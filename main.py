@@ -42,9 +42,28 @@ class IMEIResource(Resource):
         }
         
     def get(self):
-        """Get all stored IMEI submissions"""
+        """Get all stored IMEI submissions and statistics"""
         submissions = {key: db[key] for key in db.keys()}
+        
+        # Collect unique IMEIs
+        unique_imei1 = set()
+        unique_imei2 = set()
+        
+        for submission in submissions.values():
+            if submission.get('imei1'):
+                unique_imei1.add(submission['imei1'])
+            if submission.get('imei2'):
+                unique_imei2.add(submission['imei2'])
+        
+        stats = {
+            'total_submissions': len(submissions),
+            'unique_primary_imeis': len(unique_imei1),
+            'unique_secondary_imeis': len(unique_imei2),
+            'total_unique_imeis': len(unique_imei1.union(unique_imei2))
+        }
+        
         return {
+            'statistics': stats,
             'submissions': submissions
         }
 
