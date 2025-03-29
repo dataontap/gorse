@@ -2,6 +2,8 @@
 from flask import Flask, request
 from flask_restx import Api, Resource, fields
 from typing import Optional
+from replit import db
+from datetime import datetime
 
 app = Flask(__name__)
 api = Api(app, version='1.0', title='IMEI API',
@@ -21,13 +23,29 @@ class IMEIResource(Resource):
     def post(self):
         """Submit IMEI information from Android device"""
         data = request.json
+        timestamp = datetime.now().isoformat()
+        
+        # Store in database with timestamp as key
+        db[timestamp] = {
+            'imei1': data.get('imei1'),
+            'imei2': data.get('imei2')
+        }
+        
         return {
             'message': 'IMEI information received successfully',
             'status': 'success',
             'data': {
                 'imei1': data.get('imei1'),
-                'imei2': data.get('imei2')
+                'imei2': data.get('imei2'),
+                'timestamp': timestamp
             }
+        }
+        
+    def get(self):
+        """Get all stored IMEI submissions"""
+        submissions = {key: db[key] for key in db.keys()}
+        return {
+            'submissions': submissions
         }
 
 if __name__ == '__main__':
