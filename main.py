@@ -17,13 +17,17 @@ imei_model = api.model('IMEI', {
 @ns.route('')
 class IMEIResource(Resource):
     @ns.expect(imei_model)
-    @ns.marshal_with(imei_model)
+    @ns.response(200, 'Success')
     def post(self):
         """Submit IMEI information from Android device"""
         data = request.json
         return {
-            'imei1': data.get('imei1'),
-            'imei2': data.get('imei2')
+            'message': 'IMEI information received successfully',
+            'status': 'success',
+            'data': {
+                'imei1': data.get('imei1'),
+                'imei2': data.get('imei2')
+            }
         }
 
 if __name__ == '__main__':
