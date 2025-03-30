@@ -7,7 +7,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 api = Api(app, version='1.0', title='IMEI API',
-    description='API for retrieving IMEI information from Android devices')
+    description='Get android phone IMEI API with telephony permissions for eSIM activation')
 
 ns = api.namespace('imei', description='IMEI operations')
 
