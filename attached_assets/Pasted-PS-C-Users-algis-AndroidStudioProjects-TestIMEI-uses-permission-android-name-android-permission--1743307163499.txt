@@ -1,0 +1,37 @@
+PS C:\Users\algis\AndroidStudioProjects\TestIMEI> <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+< : The term '<' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of 
+the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ <uses-permission android:name="android.permission.READ_PHONE_STATE" / ...
++ ~
+    + CategoryInfo          : ObjectNotFound: (<:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\algis\AndroidStudioProjects\TestIMEI> <uses-permission android:name="android.permission.INTERNET" / 
+< : The term '<' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of 
+the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ <uses-permission android:name="android.permission.INTERNET" /
++ ~
+    + CategoryInfo          : ObjectNotFound: (<:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\algis\AndroidStudioProjects\TestIMEI> <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+< : The term '<' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of 
+the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ <uses-permission android:name="android.permission.READ_PHONE_STATE" / ...
++ ~
+    + CategoryInfo          : ObjectNotFound: (<:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\algis\AndroidStudioProjects\TestIMEI> uses-permission android:name="android.permission.INTERNET" /  
+uses-permission : The term 'uses-permission' is not recognized as the name of a cmdlet, function, script file, or operable 
+program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ uses-permission android:name="android.permission.INTERNET" /
++ ~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (uses-permission:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\algis\AndroidStudioProjects\TestIMEI>
