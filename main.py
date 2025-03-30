@@ -32,7 +32,7 @@ class IMEIResource(Resource):
         }
         
         return {
-            'message': 'IMEI information received successfully',
+            'message': 'Your IMEI has been successfully shared for eSIM activation',
             'status': 'success',
             'data': {
                 'imei1': data.get('imei1'),
