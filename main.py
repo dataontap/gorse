@@ -43,6 +43,7 @@ class IMEIResource(Resource):
         
     def get(self):
         """Get all stored IMEI submissions and statistics"""
+        print("Current database keys:", list(db.keys()))
         submissions = {key: db[key] for key in db.keys()}
         
         # Collect unique IMEIs
