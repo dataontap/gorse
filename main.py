@@ -10,7 +10,8 @@ app = Flask(__name__, static_url_path='/static')
 socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
     description='Get android phone IMEI API with telephony permissions for eSIM activation',
-    doc='/api')  # Move Swagger UI to /api endpoint
+    doc='/api', 
+    prefix='/api')  # Move all API endpoints under /api path
 
 ns = api.namespace('imei', description='IMEI operations')
 
