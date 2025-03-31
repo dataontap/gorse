@@ -14,6 +14,32 @@ api = Api(app, version='1.0', title='IMEI API',
     prefix='/api')  # Move all API endpoints under /api path
 
 ns = api.namespace('imei', description='IMEI operations')
+delivery_ns = api.namespace('delivery', description='eSIM delivery operations')
+
+delivery_model = api.model('Delivery', {
+    'method': fields.String(required=True, description='Delivery method (email or sms)'),
+    'contact': fields.String(required=True, description='Email address or phone number')
+})
+
+@delivery_ns.route('')
+class DeliveryResource(Resource):
+    @delivery_ns.expect(delivery_model)
+    @delivery_ns.response(200, 'Success')
+    @delivery_ns.response(400, 'Bad Request')
+    def post(self):
+        """Submit eSIM delivery preferences"""
+        try:
+            data = request.get_json()
+            if not data:
+                return {'message': 'No data provided', 'status': 'error'}, 400
+                
+            # Here you would implement the actual eSIM delivery logic
+            return {
+                'message': f'eSIM will be sent via {data["method"]} to {data["contact"]}',
+                'status': 'success'
+            }
+        except Exception as e:
+            return {'message': str(e), 'status': 'error'}, 500
 
 imei_model = api.model('IMEI', {
     'imei1': fields.String(required=True, description='Primary IMEI number'),

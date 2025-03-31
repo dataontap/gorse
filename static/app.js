@@ -17,7 +17,7 @@ document.getElementById('requestEsim').addEventListener('click', async () => {
         });
 
         const result = await response.json();
-        alert(result.message);
+        window.location.href = '/static/success.html';
     } catch (error) {
         alert('Error submitting IMEI information');
         console.error(error);

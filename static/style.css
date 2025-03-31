@@ -19,3 +19,16 @@
 .btn {
     margin: 5px;
 }
+
+.success-content {
+    text-align: center;
+    padding: 40px 20px;
+    background: #FFF371;
+    border-radius: 8px;
+    margin: 50px auto;
+    max-width: 600px;
+}
+
+.form-group {
+    text-align: left;
+}
