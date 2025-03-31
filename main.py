@@ -56,30 +56,38 @@ class IMEIResource(Resource):
 
     def get(self):
         """Get all stored IMEI submissions and statistics"""
-        print("Current database keys:", list(db.keys()))
-        submissions = {key: db[key] for key in db.keys()}
+        try:
+            submissions = {}
+            unique_imei1 = set()
+            unique_imei2 = set()
 
-        # Collect unique IMEIs
-        unique_imei1 = set()
-        unique_imei2 = set()
+            # Safely get database entries
+            for key in db.keys():
+                try:
+                    submission = db[key]
+                    submissions[key] = submission
+                    if submission.get('imei1'):
+                        unique_imei1.add(submission['imei1'])
+                    if submission.get('imei2'):
+                        unique_imei2.add(submission['imei2'])
+                except Exception as e:
+                    print(f"Error accessing key {key}: {str(e)}")
+                    continue
 
-        for submission in submissions.values():
-            if submission.get('imei1'):
-                unique_imei1.add(submission['imei1'])
-            if submission.get('imei2'):
-                unique_imei2.add(submission['imei2'])
+            stats = {
+                'total_submissions': len(submissions),
+                'unique_primary_imeis': len(unique_imei1),
+                'unique_secondary_imeis': len(unique_imei2),
+                'total_unique_imeis': len(unique_imei1.union(unique_imei2))
+            }
 
-        stats = {
-            'total_submissions': len(submissions),
-            'unique_primary_imeis': len(unique_imei1),
-            'unique_secondary_imeis': len(unique_imei2),
-            'total_unique_imeis': len(unique_imei1.union(unique_imei2))
-        }
-
-        return {
-            'statistics': stats,
-            'submissions': submissions
-        }
+            return {
+                'status': 'success',
+                'statistics': stats,
+                'submissions': submissions
+            }
+        except Exception as e:
+            return {'message': f'Internal Server Error: {str(e)}', 'status': 'error'}, 500
 
 @app.route('/')
 def root():
