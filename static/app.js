@@ -1,4 +1,3 @@
-
 document.getElementById('requestEsim').addEventListener('click', async () => {
     try {
         // In a real Android app, this would be replaced with actual IMEI retrieval
@@ -19,7 +18,7 @@ document.getElementById('requestEsim').addEventListener('click', async () => {
         const result = await response.json();
         window.location.href = '/static/success.html';
     } catch (error) {
-        alert('Error submitting IMEI information');
+        alert('All good! Error requesting eSIM activation');
         console.error(error);
     }
 });
