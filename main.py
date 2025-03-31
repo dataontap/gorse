@@ -7,8 +7,10 @@ from replit import db
 from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, messaging
+import stripe
 
-# Initialize Firebase Admin SDK
+# Initialize Firebase Admin SDK and Stripe
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 cred = credentials.Certificate('firebase-credentials.json')
 firebase_admin.initialize_app(cred)
 
@@ -39,7 +41,23 @@ class DeliveryResource(Resource):
             if not data:
                 return {'message': 'No data provided', 'status': 'error'}, 400
             
-            esim_download_link = "https://your-esim-download-link.com"  # Replace with actual link
+            # Create Stripe payment link
+            payment_link = stripe.PaymentLink.create(
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': 'eSIM Activation',
+                            'description': 'Activate your eSIM for extended usage',
+                        },
+                        'unit_amount': 100,  # $1.00 in cents
+                    },
+                    'quantity': 1,
+                }],
+                after_completion={'type': 'redirect', 'redirect': {'url': 'https://get-dot-esim.replit.app/success'}},
+            )
+            
+            esim_download_link = payment_link.url
             
             if data['method'] == 'sms':
                 message = messaging.Message(
