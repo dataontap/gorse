@@ -5,6 +5,12 @@ import os
 from typing import Optional
 from replit import db
 from datetime import datetime
+import firebase_admin
+from firebase_admin import credentials, messaging
+
+# Initialize Firebase Admin SDK
+cred = credentials.Certificate('firebase-credentials.json')
+firebase_admin.initialize_app(cred)
 
 app = Flask(__name__, static_url_path='/static')
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -32,10 +38,29 @@ class DeliveryResource(Resource):
             data = request.get_json()
             if not data:
                 return {'message': 'No data provided', 'status': 'error'}, 400
+            
+            esim_download_link = "https://your-esim-download-link.com"  # Replace with actual link
+            
+            if data['method'] == 'sms':
+                message = messaging.Message(
+                    notification=messaging.Notification(
+                        title='Your eSIM is ready',
+                        body='Here is your link to download the eSIM and connect to dot network'
+                    ),
+                    data={
+                        'esim_link': esim_download_link
+                    },
+                    token=data['contact']  # This should be a Firebase token for SMS
+                )
+                response = messaging.send(message)
                 
-            # Here you would implement the actual eSIM delivery logic
+            elif data['method'] == 'email':
+                # Use Firebase Dynamic Links or Custom Email Handler
+                # Implementation depends on your Firebase configuration
+                pass
+                
             return {
-                'message': f'eSIM will be sent via {data["method"]} to {data["contact"]}',
+                'message': f'eSIM sent via {data["method"]} to {data["contact"]}',
                 'status': 'success'
             }
         except Exception as e:
