@@ -8,7 +8,7 @@ document.getElementById('requestEsim').addEventListener('click', async () => {
             imei2: "987654321098765"  // Optional second IMEI
         };
 
-        const response = await fetch('/imei', {
+        const response = await fetch('/api/imei', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
