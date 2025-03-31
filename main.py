@@ -1,11 +1,13 @@
 from flask import Flask, request, send_from_directory
 from flask_restx import Api, Resource, fields
+from flask_socketio import SocketIO, emit
 import os
 from typing import Optional
 from replit import db
 from datetime import datetime
 
 app = Flask(__name__, static_url_path='/static')
+socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
     description='Get android phone IMEI API with telephony permissions for eSIM activation')
 
