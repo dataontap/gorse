@@ -39,7 +39,7 @@ document.getElementById('deliveryForm').addEventListener('submit', async (e) => 
         });
         
         const result = await response.json();
-        alert(result.message);
+        alert("Sweetz, your eSIM is on its way!");
     } catch (error) {
         alert('Error sending eSIM details');
         console.error(error);
