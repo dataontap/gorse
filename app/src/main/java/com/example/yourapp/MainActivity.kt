@@ -1,20 +1,36 @@
 
-package com.example.yourapp // Replace with your actual package name
+package com.example.yourapp
 
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
+import android.view.View
+import android.widget.Button
+import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
     private lateinit var esimManager: EsimManager
+    private lateinit var requestButton: Button
+    private lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         
+        // Initialize views
+        requestButton = findViewById(R.id.requestEsimButton)
+        progressBar = findViewById(R.id.progressBar)
+        
         // Initialize the manager
-        esimManager = EsimManager()
+        esimManager = EsimManager { success, message ->
+            runOnUiThread {
+                progressBar.visibility = View.GONE
+                requestButton.isEnabled = true
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+            }
+        }
         
         // Request runtime permissions
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -22,7 +38,9 @@ class MainActivity : AppCompatActivity() {
         }
         
         // Add button click listener
-        findViewById<android.widget.Button>(R.id.requestEsimButton).setOnClickListener {
+        requestButton.setOnClickListener {
+            requestButton.isEnabled = false
+            progressBar.visibility = View.VISIBLE
             esimManager.requestEsim(this)
         }
     }
@@ -33,6 +51,6 @@ class MainActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        // Handle permission results here
+        // Handle permission results if needed
     }
 }

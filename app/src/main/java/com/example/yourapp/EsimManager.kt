@@ -11,25 +11,28 @@ import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
 
-class EsimManager {
+class EsimManager(private val callback: (Boolean, String) -> Unit) {
     private val client = OkHttpClient()
     private val API_URL = "https://get-dot-esim.replit.app/api/imei"
 
     @SuppressLint("HardwareIds")
     fun requestEsim(context: Context) {
-        if (checkPermission(context)) {
-            val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-            
-            // Get IMEI(s)
+        if (!checkPermission(context)) {
+            callback(false, "Permission not granted")
+            return
+        }
+
+        val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        
+        try {
             val imei1 = telephonyManager.getImei(0)
             val imei2 = try { telephonyManager.getImei(1) } catch (e: Exception) { null }
             
-            // Create JSON payload
-            val json = JSONObject()
-            json.put("imei1", imei1)
-            imei2?.let { json.put("imei2", it) }
+            val json = JSONObject().apply {
+                put("imei1", imei1)
+                imei2?.let { put("imei2", it) }
+            }
 
-            // Make API request
             val requestBody = RequestBody.create(
                 MediaType.parse("application/json"), 
                 json.toString()
@@ -42,13 +45,17 @@ class EsimManager {
 
             client.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    // Handle error
+                    callback(false, "Failed to request eSIM: ${e.message}")
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    // Handle success
+                    val success = response.isSuccessful
+                    val message = if (success) "eSIM request successful" else "Failed to request eSIM"
+                    callback(success, message)
                 }
             })
+        } catch (e: Exception) {
+            callback(false, "Error accessing device information: ${e.message}")
         }
     }
 
