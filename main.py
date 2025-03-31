@@ -1,10 +1,11 @@
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 from flask_restx import Api, Resource, fields
+import os
 from typing import Optional
 from replit import db
 from datetime import datetime
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
 api = Api(app, version='1.0', title='IMEI API',
     description='Get android phone IMEI API with telephony permissions for eSIM activation')
 
@@ -76,6 +77,10 @@ class IMEIResource(Resource):
             'statistics': stats,
             'submissions': submissions
         }
+
+@app.route('/')
+def root():
+    return send_from_directory('static', 'index.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
