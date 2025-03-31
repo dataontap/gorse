@@ -7,42 +7,51 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
-import android.widget.Toast
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var esimManager: EsimManager
-    private lateinit var requestButton: Button
+    private lateinit var activateButton: Button
     private lateinit var progressBar: ProgressBar
+    private lateinit var statusText: TextView
+    private val esimManager = EsimManager { success, message ->
+        runOnUiThread {
+            handleEsimResponse(success, message)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        
-        // Initialize views
-        requestButton = findViewById(R.id.requestEsimButton)
+
+        activateButton = findViewById(R.id.activateButton)
         progressBar = findViewById(R.id.progressBar)
-        
-        // Initialize the manager
-        esimManager = EsimManager { success, message ->
-            runOnUiThread {
-                progressBar.visibility = View.GONE
-                requestButton.isEnabled = true
-                Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-            }
+        statusText = findViewById(R.id.statusText)
+
+        activateButton.setOnClickListener {
+            requestPermissions()
         }
-        
-        // Request runtime permissions
+    }
+
+    private fun requestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), 1)
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.READ_PHONE_STATE),
+                PERMISSION_REQUEST_CODE
+            )
         }
-        
-        // Add button click listener
-        requestButton.setOnClickListener {
-            requestButton.isEnabled = false
-            progressBar.visibility = View.VISIBLE
-            esimManager.requestEsim(this)
-        }
+    }
+
+    private fun handleEsimResponse(success: Boolean, message: String) {
+        progressBar.visibility = View.GONE
+        activateButton.isEnabled = true
+        statusText.text = message
+        statusText.setTextColor(if (success) 
+            getColor(android.R.color.holo_green_dark)
+        else 
+            getColor(android.R.color.holo_red_dark))
     }
 
     override fun onRequestPermissionsResult(
@@ -51,6 +60,15 @@ class MainActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        // Handle permission results if needed
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            progressBar.visibility = View.VISIBLE
+            activateButton.isEnabled = false
+            statusText.text = "Requesting eSIM activation..."
+            esimManager.requestEsim(this)
+        }
+    }
+
+    companion object {
+        private const val PERMISSION_REQUEST_CODE = 123
     }
 }
