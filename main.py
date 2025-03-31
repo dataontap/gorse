@@ -11,7 +11,10 @@ import stripe
 
 # Initialize Firebase Admin SDK and Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
-cred = credentials.Certificate('firebase-credentials.json')
+# Load Firebase credentials from environment variable
+import json
+firebase_creds = json.loads(os.environ.get('FIREBASE_CREDENTIALS', '{}'))
+cred = credentials.Certificate(firebase_creds)
 firebase_admin.initialize_app(cred)
 
 app = Flask(__name__, static_url_path='/static')
