@@ -39,9 +39,15 @@ document.getElementById('deliveryForm').addEventListener('submit', async (e) => 
         });
         
         const result = await response.json();
-        alert("Sweetz, your eSIM is on its way!");
+        const successAlert = document.createElement('div');
+        successAlert.className = 'alert alert-success';
+        successAlert.textContent = "Sweetz, your eSIM is on its way!";
+        document.querySelector('.success-content').prepend(successAlert);
     } catch (error) {
-        alert('Error sending eSIM details');
+        const errorAlert = document.createElement('div');
+        errorAlert.className = 'alert alert-danger';
+        errorAlert.textContent = 'Error sending eSIM details';
+        document.querySelector('.success-content').prepend(errorAlert);
         console.error(error);
     }
 });
