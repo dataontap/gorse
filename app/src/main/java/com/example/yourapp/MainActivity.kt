@@ -1,3 +1,4 @@
+
 package com.example.yourapp
 
 import android.Manifest
@@ -22,7 +23,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webView)
-        webView.settings.javaScriptEnabled = true
+        webView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            databaseEnabled = true
+        }
         webView.webViewClient = WebViewClient()
         webView.addJavascriptInterface(WebAppInterface(this), "Android")
         webView.loadUrl("https://get-dot-esim.replit.app")
