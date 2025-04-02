@@ -34,11 +34,7 @@ class EsimManager(private val callback: (Boolean, String) -> Unit) {
 
         try {
             val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-            val imei1 = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                telephonyManager.getImei(0)
-            } else {
-                telephonyManager.deviceId
-            }
+            val imei1 = telephonyManager.getImei(0)
 
             val imei2 = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 try {
