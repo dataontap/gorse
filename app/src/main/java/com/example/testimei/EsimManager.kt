@@ -10,6 +10,7 @@ import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
 
@@ -54,7 +55,7 @@ class EsimManager(private val callback: (Boolean, String) -> Unit) {
 
             val request = Request.Builder()
                 .url(API_URL)
-                .post(RequestBody.create(MediaType.toMediaType("application/json"), json.toString()))
+                .post(json.toString().toRequestBody("application/json".toMediaType()))
                 .build()
 
             client.newCall(request).enqueue(object : Callback {
