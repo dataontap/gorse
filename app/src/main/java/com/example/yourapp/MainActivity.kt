@@ -1,23 +1,19 @@
-
 package com.example.yourapp
 
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.widget.Button
-import android.widget.ProgressBar
-import android.widget.TextView
+import android.webkit.WebView
+import android.webkit.WebViewClient 
+import android.webkit.JavascriptInterface
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var activateButton: Button
-    private lateinit var progressBar: ProgressBar
-    private lateinit var statusText: TextView
+    private lateinit var webView: WebView
     private val esimManager = EsimManager { success, message ->
         runOnUiThread {
-            handleEsimResponse(success, message)
+            webView.evaluateJavascript("handleEsimResponse($success, '$message')", null)
         }
     }
 
@@ -25,49 +21,28 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        activateButton = findViewById(R.id.activateButton)
-        progressBar = findViewById(R.id.progressBar)
-        statusText = findViewById(R.id.statusText)
-
-        activateButton.setOnClickListener {
-            requestPermissions()
-        }
+        webView = findViewById(R.id.webView)
+        webView.settings.javaScriptEnabled = true
+        webView.webViewClient = WebViewClient()
+        webView.addJavascriptInterface(WebAppInterface(this), "Android")
+        webView.loadUrl("https://get-dot-esim.replit.app")
     }
 
-    private fun requestPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.READ_PHONE_STATE),
-                PERMISSION_REQUEST_CODE
-            )
+    inner class WebAppInterface(private val activity: MainActivity) {
+        @JavascriptInterface
+        fun requestPermissions() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                ActivityCompat.requestPermissions(
+                    activity,
+                    arrayOf(Manifest.permission.READ_PHONE_STATE),
+                    PERMISSION_REQUEST_CODE
+                )
+            }
         }
-    }
 
-    private fun handleEsimResponse(success: Boolean, message: String) {
-        progressBar.visibility = View.GONE
-        activateButton.isEnabled = true
-        if (!success && message.contains("Permission not granted")) {
-            showAlternativeMethodDialog()
-        }
-        statusText.text = message
-        statusText.setTextColor(if (success) 
-            getColor(android.R.color.holo_green_dark)
-        else 
-            getColor(android.R.color.holo_red_dark))
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            progressBar.visibility = View.VISIBLE
-            activateButton.isEnabled = false
-            statusText.text = "Requesting eSIM activation..."
-            esimManager.requestEsim(this)
+        @JavascriptInterface
+        fun requestEsim() {
+            esimManager.requestEsim(activity)
         }
     }
 
