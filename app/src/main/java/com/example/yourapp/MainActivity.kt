@@ -47,6 +47,9 @@ class MainActivity : AppCompatActivity() {
     private fun handleEsimResponse(success: Boolean, message: String) {
         progressBar.visibility = View.GONE
         activateButton.isEnabled = true
+        if (!success && message.contains("Permission not granted")) {
+            showAlternativeMethodDialog()
+        }
         statusText.text = message
         statusText.setTextColor(if (success) 
             getColor(android.R.color.holo_green_dark)

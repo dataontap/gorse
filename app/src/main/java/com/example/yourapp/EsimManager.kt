@@ -17,6 +17,20 @@ class EsimManager(private val callback: (Boolean, String) -> Unit) {
 
     @SuppressLint("HardwareIds")
     fun requestEsim(context: Context) {
+        // Let user choose identification method
+        val builder = AlertDialog.Builder(context)
+        builder.setTitle("Device Identification")
+            .setMessage("eSIM activation requires device identification. How would you like to proceed?")
+            .setPositiveButton("Use IMEI (Recommended)") { _, _ ->
+                requestEsimWithIMEI(context)
+            }
+            .setNegativeButton("Use Alternative ID") { _, _ ->
+                requestEsimWithoutIMEI(context)
+            }
+            .show()
+    }
+
+    private fun requestEsimWithIMEI(context: Context) {
         if (!checkPermission(context)) {
             callback(false, "Permission not granted")
             return
