@@ -64,7 +64,7 @@ class EsimManager(private val callback: (Boolean, String) -> Unit) {
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    val responseData = response.body()?.string()
+                    val responseData = response.body?.string()
                     callback(response.isSuccessful, responseData ?: "No response data")
                 }
             })
