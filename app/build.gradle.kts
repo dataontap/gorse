@@ -19,16 +19,6 @@ android {
 
     sourceSets {
         getByName("main") {
-            manifest {
-                srcFile("src/main/AndroidManifest.xml")
-            }
-            java.srcDirs("src/main/java")
-            res.srcDirs("src/main/res")
-        }
-    }
-
-    sourceSets {
-        getByName("main") {
             manifest.srcFile("src/main/AndroidManifest.xml")
             java.srcDirs("src/main/java")
             res.srcDirs("src/main/res")
