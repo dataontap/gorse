@@ -4,7 +4,6 @@ package com.example.testimei
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Bundle
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
