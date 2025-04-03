@@ -50,17 +50,27 @@ class DeliveryResource(Resource):
             if not data:
                 return {'message': 'No data provided', 'status': 'error'}, 400
             
-            # Create Stripe payment link
-            payment_link = stripe.PaymentLink.create(
-                line_items=[{
-                    'price_data': {
+            # Create or retrieve the product
+            try:
+                product = stripe.Product.retrieve('esim_activation_v1')
+            except stripe.error.InvalidRequestError:
+                product = stripe.Product.create(
+                    id='esim_activation_v1',
+                    name='eSIM Activation',
+                    description='Activate your eSIM for extended usage',
+                    default_price_data={
                         'currency': 'usd',
-                        'product_data': {
-                            'name': 'eSIM Activation',
-                            'description': 'Activate your eSIM for extended usage',
-                        },
                         'unit_amount': 100,  # $1.00 in cents
                     },
+                    metadata={
+                        'product_number': '1'
+                    }
+                )
+
+            # Create Stripe payment link with the product
+            payment_link = stripe.PaymentLink.create(
+                line_items=[{
+                    'price': product.default_price,
                     'quantity': 1,
                 }],
                 after_completion={'type': 'redirect', 'redirect': {'url': 'https://get-dot-esim.replit.app/success'}},
