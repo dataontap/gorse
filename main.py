@@ -108,8 +108,20 @@ class DeliveryResource(Resource):
                         ),
                     )
                     messaging.send(message)
-            
-            if data['method'] == 'sms':
+                elif data['method'] == 'sms':
+                    message = messaging.Message(
+                        notification=messaging.Notification(
+                            title='Your eSIM is ready',
+                            body='Here is your link to download the eSIM and connect to dot network'
+                        ),
+                        data={
+                            'esim_link': esim_download_link
+                        },
+                        token=data['contact']  # This should be a Firebase token for SMS
+                    )
+                    response = messaging.send(message)
+            except Exception as e:
+                return {'message': str(e), 'status': 'error'}, 500
                 message = messaging.Message(
                     notification=messaging.Notification(
                         title='Your eSIM is ready',
