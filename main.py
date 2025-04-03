@@ -13,9 +13,15 @@ import stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 # Load Firebase credentials from environment variable
 import json
-firebase_creds = json.loads(os.environ.get('FIREBASE_CREDENTIALS', '{}'))
-cred = credentials.Certificate(firebase_creds)
-firebase_admin.initialize_app(cred)
+try:
+    firebase_creds = json.loads(os.environ.get('FIREBASE_CREDENTIALS', '{}'))
+    if 'type' not in firebase_creds or firebase_creds['type'] != 'service_account':
+        print("Warning: Firebase credentials not properly configured")
+    else:
+        cred = credentials.Certificate(firebase_creds)
+        firebase_admin.initialize_app(cred)
+except Exception as e:
+    print(f"Warning: Could not initialize Firebase: {str(e)}")
 
 app = Flask(__name__, static_url_path='/static')
 socketio = SocketIO(app, cors_allowed_origins="*")
