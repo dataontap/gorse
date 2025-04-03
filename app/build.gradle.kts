@@ -19,8 +19,17 @@ android {
 
     sourceSets {
         getByName("main") {
-            manifest.srcFile("src/main/AndroidManifest.xml")
+            manifest {
+                srcFile("src/main/AndroidManifest.xml")
+            }
+            java.srcDirs("src/main/java")
+            res.srcDirs("src/main/res")
         }
+    }
+
+    tasks.withType<com.android.build.gradle.tasks.ProcessApplicationManifest>().configureEach {
+        @InputFiles
+        manifestFile.set(file("src/main/AndroidManifest.xml"))
     }
 
     buildTypes {
