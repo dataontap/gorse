@@ -81,33 +81,23 @@ class DeliveryResource(Resource):
             # Send welcome email using Firebase
             try:
                 if data['method'] == 'email':
-                    action_code_settings = auth.ActionCodeSettings(
-                        url='https://get-dot-esim.replit.app/success',
-                        handle_code_in_app=True,
-                    )
-                    email = data['contact']
-                    link = auth.generate_email_verification_link(
-                        email, action_code_settings)
-                    
-                    # Send custom welcome email
+                    # Always send email notification
                     message = messaging.Message(
                         notification=messaging.Notification(
                             title='Welcome to dot eSIM!',
                             body='Thank you for choosing dot eSIM. Your journey to better connectivity starts here!'
                         ),
                         data={
-                            'verification_link': link,
                             'esim_link': esim_download_link
                         },
-                        webpush=messaging.WebpushConfig(
-                            notification=messaging.WebpushNotification(
-                                title='Welcome to dot eSIM!',
-                                body='Thank you for choosing dot eSIM!',
-                                icon='/static/icon.png'
-                            ),
-                        ),
+                        topic='all_users'  # Send to a topic instead of specific token
                     )
-                    messaging.send(message)
+                    try:
+                        response = messaging.send(message)
+                        print(f"Email notification sent successfully: {response}")
+                    except Exception as e:
+                        print(f"Failed to send email notification: {str(e)}")
+                        return {'message': f'Failed to send email: {str(e)}', 'status': 'error'}, 500
                 elif data['method'] == 'sms':
                     message = messaging.Message(
                         notification=messaging.Notification(
