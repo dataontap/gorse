@@ -75,15 +75,24 @@ class DeliveryResource(Resource):
                     'price': product.default_price,
                     'quantity': 1,
                 }],
-                after_completion={'type': 'redirect', 'redirect': {'url': 'https://get-dot-esim.replit.app/success'}},
+                after_completion={'type': 'redirect', 'url': 'https://get-dot-esim.replit.app/success'},
+                custom_text={'payment_submit': {'message': 'Pay $1 to activate your eSIM'}},
+                allow_promotion_codes=True
             )
-            
-            esim_download_link = payment_link.url
 
-            # Send welcome email using Firebase
+            # Send payment link via Firebase
             try:
                 if data['method'] == 'email':
-                    # Always send email notification
+                    message = messaging.Message(
+                        notification=messaging.Notification(
+                            title='Your dot eSIM Payment Link',
+                            body='Click here to pay $1 and activate your eSIM'
+                        ),
+                        data={
+                            'payment_link': payment_link.url
+                        },
+                        topic='all_users'
+                    )
                     message = messaging.Message(
                         notification=messaging.Notification(
                             title='Welcome to dot eSIM!',
