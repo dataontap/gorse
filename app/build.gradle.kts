@@ -17,6 +17,10 @@ android {
         versionName = "1.0"
     }
 
+    buildFeatures {
+        dataBinding = true
+    }
+
     sourceSets {
         getByName("main") {
             manifest.srcFile("src/main/AndroidManifest.xml")
