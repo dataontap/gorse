@@ -69,37 +69,31 @@ class DeliveryResource(Resource):
                     }
                 )
 
-            # Create Stripe payment link with the product
-            payment_link = stripe.PaymentLink.create(
-                line_items=[{
-                    'price': product.default_price,
-                    'quantity': 1,
-                }],
-                after_completion={'type': 'redirect', 'url': 'https://get-dot-esim.replit.app/success'},
-                custom_text={'payment_submit': {'message': 'Pay $1 to activate your eSIM'}},
-                allow_promotion_codes=True
-            )
-
-            # Send payment link via Firebase
+            # Create or retrieve Stripe customer
             try:
-                if data['method'] == 'email':
-                    message = messaging.Message(
-                        notification=messaging.Notification(
-                            title='Your dot eSIM Payment Link',
-                            body=f'Click here to pay $1 and activate your eSIM: {payment_link.url}'
-                        ),
-                        data={
-                            'payment_link': payment_link.url,
-                            'contact': data['contact']
-                        },
-                        topic='all_users'
-                    )
-                    try:
-                        response = messaging.send(message)
-                        print(f"Email notification sent successfully: {response}")
-                    except Exception as e:
-                        print(f"Failed to send email notification: {str(e)}")
-                        return {'message': f'Failed to send email: {str(e)}', 'status': 'error'}, 500
+                # Create customer first
+                customer = stripe.Customer.create(
+                    email=data['contact'] if data['method'] == 'email' else None,
+                    phone=data['contact'] if data['method'] == 'sms' else None
+                )
+
+                # Create Stripe payment link with the customer
+                payment_link = stripe.PaymentLink.create(
+                    line_items=[{
+                        'price': product.default_price,
+                        'quantity': 1,
+                    }],
+                    customer=customer.id,
+                    after_completion={'type': 'redirect', 'url': 'https://get-dot-esim.replit.app/success'},
+                    custom_text={'payment_submit': {'message': 'Pay $1 to activate your eSIM'}},
+                    allow_promotion_codes=True
+                )
+
+                print(f"Payment link created successfully: {payment_link.url}")
+                return {
+                    'message': f'Payment link sent via {data["method"]} to {data["contact"]}',
+                    'status': 'success'
+                }
                 elif data['method'] == 'sms':
                     message = messaging.Message(
                         notification=messaging.Notification(
