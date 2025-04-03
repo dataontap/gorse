@@ -209,6 +209,31 @@ class IMEIResource(Resource):
         except Exception as e:
             return {'message': f'Internal Server Error: {str(e)}', 'status': 'error'}, 500
 
+@app.route('/webhook', methods=['POST'])
+def stripe_webhook():
+    payload = request.get_data()
+    sig_header = request.headers.get('Stripe-Signature')
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, os.environ.get('STRIPE_WEBHOOK_SECRET')
+        )
+    except ValueError as e:
+        return {'error': str(e)}, 400
+    except stripe.error.SignatureVerificationError as e:
+        return {'error': str(e)}, 400
+
+    if event.type == 'payment_intent.succeeded':
+        payment_intent = event.data.object
+        print(f"Payment succeeded for {payment_intent.amount}")
+        # Handle successful payment here
+    elif event.type == 'payment_intent.payment_failed':
+        payment_intent = event.data.object
+        print(f"Payment failed for {payment_intent.amount}")
+        # Handle failed payment here
+
+    return {'status': 'success'}, 200
+
 @app.route('/', endpoint='serve_index')
 def serve_index():
     return send_from_directory('static', 'index.html')
