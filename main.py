@@ -90,22 +90,23 @@ class DeliveryResource(Resource):
                 )
 
                 print(f"Payment link created successfully: {payment_link.url}")
-                return {
-                    'message': f'Payment link sent via {data["method"]} to {data["contact"]}',
-                    'status': 'success'
-                }
-                elif data['method'] == 'sms':
+                if data['method'] == 'sms':
                     message = messaging.Message(
                         notification=messaging.Notification(
                             title='Your eSIM is ready',
                             body='Here is your link to download the eSIM and connect to dot network'
                         ),
                         data={
-                            'esim_link': esim_download_link
+                            'esim_link': payment_link.url
                         },
                         token=data['contact']  # This should be a Firebase token for SMS
                     )
                     response = messaging.send(message)
+                
+                return {
+                    'message': f'Payment link sent via {data["method"]} to {data["contact"]}',
+                    'status': 'success'
+                }
             except Exception as e:
                 return {'message': str(e), 'status': 'error'}, 500
 
