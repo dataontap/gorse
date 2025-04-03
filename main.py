@@ -122,6 +122,8 @@ class DeliveryResource(Resource):
                     response = messaging.send(message)
             except Exception as e:
                 return {'message': str(e), 'status': 'error'}, 500
+
+            if data['method'] == 'sms':
                 message = messaging.Message(
                     notification=messaging.Notification(
                         title='Your eSIM is ready',
@@ -133,7 +135,6 @@ class DeliveryResource(Resource):
                     token=data['contact']  # This should be a Firebase token for SMS
                 )
                 response = messaging.send(message)
-                
             elif data['method'] == 'email':
                 # Use Firebase Dynamic Links or Custom Email Handler
                 # Implementation depends on your Firebase configuration
