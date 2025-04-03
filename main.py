@@ -14,12 +14,14 @@ stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 # Load Firebase credentials from environment variable
 import json
 try:
-    firebase_creds = json.loads(os.environ.get('FIREBASE_CREDENTIALS', '{}'))
-    if 'type' not in firebase_creds or firebase_creds['type'] != 'service_account':
-        print("Warning: Firebase credentials not properly configured")
-    else:
-        cred = credentials.Certificate(firebase_creds)
-        firebase_admin.initialize_app(cred)
+    firebase_creds_str = os.environ.get('FIREBASE_CREDENTIALS')
+    if not firebase_creds_str:
+        raise ValueError("FIREBASE_CREDENTIALS environment variable not set")
+    
+    firebase_creds = json.loads(firebase_creds_str)
+    cred = credentials.Certificate(firebase_creds)
+    firebase_admin.initialize_app(cred)
+    print("Firebase initialized successfully")
 except Exception as e:
     print(f"Warning: Could not initialize Firebase: {str(e)}")
 
