@@ -77,6 +77,37 @@ class DeliveryResource(Resource):
             )
             
             esim_download_link = payment_link.url
+
+            # Send welcome email using Firebase
+            try:
+                if data['method'] == 'email':
+                    action_code_settings = auth.ActionCodeSettings(
+                        url='https://get-dot-esim.replit.app/success',
+                        handle_code_in_app=True,
+                    )
+                    email = data['contact']
+                    link = auth.generate_email_verification_link(
+                        email, action_code_settings)
+                    
+                    # Send custom welcome email
+                    message = messaging.Message(
+                        notification=messaging.Notification(
+                            title='Welcome to dot eSIM!',
+                            body='Thank you for choosing dot eSIM. Your journey to better connectivity starts here!'
+                        ),
+                        data={
+                            'verification_link': link,
+                            'esim_link': esim_download_link
+                        },
+                        webpush=messaging.WebpushConfig(
+                            notification=messaging.WebpushNotification(
+                                title='Welcome to dot eSIM!',
+                                body='Thank you for choosing dot eSIM!',
+                                icon='/static/icon.png'
+                            ),
+                        ),
+                    )
+                    messaging.send(message)
             
             if data['method'] == 'sms':
                 message = messaging.Message(
