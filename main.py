@@ -86,22 +86,13 @@ class DeliveryResource(Resource):
                     message = messaging.Message(
                         notification=messaging.Notification(
                             title='Your dot eSIM Payment Link',
-                            body='Click here to pay $1 and activate your eSIM'
+                            body=f'Click here to pay $1 and activate your eSIM: {payment_link.url}'
                         ),
                         data={
-                            'payment_link': payment_link.url
+                            'payment_link': payment_link.url,
+                            'contact': data['contact']
                         },
                         topic='all_users'
-                    )
-                    message = messaging.Message(
-                        notification=messaging.Notification(
-                            title='Welcome to dot eSIM!',
-                            body='Thank you for choosing dot eSIM. Your journey to better connectivity starts here!'
-                        ),
-                        data={
-                            'esim_link': esim_download_link
-                        },
-                        topic='all_users'  # Send to a topic instead of specific token
                     )
                     try:
                         response = messaging.send(message)
