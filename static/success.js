@@ -39,18 +39,17 @@ document.getElementById('deliveryForm').addEventListener('submit', async (e) => 
         });
         
         const result = await response.json();
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-success alert-dismissible fade show';
-        alertDiv.innerHTML = `
-            Sweetz, your eSIM is on its way!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.querySelector('.success-content').prepend(alertDiv);
-        
-        // Redirect to progress page after 1.5 seconds
-        setTimeout(() => {
-            window.location.href = '/static/progress.html';
-        }, 1500);
+        if (result.payment_url) {
+            window.location.href = result.payment_url;
+        } else {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                Error processing payment
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.success-content').prepend(alertDiv);
+        }
     } catch (error) {
         const alertDiv = document.createElement('div');
         alertDiv.className = 'alert alert-danger alert-dismissible fade show';

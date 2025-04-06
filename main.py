@@ -5,28 +5,10 @@ import os
 from typing import Optional
 from replit import db
 from datetime import datetime
-import firebase_admin
-from firebase_admin import credentials, messaging
 import stripe
 
-# Initialize Firebase Admin SDK and Stripe
+# Initialize Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
-# Load Firebase credentials from environment variable
-import json
-try:
-    firebase_creds_str = os.environ.get('FIREBASE_CREDENTIALS')
-    if not firebase_creds_str:
-        print("Warning: FIREBASE_CREDENTIALS environment variable not set. SMS notifications will be disabled.")
-    else:
-        firebase_creds = json.loads(firebase_creds_str)
-        if 'type' not in firebase_creds or firebase_creds['type'] != 'service_account':
-            print("Warning: Invalid Firebase credentials format. Service account type required.")
-        else:
-            cred = credentials.Certificate(firebase_creds)
-            firebase_admin.initialize_app(cred)
-            print("Firebase initialized successfully")
-except Exception as e:
-    print(f"Warning: Firebase initialization failed: {str(e)}. SMS notifications will be disabled.")
 
 app = Flask(__name__, static_url_path='/static')
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -54,7 +36,7 @@ class DeliveryResource(Resource):
             data = request.get_json()
             if not data:
                 return {'message': 'No data provided', 'status': 'error'}, 400
-            
+
             # Create or retrieve the product
             try:
                 product = stripe.Product.retrieve('esim_activation_v1')
@@ -93,47 +75,15 @@ class DeliveryResource(Resource):
                 )
 
                 print(f"Payment link created successfully: {payment_link.url}")
-                if data['method'] == 'sms':
-                    message = messaging.Message(
-                        notification=messaging.Notification(
-                            title='Your eSIM is ready',
-                            body='Here is your link to download the eSIM and connect to dot network'
-                        ),
-                        data={
-                            'esim_link': payment_link.url
-                        },
-                        token=data['contact']  # This should be a Firebase token for SMS
-                    )
-                    response = messaging.send(message)
-                
+
                 return {
-                    'message': f'Payment link sent via {data["method"]} to {data["contact"]}',
-                    'status': 'success'
+                    'message': 'Payment link created',
+                    'status': 'success',
+                    'payment_url': payment_link.url
                 }
             except Exception as e:
                 return {'message': str(e), 'status': 'error'}, 500
 
-            if data['method'] == 'sms':
-                message = messaging.Message(
-                    notification=messaging.Notification(
-                        title='Your eSIM is ready',
-                        body='Here is your link to download the eSIM and connect to dot network'
-                    ),
-                    data={
-                        'esim_link': esim_download_link
-                    },
-                    token=data['contact']  # This should be a Firebase token for SMS
-                )
-                response = messaging.send(message)
-            elif data['method'] == 'email':
-                # Use Firebase Dynamic Links or Custom Email Handler
-                # Implementation depends on your Firebase configuration
-                pass
-                
-            return {
-                'message': f'eSIM sent via {data["method"]} to {data["contact"]}',
-                'status': 'success'
-            }
         except Exception as e:
             return {'message': str(e), 'status': 'error'}, 500
 
