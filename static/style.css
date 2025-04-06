@@ -13,15 +13,40 @@
 
 .carousel-content {
     text-align: center;
-    padding: 100px 20px;
+    padding: 60px 20px;
     background: #FFF371;
     border-radius: 8px;
     margin: 50px auto;
     max-width: 600px;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
-.carousel-item {
-    min-height: 400px;
+.carousel-indicators {
+    bottom: 20px;
+}
+
+.carousel-indicators [data-bs-target] {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #666;
+    margin: 0 5px;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+    width: 40px;
+    opacity: 0.8;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    background-color: #666;
+    border-radius: 50%;
+    padding: 15px;
 }
 
 #requestEsim {
