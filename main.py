@@ -16,14 +16,17 @@ import json
 try:
     firebase_creds_str = os.environ.get('FIREBASE_CREDENTIALS')
     if not firebase_creds_str:
-        raise ValueError("FIREBASE_CREDENTIALS environment variable not set")
-    
-    firebase_creds = json.loads(firebase_creds_str)
-    cred = credentials.Certificate(firebase_creds)
-    firebase_admin.initialize_app(cred)
-    print("Firebase initialized successfully")
+        print("Warning: FIREBASE_CREDENTIALS environment variable not set. SMS notifications will be disabled.")
+    else:
+        firebase_creds = json.loads(firebase_creds_str)
+        if 'type' not in firebase_creds or firebase_creds['type'] != 'service_account':
+            print("Warning: Invalid Firebase credentials format. Service account type required.")
+        else:
+            cred = credentials.Certificate(firebase_creds)
+            firebase_admin.initialize_app(cred)
+            print("Firebase initialized successfully")
 except Exception as e:
-    print(f"Warning: Could not initialize Firebase: {str(e)}")
+    print(f"Warning: Firebase initialization failed: {str(e)}. SMS notifications will be disabled.")
 
 app = Flask(__name__, static_url_path='/static')
 socketio = SocketIO(app, cors_allowed_origins="*")
