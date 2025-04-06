@@ -40,7 +40,7 @@ class DeliveryResource(Resource):
             # Create or retrieve the product
             if not stripe.api_key:
                 return {'message': 'Stripe API key not configured', 'status': 'error'}, 500
-                
+
             try:
                 product = stripe.Product.retrieve('esim_activation_v1')
             except stripe.error.InvalidRequestError as e:
@@ -78,13 +78,41 @@ class DeliveryResource(Resource):
                     allow_promotion_codes=True
                 )
 
-                print(f"Payment link created successfully: {payment_link.url}")
+                # Send payment link via Stripe
+                try:
+                    if data['method'] == 'email':
+                        stripe.Customer.modify(
+                            customer.id,
+                            email=data['contact'],
+                            preferred_locales=['en'],
+                            metadata={'payment_link': payment_link.url}
+                        )
+                        # Stripe will automatically send an email
+                    else:
+                        stripe.Customer.modify(
+                            customer.id,
+                            phone=data['contact'],
+                            preferred_locales=['en'],
+                            metadata={'payment_link': payment_link.url}
+                        )
+                        # Send SMS via Stripe
+                        stripe.Customer.create_balance_transaction(
+                            customer.id,
+                            amount=0,  # No charge
+                            currency='usd',
+                            description=f'Your eSIM payment link: {payment_link.url}'
+                        )
 
-                return {
-                    'message': 'Payment link created',
-                    'status': 'success',
-                    'payment_url': payment_link.url
-                }
+                    print(f"Payment link sent successfully via {data['method']}")
+
+                    return {
+                        'message': 'Payment link created',
+                        'status': 'success',
+                        'payment_url': payment_link.url
+                    }
+                except Exception as e:
+                    return {'message': str(e), 'status': 'error'}, 500
+
             except Exception as e:
                 return {'message': str(e), 'status': 'error'}, 500
 
