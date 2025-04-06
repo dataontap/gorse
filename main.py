@@ -38,9 +38,13 @@ class DeliveryResource(Resource):
                 return {'message': 'No data provided', 'status': 'error'}, 400
 
             # Create or retrieve the product
+            if not stripe.api_key:
+                return {'message': 'Stripe API key not configured', 'status': 'error'}, 500
+                
             try:
                 product = stripe.Product.retrieve('esim_activation_v1')
-            except stripe.error.InvalidRequestError:
+            except stripe.error.InvalidRequestError as e:
+                print(f"Stripe error: {str(e)}")
                 product = stripe.Product.create(
                     id='esim_activation_v1',
                     name='eSIM Activation',
