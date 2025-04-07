@@ -69,19 +69,11 @@ class DeliveryResource(Resource):
                     description='eSIM activation customer'
                 )
 
-                # Create price if it doesn't exist
-                price = stripe.Price.create(
-                    unit_amount=100,  # $1.00 in cents
-                    currency='usd',
-                    product_data={
-                        'name': 'eSIM Activation'
-                    }
-                )
-
-                # Create invoice item
+                # Create invoice item directly with amount
                 stripe.InvoiceItem.create(
                     customer=customer.id,
-                    price=price.id,
+                    amount=100,  # $1.00 in cents
+                    currency='usd',
                     description='eSIM Activation'
                 )
 
