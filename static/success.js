@@ -39,13 +39,20 @@ document.getElementById('deliveryForm').addEventListener('submit', async (e) => 
         });
         
         const result = await response.json();
-        if (result.payment_url) {
-            window.location.href = result.payment_url;
+        if (result.status === 'success') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                Payment link has been sent! Please check your ${deliveryMethod}.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.success-content').prepend(alertDiv);
+            document.getElementById('deliveryForm').reset();
         } else {
             const alertDiv = document.createElement('div');
             alertDiv.className = 'alert alert-danger alert-dismissible fade show';
             alertDiv.innerHTML = `
-                Error processing payment
+                Error sending payment link: ${result.message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
             document.querySelector('.success-content').prepend(alertDiv);
