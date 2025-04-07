@@ -69,11 +69,23 @@ class DeliveryResource(Resource):
                     description='eSIM activation customer'
                 )
 
+                # Create price if it doesn't exist
+                try:
+                    price = stripe.Price.retrieve('esim_activation_price')
+                except stripe.error.InvalidRequestError:
+                    price = stripe.Price.create(
+                        unit_amount=100,  # $1.00 in cents
+                        currency='usd',
+                        product_data={
+                            'name': 'eSIM Activation'
+                        },
+                        id='esim_activation_price'
+                    )
+
                 # Create invoice item
                 stripe.InvoiceItem.create(
                     customer=customer.id,
-                    amount=100,  # $1.00 in cents
-                    currency='usd',
+                    price=price.id,
                     description='eSIM Activation'
                 )
 
@@ -81,11 +93,12 @@ class DeliveryResource(Resource):
                 invoice = stripe.Invoice.create(
                     customer=customer.id,
                     collection_method='send_invoice',
-                    days_until_due=1  # Give customer 1 day to pay
+                    days_until_due=1,  # Give customer 1 day to pay
+                    auto_advance=False  # Prevent auto-finalizing
                 )
 
-                # Finalize and send the invoice via email/SMS
-                invoice = stripe.Invoice.finalize_invoice(invoice.id)
+                # Finalize and send the invoice
+                invoice = stripe.Invoice.finalize_invoice(invoice.id, auto_advance=False)
                 invoice = stripe.Invoice.send_invoice(invoice.id)
 
                 print(f"Invoice sent successfully to customer {customer.id}")
