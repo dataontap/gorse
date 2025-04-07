@@ -74,6 +74,26 @@ class DeliveryResource(Resource):
                     'url': 'https://buy.stripe.com/7sI4gOg1p1771sk3cj'
                 }
 
+                # Send payment link via Stripe's notification system
+                customer.email = data['contact'] if data['method'] == 'email' else None
+                customer.phone = data['contact'] if data['method'] == 'sms' else None
+                customer.save()
+
+                # Create a payment notification
+                stripe.CustomerService.notify(
+                    customer.id,
+                    {
+                        'type': data['method'],
+                        'message': {
+                            'sms': f"Here's your eSIM payment link: {payment_link['url']}",
+                            'email': {
+                                'subject': 'Your eSIM Payment Link',
+                                'message': f"Here's your eSIM payment link: {payment_link['url']}"
+                            }
+                        }[data['method']]
+                    }
+                )
+
                 print(f"Payment link sent successfully via {data['method']}")
 
                 return {
@@ -81,9 +101,6 @@ class DeliveryResource(Resource):
                     'status': 'success',
                     'payment_url': payment_link['url']
                 }
-            except Exception as e:
-                return {'message': str(e), 'status': 'error'}, 500
-
             except Exception as e:
                 return {'message': str(e), 'status': 'error'}, 500
 
