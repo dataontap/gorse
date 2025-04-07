@@ -104,11 +104,11 @@ class DeliveryResource(Resource):
 
                     print(f"Payment link sent successfully via {data['method']}")
 
-                    return {
-                        'message': 'Payment link created',
-                        'status': 'success',
-                        'payment_url': payment_link.url
-                    }
+                return {
+                    'message': 'Payment link created',
+                    'status': 'success',
+                    'payment_url': payment_link.url
+                }
                 except Exception as e:
                     return {'message': str(e), 'status': 'error'}, 500
 
