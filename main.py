@@ -86,31 +86,31 @@ class DeliveryResource(Resource):
                         custom_text={'submit': {'message': 'Pay $1 to activate your eSIM'}}
                     )
                 else:
-                        # For SMS
-                        payment_link = stripe.PaymentLink.create(
-                            line_items=[{
-                                'price': product.default_price,
-                                'quantity': 1,
-                            }],
-                            after_completion={'type': 'hosted_confirmation'},
-                            allow_promotion_codes=True,
-                            metadata={'customer_phone': data['contact']}
-                        )
-                        # Send SMS via Stripe
-                        stripe.Customer.create(
-                            phone=data['contact'],
-                            metadata={'payment_link': payment_link.url}
-                        )
+                    # For SMS
+                    payment_link = stripe.PaymentLink.create(
+                        line_items=[{
+                            'price': product.default_price,
+                            'quantity': 1,
+                        }],
+                        after_completion={'type': 'hosted_confirmation'},
+                        allow_promotion_codes=True,
+                        metadata={'customer_phone': data['contact']}
+                    )
+                    # Send SMS via Stripe
+                    stripe.Customer.create(
+                        phone=data['contact'],
+                        metadata={'payment_link': payment_link.url}
+                    )
 
-                    print(f"Payment link sent successfully via {data['method']}")
+                print(f"Payment link sent successfully via {data['method']}")
 
                 return {
                     'message': 'Payment link created',
                     'status': 'success',
                     'payment_url': payment_link.url
                 }
-                except Exception as e:
-                    return {'message': str(e), 'status': 'error'}, 500
+            except Exception as e:
+                return {'message': str(e), 'status': 'error'}, 500
 
             except Exception as e:
                 return {'message': str(e), 'status': 'error'}, 500
