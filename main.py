@@ -62,14 +62,22 @@ class DeliveryResource(Resource):
 
             # Create or retrieve Stripe customer
             try:
-                # Create customer first
+                # Create customer first with welcome email
                 customer = stripe.Customer.create(
                     email=data['contact'] if data['method'] == 'email' else None,
                     phone=data['contact'] if data['method'] == 'sms' else None,
                     description='eSIM activation customer'
                 )
 
-                # Create payment link with customer
+                # Send welcome email via Stripe
+                stripe.Customer.create_balance_transaction(
+                    customer.id,
+                    amount=0,
+                    currency='usd',
+                    description='Welcome to dot wireless eSIM service!'
+                )
+
+                # Create payment link
                 if data['method'] == 'email':
                     payment_link = stripe.PaymentLink.create(
                         line_items=[{
@@ -77,12 +85,13 @@ class DeliveryResource(Resource):
                             'quantity': 1,
                         }],
                         after_completion={'type': 'hosted_confirmation'},
-                        customer=customer.id,
-                        customer_creation='if_required',
                         automatic_tax={'enabled': True},
                         shipping_address_collection={'allowed_countries': ['US']},
                         invoice_creation={'enabled': True},
-                        metadata={'customer_email': data['contact']},
+                        metadata={
+                            'customer_id': customer.id,
+                            'customer_email': data['contact']
+                        },
                         custom_text={'submit': {'message': 'Pay $1 to activate your eSIM'}}
                     )
                 else:
