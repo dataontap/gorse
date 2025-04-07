@@ -85,7 +85,7 @@ class DeliveryResource(Resource):
                         metadata={'customer_email': data['contact']},
                         custom_text={'submit': {'message': 'Pay $1 to activate your eSIM'}}
                     )
-                    else:
+                else:
                         # For SMS
                         payment_link = stripe.PaymentLink.create(
                             line_items=[{
