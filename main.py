@@ -77,16 +77,16 @@ class DeliveryResource(Resource):
                     description='eSIM Activation'
                 )
 
-                # Create and send invoice immediately
+                # Create invoice with payment terms
                 invoice = stripe.Invoice.create(
                     customer=customer.id,
-                    auto_advance=True,
-                    collection_method='charge_automatically',
-                    days_until_due=None  # Due immediately
+                    collection_method='send_invoice',
+                    days_until_due=1  # Give customer 1 day to pay
                 )
 
-                # Finalize and send the invoice
+                # Finalize and send the invoice via email/SMS
                 invoice = stripe.Invoice.finalize_invoice(invoice.id)
+                invoice = stripe.Invoice.send_invoice(invoice.id)
 
                 print(f"Invoice sent successfully to customer {customer.id}")
 
