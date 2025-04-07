@@ -72,7 +72,7 @@ class DeliveryResource(Resource):
                         'price': product.default_price,
                         'quantity': 1,
                     }],
-                    after_completion={'type': 'redirect', 'url': 'https://get-dot-esim.replit.app/success'},
+                    after_completion={'type': 'hosted_confirmation'},
                     custom_text={'payment_submit': {'message': 'Pay $1 to activate your eSIM'}},
                     allow_promotion_codes=True
                 )
