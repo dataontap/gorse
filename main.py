@@ -45,18 +45,20 @@ class DeliveryResource(Resource):
                 product = stripe.Product.retrieve('esim_activation_v1')
             except stripe.error.InvalidRequestError as e:
                 print(f"Stripe error: {str(e)}")
-                product = stripe.Product.create(
-                    id='esim_activation_v1',
-                    name='eSIM Activation',
-                    description='Activate your eSIM for extended usage',
-                    default_price_data={
-                        'currency': 'usd',
-                        'unit_amount': 100,  # $1.00 in cents
-                    },
-                    metadata={
-                        'product_number': '1'
+                # Create a price first
+                price = stripe.Price.create(
+                    unit_amount=100,  # $1.00 in cents
+                    currency='usd',
+                    product_data={
+                        'id': 'esim_activation_v1',
+                        'name': 'eSIM Activation',
+                        'metadata': {
+                            'type': 'esim',
+                            'product_catalog': 'digital_services'
+                        }
                     }
                 )
+                product = stripe.Product.retrieve('esim_activation_v1')
 
             # Create or retrieve Stripe customer
             try:
@@ -210,7 +212,12 @@ def stripe_webhook():
     if event.type == 'payment_intent.succeeded':
         payment_intent = event.data.object
         print(f"Payment succeeded for {payment_intent.amount}")
-        # Handle successful payment here
+        # Verify payment amount is $1
+        if payment_intent.amount == 100:  # 100 cents = $1
+            # Check product catalog
+            if 'esim_activation_v1' in payment_intent.metadata.get('product', ''):
+                # Process eSIM activation here
+                print("Processing eSIM activation for verified $1 payment")
     elif event.type == 'payment_intent.payment_failed':
         payment_intent = event.data.object
         print(f"Payment failed for {payment_intent.amount}")
