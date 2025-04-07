@@ -66,13 +66,12 @@ class DeliveryResource(Resource):
                     phone=data['contact'] if data['method'] == 'sms' else None
                 )
 
-                # Create Stripe payment link with the customer
+                # Create Stripe payment link
                 payment_link = stripe.PaymentLink.create(
                     line_items=[{
                         'price': product.default_price,
                         'quantity': 1,
                     }],
-                    customer=customer.id,
                     after_completion={'type': 'redirect', 'url': 'https://get-dot-esim.replit.app/success'},
                     custom_text={'payment_submit': {'message': 'Pay $1 to activate your eSIM'}},
                     allow_promotion_codes=True
