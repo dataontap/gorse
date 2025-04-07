@@ -82,26 +82,34 @@ class DeliveryResource(Resource):
                 # Send payment link via Stripe
                 try:
                     if data['method'] == 'email':
-                        stripe.Customer.modify(
-                            customer.id,
-                            email=data['contact'],
-                            preferred_locales=['en'],
-                            metadata={'payment_link': payment_link.url}
+                        payment_link = stripe.PaymentLink.create(
+                            line_items=[{
+                                'price': product.default_price,
+                                'quantity': 1,
+                            }],
+                            after_completion={'type': 'hosted_confirmation'},
+                            allow_promotion_codes=True,
+                            customer_creation='always',
+                            automatic_tax={'enabled': True},
+                            shipping_address_collection={'allowed_countries': ['US']},
+                            invoice_creation={'enabled': True},
+                            metadata={'customer_email': data['contact']}
                         )
-                        # Stripe will automatically send an email
                     else:
-                        stripe.Customer.modify(
-                            customer.id,
-                            phone=data['contact'],
-                            preferred_locales=['en'],
-                            metadata={'payment_link': payment_link.url}
+                        # For SMS
+                        payment_link = stripe.PaymentLink.create(
+                            line_items=[{
+                                'price': product.default_price,
+                                'quantity': 1,
+                            }],
+                            after_completion={'type': 'hosted_confirmation'},
+                            allow_promotion_codes=True,
+                            metadata={'customer_phone': data['contact']}
                         )
                         # Send SMS via Stripe
-                        stripe.Customer.create_balance_transaction(
-                            customer.id,
-                            amount=0,  # No charge
-                            currency='usd',
-                            description=f'Your eSIM payment link: {payment_link.url}'
+                        stripe.Customer.create(
+                            phone=data['contact'],
+                            metadata={'payment_link': payment_link.url}
                         )
 
                     print(f"Payment link sent successfully via {data['method']}")
