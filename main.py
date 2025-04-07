@@ -73,7 +73,7 @@ class DeliveryResource(Resource):
                         'quantity': 1,
                     }],
                     after_completion={'type': 'hosted_confirmation'},
-                    custom_text={'payment_submit': {'message': 'Pay $1 to activate your eSIM'}},
+                    custom_text={'submit': {'message': 'Pay $1 to activate your eSIM'}},
                     allow_promotion_codes=True
                 )
 
