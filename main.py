@@ -79,7 +79,7 @@ class DeliveryResource(Resource):
                 return {
                     'message': 'Payment link created',
                     'status': 'success',
-                    'payment_url': payment_link.url
+                    'payment_url': payment_link['url']
                 }
             except Exception as e:
                 return {'message': str(e), 'status': 'error'}, 500
