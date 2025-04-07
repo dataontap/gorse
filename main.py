@@ -89,6 +89,7 @@ class DeliveryResource(Resource):
                 invoice = stripe.Invoice.create(
                     customer=customer.id,
                     collection_method='send_invoice',
+                    days_until_due=0,  # Due immediately
                     auto_advance=False  # Prevent auto-finalizing
                 )
 
