@@ -62,44 +62,38 @@ class DeliveryResource(Resource):
 
             # Create or retrieve Stripe customer
             try:
-                # Create customer for tracking
+                # Create customer
                 customer = stripe.Customer.create(
                     email=data['contact'] if data['method'] == 'email' else None,
                     phone=data['contact'] if data['method'] == 'sms' else None,
                     description='eSIM activation customer'
                 )
 
-                # Use fixed payment link
-                payment_link = {
-                    'url': 'https://buy.stripe.com/7sI4gOg1p1771sk3cj'
-                }
-
-                # Send payment link via Stripe's notification system
-                customer.email = data['contact'] if data['method'] == 'email' else None
-                customer.phone = data['contact'] if data['method'] == 'sms' else None
-                customer.save()
-
-                # Create a payment notification
-                stripe.CustomerService.notify(
-                    customer.id,
-                    {
-                        'type': data['method'],
-                        'message': {
-                            'sms': f"Here's your eSIM payment link: {payment_link['url']}",
-                            'email': {
-                                'subject': 'Your eSIM Payment Link',
-                                'message': f"Here's your eSIM payment link: {payment_link['url']}"
-                            }
-                        }[data['method']]
-                    }
+                # Create invoice item
+                stripe.InvoiceItem.create(
+                    customer=customer.id,
+                    amount=100,  # $1.00 in cents
+                    currency='usd',
+                    description='eSIM Activation'
                 )
 
-                print(f"Payment link sent successfully via {data['method']}")
+                # Create and send invoice immediately
+                invoice = stripe.Invoice.create(
+                    customer=customer.id,
+                    auto_advance=True,
+                    collection_method='charge_automatically',
+                    days_until_due=None  # Due immediately
+                )
+
+                # Finalize and send the invoice
+                invoice = stripe.Invoice.finalize_invoice(invoice.id)
+
+                print(f"Invoice sent successfully to customer {customer.id}")
 
                 return {
-                    'message': 'Payment link created',
+                    'message': 'Invoice sent successfully',
                     'status': 'success',
-                    'payment_url': payment_link['url']
+                    'payment_url': invoice.hosted_invoice_url
                 }
             except Exception as e:
                 return {'message': str(e), 'status': 'error'}, 500
