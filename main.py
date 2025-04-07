@@ -62,54 +62,17 @@ class DeliveryResource(Resource):
 
             # Create or retrieve Stripe customer
             try:
-                # Create customer first with welcome email
+                # Create customer for tracking
                 customer = stripe.Customer.create(
                     email=data['contact'] if data['method'] == 'email' else None,
                     phone=data['contact'] if data['method'] == 'sms' else None,
                     description='eSIM activation customer'
                 )
 
-                # Send welcome email via Stripe
-                stripe.Customer.create_balance_transaction(
-                    customer.id,
-                    amount=0,
-                    currency='usd',
-                    description='Welcome to dot wireless eSIM service!'
-                )
-
-                # Create payment link
-                if data['method'] == 'email':
-                    payment_link = stripe.PaymentLink.create(
-                        line_items=[{
-                            'price': product.default_price,
-                            'quantity': 1,
-                        }],
-                        after_completion={'type': 'hosted_confirmation'},
-                        automatic_tax={'enabled': True},
-                        shipping_address_collection={'allowed_countries': ['US']},
-                        invoice_creation={'enabled': True},
-                        metadata={
-                            'customer_id': customer.id,
-                            'customer_email': data['contact']
-                        },
-                        custom_text={'submit': {'message': 'Pay $1 to activate your eSIM'}}
-                    )
-                else:
-                    # For SMS
-                    payment_link = stripe.PaymentLink.create(
-                        line_items=[{
-                            'price': product.default_price,
-                            'quantity': 1,
-                        }],
-                        after_completion={'type': 'hosted_confirmation'},
-                        allow_promotion_codes=True,
-                        metadata={'customer_phone': data['contact']}
-                    )
-                    # Send SMS via Stripe
-                    stripe.Customer.create(
-                        phone=data['contact'],
-                        metadata={'payment_link': payment_link.url}
-                    )
+                # Use fixed payment link
+                payment_link = {
+                    'url': 'https://buy.stripe.com/7sI4gOg1p1771sk3cj'
+                }
 
                 print(f"Payment link sent successfully via {data['method']}")
 
