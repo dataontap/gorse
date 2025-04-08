@@ -1,27 +1,71 @@
 
 .form-control {
+    width: 90%;
     max-width: 300px;
-    margin: 0 auto;
+    margin: 0.5rem auto;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
 }
 
 #imeiForm {
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
+    gap: 0.5rem;
 }
-
 
 .carousel-content {
     text-align: center;
-    padding: 60px 20px;
+    padding: 2rem 1rem;
     background: #FFF371;
-    border-radius: 8px;
-    margin: 50px auto;
+    border-radius: 12px;
+    margin: 1rem auto;
+    width: 90%;
     max-width: 600px;
-    min-height: 400px;
+    min-height: 80vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.container {
+    padding: 1rem;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    width: 90%;
+    max-width: 300px;
+}
+
+.btn-primary {
+    background: #0066ff;
+    border: none;
+}
+
+.btn-secondary {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+@media (min-width: 768px) {
+    .btn {
+        width: auto;
+    }
+    
+    .carousel-content {
+        padding: 3rem 2rem;
+        min-height: 400px;
+    }
 }
 
 .carousel-indicators {
