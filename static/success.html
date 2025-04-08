@@ -1,7 +1,8 @@
+
 <!DOCTYPE html>
 <html>
 <head>
-    <title>eSIM Status - dot wireless</title>
+    <title>eSIM Delivery - dot wireless</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
 </head>
@@ -9,12 +10,35 @@
     <div class="container">
         <div class="success-content">
             <h2>Your device is compatible!</h2>
-            <p>Please enter your email to receive your eSIM.</p>
-
-            <form id="deliveryForm">
-                <div class="mb-3">
-                    <input type="email" class="form-control" id="email" placeholder="Enter your email" required>
+            <p>Please choose how you'd like to receive your eSIM</p>
+            
+            <form id="deliveryForm" class="mt-4">
+                <div class="form-group mb-3">
+                    <label for="deliveryMethod">Delivery Method</label>
+                    <select class="form-control" id="deliveryMethod">
+                        <option value="email">Email</option>
+                        <option value="sms">SMS</option>
+                    </select>
                 </div>
+                
+                <div id="emailField" class="form-group mb-3">
+                    <label for="email">Email Address</label>
+                    <input type="email" class="form-control" id="email" placeholder="Enter your email">
+                </div>
+                
+                <div id="phoneField" class="form-group mb-3" style="display: none;">
+                    <label for="phone">Phone Number</label>
+                    <div class="input-group">
+                        <select class="form-control" id="countryCode" style="max-width: 150px;">
+                            <option value="+1">+1 (USA/Canada)</option>
+                            <option value="+44">+44 (UK)</option>
+                            <option value="+61">+61 (Australia)</option>
+                            <option value="+91">+91 (India)</option>
+                        </select>
+                        <input type="tel" class="form-control" id="phone" placeholder="Enter phone number">
+                    </div>
+                </div>
+                
                 <button type="submit" class="btn btn-primary">Send eSIM</button>
             </form>
         </div>
