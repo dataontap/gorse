@@ -1,8 +1,7 @@
-
 document.getElementById('deliveryMethod').addEventListener('change', function() {
     const emailField = document.getElementById('emailField');
     const phoneField = document.getElementById('phoneField');
-    
+
     if (this.value === 'email') {
         emailField.style.display = 'block';
         phoneField.style.display = 'none';
@@ -14,18 +13,9 @@ document.getElementById('deliveryMethod').addEventListener('change', function() 
 
 document.getElementById('deliveryForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    const deliveryMethod = document.getElementById('deliveryMethod').value;
-    let contact;
-    
-    if (deliveryMethod === 'email') {
-        contact = document.getElementById('email').value;
-    } else {
-        const countryCode = document.getElementById('countryCode').value;
-        const phone = document.getElementById('phone').value;
-        contact = countryCode + phone;
-    }
-    
+
+    const email = document.getElementById('email').value;
+
     try {
         const response = await fetch('/api/delivery', {
             method: 'POST',
@@ -33,17 +23,17 @@ document.getElementById('deliveryForm').addEventListener('submit', async (e) => 
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                method: deliveryMethod,
-                contact: contact
+                method: 'email',
+                contact: email
             })
         });
-        
+
         const result = await response.json();
         if (result.status === 'success') {
             const alertDiv = document.createElement('div');
             alertDiv.className = 'alert alert-success alert-dismissible fade show';
             alertDiv.innerHTML = `
-                Payment link has been sent! Please check your ${deliveryMethod}.
+                Payment link has been sent! Please check your email.
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
             document.querySelector('.success-content').prepend(alertDiv);

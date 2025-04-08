@@ -61,11 +61,16 @@ class DeliveryResource(Resource):
                 product = stripe.Product.retrieve('esim_activation_v1')
 
             # Create or retrieve Stripe customer
+            if data['method'] != 'email':
+                return {'message': 'Only email delivery is supported', 'status': 'error'}, 400
+
+            if not data['contact'] or '@' not in data['contact']:
+                return {'message': 'Valid email address is required', 'status': 'error'}, 400
+
             try:
                 # Create customer
                 customer = stripe.Customer.create(
-                    email=data['contact'] if data['method'] == 'email' else None,
-                    phone=data['contact'] if data['method'] == 'sms' else None,
+                    email=data['contact'],
                     description='eSIM activation customer'
                 )
 
