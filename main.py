@@ -69,21 +69,22 @@ class DeliveryResource(Resource):
                     description='eSIM activation customer'
                 )
 
-                # Create invoice item directly with amount
-                stripe.InvoiceItem.create(
-                    customer=customer.id,
-                    amount=100,  # $1.00 in cents
-                    currency='usd',
-                    description='eSIM Activation'
-                )
-
-                # Create invoice
+                # Create invoice first
                 invoice = stripe.Invoice.create(
                     customer=customer.id,
                     collection_method='send_invoice',
                     days_until_due=1,  # Due in 1 day
-                    auto_advance=True,  # Allow finalizing
+                    auto_advance=False,  # Don't finalize yet
                     description='eSIM Activation Service'
+                )
+
+                # Add invoice item
+                stripe.InvoiceItem.create(
+                    customer=customer.id,
+                    amount=100,  # $1.00 in cents
+                    currency='usd',
+                    description='eSIM Activation',
+                    invoice=invoice.id
                 )
 
                 # Finalize and send invoice
