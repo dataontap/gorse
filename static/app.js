@@ -1,13 +1,45 @@
 
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('imeiForm');
-    const requestEsimBtn = document.getElementById('requestEsim');
+    const emailForm = document.getElementById('emailForm');
+    const imeiForm = document.getElementById('imeiForm');
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    let customerEmail = '';
     
-    form.addEventListener('submit', async (e) => {
+    emailForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        customerEmail = email;
+        
+        try {
+            const response = await fetch('/api/delivery', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    method: 'email',
+                    contact: email
+                })
+            });
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                step1.classList.remove('active');
+                step2.classList.add('active');
+            } else {
+                alert('Error creating customer: ' + result.message);
+            }
+        } catch (error) {
+            alert('Error creating customer');
+            console.error(error);
+        }
+    });
+    
+    imeiForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const imei1 = document.getElementById('imei1').value;
-        const imei2 = document.getElementById('imei2').value;
         
         try {
             const response = await fetch('/api/imei', {
@@ -17,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     imei1: imei1,
-                    imei2: imei2 || null
+                    email: customerEmail
                 })
             });
 

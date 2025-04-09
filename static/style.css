@@ -1,6 +1,11 @@
+body {
+    min-height: 100vh;
+    margin: 0;
+    background: #FFF371;
+}
 
 .form-control {
-    width: 90%;
+    width: 100%;
     max-width: 300px;
     margin: 0.5rem auto;
     padding: 12px;
@@ -8,21 +13,7 @@
     border: 1px solid #ddd;
 }
 
-#imeiForm {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    gap: 0.5rem;
-}
-
-body {
-    min-height: 100vh;
-    margin: 0;
-    background: #FFF371;
-}
-
-.carousel-content {
+.onboarding-content {
     text-align: center;
     padding: 2rem 1rem;
     background: rgba(255, 255, 255, 0.9);
@@ -30,37 +21,22 @@ body {
     margin: 1rem auto;
     width: 90%;
     max-width: 600px;
-    min-height: 80vh;
+    min-height: 400px;
     display: flex;
     flex-direction: column;
+    align-items: center;
     justify-content: center;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.carousel-content:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
-}
-
-.container {
-    padding: 1rem;
-    width: 100%;
-    max-width: 100%;
-    margin: 0 auto;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
 }
 
 .btn {
+    width: 100%;
+    max-width: 300px;
     padding: 12px 24px;
     border-radius: 25px;
     font-weight: 500;
-    transition: all 0.3s ease;
-    width: 90%;
-    max-width: 300px;
+    margin-top: 1rem;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     position: relative;
     overflow: hidden;
@@ -146,4 +122,13 @@ body {
 
 .form-group {
     text-align: left;
+}
+
+.step {
+    display: none;
+    width: 100%;
+}
+
+.step.active {
+    display: block;
 }
