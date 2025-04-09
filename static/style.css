@@ -16,11 +16,17 @@
     gap: 0.5rem;
 }
 
+body {
+    min-height: 100vh;
+    margin: 0;
+    background: #FFF371;
+}
+
 .carousel-content {
     text-align: center;
     padding: 2rem 1rem;
-    background: #FFF371;
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 16px;
     margin: 1rem auto;
     width: 90%;
     max-width: 600px;
@@ -28,7 +34,14 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.carousel-content:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
 }
 
 .container {
@@ -36,6 +49,9 @@
     width: 100%;
     max-width: 100%;
     margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
 }
 
 .btn {
@@ -45,6 +61,18 @@
     transition: all 0.3s ease;
     width: 90%;
     max-width: 300px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(1px);
 }
 
 .btn-primary {
@@ -52,9 +80,17 @@
     border: none;
 }
 
+.btn-primary:hover {
+    background: #0052cc;
+}
+
 .btn-secondary {
     background: #f8f9fa;
     border: 1px solid #dee2e6;
+}
+
+.btn-secondary:hover {
+    background: #e9ecef;
 }
 
 @media (min-width: 768px) {
