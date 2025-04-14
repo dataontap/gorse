@@ -193,18 +193,19 @@ def stripe_webhook():
     except stripe.error.SignatureVerificationError as e:
         return {'error': str(e)}, 400
 
-    if event.type == 'payment_intent.succeeded':
-        payment_intent = event.data.object
-        print(f"Payment succeeded for {payment_intent.amount}")
+    if event.type == 'invoice.paid':
+        invoice = event.data.object
+        print(f"Invoice paid: {invoice.id}")
         # Verify payment amount is $1
-        if payment_intent.amount == 100:  # 100 cents = $1
-            # Check product catalog
-            if 'esim_activation_v1' in payment_intent.metadata.get('product', ''):
-                # Process eSIM activation here
-                print("Processing eSIM activation for verified $1 payment")
-    elif event.type == 'payment_intent.payment_failed':
-        payment_intent = event.data.object
-        print(f"Payment failed for {payment_intent.amount}")
+        if invoice.amount_paid == 100:  # 100 cents = $1
+            customer_id = invoice.customer
+            customer = stripe.Customer.retrieve(customer_id)
+            print(f"Processing eSIM activation for customer {customer.email}")
+            # Redirect customer to dashboard
+            return {'status': 'success', 'redirect': '/static/dashboard.html'}, 200
+    elif event.type == 'invoice.payment_failed':
+        invoice = event.data.object
+        print(f"Invoice payment failed: {invoice.id}")
         # Handle failed payment here
 
     return {'status': 'success'}, 200
