@@ -185,8 +185,8 @@ body {
 }
 
 .dot-indicator {
-    width: 45vw;
-    height: 45vw;
+    width: 67.5vw;
+    height: 67.5vw;
     background: #FFF371;
     border-radius: 50%;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
@@ -213,13 +213,26 @@ body {
 
 .user-info {
     padding: 20px;
-    text-align: left;
+    display: flex;
+    flex-direction: column;
 }
 
 .email-container {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     margin-bottom: 15px;
+}
+
+.add-user-link {
+    color: #666;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.add-user-link:hover {
+    color: #333;
+    text-decoration: none;
 }
 
 .user-email {
