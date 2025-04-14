@@ -28,11 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 step1.classList.remove('active');
                 step2.classList.add('active');
             } else {
-                alert('Error creating customer: ' + result.message);
+                console.error('Server error:', result);
+                alert('Error creating customer: ' + (result.message || 'Unknown error'));
             }
         } catch (error) {
-            alert('Error creating customer');
-            console.error(error);
+            console.error('Request error:', error);
+            alert('Error creating customer: ' + error.message);
         }
     });
     
