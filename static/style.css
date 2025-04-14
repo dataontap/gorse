@@ -157,12 +157,18 @@ body {
     transform: translateY(-30px);
 }
 
+.dot-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 40px 0;
+}
+
 .dot-indicator {
-    width: 200px;
-    height: 200px;
+    width: 30vw;
+    height: 30vw;
     background: #FFF371;
     border-radius: 50%;
-    margin: 0 auto;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
     display: flex;
     align-items: center;
