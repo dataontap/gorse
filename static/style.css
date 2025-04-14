@@ -133,18 +133,28 @@ body {
     display: block;
 }
 
+.dashboard-body {
+    background: #CCCCFF;  /* Periwinkle background */
+}
+
 .dashboard-content {
     text-align: center;
     padding: 40px 20px;
-    background: white;
+    background: rgba(255, 255, 255, 0.9);
     border-radius: 8px;
     margin: 50px auto;
     max-width: 600px;
+    position: relative;
 }
 
-.dot-status {
+.floating-note {
     position: relative;
     display: inline-block;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-30px);
 }
 
 .dot-indicator {
@@ -153,17 +163,19 @@ body {
     background: #FFF371;
     border-radius: 50%;
     margin: 0 auto 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .data-balance {
     padding: 20px;
     background: #f8f9fa;
     border-radius: 8px;
+    margin-top: 40px;
 }
 
 .balance-amount {
     font-size: 48px;
     font-weight: bold;
-    color: #212529;
+    color: #666666;  /* Grey color */
     margin: 20px 0;
 }
