@@ -179,7 +179,7 @@ class IMEIResource(Resource):
         except Exception as e:
             return {'message': f'Internal Server Error: {str(e)}', 'status': 'error'}, 500
 
-@app.route('/webhook', methods=['POST'])
+@app.route('/webhook', methods=['GET', 'POST'])
 def stripe_webhook():
     payload = request.get_data()
     sig_header = request.headers.get('Stripe-Signature')
