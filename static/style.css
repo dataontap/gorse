@@ -237,7 +237,7 @@ body {
     position: absolute;
     height: 200px;
     width: 4px;
-    background: #ddd;
+    background: #FFF371;
     margin: 0;
     z-index: 1;
     left: 50%;
@@ -252,7 +252,7 @@ body {
     top: 0;
     width: 12px;
     height: 24px;
-    background: #ddd;
+    background: #FFF371;
     border-radius: 12px;
     transform: translateX(-50%);
     animation: moveData 3s infinite;
