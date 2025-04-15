@@ -310,7 +310,7 @@ body {
 .connecting-line {
     position: absolute;
     height: 200px;
-    width: 4px;
+    width: 12px;
     background: #FFF371;
     margin: 0;
     z-index: 1;
@@ -324,10 +324,10 @@ body {
     position: absolute;
     left: 50%;
     top: 0;
-    width: 12px;
-    height: 24px;
+    width: 36px;
+    height: 72px;
     background: #FFF371;
-    border-radius: 12px;
+    border-radius: 36px;
     transform: translateX(-50%);
     animation: moveData 3s infinite;
 }
