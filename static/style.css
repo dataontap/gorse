@@ -440,10 +440,31 @@ body {
     color: #666;
 }
 
+.usage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.sort-select {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background: white;
+    font-size: 14px;
+}
+
+.usage-chart {
+    height: 200px;
+    margin-bottom: 15px;
+}
+
 .usage-amount {
     font-size: 24px;
     color: #333;
     font-weight: bold;
+    text-align: right;
 }
 
 .add-user-btn {
