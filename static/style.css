@@ -234,14 +234,14 @@ body {
 
 .connecting-line {
     position: absolute;
-    height: 160px;
+    height: 200px;
     width: 4px;
     background: #ddd;
     margin: 0;
     z-index: 1;
     left: 50%;
     transform: translateX(-50%);
-    bottom: -80px;
+    bottom: -40px;
     overflow: visible;
 }
 
