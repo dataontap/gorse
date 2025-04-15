@@ -137,6 +137,74 @@ body {
     background: #CCCCFF;  /* Periwinkle background */
 }
 
+.top-bar {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(5px);
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.menu-icon, .profile-section {
+    position: relative;
+    cursor: pointer;
+}
+
+.menu-icon i, .profile-section i {
+    font-size: 24px;
+    color: #333;
+}
+
+.menu-dropdown, .profile-dropdown {
+    position: absolute;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: none;
+    min-width: 200px;
+    z-index: 1000;
+}
+
+.menu-dropdown {
+    left: 0;
+    top: 40px;
+}
+
+.profile-dropdown {
+    right: 0;
+    top: 40px;
+}
+
+.menu-icon:hover .menu-dropdown,
+.profile-section:hover .profile-dropdown {
+    display: block;
+}
+
+.menu-dropdown a, .profile-dropdown a {
+    display: block;
+    padding: 10px 15px;
+    color: #333;
+    text-decoration: none;
+    transition: background 0.3s;
+}
+
+.menu-dropdown a:hover, .profile-dropdown a:hover {
+    background: #f5f5f5;
+}
+
+.profile-info {
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    font-weight: bold;
+}
+
+.menu-dropdown i, .profile-dropdown i {
+    margin-right: 10px;
+    font-size: 16px;
+}
+
 .dashboard-content {
     text-align: center;
     padding: 40px 20px;
