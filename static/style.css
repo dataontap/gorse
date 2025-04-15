@@ -263,18 +263,18 @@ body {
         top: 0;
         width: 12px;
         height: 24px;
-        transform: translateX(-50%) scale(1);
+        transform: translateX(-50%) scale(0.8);
     }
     50% {
-        width: 20px;
-        height: 32px;
+        width: 14px;
+        height: 28px;
         transform: translateX(-50%) scale(1.2);
     }
     100% {
         top: calc(100% - 24px);
         width: 12px;
         height: 24px;
-        transform: translateX(-50%) scale(1);
+        transform: translateX(-50%) scale(0.8);
     }
 }
 
