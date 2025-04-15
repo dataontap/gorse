@@ -147,6 +147,17 @@ body {
     position: relative;
     backdrop-filter: blur(5px);
     z-index: 2;
+    transition: all 0.3s ease-out;
+}
+
+.dashboard-content.slide-in {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.dashboard-content.slide-in.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .dashboard-content:first-of-type {

@@ -20,54 +20,71 @@
                 <div class="line-animation"></div>
             </div>
         </div>
-        <div class="dashboard-content">
-            <div class="user-info">
-                <div class="email-container">
-                    <div class="user-info-header">
-                        <span class="user-name">John Doe</span>
-                        <span class="user-email">john@example.com</span>
+        <div id="user-cards-container">
+            <div class="dashboard-content">
+                <div class="user-info">
+                    <div class="email-container">
+                        <div class="user-info-header">
+                            <span class="user-name">John Doe</span>
+                            <span class="user-email">john@example.com</span>
+                        </div>
+                        <i class="fas fa-ellipsis-v settings-icon"></i>
                     </div>
-                    <i class="fas fa-ellipsis-v settings-icon"></i>
-                </div>
-                <div class="data-usage">
-                    <div class="usage-label">Data Usage</div>
-                    <div class="usage-amount">100%</div>
-                </div>
-                <div class="network-settings">
-                    <a href="#" class="settings-link">
-                        <i class="fas fa-cog"></i> Network Settings
-                    </a>
-                </div>
-            </div>
-        </div>
-        <div class="dashboard-content">
-            <div class="user-info">
-                <div class="email-container">
-                    <div class="user-info-header">
-                        <span class="user-name">Jenny Doe</span>
-                        <span class="user-email">jenny@example.com</span>
+                    <div class="data-usage">
+                        <div class="usage-label">Data Usage</div>
+                        <div class="usage-amount">100%</div>
                     </div>
-                    <i class="fas fa-ellipsis-v settings-icon"></i>
-                </div>
-                <div class="data-usage">
-                    <div class="usage-label">Data Usage</div>
-                    <div class="usage-amount">50%</div>
-                </div>
-                <div class="network-settings">
-                    <a href="#" class="settings-link">
-                        <i class="fas fa-cog"></i> Network Settings
-                    </a>
+                    <div class="network-settings">
+                        <a href="#" class="settings-link">
+                            <i class="fas fa-cog"></i> Network Settings
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="add-user-container">
-            <a href="/static/index.html" class="add-user-link">
+            <a href="#" class="add-user-link" id="addUserBtn">
                 <i class="fas fa-plus-circle"></i> Add User
             </a>
         </div>
-            </div>
-        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
+        const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
+        
+        document.getElementById('addUserBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+            const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+            const usage = Math.floor(Math.random() * 100);
+            
+            const newCard = document.createElement('div');
+            newCard.className = 'dashboard-content slide-in';
+            newCard.innerHTML = `
+                <div class="user-info">
+                    <div class="email-container">
+                        <div class="user-info-header">
+                            <span class="user-name">${firstName} ${lastName}</span>
+                            <span class="user-email">${firstName.toLowerCase()}@example.com</span>
+                        </div>
+                        <i class="fas fa-ellipsis-v settings-icon"></i>
+                    </div>
+                    <div class="data-usage">
+                        <div class="usage-label">Data Usage</div>
+                        <div class="usage-amount">${usage}%</div>
+                    </div>
+                    <div class="network-settings">
+                        <a href="#" class="settings-link">
+                            <i class="fas fa-cog"></i> Network Settings
+                        </a>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('user-cards-container').appendChild(newCard);
+            setTimeout(() => newCard.classList.add('visible'), 50);
+        });
+    </script>
 </body>
 </html>
