@@ -205,6 +205,7 @@ body {
     align-items: center;
     padding: 40px 0 80px 0;
     position: relative;
+    z-index: 2;
 }
 
 .dot-indicator {
