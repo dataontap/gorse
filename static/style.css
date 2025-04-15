@@ -140,9 +140,9 @@ body {
 .dashboard-content {
     text-align: center;
     padding: 40px 20px;
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 8px;
-    margin: 50px auto;
+    margin: 20px auto;
     max-width: 600px;
     position: relative;
     backdrop-filter: blur(5px);
@@ -213,14 +213,14 @@ body {
 
 .connecting-line {
     position: absolute;
-    height: 120px;
+    height: 60px;
     width: 2px;
     background: #ddd;
     margin: 0;
     z-index: 1;
     left: 50%;
     transform: translateX(-50%);
-    bottom: -120px;
+    bottom: -60px;
 }
 
 .line-animation {
