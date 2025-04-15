@@ -69,6 +69,16 @@
         const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
         const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
         
+        // Function to remove user card
+        function removeUserCard(card) {
+            if (confirm('Are you sure you want to remove this user?')) {
+                card.classList.remove('visible');
+                setTimeout(() => {
+                    card.remove();
+                }, 300);
+            }
+        }
+
         document.getElementById('addUserBtn').addEventListener('click', function(e) {
             e.preventDefault();
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
@@ -84,19 +94,19 @@
                             <span class="user-name">${firstName} ${lastName}</span>
                             <span class="user-email">${firstName.toLowerCase()}@example.com</span>
                         </div>
-                        <i class="fas fa-ellipsis-v settings-icon"></i>
+                        ${firstName !== 'John' ? '<i class="fas fa-times remove-icon"></i>' : ''}
                     </div>
                     <div class="data-usage">
                         <div class="usage-label">Data Usage</div>
                         <div class="usage-amount">${usage}%</div>
                     </div>
-                    <div class="network-settings">
-                        <a href="#" class="settings-link">
-                            <i class="fas fa-cog"></i> Network Settings
-                        </a>
-                    </div>
                 </div>
             `;
+
+            if (firstName !== 'John') {
+                const removeIcon = newCard.querySelector('.remove-icon');
+                removeIcon.addEventListener('click', () => removeUserCard(newCard));
+            }
             
             document.getElementById('user-cards-container').appendChild(newCard);
             setTimeout(() => newCard.classList.add('visible'), 50);

@@ -177,10 +177,15 @@ body {
     margin-bottom: 4px;
 }
 
-.settings-icon {
+.remove-icon {
     cursor: pointer;
     padding: 8px;
     color: #666;
+    transition: color 0.3s ease;
+}
+
+.remove-icon:hover {
+    color: #ff4444;
 }
 
 .floating-note {
