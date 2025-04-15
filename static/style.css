@@ -376,17 +376,3 @@ body {
     font-size: 14px;
 }
 
-.user-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.edit-link, .remove-link {
-    color: #666;
-    text-decoration: none;
-}
-
-.edit-link:hover, .remove-link:hover {
-    color: #333;
-}
