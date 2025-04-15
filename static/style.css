@@ -348,7 +348,7 @@ body {
     50% {
         width: 14px;
         height: 28px;
-        transform: translateX(-50%) scale(1.2);
+        transform: translateX(-50%) scale(1.4);
     }
     100% {
         top: calc(100% - 24px);
