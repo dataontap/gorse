@@ -40,8 +40,22 @@
             </div>
         </div>
         <div id="user-cards-container">
+            <div class="data-usage-header">
+                <h2>Data Usage Overview</h2>
+                <select id="sortUsage" class="sort-select">
+                    <option value="none">Sort by</option>
+                    <option value="asc">Lowest to Highest</option>
+                    <option value="desc">Highest to Lowest</option>
+                </select>
+            </div>
             <div class="dashboard-content">
                 <div class="user-info">
+                    <div class="data-usage">
+                        <div class="usage-chart">
+                            <canvas id="usageChart-main"></canvas>
+                        </div>
+                        <div class="usage-amount">100%</div>
+                    </div>
                     <div class="email-container">
                         <div class="user-info-header">
                             <span class="user-name">John Doe</span>
@@ -49,7 +63,6 @@
                         </div>
                         <i class="fas fa-ellipsis-v settings-icon"></i>
                     </div>
-                    <div class="data-usage">
                         <div class="usage-header">
                             <div class="usage-label">Data Usage</div>
                             <select id="sortUsage" class="sort-select">
@@ -82,8 +95,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Initialize usage chart
-        function initializeChart(element) {
-            const ctx = element.querySelector('#usageChart').getContext('2d');
+        function initializeChart(canvas) {
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
             const dates = Array.from({length: 30}, (_, i) => {
                 const date = new Date();
                 date.setDate(date.getDate() - i);
@@ -172,16 +186,18 @@
             newCard.className = 'dashboard-content slide-in';
             newCard.innerHTML = `
                 <div class="user-info">
+                    <div class="data-usage">
+                        <div class="usage-chart">
+                            <canvas id="usageChart-${firstName.toLowerCase()}"></canvas>
+                        </div>
+                        <div class="usage-amount">${usage}%</div>
+                    </div>
                     <div class="email-container">
                         <div class="user-info-header">
                             <span class="user-name">${firstName} ${lastName}</span>
                             <span class="user-email">${firstName.toLowerCase()}@example.com</span>
                         </div>
                         ${firstName !== 'John' ? '<i class="fas fa-times remove-icon"></i>' : ''}
-                    </div>
-                    <div class="data-usage">
-                        <div class="usage-label">Data Usage</div>
-                        <div class="usage-amount">${usage}%</div>
                     </div>
                 </div>
             `;
@@ -194,9 +210,13 @@
             document.getElementById('user-cards-container').appendChild(newCard);
             setTimeout(() => {
                 newCard.classList.add('visible');
-                initializeChart(newCard);
+                initializeChart(newCard.querySelector('.usage-chart canvas'));
             }, 50);
-            initializeChart(document.querySelector('.dashboard-content'));
+            
+            // Initialize main chart if not already initialized
+            if (!document.querySelector('#usageChart-main').chart) {
+                initializeChart(document.querySelector('#usageChart-main'));
+            }
         });
     </script>
 </body>
