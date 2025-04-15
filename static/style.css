@@ -234,39 +234,51 @@ body {
 
 .connecting-line {
     position: absolute;
-    height: 80px;
-    width: 2px;
+    height: 120px;
+    width: 4px;
     background: #ddd;
     margin: 0;
     z-index: 1;
     left: 50%;
     transform: translateX(-50%);
-    bottom: -40px;
+    bottom: -120px;
+    overflow: visible;
 }
 
 .line-animation {
     position: absolute;
-    left: -3px;
+    left: 50%;
     top: 0;
-    width: 8px;
-    height: 20px;
+    width: 12px;
+    height: 24px;
     background: #666;
-    border-radius: 4px;
-    animation: moveData 2s infinite;
+    border-radius: 12px;
+    transform: translateX(-50%);
+    animation: moveData 3s infinite;
 }
 
 @keyframes moveData {
     0% {
         top: 0;
-        transform: scale(1);
+        width: 12px;
+        height: 24px;
+        transform: translateX(-50%) scale(1);
     }
     50% {
-        transform: scale(1.5);
+        width: 20px;
+        height: 32px;
+        transform: translateX(-50%) scale(1.2);
     }
     100% {
-        top: calc(100% - 20px);
-        transform: scale(1);
+        top: calc(100% - 24px);
+        width: 12px;
+        height: 24px;
+        transform: translateX(-50%) scale(1);
     }
+}
+
+.dot-container {
+    padding-bottom: 120px;
 }
 
 .add-user-container {
