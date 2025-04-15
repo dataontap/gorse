@@ -54,7 +54,8 @@
         // Back to top functionality
         window.onscroll = function() {
             const backToTop = document.querySelector('.back-to-top');
-            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+            const screenHeight = window.innerHeight * 2;
+            if (document.body.scrollTop > screenHeight || document.documentElement.scrollTop > screenHeight) {
                 backToTop.style.display = "block";
             } else {
                 backToTop.style.display = "none";
