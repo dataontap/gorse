@@ -142,11 +142,15 @@ body {
     padding: 40px 20px;
     background: rgba(255, 255, 255, 0.15);
     border-radius: 8px;
-    margin: -30px auto 20px;
+    margin: 20px auto;
     max-width: 600px;
     position: relative;
     backdrop-filter: blur(5px);
     z-index: 2;
+}
+
+.dashboard-content:first-of-type {
+    margin-top: -30px;
 }
 
 .user-info-header {
