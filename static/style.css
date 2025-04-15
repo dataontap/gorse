@@ -13,6 +13,12 @@ body {
     border: 1px solid #ddd;
 }
 
+.welcome-text {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
 .onboarding-content {
     text-align: center;
     padding: 2rem 1rem;
