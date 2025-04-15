@@ -142,10 +142,11 @@ body {
     padding: 40px 20px;
     background: rgba(255, 255, 255, 0.15);
     border-radius: 8px;
-    margin: 20px auto;
+    margin: -30px auto 20px;
     max-width: 600px;
     position: relative;
     backdrop-filter: blur(5px);
+    z-index: 2;
 }
 
 .user-info-header {
@@ -213,14 +214,14 @@ body {
 
 .connecting-line {
     position: absolute;
-    height: 60px;
+    height: 80px;
     width: 2px;
     background: #ddd;
     margin: 0;
     z-index: 1;
     left: 50%;
     transform: translateX(-50%);
-    bottom: -60px;
+    bottom: -40px;
 }
 
 .line-animation {
