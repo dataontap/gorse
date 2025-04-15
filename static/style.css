@@ -213,13 +213,14 @@ body {
 
 .connecting-line {
     position: absolute;
-    height: 180px;
+    height: 120px;
     width: 2px;
     background: #ddd;
     margin: 0;
     z-index: 1;
     left: 50%;
     transform: translateX(-50%);
+    bottom: -120px;
 }
 
 .line-animation {
