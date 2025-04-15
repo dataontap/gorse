@@ -264,6 +264,24 @@ body {
     }
 }
 
+.settings-container {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.settings-link {
+    color: #333;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.settings-link:hover {
+    color: #007bff;
+}
+
 .add-user-container {
     text-align: center;
     margin: 20px 0;
