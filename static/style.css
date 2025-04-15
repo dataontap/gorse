@@ -357,3 +357,36 @@ body {
 .add-user-btn:hover {
     color: #333;
 }
+
+.back-to-top {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(102, 102, 102, 0.8);
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: none;
+    z-index: 1000;
+}
+
+.back-to-top a {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.user-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.edit-link, .remove-link {
+    color: #666;
+    text-decoration: none;
+}
+
+.edit-link:hover, .remove-link:hover {
+    color: #333;
+}
