@@ -251,7 +251,7 @@ body {
     top: 0;
     width: 12px;
     height: 24px;
-    background: #666;
+    background: #ddd;
     border-radius: 12px;
     transform: translateX(-50%);
     animation: moveData 3s infinite;
