@@ -19,6 +19,35 @@ api = Api(app, version='1.0', title='IMEI API',
 
 ns = api.namespace('imei', description='IMEI operations')
 delivery_ns = api.namespace('delivery', description='eSIM delivery operations')
+customer_ns = api.namespace('customer', description='Customer operations')
+
+customer_model = api.model('Customer', {
+    'email': fields.String(required=True, description='Customer email address')
+})
+
+@customer_ns.route('')
+class CustomerResource(Resource):
+    @customer_ns.expect(customer_model)
+    @customer_ns.response(200, 'Success')
+    @customer_ns.response(400, 'Bad Request')
+    def post(self):
+        """Create a new customer"""
+        try:
+            data = request.get_json()
+            if not data or 'email' not in data:
+                return {'message': 'Email is required', 'status': 'error'}, 400
+            
+            # Store customer email in database
+            timestamp = datetime.now().isoformat()
+            db[f"customer_{timestamp}"] = {'email': data['email']}
+            
+            return {
+                'message': 'Customer created successfully',
+                'status': 'success',
+                'data': {'email': data['email']}
+            }
+        except Exception as e:
+            return {'message': str(e), 'status': 'error'}, 500
 
 delivery_model = api.model('Delivery', {
     'method': fields.String(required=True, description='Delivery method (email or sms)'),
