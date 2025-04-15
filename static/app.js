@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     imeiForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const imei = document.getElementById('imei1').value;
+        const imei1 = document.getElementById('imei1').value;
 
         try {
             const response = await fetch('/api/imei', {
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ imei })
+                body: JSON.stringify({ imei1 })
             });
 
             if (response.ok) {
