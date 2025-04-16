@@ -173,7 +173,7 @@ body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     display: none;
     min-width: 200px;
-    z-index: 1003;
+    z-index: 1005; /* Highest layer - menus */
 }
 
 .menu-dropdown {
@@ -226,7 +226,7 @@ body {
     max-width: 600px;
     position: relative;
     backdrop-filter: blur(5px);
-    z-index: 3; /* Increased z-index */
+    z-index: 1003; /* Cards layer */
     transition: all 0.3s ease-out;
 }
 
@@ -324,7 +324,7 @@ body {
     transform: translateX(-50%);
     bottom: -40px;
     overflow: visible;
-    z-index: 1; /* Added z-index */
+    z-index: 1002; /* Connecting line layer */
 }
 
 .user-info + .dashboard-content::before {
