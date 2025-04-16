@@ -317,7 +317,7 @@ body {
     position: relative;
 }
 
-.dashboard-content:not(:first-child):not(.insights-card) + .dashboard-content::after {
+.dashboard-content.user-card:first-of-type::after {
     content: '';
     position: absolute;
     height: 60px;
@@ -327,9 +327,10 @@ body {
     transform: translateX(-50%);
     bottom: -40px;
     overflow: visible;
+    z-index: 1002;
 }
 
-.dashboard-content:not(:first-child):not(.insights-card) + .dashboard-content::before {
+.dashboard-content.user-card:first-of-type::before {
     content: '';
     position: absolute;
     left: 50%;
