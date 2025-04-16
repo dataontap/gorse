@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function() {
     const emailForm = document.getElementById('emailForm');
     const imeiForm = document.getElementById('imeiForm');
@@ -8,7 +9,10 @@ document.addEventListener('DOMContentLoaded', function() {
         emailForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const emailInput = document.getElementById('email');
-            if (!emailInput) return;
+            if (!emailInput) {
+                console.error('Email input not found');
+                return;
+            }
 
             fetch('/customer', {
                 method: 'POST',
@@ -37,7 +41,10 @@ document.addEventListener('DOMContentLoaded', function() {
         imeiForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const imeiInput = document.getElementById('imei1');
-            if (!imeiInput) return;
+            if (!imeiInput) {
+                console.error('IMEI input not found');
+                return;
+            }
 
             fetch('/imei', {
                 method: 'POST',
