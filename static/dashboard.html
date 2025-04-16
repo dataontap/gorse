@@ -179,30 +179,31 @@
         }
 
         // Sort users by usage
-        document.getElementById('sortOrder').addEventListener('change', function(e) {
+        document.getElementById('sortOrder')?.addEventListener('change', function(e) {
             const container = document.getElementById('user-cards-container');
-            const cards = Array.from(container.getElementsByClassName('dashboard-content'));
+            if (!container || !e.target || !e.target.value || e.target.value === 'none') return;
 
-            if (!e.target || !e.target.value || e.target.value === 'none') return;
+            const cards = Array.from(container.getElementsByClassName('dashboard-content') || [])
+                .filter(card => !card.classList.contains('insights-card'));
 
-            const validCards = Array.from(cards || []).filter(card => {
-                if (!card) return false;
-                const usageEl = card.querySelector('.usage-amount');
-                return usageEl && usageEl.textContent && !isNaN(parseInt(usageEl.textContent));
+            const validCards = cards.filter(card => {
+                const usageEl = card?.querySelector('.usage-amount');
+                const usage = usageEl?.textContent?.trim();
+                return usage && !isNaN(parseInt(usage));
             });
 
             if (validCards.length > 0) {
                 validCards.sort((a, b) => {
-                    const usageA = parseInt(a.querySelector('.usage-amount')?.textContent) || 0;
-                    const usageB = parseInt(b.querySelector('.usage-amount')?.textContent) || 0;
+                    const usageA = parseInt(a.querySelector('.usage-amount')?.textContent?.trim() || '0');
+                    const usageB = parseInt(b.querySelector('.usage-amount')?.textContent?.trim() || '0');
                     return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
                 });
 
-                // Clear and re-append cards
-                while (container && container.firstChild) {
-                    container.removeChild(container.firstChild);
-                }
-                validCards.forEach(card => container && container.appendChild(card));
+                // Preserve insights card if it exists
+                const insightsCard = container.querySelector('.insights-card');
+                container.innerHTML = '';
+                if (insightsCard) container.appendChild(insightsCard);
+                validCards.forEach(card => container.appendChild(card));
             }
         });
 
