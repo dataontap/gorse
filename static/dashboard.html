@@ -186,13 +186,18 @@
             
             if (e.target.value === 'none') return;
             
-            cards.sort((a, b) => {
-                const usageElA = a.querySelector('.usage-amount');
-                const usageElB = b.querySelector('.usage-amount');
-                const usageA = usageElA ? parseInt(usageElA.textContent) || 0 : 0;
-                const usageB = usageElB ? parseInt(usageElB.textContent) || 0 : 0;
+            const validCards = cards.filter(card => {
+                const usageEl = card.querySelector('.usage-amount');
+                return usageEl && usageEl.textContent;
+            });
+            
+            validCards.sort((a, b) => {
+                const usageA = parseInt(a.querySelector('.usage-amount').textContent) || 0;
+                const usageB = parseInt(b.querySelector('.usage-amount').textContent) || 0;
                 return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
             });
+            
+            validCards.forEach(card => container.appendChild(card));
             
             cards.forEach(card => container.appendChild(card));
         });
