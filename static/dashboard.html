@@ -187,8 +187,10 @@
             if (e.target.value === 'none') return;
             
             cards.sort((a, b) => {
-                const usageA = parseInt(a.querySelector('.usage-amount').textContent);
-                const usageB = parseInt(b.querySelector('.usage-amount').textContent);
+                const usageElA = a.querySelector('.usage-amount');
+                const usageElB = b.querySelector('.usage-amount');
+                const usageA = usageElA ? parseInt(usageElA.textContent) || 0 : 0;
+                const usageB = usageElB ? parseInt(usageElB.textContent) || 0 : 0;
                 return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
             });
             
