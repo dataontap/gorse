@@ -79,7 +79,7 @@ body {
     .btn {
         width: auto;
     }
-    
+
     .carousel-content {
         padding: 3rem 2rem;
         min-height: 400px;
@@ -317,7 +317,7 @@ body {
     position: relative;
 }
 
-.dashboard-content:not(:last-child)::after {
+.dashboard-content:not(:first-child):not(.insights-card) + .dashboard-content::after {
     content: '';
     position: absolute;
     height: 60px;
@@ -329,7 +329,7 @@ body {
     overflow: visible;
 }
 
-.dashboard-content:not(:last-child)::before {
+.dashboard-content:not(:first-child):not(.insights-card) + .dashboard-content::before {
     content: '';
     position: absolute;
     left: 50%;
@@ -547,4 +547,3 @@ body {
     text-decoration: none;
     font-size: 14px;
 }
-
