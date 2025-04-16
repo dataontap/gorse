@@ -1,6 +1,7 @@
 from flask import Flask, request, send_from_directory
 from flask_restx import Api, Resource, fields
 from flask_socketio import SocketIO, emit
+from flask_cors import CORS
 import os
 from typing import Optional
 from replit import db
@@ -11,15 +12,27 @@ import stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
 app = Flask(__name__, static_url_path='/static')
+CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
     description='Get android phone IMEI API with telephony permissions for eSIM activation',
-    doc='/api', 
-    prefix='/api')  # Move all API endpoints under /api path
+    doc='/api')
 
 ns = api.namespace('imei', description='IMEI operations')
 delivery_ns = api.namespace('delivery', description='eSIM delivery operations')
 customer_ns = api.namespace('customer', description='Customer operations')
+
+@app.errorhandler(Exception)
+def handle_error(error):
+    return {'message': str(error), 'status': 'error'}, 500
+
+@app.route('/', endpoint='serve_index')
+def serve_index():
+    return send_from_directory('static', 'index.html')
+
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
 
 customer_model = api.model('Customer', {
     'email': fields.String(required=True, description='Customer email address')
@@ -31,16 +44,14 @@ class CustomerResource(Resource):
     @customer_ns.response(200, 'Success')
     @customer_ns.response(400, 'Bad Request')
     def post(self):
-        """Create a new customer"""
         try:
             data = request.get_json()
             if not data or 'email' not in data:
                 return {'message': 'Email is required', 'status': 'error'}, 400
-            
-            # Store customer email in database
+
             timestamp = datetime.now().isoformat()
             db[f"customer_{timestamp}"] = {'email': data['email']}
-            
+
             return {
                 'message': 'Customer created successfully',
                 'status': 'success',
@@ -60,7 +71,6 @@ class DeliveryResource(Resource):
     @delivery_ns.response(200, 'Success')
     @delivery_ns.response(400, 'Bad Request')
     def post(self):
-        """Submit eSIM delivery preferences"""
         try:
             data = request.get_json()
             if not data:
@@ -145,7 +155,6 @@ class IMEIResource(Resource):
     @ns.response(400, 'Bad Request')
     @ns.response(500, 'Internal Server Error')
     def post(self):
-        """Submit IMEI information from Android device"""
         try:
             data = request.get_json()
             if not data:
@@ -239,10 +248,7 @@ def stripe_webhook():
 
     return {'status': 'success'}, 200
 
-@app.route('/', endpoint='serve_index')
-def serve_index():
-    return send_from_directory('static', 'index.html')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)
