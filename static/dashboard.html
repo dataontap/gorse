@@ -146,6 +146,7 @@
         // Sort users by usage
         document.getElementById('sortUsage').addEventListener('change', function(e) {
             const container = document.getElementById('user-cards-container');
+            const sortContainer = container.querySelector('.sort-container');
             const cards = Array.from(container.getElementsByClassName('dashboard-content')).slice(1); // Skip insights card
             
             if (e.target.value === 'none') return;
@@ -156,10 +157,11 @@
                 return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
             });
             
-            // Clear container except first card (insights)
+            // Clear container except first card (insights) and sort container
             const firstCard = container.firstElementChild;
             container.innerHTML = '';
             container.appendChild(firstCard);
+            container.appendChild(sortContainer);
             
             // Add sorted cards
             cards.forEach(card => container.appendChild(card));
