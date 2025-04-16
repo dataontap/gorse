@@ -26,11 +26,11 @@ customer_ns = api.namespace('customer', description='Customer operations')
 def handle_error(error):
     return {'message': str(error), 'status': 'error'}, 500
 
-@app.route('/', endpoint='serve_index')
+@app.route('/')
 def serve_index():
     return send_from_directory('static', 'index.html')
 
-@app.route('/static/<path:path>')
+@app.route('/<path:path>')
 def serve_static(path):
     return send_from_directory('static', path)
 
