@@ -20,11 +20,16 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    step1.classList.remove('active');
-                    step2.classList.add('active');
+                    step1.style.display = 'none';
+                    step2.style.display = 'block';
+                } else {
+                    alert('Error: ' + data.message);
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while submitting the form');
+            });
         });
     }
 
@@ -43,10 +48,15 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    window.location.href = '/static/success.html';
+                    window.location.href = '/success.html';
+                } else {
+                    alert('Error: ' + data.message);
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while submitting the form');
+            });
         });
     }
 });
