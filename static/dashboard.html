@@ -83,21 +83,7 @@
                 </div>
             </div>
         </div>
-        <!-- Default user card -->
-        <div class="dashboard-content">
-            <div class="user-info">
-                <div class="email-container">
-                    <div class="user-info-header">
-                        <span class="user-name">John Doe</span>
-                        <span class="user-email">john@example.com</span>
-                    </div>
-                </div>
-                <div class="data-usage">
-                    <div class="usage-label">Data Usage</div>
-                    <div class="usage-amount">50%</div>
-                </div>
-            </div>
-        </div>
+        <!-- User cards will be added here dynamically -->
         <div class="back-to-top">
             <a href="#" id="backToTop">
                 Back to Top
@@ -219,17 +205,15 @@
                 </div>
             `;
 
-            if (firstName !== 'John') {
-                const removeIcon = newCard.querySelector('.remove-icon');
+            const removeIcon = newCard.querySelector('.remove-icon');
+            if (removeIcon) {
                 removeIcon.addEventListener('click', () => removeUserCard(newCard));
             }
 
             document.getElementById('user-cards-container').appendChild(newCard);
             setTimeout(() => {
                 newCard.classList.add('visible');
-                initializeChart(newCard);
             }, 50);
-            initializeChart(document.querySelector('.dashboard-content'));
         });
     </script>
 </body>
