@@ -3,7 +3,6 @@ from flask_restx import Api, Resource, fields
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 import os
-import os
 from typing import Optional
 from replit import db
 from datetime import datetime
@@ -259,4 +258,4 @@ def stripe_webhook():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
