@@ -474,9 +474,7 @@ body {
     padding: 20px;
     margin: 0 auto 20px;
     max-width: 600px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 8px;
-    backdrop-filter: blur(5px);
+    background: transparent;
 }
 
 .sort-select {
