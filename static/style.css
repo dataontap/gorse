@@ -79,7 +79,7 @@ body {
     .btn {
         width: auto;
     }
-    
+
     .carousel-content {
         padding: 3rem 2rem;
         min-height: 400px;
@@ -226,7 +226,7 @@ body {
     max-width: 600px;
     position: relative;
     backdrop-filter: blur(5px);
-    z-index: 2;
+    z-index: 3; /* Increased z-index */
     transition: all 0.3s ease-out;
 }
 
@@ -313,9 +313,6 @@ body {
     margin: 0 5px;
 }
 
-.dashboard-content {
-    position: relative;
-}
 
 .user-info + .dashboard-content::after {
     content: '';
@@ -327,6 +324,7 @@ body {
     transform: translateX(-50%);
     bottom: -40px;
     overflow: visible;
+    z-index: 1; /* Added z-index */
 }
 
 .user-info + .dashboard-content::before {
@@ -547,4 +545,3 @@ body {
     text-decoration: none;
     font-size: 14px;
 }
-
