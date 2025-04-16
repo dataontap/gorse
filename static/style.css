@@ -501,7 +501,7 @@ body {
 
 .back-to-top {
     position: fixed;
-    bottom: 50px;
+    bottom: 60px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(102, 102, 102, 0.8);
