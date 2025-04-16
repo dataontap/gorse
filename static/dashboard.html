@@ -213,14 +213,14 @@
                 <div class="user-info">
                     <div class="email-container">
                         <div class="user-info-header">
-                            <span class="user-name">${firstName} ${lastName}</span>
-                            <span class="user-email">${firstName.toLowerCase()}@example.com</span>
+                            <span class="user-name">${firstName || 'N/A'} ${lastName || ''}</span>
+                            <span class="user-email">${firstName ? firstName.toLowerCase() + '@example.com' : 'N/A'}</span>
                         </div>
                         ${firstName !== 'John' ? '<i class="fas fa-times remove-icon"></i>' : ''}
                     </div>
                     <div class="data-usage">
                         <div class="usage-label">Data Usage</div>
-                        <div class="usage-amount">${usage}%</div>
+                        <div class="usage-amount">${typeof usage === 'number' ? usage + '%' : 'N/A'}</div>
                     </div>
                 </div>
             `;
