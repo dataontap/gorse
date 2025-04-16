@@ -400,10 +400,28 @@ body {
     margin-right: 5px;
 }
 
-.user-info {
+.insights-card {
     padding: 20px;
     display: flex;
     flex-direction: column;
+}
+
+.insights-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.insights-header h2 {
+    font-size: 24px;
+    color: #333;
+    margin: 0;
+}
+
+.insights-header i {
+    font-size: 24px;
+    color: #666;
 }
 
 .email-container {
