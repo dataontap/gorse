@@ -79,7 +79,7 @@ body {
     .btn {
         width: auto;
     }
-
+    
     .carousel-content {
         padding: 3rem 2rem;
         min-height: 400px;
@@ -173,7 +173,7 @@ body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     display: none;
     min-width: 200px;
-    z-index: 1005; /* Highest layer - menus */
+    z-index: 1003;
 }
 
 .menu-dropdown {
@@ -226,7 +226,7 @@ body {
     max-width: 600px;
     position: relative;
     backdrop-filter: blur(5px);
-    z-index: 1003; /* Cards layer */
+    z-index: 2;
     transition: all 0.3s ease-out;
 }
 
@@ -313,8 +313,11 @@ body {
     margin: 0 5px;
 }
 
+.dashboard-content {
+    position: relative;
+}
 
-.user-info + .dashboard-content::after {
+.dashboard-content:not(:last-child)::after {
     content: '';
     position: absolute;
     height: 60px;
@@ -324,10 +327,9 @@ body {
     transform: translateX(-50%);
     bottom: -40px;
     overflow: visible;
-    z-index: 1006; /* Highest z-index */
 }
 
-.user-info + .dashboard-content::before {
+.dashboard-content:not(:last-child)::before {
     content: '';
     position: absolute;
     left: 50%;
@@ -537,7 +539,7 @@ body {
     padding: 8px 16px;
     border-radius: 20px;
     display: none;
-    z-index: 1005; /* Same layer as menus */
+    z-index: 1000;
 }
 
 .back-to-top a {
@@ -545,3 +547,4 @@ body {
     text-decoration: none;
     font-size: 14px;
 }
+
