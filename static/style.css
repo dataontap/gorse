@@ -485,6 +485,13 @@ body {
     margin-bottom: 15px;
 }
 
+.authorized-users-title {
+    text-align: left;
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 15px;
+}
+
 .sort-container {
     text-align: right;
     padding: 20px;
