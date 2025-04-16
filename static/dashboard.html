@@ -146,16 +146,22 @@
         // Sort users by usage
         document.getElementById('sortUsage').addEventListener('change', function(e) {
             const container = document.getElementById('user-cards-container');
-            const cards = Array.from(container.getElementsByClassName('dashboard-content'));
+            const cards = Array.from(container.getElementsByClassName('dashboard-content')).slice(1); // Skip insights card
             
             if (e.target.value === 'none') return;
             
             cards.sort((a, b) => {
-                const usageA = parseInt(a.querySelector('.usage-amount').textContent);
-                const usageB = parseInt(b.querySelector('.usage-amount').textContent);
+                const usageA = parseInt(a.querySelector('.usage-amount')?.textContent || '0');
+                const usageB = parseInt(b.querySelector('.usage-amount')?.textContent || '0');
                 return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
             });
             
+            // Clear container except first card (insights)
+            const firstCard = container.firstElementChild;
+            container.innerHTML = '';
+            container.appendChild(firstCard);
+            
+            // Add sorted cards
             cards.forEach(card => container.appendChild(card));
         });
 
