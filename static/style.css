@@ -327,6 +327,7 @@ body {
     transform: translateX(-50%);
     bottom: -40px;
     overflow: visible;
+    z-index: 1002; /* Below cards (1003) */
 }
 
 .dashboard-content:not(:first-child):not(.insights-card) + .dashboard-content::before {
