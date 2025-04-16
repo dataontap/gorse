@@ -471,9 +471,12 @@ body {
 
 .sort-container {
     text-align: right;
-    padding: 10px 20px;
-    margin: 10px auto;
+    padding: 20px;
+    margin: 0 auto 20px;
     max-width: 600px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
 }
 
 .sort-select {
@@ -482,7 +485,7 @@ body {
     border: 1px solid #ddd;
     background: white;
     font-size: 14px;
-    min-width: 120px;
+    min-width: 150px;
 }
 
 .usage-chart {
