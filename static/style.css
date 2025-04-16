@@ -458,8 +458,24 @@ body {
 }
 
 .usage-label {
+    font-size: 16px;
+    color: #333;
+    font-weight: 600;
+}
+
+.insight-message {
     font-size: 14px;
     color: #666;
+    margin-top: 8px;
+}
+
+.insight-link {
+    color: #0066ff;
+    text-decoration: none;
+}
+
+.insight-link:hover {
+    text-decoration: underline;
 }
 
 .usage-header {
