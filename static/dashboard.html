@@ -73,14 +73,32 @@
             `;
 
             const container = document.getElementById('user-cards-container');
-            if (container) {
-                container.appendChild(newCard);
+            if (!container) return;
+
+            container.appendChild(newCard);
+
+            // Ensure all elements exist before adding listeners
+            requestAnimationFrame(() => {
                 const removeIcon = newCard.querySelector('.remove-icon');
                 if (removeIcon) {
                     removeIcon.addEventListener('click', () => removeUserCard(newCard));
                 }
-                setTimeout(() => newCard.classList.add('visible'), 50);
-            }
+                newCard.classList.add('visible');
+            });
+        });
+
+        // Initialize existing cards when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('user-cards-container');
+            if (!container) return;
+
+            const existingCards = container.querySelectorAll('.dashboard-content');
+            existingCards.forEach(card => {
+                const removeIcon = card.querySelector('.remove-icon');
+                if (removeIcon) {
+                    removeIcon.addEventListener('click', () => removeUserCard(card));
+                }
+            });
         });
     </script>
 </body>
