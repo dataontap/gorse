@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -104,27 +103,27 @@
                 console.warn('Chart container element not found');
                 return null;
             }
-            
+
             const canvas = element.querySelector('#usageChart');
             if (!canvas) {
                 console.warn('Usage chart canvas not found');
                 return null;
             }
-            
+
             const ctx = canvas.getContext('2d');
             if (!ctx) {
                 console.warn('Canvas context not available');
                 return null;
             }
-            
+
             const dates = Array.from({length: 30}, (_, i) => {
                 const date = new Date();
                 date.setDate(date.getDate() - i);
                 return date.toLocaleDateString();
             }).reverse();
-            
+
             const data = Array.from({length: 30}, () => Math.floor(Math.random() * 100));
-            
+
             return new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -168,7 +167,7 @@
 
         const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
         const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
-        
+
         // Function to remove user card
         function removeUserCard(card) {
             if (confirm('Are you sure you want to remove this user?')) {
@@ -180,26 +179,31 @@
         }
 
         // Sort users by usage
-        document.getElementById('sortUsage').addEventListener('change', function(e) {
+        document.getElementById('sortOrder').addEventListener('change', function(e) {
             const container = document.getElementById('user-cards-container');
             const cards = Array.from(container.getElementsByClassName('dashboard-content'));
-            
-            if (e.target.value === 'none') return;
-            
-            const validCards = cards.filter(card => {
+
+            if (!e.target || !e.target.value || e.target.value === 'none') return;
+
+            const validCards = Array.from(cards || []).filter(card => {
+                if (!card) return false;
                 const usageEl = card.querySelector('.usage-amount');
-                return usageEl && usageEl.textContent;
+                return usageEl && usageEl.textContent && !isNaN(parseInt(usageEl.textContent));
             });
-            
-            validCards.sort((a, b) => {
-                const usageA = parseInt(a.querySelector('.usage-amount').textContent) || 0;
-                const usageB = parseInt(b.querySelector('.usage-amount').textContent) || 0;
-                return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
-            });
-            
-            validCards.forEach(card => container.appendChild(card));
-            
-            cards.forEach(card => container.appendChild(card));
+
+            if (validCards.length > 0) {
+                validCards.sort((a, b) => {
+                    const usageA = parseInt(a.querySelector('.usage-amount')?.textContent) || 0;
+                    const usageB = parseInt(b.querySelector('.usage-amount')?.textContent) || 0;
+                    return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
+                });
+
+                // Clear and re-append cards
+                while (container && container.firstChild) {
+                    container.removeChild(container.firstChild);
+                }
+                validCards.forEach(card => container && container.appendChild(card));
+            }
         });
 
         document.getElementById('addUserBtn').addEventListener('click', function(e) {
@@ -207,7 +211,7 @@
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
             const usage = Math.floor(Math.random() * 100);
-            
+
             const newCard = document.createElement('div');
             newCard.className = 'dashboard-content slide-in';
             newCard.innerHTML = `
@@ -230,7 +234,7 @@
                 const removeIcon = newCard.querySelector('.remove-icon');
                 removeIcon.addEventListener('click', () => removeUserCard(newCard));
             }
-            
+
             document.getElementById('user-cards-container').appendChild(newCard);
             setTimeout(() => {
                 newCard.classList.add('visible');
