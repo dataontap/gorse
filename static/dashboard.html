@@ -39,31 +39,48 @@
                 <div class="line-animation"></div>
             </div>
         </div>
-        <div id="user-cards-container">
-            <div class="dashboard-content">
+        <div class="sorting-controls">
+        <div class="sort-group">
+            <label>Data Usage:</label>
+            <select id="timeRange" class="sort-select">
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+            </select>
+            <select id="sortOrder" class="sort-select">
+                <option value="desc">Highest to Lowest</option>
+                <option value="asc">Lowest to Highest</option>
+            </select>
+        </div>
+    </div>
+    <div id="user-cards-container">
+            <div class="dashboard-content insights-card">
                 <div class="user-info">
                     <div class="email-container">
                         <div class="user-info-header">
-                            <span class="user-name">John Doe</span>
-                            <span class="user-email">john@example.com</span>
+                            <span class="user-name">Data Insights</span>
+                            <span class="user-email">Account Summary</span>
                         </div>
-                        <i class="fas fa-ellipsis-v settings-icon"></i>
+                        <i class="fas fa-chart-line"></i>
                     </div>
                     <div class="data-usage">
                         <div class="usage-header">
-                            <div class="usage-label">Data Usage</div>
-                            <select id="sortUsage" class="sort-select">
-                                <option value="none">Sort by</option>
-                                <option value="asc">Lowest to Highest</option>
-                                <option value="desc">Highest to Lowest</option>
-                            </select>
+                            <div class="usage-label">Usage Overview</div>
                         </div>
                         <div class="usage-chart">
                             <canvas id="usageChart"></canvas>
                         </div>
-                        <div class="usage-amount">100%</div>
+                        <div class="insights-metrics">
+                            <div class="metric">
+                                <span class="metric-label">Total Usage</span>
+                                <span class="metric-value">1.5 GB</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Active Users</span>
+                                <span class="metric-value">3</span>
+                            </div>
+                        </div>
                     </div>
-                    
                 </div>
             </div>
         </div>
