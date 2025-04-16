@@ -317,7 +317,7 @@ body {
     position: relative;
 }
 
-.dashboard-content:not(:last-child)::after {
+.user-info + .dashboard-content::after {
     content: '';
     position: absolute;
     height: 60px;
@@ -329,7 +329,7 @@ body {
     overflow: visible;
 }
 
-.dashboard-content:not(:last-child)::before {
+.user-info + .dashboard-content::before {
     content: '';
     position: absolute;
     left: 50%;
