@@ -173,6 +173,22 @@
             return element && element.textContent ? element.textContent : '0';
         }
 
+        function initializeElements() {
+            const container = document.getElementById('user-cards-container');
+            if (!container) return;
+
+            const cards = Array.from(container.getElementsByClassName('dashboard-content'));
+            cards.forEach(card => {
+                const removeIcon = card.querySelector('.remove-icon');
+                if (removeIcon) {
+                    removeIcon.addEventListener('click', () => removeUserCard(card));
+                }
+            });
+        }
+
+        // Initialize elements when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializeElements);
+
         // Function to remove user card
         function removeUserCard(card) {
             if (confirm('Are you sure you want to remove this user?')) {
