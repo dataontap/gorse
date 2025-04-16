@@ -396,6 +396,10 @@ body {
     margin-top: 5px;
 }
 
+.status i {
+    margin-right: 5px;
+}
+
 .user-info {
     padding: 20px;
     display: flex;
