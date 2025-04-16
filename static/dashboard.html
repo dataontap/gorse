@@ -225,15 +225,26 @@
                 </div>
             `;
 
-            const removeIcon = newCard.querySelector('.remove-icon');
-            if (removeIcon) {
-                removeIcon.addEventListener('click', () => removeUserCard(newCard));
+            const container = document.getElementById('user-cards-container');
+            if (container) {
+                const removeIcon = newCard.querySelector('.remove-icon');
+                if (removeIcon) {
+                    removeIcon.addEventListener('click', () => removeUserCard(newCard));
+                }
+                
+                container.appendChild(newCard);
+                setTimeout(() => {
+                    newCard.classList.add('visible');
+                }, 50);
             }
+        });
 
-            document.getElementById('user-cards-container').appendChild(newCard);
-            setTimeout(() => {
-                newCard.classList.add('visible');
-            }, 50);
+        // Initialize container when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('user-cards-container');
+            if (!container) {
+                console.warn('User cards container not found');
+            }
         });
     </script>
 </body>
