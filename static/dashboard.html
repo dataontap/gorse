@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -43,7 +44,7 @@
                 <div class="user-info">
                     <div class="email-container">
                         <div class="user-info-header">
-                            <span class="user-name">Data Insights</span>
+                            <span class="user-name">John Doe</span>
                             <span class="user-email">john@example.com</span>
                         </div>
                         <i class="fas fa-ellipsis-v settings-icon"></i>
@@ -60,8 +61,9 @@
                         <div class="usage-chart">
                             <canvas id="usageChart"></canvas>
                         </div>
+                        <div class="usage-amount">100%</div>
                     </div>
-
+                    
                 </div>
             </div>
         </div>
@@ -87,9 +89,9 @@
                 date.setDate(date.getDate() - i);
                 return date.toLocaleDateString();
             }).reverse();
-
+            
             const data = Array.from({length: 30}, () => Math.floor(Math.random() * 100));
-
+            
             return new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -133,7 +135,7 @@
 
         const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
         const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
-
+        
         // Function to remove user card
         function removeUserCard(card) {
             if (confirm('Are you sure you want to remove this user?')) {
@@ -148,15 +150,15 @@
         document.getElementById('sortUsage').addEventListener('change', function(e) {
             const container = document.getElementById('user-cards-container');
             const cards = Array.from(container.getElementsByClassName('dashboard-content'));
-
+            
             if (e.target.value === 'none') return;
-
+            
             cards.sort((a, b) => {
                 const usageA = parseInt(a.querySelector('.usage-amount').textContent);
                 const usageB = parseInt(b.querySelector('.usage-amount').textContent);
                 return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
             });
-
+            
             cards.forEach(card => container.appendChild(card));
         });
 
@@ -165,7 +167,7 @@
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
             const usage = Math.floor(Math.random() * 100);
-
+            
             const newCard = document.createElement('div');
             newCard.className = 'dashboard-content slide-in';
             newCard.innerHTML = `
@@ -184,26 +186,16 @@
                 </div>
             `;
 
-            if (firstName === 'John' && lastName === 'Doe') {
-                    const adminBadge = document.createElement('div');
-                    adminBadge.className = 'admin-badge';
-                    adminBadge.textContent = 'Admin';
-                    newCard.querySelector('.user-info').appendChild(adminBadge);
-                }
-                document.getElementById('user-cards-container').appendChild(newCard);
-                setTimeout(() => {
-                    newCard.classList.add('visible');
-                    initializeChart(newCard);
-
-                    // Update connecting line height
-                    const cards = document.querySelectorAll('.dashboard-content');
-                    const lastCard = cards[cards.length - 1];
-                    const firstCard = cards[0];
-                    const line = document.querySelector('.connecting-line');
-                    const totalHeight = lastCard.getBoundingClientRect().bottom - firstCard.getBoundingClientRect().top;
-                    line.style.height = `${totalHeight}px`;
-                    line.style.top = `${firstCard.getBoundingClientRect().top}px`;
-                }, 50);
+            if (firstName !== 'John') {
+                const removeIcon = newCard.querySelector('.remove-icon');
+                removeIcon.addEventListener('click', () => removeUserCard(newCard));
+            }
+            
+            document.getElementById('user-cards-container').appendChild(newCard);
+            setTimeout(() => {
+                newCard.classList.add('visible');
+                initializeChart(newCard);
+            }, 50);
             initializeChart(document.querySelector('.dashboard-content'));
         });
     </script>
