@@ -27,67 +27,8 @@
         </div>
     </div>
     <div class="container">
-        <div class="dot-container">
-            <div class="dot-indicator">
-                <div class="dot-content">
-                    <div class="data-amount">1.0<span>GB</span></div>
-                    <div class="status">Online</div>
-                </div>
-            </div>
-            <div class="connecting-line">
-                <div class="line-animation"></div>
-            </div>
-        </div>
-        <div class="sorting-controls">
-        <div class="sort-group">
-            <label>Data Usage:</label>
-            <select id="timeRange" class="sort-select">
-                <option value="day">Day</option>
-                <option value="week">Week</option>
-                <option value="month">Month</option>
-            </select>
-            <select id="sortOrder" class="sort-select">
-                <option value="desc">Highest to Lowest</option>
-                <option value="asc">Lowest to Highest</option>
-            </select>
-        </div>
-    </div>
-    <div id="user-cards-container">
-            <div class="dashboard-content insights-card">
-                <div class="user-info">
-                    <div class="email-container">
-                        <div class="user-info-header">
-                            <span class="user-name">Data Insights</span>
-                            <span class="user-email">Account Summary</span>
-                        </div>
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="data-usage">
-                        <div class="usage-header">
-                            <div class="usage-label">Usage Overview</div>
-                        </div>
-                        <div class="usage-chart">
-                            <canvas id="usageChart"></canvas>
-                        </div>
-                        <div class="insights-metrics">
-                            <div class="metric">
-                                <span class="metric-label">Total Usage</span>
-                                <span class="metric-value">1.5 GB</span>
-                            </div>
-                            <div class="metric">
-                                <span class="metric-label">Active Users</span>
-                                <span class="metric-value">3</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- User cards will be added here dynamically -->
-        <div class="back-to-top">
-            <a href="#" id="backToTop">
-                Back to Top
-            </a>
+        <div id="user-cards-container">
+            <!-- Cards will be added here -->
         </div>
         <div class="add-user-container">
             <a href="#" class="add-user-link" id="addUserBtn">
@@ -96,110 +37,16 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Initialize usage chart
-        function initializeChart(element) {
-            if (!element) {
-                console.warn('Chart container element not found');
-                return null;
-            }
-
-            const canvas = element.querySelector('#usageChart');
-            if (!canvas) {
-                console.warn('Usage chart canvas not found');
-                return null;
-            }
-
-            const ctx = canvas.getContext('2d');
-            if (!ctx) {
-                console.warn('Canvas context not available');
-                return null;
-            }
-
-            const dates = Array.from({length: 30}, (_, i) => {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                return date.toLocaleDateString();
-            }).reverse();
-
-            const data = Array.from({length: 30}, () => Math.floor(Math.random() * 100));
-
-            return new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: 'Daily Usage %',
-                        data: data,
-                        borderColor: '#FFF371',
-                        backgroundColor: 'rgba(255, 243, 113, 0.2)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100
-                        }
-                    }
-                }
-            });
-        }
-        // Back to top functionality
-        window.onscroll = function() {
-            const backToTop = document.querySelector('.back-to-top');
-            const screenHeight = window.innerHeight * 2;
-            if (document.body.scrollTop > screenHeight || document.documentElement.scrollTop > screenHeight) {
-                backToTop.style.display = "block";
-            } else {
-                backToTop.style.display = "none";
-            }
-        };
-
-        document.getElementById('backToTop').addEventListener('click', function(e) {
-            e.preventDefault();
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        });
-
         const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
         const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
 
-        function getTextContentSafely(element) {
-            return element && element.textContent ? element.textContent : '0';
-        }
-
-        function initializeElements() {
-            const container = document.getElementById('user-cards-container');
-            if (!container) return;
-
-            const cards = Array.from(container.getElementsByClassName('dashboard-content'));
-            cards.forEach(card => {
-                const removeIcon = card.querySelector('.remove-icon');
-                if (removeIcon) {
-                    removeIcon.addEventListener('click', () => removeUserCard(card));
-                }
-            });
-        }
-
-        // Initialize elements when DOM is loaded
-        document.addEventListener('DOMContentLoaded', initializeElements);
-
-        // Function to remove user card
         function removeUserCard(card) {
             if (confirm('Are you sure you want to remove this user?')) {
                 card.classList.remove('visible');
-                setTimeout(() => {
-                    card.remove();
-                }, 300);
+                setTimeout(() => card.remove(), 300);
             }
         }
-
-
 
         document.getElementById('addUserBtn').addEventListener('click', function(e) {
             e.preventDefault();
@@ -213,37 +60,26 @@
                 <div class="user-info">
                     <div class="email-container">
                         <div class="user-info-header">
-                            <span class="user-name">${firstName || 'N/A'} ${lastName || ''}</span>
-                            <span class="user-email">${firstName ? firstName.toLowerCase() + '@example.com' : 'N/A'}</span>
+                            <span class="user-name">${firstName} ${lastName}</span>
+                            <span class="user-email">${firstName.toLowerCase()}@example.com</span>
                         </div>
-                        ${firstName !== 'John' ? '<i class="fas fa-times remove-icon"></i>' : ''}
+                        <i class="fas fa-times remove-icon"></i>
                     </div>
                     <div class="data-usage">
                         <div class="usage-label">Data Usage</div>
-                        <div class="usage-amount">${typeof usage === 'number' ? usage + '%' : 'N/A'}</div>
+                        <div class="usage-amount">${usage}%</div>
                     </div>
                 </div>
             `;
 
             const container = document.getElementById('user-cards-container');
             if (container) {
+                container.appendChild(newCard);
                 const removeIcon = newCard.querySelector('.remove-icon');
                 if (removeIcon) {
                     removeIcon.addEventListener('click', () => removeUserCard(newCard));
                 }
-                
-                container.appendChild(newCard);
-                setTimeout(() => {
-                    newCard.classList.add('visible');
-                }, 50);
-            }
-        });
-
-        // Initialize container when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            const container = document.getElementById('user-cards-container');
-            if (!container) {
-                console.warn('User cards container not found');
+                setTimeout(() => newCard.classList.add('visible'), 50);
             }
         });
     </script>
