@@ -1,7 +1,8 @@
-from flask import Flask, request, send_from_directory
+from flask import Flask, request, send_from_directory, send_file
 from flask_restx import Api, Resource, fields
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
+import os
 import os
 from typing import Optional
 from replit import db
@@ -32,7 +33,7 @@ def handle_error(error):
 @app.route('/')
 def serve_index():
     try:
-        return send_from_directory('static', 'index.html')
+        return send_file('static/index.html')
     except Exception as e:
         print(f"Health check exception: {str(e)}")
         return {'status': 'ok'}, 200
