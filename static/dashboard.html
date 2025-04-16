@@ -100,6 +100,11 @@
     <script>
         // Initialize usage chart
         function initializeChart(element) {
+            if (!element) {
+                console.warn('Chart container element not found');
+                return null;
+            }
+            
             const canvas = element.querySelector('#usageChart');
             if (!canvas) {
                 console.warn('Usage chart canvas not found');
@@ -107,6 +112,11 @@
             }
             
             const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.warn('Canvas context not available');
+                return null;
+            }
+            
             const dates = Array.from({length: 30}, (_, i) => {
                 const date = new Date();
                 date.setDate(date.getDate() - i);
