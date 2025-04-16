@@ -406,22 +406,22 @@ body {
     flex-direction: column;
 }
 
-.insights-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
+.section-header {
+    max-width: 600px;
+    margin: 0 auto 20px;
+    padding: 0 20px;
 }
 
-.insights-header h2 {
+.section-header h2 {
     font-size: 24px;
     color: #333;
     margin: 0;
 }
 
-.insights-header i {
+.section-header i, .authorized-users-title i {
     font-size: 24px;
     color: #666;
+    margin-right: 10px;
 }
 
 .email-container {
