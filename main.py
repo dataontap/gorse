@@ -1,4 +1,4 @@
-from flask import Flask, request, send_from_directory, send_file
+from flask import Flask, request, send_from_directory
 from flask_restx import Api, Resource, fields
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
@@ -11,7 +11,7 @@ import stripe
 # Initialize Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
-app = Flask(__name__, static_folder='static', static_url_path='')
+app = Flask(__name__, static_url_path='/static')
 CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
@@ -24,20 +24,13 @@ customer_ns = api.namespace('customer', description='Customer operations')
 
 @app.errorhandler(Exception)
 def handle_error(error):
-    print(f"Error occurred: {str(error)}")
-    if request.path == '/':
-        return {'status': 'ok'}, 200
     return {'message': str(error), 'status': 'error'}, 500
 
-@app.route('/')
+@app.route('/', endpoint='serve_index')
 def serve_index():
-    try:
-        return send_from_directory('static', 'index.html')
-    except Exception as e:
-        print(f"Health check exception: {str(e)}")
-        return {'status': 'ok'}, 200
+    return send_from_directory('static', 'index.html')
 
-@app.route('/<path:path>')
+@app.route('/static/<path:path>')
 def serve_static(path):
     return send_from_directory('static', path)
 
@@ -258,4 +251,4 @@ def stripe_webhook():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)

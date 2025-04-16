@@ -217,25 +217,6 @@ body {
     font-size: 16px;
 }
 
-.sorting-controls {
-    text-align: center;
-    padding: 20px;
-    margin: 0 auto;
-    max-width: 600px;
-}
-
-.sort-group {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    justify-content: center;
-}
-
-.sort-group label {
-    color: #333;
-    font-weight: bold;
-}
-
 .dashboard-content {
     text-align: center;
     padding: 40px 20px;
@@ -247,34 +228,6 @@ body {
     backdrop-filter: blur(5px);
     z-index: 2;
     transition: all 0.3s ease-out;
-}
-
-.insights-card {
-    background: rgba(255, 243, 113, 0.15);
-}
-
-.insights-metrics {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
-}
-
-.metric {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.metric-label {
-    font-size: 14px;
-    color: #666;
-}
-
-.metric-value {
-    font-size: 24px;
-    font-weight: bold;
-    color: #333;
-    margin-top: 5px;
 }
 
 .dashboard-content.slide-in {

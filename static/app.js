@@ -1,70 +1,57 @@
-
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
     const emailForm = document.getElementById('emailForm');
     const imeiForm = document.getElementById('imeiForm');
     const step1 = document.getElementById('step1');
     const step2 = document.getElementById('step2');
 
-    if (emailForm) {
-        emailForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const emailInput = document.getElementById('email');
-            if (!emailInput) {
-                console.error('Email input not found');
-                return;
-            }
+    emailForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
 
-            fetch('/customer', {
+        try {
+            const response = await fetch('/api/customer', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ email: emailInput.value })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success' && step1 && step2) {
-                    step1.style.display = 'none';
-                    step2.style.display = 'block';
-                } else {
-                    alert('Error: ' + (data.message || 'Unknown error occurred'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while submitting the form');
+                body: JSON.stringify({ email })
             });
-        });
-    }
 
-    if (imeiForm) {
-        imeiForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const imeiInput = document.getElementById('imei1');
-            if (!imeiInput) {
-                console.error('IMEI input not found');
-                return;
+            if (response.ok) {
+                step1.classList.remove('active');
+                step2.classList.add('active');
+            } else {
+                const error = await response.json();
+                alert(error.message || 'Error creating customer');
             }
+        } catch (error) {
+            console.error('Request error:', error);
+            alert('Error submitting form');
+        }
+    });
 
-            fetch('/imei', {
+    imeiForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const imei1 = document.getElementById('imei1').value;
+
+        try {
+            const response = await fetch('/api/imei', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ imei1: imeiInput.value })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    window.location.href = '/success.html';
-                } else {
-                    alert('Error: ' + (data.message || 'Unknown error occurred'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while submitting the form');
+                body: JSON.stringify({ imei1 })
             });
-        });
-    }
+
+            if (response.ok) {
+                window.location.href = '/static/success.html';
+            } else {
+                const error = await response.json();
+                alert(error.message || 'Error submitting IMEI');
+            }
+        } catch (error) {
+            console.error('Request error:', error);
+            alert('Error submitting form');
+        }
+    });
 });
