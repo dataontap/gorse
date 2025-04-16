@@ -11,7 +11,7 @@ import stripe
 # Initialize Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
-app = Flask(__name__, static_url_path='/static')
+app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
@@ -26,9 +26,9 @@ customer_ns = api.namespace('customer', description='Customer operations')
 def handle_error(error):
     return {'message': str(error), 'status': 'error'}, 500
 
-@app.route('/', endpoint='serve_index')
+@app.route('/')
 def serve_index():
-    return send_from_directory('static', 'index.html')
+    return app.send_static_file('index.html')
 
 @app.route('/static/<path:path>')
 def serve_static(path):
