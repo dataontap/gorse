@@ -12,7 +12,7 @@ import stripe
 # Initialize Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
-app = Flask(__name__, static_folder='static', static_url_path='/static')
+app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
@@ -33,7 +33,7 @@ def handle_error(error):
 @app.route('/')
 def serve_index():
     try:
-        return send_file('static/index.html')
+        return send_from_directory('static', 'index.html')
     except Exception as e:
         print(f"Health check exception: {str(e)}")
         return {'status': 'ok'}, 200
