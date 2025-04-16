@@ -180,31 +180,25 @@
 
         // Sort users by usage
         document.getElementById('sortOrder')?.addEventListener('change', function(e) {
+            if (!e.target?.value || e.target.value === 'none') return;
+
             const container = document.getElementById('user-cards-container');
-            if (!container || !e.target || !e.target.value || e.target.value === 'none') return;
+            if (!container) return;
 
-            const cards = Array.from(container.getElementsByClassName('dashboard-content') || [])
-                .filter(card => !card.classList.contains('insights-card'));
+            const cards = Array.from(container.querySelectorAll('.dashboard-content:not(.insights-card)'));
+            if (!cards.length) return;
 
-            const validCards = cards.filter(card => {
-                if (!card || card.classList.contains('insights-card')) return false;
-                const usageEl = card.querySelector('.usage-amount');
-                return usageEl && typeof usageEl.textContent === 'string' && !isNaN(parseInt(usageEl.textContent));
+            cards.sort((a, b) => {
+                const usageA = parseInt(a.querySelector('.usage-amount')?.textContent || '0');
+                const usageB = parseInt(b.querySelector('.usage-amount')?.textContent || '0');
+                return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
             });
 
-            if (validCards.length > 0) {
-                validCards.sort((a, b) => {
-                    const usageA = parseInt(a.querySelector('.usage-amount').textContent) || 0;
-                    const usageB = parseInt(b.querySelector('.usage-amount').textContent) || 0;
-                    return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
-                });
-
-                // Preserve insights card if it exists
-                const insightsCard = container.querySelector('.insights-card');
-                container.innerHTML = '';
-                if (insightsCard) container.appendChild(insightsCard);
-                validCards.forEach(card => container.appendChild(card));
-            }
+            // Preserve insights card if it exists
+            const insightsCard = container.querySelector('.insights-card');
+            container.innerHTML = '';
+            if (insightsCard) container.appendChild(insightsCard);
+            cards.forEach(card => container.appendChild(card));
         });
 
         document.getElementById('addUserBtn').addEventListener('click', function(e) {
