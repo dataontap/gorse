@@ -187,19 +187,15 @@
                 .filter(card => !card.classList.contains('insights-card'));
 
             const validCards = cards.filter(card => {
-                if (!card) return false;
+                if (!card || card.classList.contains('insights-card')) return false;
                 const usageEl = card.querySelector('.usage-amount');
-                if (!usageEl || !usageEl.textContent) return false;
-                const usage = usageEl.textContent.trim();
-                return usage && !isNaN(parseInt(usage));
+                return usageEl && typeof usageEl.textContent === 'string' && !isNaN(parseInt(usageEl.textContent));
             });
 
-            if (validCards && validCards.length > 0) {
+            if (validCards.length > 0) {
                 validCards.sort((a, b) => {
-                    const usageElA = a?.querySelector('.usage-amount');
-                    const usageElB = b?.querySelector('.usage-amount');
-                    const usageA = parseInt(usageElA?.textContent?.trim() || '0');
-                    const usageB = parseInt(usageElB?.textContent?.trim() || '0');
+                    const usageA = parseInt(a.querySelector('.usage-amount').textContent) || 0;
+                    const usageB = parseInt(b.querySelector('.usage-amount').textContent) || 0;
                     return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
                 });
 
