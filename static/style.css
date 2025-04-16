@@ -469,12 +469,20 @@ body {
     margin-bottom: 15px;
 }
 
+.sort-container {
+    text-align: right;
+    padding: 10px 20px;
+    margin: 10px auto;
+    max-width: 600px;
+}
+
 .sort-select {
-    padding: 5px;
+    padding: 8px 12px;
     border-radius: 4px;
     border: 1px solid #ddd;
     background: white;
     font-size: 14px;
+    min-width: 120px;
 }
 
 .usage-chart {
