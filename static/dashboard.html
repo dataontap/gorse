@@ -169,6 +169,10 @@
         const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
         const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
 
+        function getTextContentSafely(element) {
+            return element && element.textContent ? element.textContent : '0';
+        }
+
         // Function to remove user card
         function removeUserCard(card) {
             if (confirm('Are you sure you want to remove this user?')) {
