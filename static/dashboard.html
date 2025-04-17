@@ -240,16 +240,34 @@
             }, 50);
             initializeChart(document.querySelector('.dashboard-content'));
         });
-    // Sort icons functionality
+        // Sort icons functionality
         document.querySelectorAll('.sort-icon').forEach(icon => {
             icon.addEventListener('click', function() {
-                // Remove active class from all icons
                 document.querySelectorAll('.sort-icon').forEach(i => i.classList.remove('active'));
-                // Add active class to clicked icon
                 this.classList.add('active');
-                // Handle sorting based on data-sort attribute
                 const sortType = this.getAttribute('data-sort');
-                // Your existing sorting logic here
+
+                const container = document.getElementById('user-cards-container');
+                const cards = Array.from(container.getElementsByClassName('dashboard-content')).slice(1);
+
+                cards.sort((a, b) => {
+                    if (sortType === 'alpha') {
+                        const nameA = a.querySelector('.user-name').textContent;
+                        const nameB = b.querySelector('.user-name').textContent;
+                        return nameA.localeCompare(nameB);
+                    } else {
+                        const usageA = parseInt(a.querySelector('.usage-amount').textContent);
+                        const usageB = parseInt(b.querySelector('.usage-amount').textContent);
+                        return sortType === 'asc' ? usageA - usageB : usageB - usageA;
+                    }
+                });
+
+                const firstCard = container.firstElementChild;
+                const sortContainer = container.querySelector('.sort-container');
+                container.innerHTML = '';
+                container.appendChild(firstCard);
+                container.appendChild(sortContainer);
+                cards.forEach(card => container.appendChild(card));
             });
         });
     </script>
