@@ -100,11 +100,22 @@ body {
 
 .carousel-item {
     transition: transform 0.6s ease-in-out;
-    position: relative;
-    float: left;
+    position: absolute;
+    left: 0;
+    top: 0;
     width: 100%;
-    margin-right: -100%;
-    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translateX(0);
+    opacity: 0;
+    visibility: hidden;
+}
+
+.carousel-item.active {
+    position: relative;
+    opacity: 1;
+    visibility: visible;
 }
 
 .carousel-inner {
@@ -112,6 +123,15 @@ body {
     width: 100%;
     overflow: hidden;
     padding-bottom: 50px;
+    min-height: 200px;
+}
+
+.carousel-item-next:not(.carousel-item-start) {
+    transform: translateX(100%);
+}
+
+.carousel-item-prev:not(.carousel-item-end) {
+    transform: translateX(-100%);
 }
 
 
