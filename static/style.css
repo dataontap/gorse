@@ -415,28 +415,62 @@ body {
     background-color: #1a1a1a;
     clip-path: polygon(100% 0, 100% 100%, 100% 100%, 100% 0);
     transition: clip-path 0.5s ease-out;
+    box-shadow: -10px 0 15px rgba(0,0,0,0.3);
+    filter: brightness(0.8);
 }
 
 .dot-indicator.peeling::before {
-    clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
+    clip-path: polygon(45% 0, 100% 0, 100% 100%, 55% 100%);
+    filter: brightness(0.7);
 }
 
-.hidden-message {
+.door-sign {
     position: absolute;
-    right: 10%;
+    right: 15%;
     top: 50%;
     transform: translateY(-50%);
-    color: #FFF371;
-    font-size: 14px;
-    text-align: right;
+    font-size: 24px;
+    color: #1a1a1a;
     opacity: 0;
     transition: opacity 0.3s ease-in;
-    z-index: 2;
-    pointer-events: none;
-    width: 40%;
+    animation: doorPulse 2s infinite;
 }
 
-.dot-indicator.peeling .hidden-message {
+@keyframes doorPulse {
+    0% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.2); }
+    100% { transform: translateY(-50%) scale(1); }
+}
+
+.dot-indicator.peeling .door-sign {
+    opacity: 1;
+}
+
+.network-callout {
+    position: absolute;
+    right: -120px;
+    top: 20px;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.network-callout::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 10px;
+    border-style: solid;
+    border-color: transparent white transparent transparent;
+}
+
+.dot-indicator.peeling .network-callout {
     opacity: 1;
 }
 
