@@ -64,12 +64,11 @@
                         </select>
                     </div>
                     <div class="sort-group">
-                        <label>Sort by</label>
-                        <select id="sortUsage" class="sort-select" style="display: none;">
-                            <option value="none">Sort by</option>
-                            <option value="asc">Lowest to Highest</option>
-                            <option value="desc">Highest to Lowest</option>
-                        </select>
+                        <div class="sort-icons">
+                            <i class="fas fa-sort-alpha-down sort-icon" data-sort="alpha" title="Sort by A-Z"></i>
+                            <i class="fas fa-sort-amount-down sort-icon" data-sort="asc" title="Lowest to Highest"></i>
+                            <i class="fas fa-sort-amount-up sort-icon" data-sort="desc" title="Highest to Lowest"></i>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -240,6 +239,18 @@
                 initializeChart(newCard);
             }, 50);
             initializeChart(document.querySelector('.dashboard-content'));
+        });
+    // Sort icons functionality
+        document.querySelectorAll('.sort-icon').forEach(icon => {
+            icon.addEventListener('click', function() {
+                // Remove active class from all icons
+                document.querySelectorAll('.sort-icon').forEach(i => i.classList.remove('active'));
+                // Add active class to clicked icon
+                this.classList.add('active');
+                // Handle sorting based on data-sort attribute
+                const sortType = this.getAttribute('data-sort');
+                // Your existing sorting logic here
+            });
         });
     </script>
 </body>
