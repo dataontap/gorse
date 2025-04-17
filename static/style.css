@@ -401,9 +401,14 @@ body {
 }
 
 .insights-card {
-    padding: 20px;
+    padding: 15px;
     display: flex;
     flex-direction: column;
+}
+
+.usage-chart {
+    margin-top: 15px;
+    transition: all 0.3s ease;
 }
 
 .section-header {
