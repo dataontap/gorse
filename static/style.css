@@ -395,6 +395,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: transform 0.3s ease-out;
+}
+
+.dot-indicator.pulse {
+    transform: scale(1.1);
 }
 
 .dot-content {
