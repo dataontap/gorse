@@ -353,8 +353,8 @@ body {
 }
 
 .dot-indicator {
-    width: 67.5vw;
-    height: 67.5vw;
+    width: 75vw;
+    height: 75vw;
     background: #FFF371;
     border-radius: 50%;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
@@ -365,16 +365,22 @@ body {
 
 .dot-content {
     text-align: center;
+    width: 100%;
+    padding: 0 20px;
 }
 
 .data-amount {
-    font-size: 48px;
+    font-size: 56px;
     font-weight: bold;
     color: #666666;
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 8px;
 }
 
 .data-amount span {
-    margin: 0 5px;
+    font-size: 42px;
 }
 
 .dashboard-content {
