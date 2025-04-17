@@ -442,6 +442,13 @@ body {
     font-size: 16px;
 }
 
+.sort-controls {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
 .add-user-link:hover {
     color: #333;
     text-decoration: none;
