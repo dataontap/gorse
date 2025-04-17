@@ -55,7 +55,7 @@
             </div>
         <div class="sort-container">
                 <h2 class="authorized-users-title"><i class="fas fa-users"></i> Users</h2>
-                <select id="sortUsage" class="sort-select">
+                <select id="sortUsage" class="sort-select" style="display: none;">
                     <option value="none">Sort by</option>
                     <option value="asc">Lowest to Highest</option>
                     <option value="desc">Highest to Lowest</option>
@@ -185,6 +185,10 @@
 
         document.getElementById('addUserBtn').addEventListener('click', function(e) {
             e.preventDefault();
+            const userCards = Array.from(document.getElementsByClassName('dashboard-content')).slice(1);
+            if (userCards.length >= 1) {
+                document.getElementById('sortUsage').style.display = 'inline-block';
+            }
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
             const usage = Math.floor(Math.random() * 100);
