@@ -268,7 +268,7 @@
                 removeIcon.addEventListener('click', () => removeUserCard(newCard));
             }
 
-            document.getElementById('user-cards-container').appendChild(newCard);
+            document.querySelector('.container').appendChild(newCard);
 
             setTimeout(() => {
                 newCard.classList.add('visible');
