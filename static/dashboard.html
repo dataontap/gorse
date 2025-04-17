@@ -122,38 +122,37 @@
         const dotIndicator = document.querySelector('.dot-indicator');
         let pressTimer;
 
+        let isPeeling = false;
+        
+        function startPeeling() {
+            if (!isPeeling) {
+                isPeeling = true;
+                dotIndicator.classList.add('peeling');
+            }
+        }
+
+        function stopPeeling() {
+            if (isPeeling) {
+                isPeeling = false;
+                dotIndicator.classList.remove('peeling');
+            }
+        }
+
+        dotIndicator.addEventListener('click', () => {
+            if (isPeeling) {
+                stopPeeling();
+            } else {
+                startPeeling();
+            }
+        });
+
+        // Keep the long press functionality as an alternative
         dotIndicator.addEventListener('touchstart', (e) => {
-            pressTimer = setTimeout(() => {
-                dotIndicator.classList.add('peeling');
-            }, 3000);
+            pressTimer = setTimeout(startPeeling, 3000);
         });
 
-        dotIndicator.addEventListener('touchend', () => {
-            clearTimeout(pressTimer);
-            dotIndicator.classList.remove('peeling');
-        });
-
-        dotIndicator.addEventListener('touchcancel', () => {
-            clearTimeout(pressTimer);
-            dotIndicator.classList.remove('peeling');
-        });
-
-        // Mouse events for desktop testing
-        dotIndicator.addEventListener('mousedown', () => {
-            pressTimer = setTimeout(() => {
-                dotIndicator.classList.add('peeling');
-            }, 3000);
-        });
-
-        dotIndicator.addEventListener('mouseup', () => {
-            clearTimeout(pressTimer);
-            dotIndicator.classList.remove('peeling');
-        });
-
-        dotIndicator.addEventListener('mouseleave', () => {
-            clearTimeout(pressTimer);
-            dotIndicator.classList.remove('peeling');
-        });
+        dotIndicator.addEventListener('touchend', stopPeeling);
+        dotIndicator.addEventListener('touchcancel', stopPeeling);
 
         function toggleChart(event) {
             event.preventDefault();
