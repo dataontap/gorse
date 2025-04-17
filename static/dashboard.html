@@ -79,7 +79,10 @@
             </div>
         </div>
         <div class="sort-container">
-            <h2 class="authorized-users-title"><i class="fas fa-users"></i> Users</h2>
+            <h2 class="authorized-users-title">
+                <i class="fas fa-users"></i> Users
+                <span class="user-count">0</span>
+            </h2>
             <div class="sort-controls">
                 <div class="sort-group">
                     <label>Data Usage</label>
@@ -188,12 +191,18 @@
 
         // Function to remove user card
         // Initialize sort controls visibility
+        function updateUserCount() {
+            const userCards = Array.from(document.getElementsByClassName('user-card'));
+            document.querySelector('.user-count').textContent = userCards.length;
+        }
+
         function updateSortControlsVisibility() {
             const userCards = Array.from(document.getElementsByClassName('dashboard-content')).slice(1);
             const sortControls = document.querySelector('.sort-controls');
             const sortUsage = document.getElementById('sortUsage');
             sortControls.style.display = userCards.length > 1 ? 'flex' : 'none';
             sortUsage.style.display = userCards.length > 1 ? 'block' : 'none';
+            updateUserCount();
         }
 
         // Call immediately to set initial state

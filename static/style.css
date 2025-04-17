@@ -579,6 +579,19 @@ body {
     font-size: 24px;
     color: #333;
     margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-count {
+    background: rgba(102, 102, 102, 0.2);
+    color: #666;
+    font-size: 16px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    min-width: 24px;
+    text-align: center;
 }
 
 .sort-container {
