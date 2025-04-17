@@ -179,7 +179,13 @@
                 card.classList.remove('visible');
                 setTimeout(() => {
                     card.remove();
-                    updateSortControlsVisibility();
+                    const userCards = Array.from(document.getElementsByClassName('dashboard-content')).slice(1);
+                    const sortControls = document.querySelector('.sort-controls');
+                    const sortUsage = document.getElementById('sortUsage');
+                    if (userCards.length < 2) {
+                        sortControls.style.display = 'none';
+                        sortUsage.style.display = 'none';
+                    }
                 }, 300);
             }
         }
@@ -238,12 +244,17 @@
             }
 
             document.getElementById('user-cards-container').appendChild(newCard);
+            
             setTimeout(() => {
                 newCard.classList.add('visible');
-                initializeChart(newCard);
+                const userCards = Array.from(document.getElementsByClassName('dashboard-content')).slice(1);
+                if (userCards.length >= 2) {
+                    const sortControls = document.querySelector('.sort-controls');
+                    const sortUsage = document.getElementById('sortUsage');
+                    sortControls.style.display = 'flex';
+                    sortUsage.style.display = 'block';
+                }
             }, 50);
-            initializeChart(document.querySelector('.dashboard-content'));
-            updateSortControlsVisibility();
         });
     </script>
 </body>
