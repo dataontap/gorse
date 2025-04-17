@@ -87,7 +87,7 @@ body {
 }
 
 .carousel-indicators {
-    bottom: 20px;
+    bottom: -30px;
 }
 
 .carousel-indicators [data-bs-target] {
@@ -96,6 +96,10 @@ body {
     border-radius: 50%;
     background-color: #666;
     margin: 0 5px;
+}
+
+.carousel-item {
+    transition: transform 0.9s ease-in-out;
 }
 
 .carousel-control-prev,
