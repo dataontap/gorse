@@ -34,43 +34,68 @@
                     <div class="status"><i class="fas fa-globe"></i> Global</div>
                 </div>
             </div>
+        </div>
+        <div id="promotionsCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <h3>Global Data Package</h3>
+                    <p>Add 10GB global data</p>
+                    <p><strong>$10</strong></p>
+                    <button class="btn btn-primary" onclick="addGlobalData()">Buy</button>
+                </div>
+                <div class="carousel-item">
+                    <h3>Secure Network</h3>
+                    <p>Annual secure network subscription</p>
+                    <p><strong>$50/year</strong></p>
+                    <button class="btn btn-primary">Buy</button>
+                </div>
+                <div class="carousel-item">
+                    <h3>New User Bundle</h3>
+                    <p>eSIM + 1 year service</p>
+                    <p><strong>$61</strong></p>
+                    <button class="btn btn-primary" onclick="document.getElementById('addUserBtn').click()">Get Started</button>
+                </div>
             </div>
-        <div id="user-cards-container">
-            <div class="section-header">
-                <h2><i class="fas fa-chart-line"></i> Insights</h2>
+            <div class="carousel-indicators">
+                <button type="button" data-bs-target="#promotionsCarousel" data-bs-slide-to="0" class="active"></button>
+                <button type="button" data-bs-target="#promotionsCarousel" data-bs-slide-to="1"></button>
+                <button type="button" data-bs-target="#promotionsCarousel" data-bs-slide-to="2"></button>
             </div>
-            <div class="dashboard-content">
-                <div class="insights-card">
-                    <div class="data-usage">
-                        <div class="usage-header">
-                            <div class="usage-label"><i class="fas fa-exclamation-triangle"></i> Usage Trend Alert</div>
-                            <div class="insight-message">Jenny's data usage increased by 45% this week. <a href="#" class="insight-link" onclick="toggleChart(event)">See details</a></div>
-                        </div>
-                        <div class="usage-chart" style="display: none;">
-                            <canvas id="usageChart"></canvas>
-                        </div>
+        </div>
+        <div class="section-header">
+            <h2><i class="fas fa-chart-line"></i> Insights</h2>
+        </div>
+        <div class="dashboard-content">
+            <div class="insights-card">
+                <div class="data-usage">
+                    <div class="usage-header">
+                        <div class="usage-label"><i class="fas fa-exclamation-triangle"></i> Usage Trend Alert</div>
+                        <div class="insight-message">Jenny's data usage increased by 45% this week. <a href="#" class="insight-link" onclick="toggleChart(event)">See details</a></div>
+                    </div>
+                    <div class="usage-chart" style="display: none;">
+                        <canvas id="usageChart"></canvas>
                     </div>
                 </div>
             </div>
+        </div>
         <div class="sort-container">
-                <h2 class="authorized-users-title"><i class="fas fa-users"></i> Users</h2>
-                <div class="sort-controls">
-                    <div class="sort-group">
-                        <label>Data Usage</label>
-                        <select class="sort-select">
-                            <option value="percentage">Percentage</option>
-                            <option value="dollars">Dollars</option>
-                            <option value="screentime">Screentime</option>
-                        </select>
-                    </div>
-                    <div class="sort-group">
-                        <label>Sort by</label>
-                        <select id="sortUsage" class="sort-select" style="display: none;">
-                            <option value="none">Sort by</option>
-                            <option value="asc">Lowest to Highest</option>
-                            <option value="desc">Highest to Lowest</option>
-                        </select>
-                    </div>
+            <h2 class="authorized-users-title"><i class="fas fa-users"></i> Users</h2>
+            <div class="sort-controls">
+                <div class="sort-group">
+                    <label>Data Usage</label>
+                    <select class="sort-select">
+                        <option value="percentage">Percentage</option>
+                        <option value="dollars">Dollars</option>
+                        <option value="screentime">Screentime</option>
+                    </select>
+                </div>
+                <div class="sort-group">
+                    <label>Sort by</label>
+                    <select id="sortUsage" class="sort-select" style="display: none;">
+                        <option value="none">Sort by</option>
+                        <option value="asc">Lowest to Highest</option>
+                        <option value="desc">Highest to Lowest</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -170,7 +195,7 @@
             sortControls.style.display = userCards.length > 1 ? 'flex' : 'none';
             sortUsage.style.display = userCards.length > 1 ? 'block' : 'none';
         }
-        
+
         // Call immediately to set initial state
         document.addEventListener('DOMContentLoaded', updateSortControlsVisibility);
 
@@ -244,7 +269,7 @@
             }
 
             document.getElementById('user-cards-container').appendChild(newCard);
-            
+
             setTimeout(() => {
                 newCard.classList.add('visible');
                 const userCards = Array.from(document.getElementsByClassName('dashboard-content')).slice(1);
@@ -256,6 +281,12 @@
                 }
             }, 50);
         });
+
+        function addGlobalData() {
+            let currentData = parseFloat(document.querySelector('.data-amount').textContent);
+            currentData += 10;
+            document.querySelector('.data-amount').textContent = currentData.toFixed(1);
+        }
     </script>
 </body>
 </html>
