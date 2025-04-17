@@ -162,11 +162,17 @@
         const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
 
         // Function to remove user card
+        // Initialize sort controls visibility
         function updateSortControlsVisibility() {
             const userCards = Array.from(document.getElementsByClassName('dashboard-content')).slice(1);
             const sortControls = document.querySelector('.sort-controls');
+            const sortUsage = document.getElementById('sortUsage');
             sortControls.style.display = userCards.length > 1 ? 'flex' : 'none';
+            sortUsage.style.display = userCards.length > 1 ? 'block' : 'none';
         }
+        
+        // Call immediately to set initial state
+        document.addEventListener('DOMContentLoaded', updateSortControlsVisibility);
 
         function removeUserCard(card) {
             if (confirm('Are you sure you want to remove this user?')) {
