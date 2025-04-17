@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -80,7 +79,7 @@
             event.preventDefault();
             const chartDiv = document.querySelector('.usage-chart');
             const link = event.target;
-            
+
             if (chartDiv.style.display === 'none') {
                 chartDiv.style.display = 'block';
                 link.textContent = 'Hide details';
@@ -102,9 +101,9 @@
                 date.setDate(date.getDate() - i);
                 return date.toLocaleDateString();
             }).reverse();
-            
+
             const data = Array.from({length: 30}, () => Math.floor(Math.random() * 100));
-            
+
             return new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -148,7 +147,7 @@
 
         const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
         const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
-        
+
         // Function to remove user card
         function removeUserCard(card) {
             if (confirm('Are you sure you want to remove this user?')) {
@@ -164,21 +163,21 @@
             const container = document.getElementById('user-cards-container');
             const sortContainer = container.querySelector('.sort-container');
             const cards = Array.from(container.getElementsByClassName('dashboard-content')).slice(1); // Skip insights card
-            
+
             if (e.target.value === 'none') return;
-            
+
             cards.sort((a, b) => {
                 const usageA = parseInt(a.querySelector('.usage-amount')?.textContent || '0');
                 const usageB = parseInt(b.querySelector('.usage-amount')?.textContent || '0');
                 return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
             });
-            
+
             // Clear container except first card (insights) and sort container
             const firstCard = container.firstElementChild;
             container.innerHTML = '';
             container.appendChild(firstCard);
             container.appendChild(sortContainer);
-            
+
             // Add sorted cards
             cards.forEach(card => container.appendChild(card));
         });
@@ -192,7 +191,7 @@
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
             const usage = Math.floor(Math.random() * 100);
-            
+
             const newCard = document.createElement('div');
             newCard.className = 'dashboard-content slide-in user-card';
             newCard.innerHTML = `
@@ -204,9 +203,9 @@
                         </div>
                         ${firstName !== 'John' ? '<i class="fas fa-times remove-icon"></i>' : ''}
                     </div>
-                    <div class="data-usage">
+                    <div class="data-usage" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="usage-label">Data Usage</div>
-                        <div class="usage-amount">${usage}%</div>
+                        <div class="usage-amount" style="margin-left: 15px;">${usage}%</div>
                     </div>
                 </div>
             `;
@@ -215,7 +214,7 @@
                 const removeIcon = newCard.querySelector('.remove-icon');
                 removeIcon.addEventListener('click', () => removeUserCard(newCard));
             }
-            
+
             document.getElementById('user-cards-container').appendChild(newCard);
             setTimeout(() => {
                 newCard.classList.add('visible');
