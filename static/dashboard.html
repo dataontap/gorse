@@ -285,7 +285,7 @@
         function addGlobalData() {
             let currentData = parseFloat(document.querySelector('.data-amount').textContent);
             currentData += 10;
-            document.querySelector('.data-amount').textContent = currentData.toFixed(1);
+            document.querySelector('.data-amount').innerHTML = `${currentData.toFixed(1)}<span>GB</span>`;
         }
     </script>
 </body>
