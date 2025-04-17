@@ -101,14 +101,30 @@ body {
 .carousel-item {
     transition: transform 0.6s ease-in-out;
     position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .carousel-item.active {
     position: relative;
-    transform: translateX(0);
+}
+
+.carousel-inner {
+    position: relative;
+    overflow: hidden;
+    height: 180px;
+}
+
+.carousel-item-next:not(.carousel-item-start),
+.active.carousel-item-end {
+    transform: translateX(100%);
+}
+
+.carousel-item-prev:not(.carousel-item-end),
+.active.carousel-item-start {
+    transform: translateX(-100%);
 }
 
 .carousel-item-next:not(.carousel-item-start),
