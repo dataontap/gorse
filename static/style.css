@@ -99,7 +99,24 @@ body {
 }
 
 .carousel-item {
-    transition: transform 0.9s ease-in-out;
+    transition: transform 9s ease-in-out !important;
+}
+
+.carousel-item.active,
+.carousel-item-next,
+.carousel-item-prev {
+    display: block;
+    transform: translateX(0);
+}
+
+.carousel-item-next:not(.carousel-item-start),
+.active.carousel-item-end {
+    transform: translateX(100%);
+}
+
+.carousel-item-prev:not(.carousel-item-end),
+.active.carousel-item-start {
+    transform: translateX(-100%);
 }
 
 .carousel-control-prev,
