@@ -173,10 +173,14 @@
                 return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
             });
             
-            // Clear container except first card (insights) and sort container
-            const firstCard = container.firstElementChild;
+            // Get all important elements
+            const insightsCard = container.querySelector('.dashboard-content:first-of-type');
+            
+            // Clear container
             container.innerHTML = '';
-            container.appendChild(firstCard);
+            
+            // Restore insights card and sort container
+            container.appendChild(insightsCard);
             container.appendChild(sortContainer);
             
             // Add sorted cards
