@@ -191,9 +191,10 @@
 
         // Function to remove user card
         // Initialize sort controls visibility
-        function updateUserCount() {
-            const userCards = Array.from(document.getElementsByClassName('user-card'));
-            document.querySelector('.user-count').textContent = userCards.length;
+        function updateUserCount(change = 0) {
+            const countElement = document.querySelector('.user-count');
+            const currentCount = parseInt(countElement.textContent) || 0;
+            countElement.textContent = currentCount + change;
         }
 
         function updateSortControlsVisibility() {
@@ -220,6 +221,7 @@
                         sortControls.style.display = 'none';
                         sortUsage.style.display = 'none';
                     }
+                    updateUserCount(-1);
                 }, 300);
             }
         }
@@ -240,7 +242,7 @@
 
             // Remove all user cards
             cards.forEach(card => card.remove());
-            
+
             // Add sorted cards back before the Add User container
             const addUserContainer = document.querySelector('.add-user-container');
             cards.forEach(card => {
@@ -289,6 +291,7 @@
                     sortControls.style.display = 'flex';
                     sortUsage.style.display = 'block';
                 }
+                updateUserCount(1);
             }, 50);
         });
 
@@ -296,7 +299,7 @@
             let currentData = parseFloat(document.querySelector('.data-amount').textContent);
             currentData += 10;
             document.querySelector('.data-amount').innerHTML = `${currentData.toFixed(1)}<span>GB</span>`;
-            
+
             const dotIndicator = document.querySelector('.dot-indicator');
             dotIndicator.classList.add('pulse');
             setTimeout(() => {
