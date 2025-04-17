@@ -64,11 +64,12 @@
                         </select>
                     </div>
                     <div class="sort-group">
-                        <div class="sort-icons">
-                            <span class="sort-icon" data-sort="alpha" title="Sort by A-Z" style="font-weight: bold;">A</span>
-                            <i class="fas fa-sort-amount-down sort-icon" data-sort="asc" title="Lowest to Highest"></i>
-                            <i class="fas fa-sort-amount-up sort-icon" data-sort="desc" title="Highest to Lowest"></i>
-                        </div>
+                        <label>Sort by</label>
+                        <select id="sortUsage" class="sort-select" style="display: none;">
+                            <option value="none">Sort by</option>
+                            <option value="asc">Lowest to Highest</option>
+                            <option value="desc">Highest to Lowest</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -145,9 +146,7 @@
         window.onscroll = function() {
             const backToTop = document.querySelector('.back-to-top');
             const screenHeight = window.innerHeight * 1.5;
-            const scrollPosition = window.scrollY || document.documentElement.scrollTop;
-            
-            if (scrollPosition > screenHeight) {
+            if (document.body.scrollTop > screenHeight || document.documentElement.scrollTop > screenHeight) {
                 backToTop.style.display = "block";
             } else {
                 backToTop.style.display = "none";
@@ -157,11 +156,6 @@
         document.getElementById('backToTop').addEventListener('click', function(e) {
             e.preventDefault();
             window.scrollTo({top: 0, behavior: 'smooth'});
-        });
-
-        document.getElementById('addUserBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
         });
 
         const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
@@ -201,10 +195,18 @@
             cards.forEach(card => container.appendChild(card));
         });
 
-        document.querySelector('.add-user-link').addEventListener('click', function(e) {
+        document.getElementById('addUserBtn').addEventListener('click', function(e) {
             e.preventDefault();
-            e.stopPropagation();
-            
+            const userCards = Array.from(document.getElementsByClassName('dashboard-content')).slice(1);
+            const sortSelect = document.getElementById('sortUsage');
+            const sortLabel = sortSelect.previousElementSibling;
+            if (userCards.length >= 1) {
+                sortSelect.style.display = 'inline-block';
+                sortLabel.style.display = 'inline-block';
+            } else {
+                sortSelect.style.display = 'none';
+                sortLabel.style.display = 'none';
+            }
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
             const usage = Math.floor(Math.random() * 100);
@@ -232,41 +234,12 @@
                 removeIcon.addEventListener('click', () => removeUserCard(newCard));
             }
 
-            const container = document.getElementById('user-cards-container');
-            container.appendChild(newCard);
+            document.getElementById('user-cards-container').appendChild(newCard);
             setTimeout(() => {
                 newCard.classList.add('visible');
+                initializeChart(newCard);
             }, 50);
-        });
-        // Sort icons functionality
-        document.querySelectorAll('.sort-icon').forEach(icon => {
-            icon.addEventListener('click', function() {
-                document.querySelectorAll('.sort-icon').forEach(i => i.classList.remove('active'));
-                this.classList.add('active');
-                const sortType = this.getAttribute('data-sort');
-
-                const container = document.getElementById('user-cards-container');
-                const cards = Array.from(container.getElementsByClassName('dashboard-content')).slice(1);
-
-                cards.sort((a, b) => {
-                    if (sortType === 'alpha') {
-                        const nameA = a.querySelector('.user-name').textContent;
-                        const nameB = b.querySelector('.user-name').textContent;
-                        return nameA.localeCompare(nameB);
-                    } else {
-                        const usageA = parseInt(a.querySelector('.usage-amount').textContent);
-                        const usageB = parseInt(b.querySelector('.usage-amount').textContent);
-                        return sortType === 'asc' ? usageA - usageB : usageB - usageA;
-                    }
-                });
-
-                const firstCard = container.firstElementChild;
-                const sortContainer = container.querySelector('.sort-container');
-                container.innerHTML = '';
-                container.appendChild(firstCard);
-                container.appendChild(sortContainer);
-                cards.forEach(card => container.appendChild(card));
-            });
+            initializeChart(document.querySelector('.dashboard-content'));
         });
     </script>
 </body>
