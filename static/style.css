@@ -99,13 +99,15 @@ body {
 }
 
 .carousel-item {
-    transition: transform 9s ease-in-out !important;
+    transition: transform 0.6s ease-in-out;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
 }
 
-.carousel-item.active,
-.carousel-item-next,
-.carousel-item-prev {
-    display: block;
+.carousel-item.active {
+    position: relative;
     transform: translateX(0);
 }
 
@@ -419,7 +421,7 @@ body {
 }
 
 .insights-card {
-    padding: 10px;
+    padding: 30px;
     display: flex;
     flex-direction: column;
 }
