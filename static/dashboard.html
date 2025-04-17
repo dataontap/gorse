@@ -198,8 +198,14 @@
         document.getElementById('addUserBtn').addEventListener('click', function(e) {
             e.preventDefault();
             const userCards = Array.from(document.getElementsByClassName('dashboard-content')).slice(1);
+            const sortSelect = document.getElementById('sortUsage');
+            const sortLabel = sortSelect.previousElementSibling;
             if (userCards.length >= 1) {
-                document.getElementById('sortUsage').style.display = 'inline-block';
+                sortSelect.style.display = 'inline-block';
+                sortLabel.style.display = 'inline-block';
+            } else {
+                sortSelect.style.display = 'none';
+                sortLabel.style.display = 'none';
             }
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
