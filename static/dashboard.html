@@ -256,6 +256,7 @@
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
             const usage = Math.floor(Math.random() * 100);
 
+            const timestamp = new Date().toLocaleString();
             const newCard = document.createElement('div');
             newCard.className = 'dashboard-content slide-in user-card';
             newCard.innerHTML = `
@@ -264,8 +265,12 @@
                         <div class="user-info-header">
                             <span class="user-name">${firstName} ${lastName}</span>
                             <span class="user-email">${firstName.toLowerCase()}@example.com</span>
+                            <span class="timestamp">${timestamp}</span>
                         </div>
-                        ${firstName !== 'John' ? '<i class="fas fa-times remove-icon"></i>' : ''}
+                        <div class="card-actions">
+                            <i class="fas fa-pause pause-play-icon" onclick="togglePausePlay(this)"></i>
+                            ${firstName !== 'John' ? '<i class="fas fa-times remove-icon"></i>' : ''}
+                        </div>
                     </div>
                     <div class="data-usage" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="usage-label">Data Usage</div>
@@ -294,6 +299,16 @@
                 updateUserCount(1);
             }, 50);
         });
+
+        function togglePausePlay(icon) {
+            if (icon.classList.contains('fa-pause')) {
+                icon.classList.remove('fa-pause');
+                icon.classList.add('fa-play');
+            } else {
+                icon.classList.remove('fa-play');
+                icon.classList.add('fa-pause');
+            }
+        }
 
         function addGlobalData() {
             let currentData = parseFloat(document.querySelector('.data-amount').textContent);
