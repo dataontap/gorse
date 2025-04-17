@@ -461,13 +461,13 @@ body {
 }
 
 .insights-card {
-    padding: 30px;
+    padding: 15px;
     display: flex;
     flex-direction: column;
 }
 
 .usage-chart {
-    margin-top: 15px;
+    margin-top: 10px;
     transition: all 0.3s ease;
 }
 
@@ -530,7 +530,7 @@ body {
 }
 
 .usage-label {
-    font-size: 16px;
+    font-size: 14px;
     color: #333;
     font-weight: 600;
     display: flex;
@@ -539,7 +539,7 @@ body {
     background: rgba(255, 243, 113, 0.3);
     padding: 8px 12px;
     border-radius: 6px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .usage-label i {
