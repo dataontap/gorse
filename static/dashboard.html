@@ -201,7 +201,7 @@
             cards.forEach(card => container.appendChild(card));
         });
 
-        document.getElementById('addUserBtn').addEventListener('click', function(e) {
+        document.querySelector('.add-user-link').addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
@@ -232,7 +232,8 @@
                 removeIcon.addEventListener('click', () => removeUserCard(newCard));
             }
 
-            document.getElementById('user-cards-container').appendChild(newCard);
+            const container = document.getElementById('user-cards-container');
+            container.appendChild(newCard);
             setTimeout(() => {
                 newCard.classList.add('visible');
             }, 50);
