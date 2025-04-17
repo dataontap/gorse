@@ -136,7 +136,12 @@
 
         // Initialize usage chart
         function initializeChart(element) {
-            const ctx = element.querySelector('#usageChart').getContext('2d');
+            const canvas = element.querySelector('#usageChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            
             const dates = Array.from({length: 30}, (_, i) => {
                 const date = new Date();
                 date.setDate(date.getDate() - i);
