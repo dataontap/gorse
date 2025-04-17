@@ -217,9 +217,9 @@
 
         // Sort users by usage
         document.getElementById('sortUsage').addEventListener('change', function(e) {
-            const container = document.getElementById('user-cards-container');
-            const sortContainer = container.querySelector('.sort-container');
-            const cards = Array.from(container.getElementsByClassName('dashboard-content')).slice(1); // Skip insights card
+            const container = document.querySelector('.container');
+            const sortContainer = document.querySelector('.sort-container');
+            const cards = Array.from(document.getElementsByClassName('user-card'));
 
             if (e.target.value === 'none') return;
 
@@ -229,14 +229,14 @@
                 return e.target.value === 'asc' ? usageA - usageB : usageB - usageA;
             });
 
-            // Clear container except first card (insights) and sort container
-            const firstCard = container.firstElementChild;
-            container.innerHTML = '';
-            container.appendChild(firstCard);
-            container.appendChild(sortContainer);
-
-            // Add sorted cards
-            cards.forEach(card => container.appendChild(card));
+            // Remove all user cards
+            cards.forEach(card => card.remove());
+            
+            // Add sorted cards back before the Add User container
+            const addUserContainer = document.querySelector('.add-user-container');
+            cards.forEach(card => {
+                container.insertBefore(card, addUserContainer);
+            });
         });
 
         document.getElementById('addUserBtn').addEventListener('click', function(e) {
@@ -268,11 +268,12 @@
                 removeIcon.addEventListener('click', () => removeUserCard(newCard));
             }
 
-            document.querySelector('.container').appendChild(newCard);
+            const addUserContainer = document.querySelector('.add-user-container');
+            document.querySelector('.container').insertBefore(newCard, addUserContainer);
 
             setTimeout(() => {
                 newCard.classList.add('visible');
-                const userCards = Array.from(document.getElementsByClassName('dashboard-content')).slice(1);
+                const userCards = Array.from(document.getElementsByClassName('user-card'));
                 if (userCards.length >= 2) {
                     const sortControls = document.querySelector('.sort-controls');
                     const sortUsage = document.getElementById('sortUsage');
