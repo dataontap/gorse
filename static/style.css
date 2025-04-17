@@ -517,13 +517,32 @@ body {
     background: transparent;
 }
 
+.sort-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.sort-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sort-group label {
+    color: #333;
+    font-size: 14px;
+}
+
 .sort-select {
     padding: 8px 12px;
     border-radius: 4px;
     border: 1px solid #ddd;
-    background: white;
+    background: #CCCCFF;
     font-size: 14px;
     min-width: 150px;
+    color: #333;
 }
 
 .usage-chart {

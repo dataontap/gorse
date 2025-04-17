@@ -54,11 +54,22 @@
             </div>
         <div class="sort-container">
                 <h2 class="authorized-users-title"><i class="fas fa-users"></i> Users</h2>
-                <select id="sortUsage" class="sort-select" style="display: none;">
-                    <option value="none">Sort by</option>
-                    <option value="asc">Lowest to Highest</option>
-                    <option value="desc">Highest to Lowest</option>
-                </select>
+                <div class="sort-controls">
+                    <div class="sort-group">
+                        <label>Data Usage Share</label>
+                        <select class="sort-select">
+                            <option value="percentage">Percentage</option>
+                        </select>
+                    </div>
+                    <div class="sort-group">
+                        <label>Sort by</label>
+                        <select id="sortUsage" class="sort-select" style="display: none;">
+                            <option value="none">Sort by</option>
+                            <option value="asc">Lowest to Highest</option>
+                            <option value="desc">Highest to Lowest</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="back-to-top">
