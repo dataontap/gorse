@@ -162,11 +162,18 @@
         const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
 
         // Function to remove user card
+        function updateSortControlsVisibility() {
+            const userCards = Array.from(document.getElementsByClassName('dashboard-content')).slice(1);
+            const sortControls = document.querySelector('.sort-controls');
+            sortControls.style.display = userCards.length > 1 ? 'flex' : 'none';
+        }
+
         function removeUserCard(card) {
             if (confirm('Are you sure you want to remove this user?')) {
                 card.classList.remove('visible');
                 setTimeout(() => {
                     card.remove();
+                    updateSortControlsVisibility();
                 }, 300);
             }
         }
@@ -197,14 +204,6 @@
 
         document.getElementById('addUserBtn').addEventListener('click', function(e) {
             e.preventDefault();
-            const userCards = Array.from(document.getElementsByClassName('dashboard-content')).slice(1);
-            const sortSelect = document.getElementById('sortUsage');
-            const sortControls = document.querySelector('.sort-controls');
-            if (userCards.length > 1) {
-                sortControls.style.display = 'flex';
-            } else {
-                sortControls.style.display = 'none';
-            }
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
             const usage = Math.floor(Math.random() * 100);
@@ -236,6 +235,7 @@
             setTimeout(() => {
                 newCard.classList.add('visible');
                 initializeChart(newCard);
+                updateSortControlsVisibility();
             }, 50);
             initializeChart(document.querySelector('.dashboard-content'));
         });
