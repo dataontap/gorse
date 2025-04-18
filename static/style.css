@@ -554,7 +554,7 @@ body {
 }
 
 .insights-card {
-    padding: 15px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
 }
