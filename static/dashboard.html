@@ -5,6 +5,26 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
+    <style>
+        .esim-info {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+
+        .esim-icon:hover + .esim-info {
+            display: block;
+        }
+
+        .name-with-esim {
+            position: relative;
+            display: inline-block;
+        }
+    </style>
 </head>
 <body class="dashboard-body">
     <div class="top-bar">
@@ -117,6 +137,27 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        function generateIMEI() {
+            let imei = '';
+            for (let i = 0; i < 20; i++) {
+                imei += Math.floor(Math.random() * 10);
+            }
+            return imei;
+        }
+
+        function generateDevice() {
+            const makes = ['Apple', 'Samsung', 'Google', 'OnePlus'];
+            const models = ['iPhone 14', 'Galaxy S23', 'Pixel 7', 'OnePlus 11'];
+            const make = makes[Math.floor(Math.random() * makes.length)];
+            const model = models[Math.floor(Math.random() * models.length)];
+            return `${make} ${model}`;
+        }
+
+        function showEsimInfo(icon) {
+            //This function needs implementation to show the eSIM info in a more user-friendly way.  Currently it just toggles display.
+            icon.nextElementSibling.style.display = icon.nextElementSibling.style.display === 'block' ? 'none' : 'block';
+        }
+
         // Touch handling for dot indicator
         const dotIndicator = document.querySelector('.dot-indicator');
         let pressTimer;
@@ -309,7 +350,14 @@
                 <div class="user-info">
                     <div class="email-container">
                         <div class="user-info-header">
-                            <span class="user-name">${firstName} ${lastName}</span>
+                            <div class="name-with-esim">
+                                <span class="user-name">${firstName} ${lastName}</span>
+                                <i class="fas fa-sim-card esim-icon" onclick="showEsimInfo(this)"></i>
+                                <div class="esim-info">
+                                    <div class="imei">IMEI: ${generateIMEI()}</div>
+                                    <div class="device">${generateDevice()}</div>
+                                </div>
+                            </div>
                             <span class="user-email">${firstName.toLowerCase()}@example.com</span>
                             <span class="timestamp">${timestamp}</span>
                         </div>
