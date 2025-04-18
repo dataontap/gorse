@@ -33,7 +33,7 @@
                     <div class="data-amount">1.0<span>GB</span></div>
                     <div class="status"><i class="fas fa-globe"></i> Global</div>
                 </div>
-                
+
             </div>
         </div>
         <div id="promotionsCarousel" class="carousel slide" data-bs-touch="true">
@@ -143,7 +143,7 @@
         }
 
         dotIndicator.addEventListener('touchstart', (e) => {
-            pressTimer = setTimeout(startPulsating, 3000);
+            pressTimer = setTimeout(startPulsating, 1000);
         });
 
         dotIndicator.addEventListener('touchend', resetState);
@@ -151,7 +151,7 @@
 
         // Mouse events for desktop testing
         dotIndicator.addEventListener('mousedown', () => {
-            pressTimer = setTimeout(startPulsating, 3000);
+            pressTimer = setTimeout(startPulsating, 1000);
         });
 
         dotIndicator.addEventListener('mouseup', resetState);
