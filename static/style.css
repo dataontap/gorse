@@ -618,13 +618,13 @@ body {
 }
 
 .dashboard-content.paused {
-    background: rgba(230, 230, 230, 0.15);
+    background: rgba(200, 200, 200, 0.25);
 }
 
 .paused .user-name,
 .paused .user-email,
 .paused .usage-amount {
-    color: #888;
+    color: #999;
 }
 
 .pause-duration {
