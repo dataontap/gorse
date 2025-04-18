@@ -612,6 +612,27 @@ body {
     color: #333;
 }
 
+.pause-play-icon.fa-play {
+    color: #0066ff;
+    font-size: 18px;
+}
+
+.dashboard-content.paused {
+    background: rgba(230, 230, 230, 0.15);
+}
+
+.paused .user-name,
+.paused .user-email,
+.paused .usage-amount {
+    color: #888;
+}
+
+.pause-duration {
+    font-size: 12px;
+    color: #888;
+    margin-left: 8px;
+}
+
 .add-user-link {
     color: #666;
     text-decoration: none;

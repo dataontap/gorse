@@ -24,6 +24,17 @@
             position: relative;
             display: inline-block;
         }
+        .paused {
+            background-color: #f2f2f2; /* Grey background for paused cards */
+        }
+        .paused .pause-duration {
+            margin-left: 10px; /* Adjust spacing as needed */
+        }
+        .fa-play {
+            color: #007bff; /* Make play button more distinct */
+        }
+
+
     </style>
 </head>
 <body class="dashboard-body">
@@ -165,7 +176,7 @@
             event.stopPropagation();
             const infoElement = icon.nextElementSibling;
             const allInfoElements = document.querySelectorAll('.esim-info');
-            
+
             // Hide all other info elements
             allInfoElements.forEach(el => {
                 if (el !== infoElement) el.style.display = 'none';
@@ -422,13 +433,42 @@
             }, 50);
         });
 
+        function formatTimeDifference(timestamp) {
+            const now = new Date();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+            if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        }
+
         function togglePausePlay(icon) {
+            const card = icon.closest('.dashboard-content');
             if (icon.classList.contains('fa-pause')) {
                 icon.classList.remove('fa-pause');
                 icon.classList.add('fa-play');
+                card.classList.add('paused');
+
+                // Add pause duration element
+                const pauseTime = new Date();
+                const durationSpan = document.createElement('span');
+                durationSpan.className = 'pause-duration';
+                durationSpan.textContent = 'Paused just now';
+                icon.parentElement.appendChild(durationSpan);
+
+                // Update duration text periodically
+                setInterval(() => {
+                    durationSpan.textContent = 'Paused ' + formatTimeDifference(pauseTime);
+                }, 60000);
             } else {
                 icon.classList.remove('fa-play');
                 icon.classList.add('fa-pause');
+                card.classList.remove('paused');
+                const durationSpan = icon.parentElement.querySelector('.pause-duration');
+                if (durationSpan) durationSpan.remove();
             }
         }
 
