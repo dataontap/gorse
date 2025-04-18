@@ -407,11 +407,23 @@ body {
     right: 0;
     width: 50%;
     height: 100%;
-    background: linear-gradient(45deg, #000 25%, transparent 25%) -5px 0,
-                linear-gradient(-45deg, #000 25%, transparent 25%) -5px 0,
-                linear-gradient(45deg, transparent 75%, #000 75%),
-                linear-gradient(-45deg, transparent 75%, #000 75%);
-    background-size: 10px 10px;
+    background: 
+        linear-gradient(90deg, rgba(0,0,0,0.8) 2px, transparent 2px) 0 0,
+        linear-gradient(0deg, rgba(0,0,0,0.8) 2px, transparent 2px) 0 0,
+        repeating-linear-gradient(90deg, 
+            rgba(0,0,0,0.2) 0px,
+            rgba(0,0,0,0.2) 1px,
+            transparent 1px,
+            transparent 20px
+        ),
+        repeating-linear-gradient(0deg,
+            rgba(0,0,0,0.2) 0px,
+            rgba(0,0,0,0.2) 1px,
+            transparent 1px,
+            transparent 20px
+        ),
+        linear-gradient(45deg, #000 25%, transparent 25%);
+    background-size: 40px 40px, 40px 40px, 20px 20px, 20px 20px, 10px 10px;
     background-color: #1a1a1a;
     clip-path: polygon(100% 0, 100% 100%, 100% 100%, 100% 0);
     transition: clip-path 0.5s ease-out;
