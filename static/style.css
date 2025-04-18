@@ -388,11 +388,11 @@ body {
 
 @keyframes pulse {
     0% { transform: scale(1); }
-    20% { transform: scale(1.08); }
+    20% { transform: scale(1.03); }
     33% { transform: scale(1); }
-    53% { transform: scale(1.12); }
+    53% { transform: scale(1.05); }
     66% { transform: scale(1); }
-    86% { transform: scale(1.15); }
+    86% { transform: scale(1.07); }
     100% { transform: scale(1); }
 }
 
