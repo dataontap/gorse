@@ -398,11 +398,6 @@ body {
     transition: transform 0.3s ease-out;
     position: relative;
     overflow: hidden;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
 }
 
 .dot-indicator::before {
@@ -420,69 +415,28 @@ body {
     background-color: #1a1a1a;
     clip-path: polygon(100% 0, 100% 100%, 100% 100%, 100% 0);
     transition: clip-path 0.5s ease-out;
-    box-shadow: -10px 0 15px rgba(0,0,0,0.3);
-    filter: brightness(0.8);
 }
 
 .dot-indicator.peeling::before {
-    clip-path: polygon(45% 0, 100% 0, 100% 100%, 55% 100%);
-    filter: brightness(0.7);
+    clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
 }
 
-.door-sign {
+.hidden-message {
     position: absolute;
-    right: 15%;
+    right: 10%;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 20px;
+    color: #FFF371;
+    font-size: 14px;
+    text-align: right;
     opacity: 0;
     transition: opacity 0.3s ease-in;
-    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #0073e6, 0 0 20px #0073e6;
-    color: #fff;
-    animation: neonFlicker 1.5s infinite alternate;
-    z-index: 1002;
+    z-index: 2;
+    pointer-events: none;
+    width: 40%;
 }
 
-@keyframes neonFlicker {
-    0%, 18%, 22%, 25%, 53%, 57%, 100% {
-        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #0073e6, 0 0 20px #0073e6;
-    }
-    20%, 24%, 55% {
-        text-shadow: none;
-    }
-}
-
-.dot-indicator.peeling .door-sign {
-    opacity: 1;
-}
-
-.network-callout {
-    position: absolute;
-    right: -140px;
-    top: 20px;
-    background: #ffeb3b;
-    padding: 15px;
-    font-size: 12px;
-    opacity: 0;
-    transition: opacity 0.3s ease-in;
-    clip-path: polygon(0% 0%, 100% 0%, 100% 75%, 75% 75%, 75% 100%, 50% 75%, 0% 75%);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    z-index: 1004;
-    font-weight: bold;
-    color: #333;
-    transform: rotate(5deg);
-}
-
-.network-callout::before {
-    content: '💥';
-    position: absolute;
-    left: -20px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 20px;
-}
-
-.dot-indicator.peeling .network-callout {
+.dot-indicator.peeling .hidden-message {
     opacity: 1;
 }
 

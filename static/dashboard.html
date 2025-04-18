@@ -33,8 +33,7 @@
                     <div class="data-amount">1.0<span>GB</span></div>
                     <div class="status"><i class="fas fa-globe"></i> Global</div>
                 </div>
-                <div class="door-sign">⮕ ENTER</div>
-                <div class="network-callout">Learn more about our member powered network</div>
+                <div class="hidden-message">Learn more about our member powered network</div>
             </div>
         </div>
         <div id="promotionsCarousel" class="carousel slide" data-bs-touch="true">
@@ -122,37 +121,38 @@
         const dotIndicator = document.querySelector('.dot-indicator');
         let pressTimer;
 
-        let isPeeling = false;
-        
-        function startPeeling() {
-            if (!isPeeling) {
-                isPeeling = true;
-                dotIndicator.classList.add('peeling');
-            }
-        }
-
-        function stopPeeling() {
-            if (isPeeling) {
-                isPeeling = false;
-                dotIndicator.classList.remove('peeling');
-            }
-        }
-
-        dotIndicator.addEventListener('click', () => {
-            if (isPeeling) {
-                stopPeeling();
-            } else {
-                startPeeling();
-            }
-        });
-
-        // Keep the long press functionality as an alternative
         dotIndicator.addEventListener('touchstart', (e) => {
-            pressTimer = setTimeout(startPeeling, 3000);
+            pressTimer = setTimeout(() => {
+                dotIndicator.classList.add('peeling');
+            }, 3000);
         });
 
-        dotIndicator.addEventListener('touchend', stopPeeling);
-        dotIndicator.addEventListener('touchcancel', stopPeeling);
+        dotIndicator.addEventListener('touchend', () => {
+            clearTimeout(pressTimer);
+            dotIndicator.classList.remove('peeling');
+        });
+
+        dotIndicator.addEventListener('touchcancel', () => {
+            clearTimeout(pressTimer);
+            dotIndicator.classList.remove('peeling');
+        });
+
+        // Mouse events for desktop testing
+        dotIndicator.addEventListener('mousedown', () => {
+            pressTimer = setTimeout(() => {
+                dotIndicator.classList.add('peeling');
+            }, 3000);
+        });
+
+        dotIndicator.addEventListener('mouseup', () => {
+            clearTimeout(pressTimer);
+            dotIndicator.classList.remove('peeling');
+        });
+
+        dotIndicator.addEventListener('mouseleave', () => {
+            clearTimeout(pressTimer);
+            dotIndicator.classList.remove('peeling');
+        });
 
         function toggleChart(event) {
             event.preventDefault();
