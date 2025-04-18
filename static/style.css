@@ -817,8 +817,22 @@ body {
     display: block;
 }
 
-.imei, .device {
+.imei, .device, .sim {
     font-size: 14px;
     color: #666;
     margin: 4px 0;
+}
+
+.manage-link {
+    display: block;
+    font-size: 12px;
+    color: #0066ff;
+    text-decoration: none;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+}
+
+.manage-link:hover {
+    text-decoration: underline;
 }

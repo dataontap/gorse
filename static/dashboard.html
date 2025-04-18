@@ -145,6 +145,14 @@
             return imei;
         }
 
+        function generateSIMNumber() {
+            let sim = '';
+            for (let i = 0; i < 20; i++) {
+                sim += Math.floor(Math.random() * 10);
+            }
+            return sim;
+        }
+
         function generateDevice() {
             const makes = ['Apple', 'Samsung', 'Google', 'OnePlus'];
             const models = ['iPhone 14', 'Galaxy S23', 'Pixel 7', 'OnePlus 11'];
@@ -153,10 +161,28 @@
             return `${make} ${model}`;
         }
 
-        function showEsimInfo(icon) {
-            //This function needs implementation to show the eSIM info in a more user-friendly way.  Currently it just toggles display.
-            icon.nextElementSibling.style.display = icon.nextElementSibling.style.display === 'block' ? 'none' : 'block';
+        function showEsimInfo(icon, event) {
+            event.stopPropagation();
+            const infoElement = icon.nextElementSibling;
+            const allInfoElements = document.querySelectorAll('.esim-info');
+            
+            // Hide all other info elements
+            allInfoElements.forEach(el => {
+                if (el !== infoElement) el.style.display = 'none';
+            });
+
+            // Toggle current info element
+            infoElement.style.display = infoElement.style.display === 'block' ? 'none' : 'block';
         }
+
+        // Close info when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.esim-info') && !event.target.closest('.esim-icon')) {
+                document.querySelectorAll('.esim-info').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }
+        });
 
         // Touch handling for dot indicator
         const dotIndicator = document.querySelector('.dot-indicator');
@@ -352,10 +378,12 @@
                         <div class="user-info-header">
                             <div class="name-with-esim">
                                 <span class="user-name">${firstName} ${lastName}</span>
-                                <i class="fas fa-sim-card esim-icon" onclick="showEsimInfo(this)"></i>
+                                <i class="fas fa-sim-card esim-icon" onclick="showEsimInfo(this, event)"></i>
                                 <div class="esim-info">
                                     <div class="imei">IMEI: ${generateIMEI()}</div>
+                                    <div class="sim">SIM #: ${generateSIMNumber()}</div>
                                     <div class="device">${generateDevice()}</div>
+                                    <a href="#" class="manage-link">Manage</a>
                                 </div>
                             </div>
                             <span class="user-email">${firstName.toLowerCase()}@example.com</span>
