@@ -120,39 +120,42 @@
         // Touch handling for dot indicator
         const dotIndicator = document.querySelector('.dot-indicator');
         let pressTimer;
+        let isPulsating = false;
+
+        function startPulsating() {
+            if (!isPulsating) {
+                isPulsating = true;
+                dotIndicator.classList.add('pulsating');
+                setTimeout(() => {
+                    dotIndicator.classList.remove('pulsating');
+                    dotIndicator.style.setProperty('--reveal-opacity', '1');
+                    dotIndicator.querySelector(':before').style.opacity = '1';
+                }, 1000);
+            }
+        }
+
+        function resetState() {
+            clearTimeout(pressTimer);
+            isPulsating = false;
+            dotIndicator.classList.remove('pulsating');
+            dotIndicator.style.setProperty('--reveal-opacity', '0');
+            dotIndicator.querySelector(':before').style.opacity = '0';
+        }
 
         dotIndicator.addEventListener('touchstart', (e) => {
-            pressTimer = setTimeout(() => {
-                dotIndicator.classList.add('peeling');
-            }, 3000);
+            pressTimer = setTimeout(startPulsating, 3000);
         });
 
-        dotIndicator.addEventListener('touchend', () => {
-            clearTimeout(pressTimer);
-            dotIndicator.classList.remove('peeling');
-        });
-
-        dotIndicator.addEventListener('touchcancel', () => {
-            clearTimeout(pressTimer);
-            dotIndicator.classList.remove('peeling');
-        });
+        dotIndicator.addEventListener('touchend', resetState);
+        dotIndicator.addEventListener('touchcancel', resetState);
 
         // Mouse events for desktop testing
         dotIndicator.addEventListener('mousedown', () => {
-            pressTimer = setTimeout(() => {
-                dotIndicator.classList.add('peeling');
-            }, 3000);
+            pressTimer = setTimeout(startPulsating, 3000);
         });
 
-        dotIndicator.addEventListener('mouseup', () => {
-            clearTimeout(pressTimer);
-            dotIndicator.classList.remove('peeling');
-        });
-
-        dotIndicator.addEventListener('mouseleave', () => {
-            clearTimeout(pressTimer);
-            dotIndicator.classList.remove('peeling');
-        });
+        dotIndicator.addEventListener('mouseup', resetState);
+        dotIndicator.addEventListener('mouseleave', resetState);
 
         function toggleChart(event) {
             event.preventDefault();
