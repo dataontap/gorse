@@ -381,6 +381,23 @@
             const usage = Math.floor(Math.random() * 100);
 
             const timestamp = new Date().toLocaleString();
+            const userTypes = ['Admin', 'Parent', 'Child', 'Family', 'Friend', 'Device', 'Car', 'Pet'];
+            const userType = userTypes[Math.floor(Math.random() * userTypes.length)];
+            
+            const getPolicies = (type) => {
+                const policies = {
+                    'Admin': ['Unlimited Data', 'Full Control', 'Priority Network'],
+                    'Parent': ['10GB Data', 'Content Filter Off', 'Usage Reports'],
+                    'Child': ['5GB Data', 'Content Filter On', 'Time Limits'],
+                    'Family': ['8GB Data', 'Shared Pool', 'Family Sync'],
+                    'Friend': ['3GB Data', 'Time Limited', 'Guest Access'],
+                    'Device': ['2GB Data', 'IoT Priority', 'Auto Connect'],
+                    'Car': ['4GB Data', 'Navigation Only', 'Emergency Data'],
+                    'Pet': ['1GB Data', 'Location Track', 'Health Monitor']
+                };
+                return policies[type];
+            };
+
             const newCard = document.createElement('div');
             newCard.className = 'dashboard-content slide-in user-card';
             newCard.innerHTML = `
@@ -389,12 +406,12 @@
                         <div class="user-info-header">
                             <div class="name-with-esim">
                                 <span class="user-name">${firstName} ${lastName}</span>
+                                <span class="user-type user-type-${userType.toLowerCase()}">${userType}</span>
                                 <i class="fas fa-sim-card esim-icon" onclick="showEsimInfo(this, event)"></i>
                                 <div class="esim-info">
                                     <div class="imei">IMEI: ${generateIMEI()}</div>
                                     <div class="sim">SIM #: ${generateSIMNumber()}</div>
                                     <div class="device">${generateDevice()}</div>
-                                    <a href="#" class="manage-link">Manage</a>
                                 </div>
                             </div>
                             <span class="user-email">${firstName.toLowerCase()}@example.com</span>
@@ -408,6 +425,13 @@
                     <div class="data-usage" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="usage-label">Data Usage</div>
                         <div class="usage-amount" style="margin-left: 15px;">${usage}%</div>
+                    </div>
+                    <div class="policy-pills">
+                        ${getPolicies(userType).map(policy => `<span class="policy-pill">${policy}</span>`).join('')}
+                    </div>
+                    <div class="manage-section">
+                        <a href="#" class="manage-link">Manage ${userType.toLowerCase()} settings</a>
+                        <i class="fas fa-cog" style="color: #666; font-size: 14px;"></i>
                     </div>
                 </div>
             `;

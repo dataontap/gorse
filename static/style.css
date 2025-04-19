@@ -857,3 +857,45 @@ body {
 .manage-link:hover {
     text-decoration: underline;
 }
+
+.user-type {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    background: rgba(255, 243, 113, 0.3);
+    color: #666;
+}
+
+.policy-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+}
+
+.policy-pill {
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: rgba(204, 204, 255, 0.3);
+    color: #666;
+}
+
+.manage-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.user-type-admin { background: rgba(255, 99, 71, 0.2); color: #993322; }
+.user-type-parent { background: rgba(65, 105, 225, 0.2); color: #234990; }
+.user-type-child { background: rgba(50, 205, 50, 0.2); color: #1a661a; }
+.user-type-family { background: rgba(255, 165, 0, 0.2); color: #996633; }
+.user-type-friend { background: rgba(147, 112, 219, 0.2); color: #553399; }
+.user-type-device { background: rgba(128, 128, 128, 0.2); color: #444; }
+.user-type-car { background: rgba(0, 139, 139, 0.2); color: #006666; }
+.user-type-pet { background: rgba(255, 20, 147, 0.2); color: #991466; }
