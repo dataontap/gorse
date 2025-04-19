@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize sort controls
     const sortIcons = document.querySelectorAll('.sort-icon');
@@ -59,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addUserBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
             const usage = Math.floor(Math.random() * 100);
@@ -183,4 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 300);
         }
     }
+    document.getElementById('backToTop')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        });
 });
