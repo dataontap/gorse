@@ -4,28 +4,24 @@ const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', '
 const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
 const userTypes = ['Admin', 'Parent', 'Child', 'Family', 'Friend', 'Device', 'Car', 'Pet'];
 
-// Initialize all functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    initializeButtons();
     initializeAddUser();
     initializeSortControls();
     initializeBackToTop();
+    initializeButtons();
     updateSortControlsVisibility();
 });
 
 function initializeButtons() {
-    // Buy buttons
     document.querySelectorAll('.btn-primary').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            e.stopPropagation();
             if (btn.textContent.trim() === 'Buy') {
                 addGlobalData();
             }
         });
     });
 
-    // Chart detail links
     document.querySelectorAll('.insight-link').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -48,6 +44,7 @@ function initializeAddUser() {
             const userType = userTypes[Math.floor(Math.random() * userTypes.length)];
 
             createNewUserCard(firstName, lastName, usage, timestamp, userType);
+            return false;
         });
     }
 }
@@ -123,17 +120,7 @@ function initializeSortControls() {
     });
 }
 
-function initializeBackToTop() {
-    const backToTopBtn = document.getElementById('backToTop');
-    if (backToTopBtn) {
-        backToTopBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        });
-    }
-}
-
-// Helper functions
+// Utility functions
 function generateIMEI() {
     return Array.from({length: 20}, () => Math.floor(Math.random() * 10)).join('');
 }
@@ -145,9 +132,7 @@ function generateSIMNumber() {
 function generateDevice() {
     const makes = ['Apple', 'Samsung', 'Google', 'OnePlus'];
     const models = ['iPhone 14', 'Galaxy S23', 'Pixel 7', 'OnePlus 11'];
-    const make = makes[Math.floor(Math.random() * makes.length)];
-    const model = models[Math.floor(Math.random() * models.length)];
-    return `${make} ${model}`;
+    return `${makes[Math.floor(Math.random() * makes.length)]} ${models[Math.floor(Math.random() * models.length)]}`;
 }
 
 function getPolicies(type) {
@@ -162,31 +147,6 @@ function getPolicies(type) {
         'Pet': ['1GB Data', 'Location Track', 'Health Monitor']
     };
     return policies[type] || [];
-}
-
-function sortUsers(sortType) {
-    const container = document.querySelector('.container');
-    const cards = Array.from(document.getElementsByClassName('user-card'));
-    const addUserContainer = document.querySelector('.add-user-container');
-
-    if (sortType === 'newest') {
-        cards.sort((a, b) => {
-            const timeA = new Date(a.querySelector('.timestamp').textContent);
-            const timeB = new Date(b.querySelector('.timestamp').textContent);
-            return timeB - timeA;
-        });
-    } else {
-        cards.sort((a, b) => {
-            const usageA = parseInt(a.querySelector('.usage-amount')?.textContent || '0');
-            const usageB = parseInt(b.querySelector('.usage-amount')?.textContent || '0');
-            return sortType === 'asc' ? usageA - usageB : usageB - usageA;
-        });
-    }
-
-    cards.forEach(card => card.remove());
-    cards.forEach(card => {
-        container.insertBefore(card, addUserContainer);
-    });
 }
 
 function updateUserCount(change = 0) {
@@ -216,7 +176,38 @@ function removeUserCard(card) {
     }
 }
 
-// Make functions available globally
+function sortUsers(sortType) {
+    const container = document.querySelector('.container');
+    const cards = Array.from(document.getElementsByClassName('user-card'));
+    const addUserContainer = document.querySelector('.add-user-container');
+
+    cards.sort((a, b) => {
+        if (sortType === 'newest') {
+            const timeA = new Date(a.querySelector('.timestamp').textContent);
+            const timeB = new Date(b.querySelector('.timestamp').textContent);
+            return timeB - timeA;
+        } else {
+            const usageA = parseInt(a.querySelector('.usage-amount').textContent);
+            const usageB = parseInt(b.querySelector('.usage-amount').textContent);
+            return sortType === 'asc' ? usageA - usageB : usageB - usageA;
+        }
+    });
+
+    cards.forEach(card => card.remove());
+    cards.forEach(card => container.insertBefore(card, addUserContainer));
+}
+
+function initializeBackToTop() {
+    const backToTopBtn = document.getElementById('backToTop');
+    if (backToTopBtn) {
+        backToTopBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        });
+    }
+}
+
+// Global functions needed for HTML onclick attributes
 window.showEsimInfo = function(icon, event) {
     event.preventDefault();
     event.stopPropagation();
