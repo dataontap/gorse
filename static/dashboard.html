@@ -380,15 +380,7 @@
             });
         });
 
-        document.getElementById('addUserBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-            const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-            const usage = Math.floor(Math.random() * 100);
-
-            const timestamp = new Date().toLocaleString();
-            const userTypes = ['Admin', 'Parent', 'Child', 'Family', 'Friend', 'Device', 'Car', 'Pet'];
-            const userType = userTypes[Math.floor(Math.random() * userTypes.length)];
+        // Add User functionality moved to app.js
 
             const getPolicies = (type) => {
                 const policies = {
