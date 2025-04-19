@@ -124,13 +124,19 @@
                         <option value="screentime">Screentime</option>
                     </select>
                 </div>
-                <div class="sort-group">
-                    <label>Sort by</label>
-                    <select id="sortUsage" class="sort-select" style="display: none;">
-                        <option value="none">Sort by</option>
-                        <option value="asc">Lowest to Highest</option>
-                        <option value="desc">Highest to Lowest</option>
-                    </select>
+                <div class="sort-icons">
+                    <span class="sort-icon active" data-sort="newest">
+                        <i class="fas fa-clock"></i>
+                        <span class="sort-label">Newest</span>
+                    </span>
+                    <span class="sort-icon" data-sort="desc">
+                        <i class="fas fa-sort-amount-down"></i>
+                        <span class="sort-label">Highest</span>
+                    </span>
+                    <span class="sort-icon" data-sort="asc">
+                        <i class="fas fa-sort-amount-up"></i>
+                        <span class="sort-label">Lowest</span>
+                    </span>
                 </div>
             </div>
         </div>
@@ -383,7 +389,7 @@
             const timestamp = new Date().toLocaleString();
             const userTypes = ['Admin', 'Parent', 'Child', 'Family', 'Friend', 'Device', 'Car', 'Pet'];
             const userType = userTypes[Math.floor(Math.random() * userTypes.length)];
-            
+
             const getPolicies = (type) => {
                 const policies = {
                     'Admin': ['Unlimited Data', 'Full Control', 'Priority Network'],
