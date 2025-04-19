@@ -185,10 +185,10 @@ function sortUsers(sortType) {
     const addUserContainer = document.querySelector('.add-user-container');
 
     cards.sort((a, b) => {
-        if (sortType === 'newest') {
+        if (sortType === 'newest' || sortType === 'oldest') {
             const timeA = new Date(a.querySelector('.timestamp').textContent);
             const timeB = new Date(b.querySelector('.timestamp').textContent);
-            return timeB - timeA;
+            return sortType === 'newest' ? timeB - timeA : timeA - timeB;
         } else {
             const usageA = parseInt(a.querySelector('.usage-amount').textContent);
             const usageB = parseInt(b.querySelector('.usage-amount').textContent);
