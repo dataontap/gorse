@@ -1,8 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize sort controls first
+    initializeSortControls();
+    
+    // Then handle forms if they exist
     const emailForm = document.getElementById('emailForm');
     const imeiForm = document.getElementById('imeiForm');
     const step1 = document.getElementById('step1');
     const step2 = document.getElementById('step2');
+
+    function initializeSortControls() {
+        const sortIcons = document.querySelectorAll('.sort-icon');
+        if (sortIcons) {
 
     emailForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -55,8 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.querySelectorAll('.sort-icon').forEach(icon => {
-            icon.addEventListener('click', function() {
+    sortIcons.forEach(icon => {
+                icon.addEventListener('click', function() {
                 // Update active state
                 document.querySelectorAll('.sort-icon').forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
@@ -102,5 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }, 300);
             });
-        });
+            });
+        }
+    }
 });
