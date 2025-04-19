@@ -107,9 +107,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add User functionality
     const addUserBtn = document.getElementById('addUserBtn');
     if (addUserBtn) {
-        addUserBtn.onclick = function(e) {
+        addUserBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            e.stopPropagation();
+            if (e) e.stopPropagation();
             
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
@@ -175,8 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 50);
             }
 
-            return false;
-        };
+            });
     }
 
     // Back to top functionality
