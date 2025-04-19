@@ -6,10 +6,10 @@ const userTypes = ['Admin', 'Parent', 'Child', 'Family', 'Friend', 'Device', 'Ca
 
 // Initialize all functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    initializeButtons();
     initializeAddUser();
     initializeSortControls();
     initializeBackToTop();
-    initializeButtons();
     updateSortControlsVisibility();
 });
 
@@ -18,6 +18,7 @@ function initializeButtons() {
     document.querySelectorAll('.btn-primary').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             if (btn.textContent.trim() === 'Buy') {
                 addGlobalData();
             }
@@ -36,7 +37,7 @@ function initializeButtons() {
 function initializeAddUser() {
     const addUserBtn = document.getElementById('addUserBtn');
     if (addUserBtn) {
-        addUserBtn.addEventListener('click', (e) => {
+        addUserBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
@@ -46,64 +47,68 @@ function initializeAddUser() {
             const timestamp = new Date().toLocaleString();
             const userType = userTypes[Math.floor(Math.random() * userTypes.length)];
 
-            const newCard = document.createElement('div');
-            newCard.className = 'dashboard-content slide-in user-card';
-            newCard.innerHTML = `
-                <div class="user-info">
-                    <div class="email-container">
-                        <div class="user-info-header">
-                            <div class="name-with-esim">
-                                <span class="user-name">${firstName} ${lastName}</span>
-                                <span class="user-type user-type-${userType.toLowerCase()}">${userType}</span>
-                                <i class="fas fa-sim-card esim-icon" onclick="showEsimInfo(this, event)"></i>
-                                <div class="esim-info">
-                                    <div class="imei">IMEI: ${generateIMEI()}</div>
-                                    <div class="sim">SIM #: ${generateSIMNumber()}</div>
-                                    <div class="device">${generateDevice()}</div>
-                                </div>
-                            </div>
-                            <span class="user-email">${firstName.toLowerCase()}@example.com</span>
-                            <span class="timestamp">${timestamp}</span>
-                        </div>
-                        <div class="card-actions">
-                            <i class="fas fa-pause pause-play-icon" onclick="togglePausePlay(this)"></i>
-                            ${firstName !== 'John' ? '<i class="fas fa-times remove-icon"></i>' : ''}
-                        </div>
-                    </div>
-                    <div class="data-usage">
-                        <div class="usage-label">Data Usage</div>
-                        <div class="usage-amount">${usage}%</div>
-                    </div>
-                    <div class="policy-pills">
-                        ${getPolicies(userType).map(policy => `<span class="policy-pill">${policy}</span>`).join('')}
-                    </div>
-                    <div class="manage-section">
-                        <a href="#" class="manage-link">Manage ${userType.toLowerCase()} settings</a>
-                        <i class="fas fa-cog"></i>
-                    </div>
-                </div>
-            `;
-
-            const container = document.querySelector('.container');
-            const addUserContainer = document.querySelector('.add-user-container');
-            
-            if (container && addUserContainer) {
-                container.insertBefore(newCard, addUserContainer);
-
-                if (firstName !== 'John') {
-                    const removeIcon = newCard.querySelector('.remove-icon');
-                    if (removeIcon) {
-                        removeIcon.addEventListener('click', () => removeUserCard(newCard));
-                    }
-                }
-
-                setTimeout(() => {
-                    newCard.classList.add('visible');
-                    updateUserCount(1);
-                    updateSortControlsVisibility();
-                }, 50);
-            }
+            createNewUserCard(firstName, lastName, usage, timestamp, userType);
         });
+    }
+}
+
+function createNewUserCard(firstName, lastName, usage, timestamp, userType) {
+    const newCard = document.createElement('div');
+    newCard.className = 'dashboard-content slide-in user-card';
+    newCard.innerHTML = `
+        <div class="user-info">
+            <div class="email-container">
+                <div class="user-info-header">
+                    <div class="name-with-esim">
+                        <span class="user-name">${firstName} ${lastName}</span>
+                        <span class="user-type user-type-${userType.toLowerCase()}">${userType}</span>
+                        <i class="fas fa-sim-card esim-icon" onclick="showEsimInfo(this, event)"></i>
+                        <div class="esim-info">
+                            <div class="imei">IMEI: ${generateIMEI()}</div>
+                            <div class="sim">SIM #: ${generateSIMNumber()}</div>
+                            <div class="device">${generateDevice()}</div>
+                        </div>
+                    </div>
+                    <span class="user-email">${firstName.toLowerCase()}@example.com</span>
+                    <span class="timestamp">${timestamp}</span>
+                </div>
+                <div class="card-actions">
+                    <i class="fas fa-pause pause-play-icon" onclick="togglePausePlay(this)"></i>
+                    ${firstName !== 'John' ? '<i class="fas fa-times remove-icon"></i>' : ''}
+                </div>
+            </div>
+            <div class="data-usage">
+                <div class="usage-label">Data Usage</div>
+                <div class="usage-amount">${usage}%</div>
+            </div>
+            <div class="policy-pills">
+                ${getPolicies(userType).map(policy => `<span class="policy-pill">${policy}</span>`).join('')}
+            </div>
+            <div class="manage-section">
+                <a href="#" class="manage-link">Manage ${userType.toLowerCase()} settings</a>
+                <i class="fas fa-cog"></i>
+            </div>
+        </div>
+    `;
+
+    const container = document.querySelector('.container');
+    const addUserContainer = document.querySelector('.add-user-container');
+    
+    if (container && addUserContainer) {
+        container.insertBefore(newCard, addUserContainer);
+
+        if (firstName !== 'John') {
+            const removeIcon = newCard.querySelector('.remove-icon');
+            if (removeIcon) {
+                removeIcon.addEventListener('click', () => removeUserCard(newCard));
+            }
+        }
+
+        setTimeout(() => {
+            newCard.classList.add('visible');
+            updateUserCount(1);
+            updateSortControlsVisibility();
+        }, 50);
     }
 }
 
@@ -111,7 +116,7 @@ function initializeSortControls() {
     const sortIcons = document.querySelectorAll('.sort-icon');
     sortIcons.forEach(icon => {
         icon.addEventListener('click', function() {
-            document.querySelectorAll('.sort-icon').forEach(i => i.classList.remove('active'));
+            sortIcons.forEach(i => i.classList.remove('active'));
             this.classList.add('active');
             sortUsers(this.dataset.sort);
         });
@@ -126,38 +131,6 @@ function initializeBackToTop() {
             window.scrollTo({top: 0, behavior: 'smooth'});
         });
     }
-}
-
-function sortUsers(sortType) {
-    const container = document.querySelector('.container');
-    const cards = Array.from(document.getElementsByClassName('user-card'));
-    const addUserContainer = document.querySelector('.add-user-container');
-
-    cards.forEach(card => card.classList.add('sorting'));
-
-    if (sortType === 'newest') {
-        cards.sort((a, b) => {
-            const timeA = new Date(a.querySelector('.timestamp').textContent);
-            const timeB = new Date(b.querySelector('.timestamp').textContent);
-            return timeB - timeA;
-        });
-    } else {
-        cards.sort((a, b) => {
-            const usageA = parseInt(a.querySelector('.usage-amount')?.textContent || '0');
-            const usageB = parseInt(b.querySelector('.usage-amount')?.textContent || '0');
-            return sortType === 'asc' ? usageA - usageB : usageB - usageA;
-        });
-    }
-
-    setTimeout(() => {
-        cards.forEach(card => card.remove());
-        cards.forEach((card, index) => {
-            setTimeout(() => {
-                container.insertBefore(card, addUserContainer);
-                setTimeout(() => card.classList.remove('sorting'), 100);
-            }, index * 100);
-        });
-    }, 300);
 }
 
 // Helper functions
@@ -189,6 +162,31 @@ function getPolicies(type) {
         'Pet': ['1GB Data', 'Location Track', 'Health Monitor']
     };
     return policies[type] || [];
+}
+
+function sortUsers(sortType) {
+    const container = document.querySelector('.container');
+    const cards = Array.from(document.getElementsByClassName('user-card'));
+    const addUserContainer = document.querySelector('.add-user-container');
+
+    if (sortType === 'newest') {
+        cards.sort((a, b) => {
+            const timeA = new Date(a.querySelector('.timestamp').textContent);
+            const timeB = new Date(b.querySelector('.timestamp').textContent);
+            return timeB - timeA;
+        });
+    } else {
+        cards.sort((a, b) => {
+            const usageA = parseInt(a.querySelector('.usage-amount')?.textContent || '0');
+            const usageB = parseInt(b.querySelector('.usage-amount')?.textContent || '0');
+            return sortType === 'asc' ? usageA - usageB : usageB - usageA;
+        });
+    }
+
+    cards.forEach(card => card.remove());
+    cards.forEach(card => {
+        container.insertBefore(card, addUserContainer);
+    });
 }
 
 function updateUserCount(change = 0) {
@@ -269,7 +267,6 @@ function formatTimeDifference(timestamp) {
     return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
 }
 
-// Add global functions needed by dashboard.html
 window.addGlobalData = function() {
     const dataAmountElement = document.querySelector('.data-amount');
     if (dataAmountElement) {
