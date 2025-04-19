@@ -1,10 +1,15 @@
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Define variables first
+    const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
+    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
+    const userTypes = ['Admin', 'Parent', 'Child', 'Family', 'Friend', 'Device', 'Car', 'Pet'];
+
     // Initialize sort controls
     const sortIcons = document.querySelectorAll('.sort-icon');
     if (sortIcons) {
         sortIcons.forEach(icon => {
             icon.addEventListener('click', function() {
-                // Update active state
                 document.querySelectorAll('.sort-icon').forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
 
@@ -12,20 +17,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const container = document.querySelector('.container');
                 const cards = Array.from(document.getElementsByClassName('user-card'));
 
-                // Add sorting class to trigger animation
-                cards.forEach(card => {
-                    card.classList.add('sorting');
-                });
+                cards.forEach(card => card.classList.add('sorting'));
 
                 if (sortType === 'newest') {
-                    // Sort by timestamp
                     cards.sort((a, b) => {
                         const timeA = new Date(a.querySelector('.timestamp').textContent);
                         const timeB = new Date(b.querySelector('.timestamp').textContent);
                         return timeB - timeA;
                     });
                 } else {
-                    // Sort by usage
                     cards.sort((a, b) => {
                         const usageA = parseInt(a.querySelector('.usage-amount')?.textContent || '0');
                         const usageB = parseInt(b.querySelector('.usage-amount')?.textContent || '0');
@@ -33,17 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
 
-                // Stagger the reinsert animation
                 setTimeout(() => {
-                    // Remove all user cards
                     cards.forEach(card => card.remove());
-
-                    // Add sorted cards back with staggered delay
                     const addUserContainer = document.querySelector('.add-user-container');
                     cards.forEach((card, index) => {
                         setTimeout(() => {
                             container.insertBefore(card, addUserContainer);
-                            // Remove sorting class after animation
                             setTimeout(() => card.classList.remove('sorting'), 600);
                         }, index * 100);
                     });
@@ -51,80 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-
-    // Handle Add User click
-    const addUserBtn = document.getElementById('addUserBtn');
-    if (addUserBtn) {
-        addUserBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-            const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-            const usage = Math.floor(Math.random() * 100);
-            const timestamp = new Date().toLocaleString();
-            const userType = userTypes[Math.floor(Math.random() * userTypes.length)];
-
-            const newCard = document.createElement('div');
-            newCard.className = 'dashboard-content slide-in user-card';
-            newCard.innerHTML = `
-                <div class="user-info">
-                    <div class="email-container">
-                        <div class="user-info-header">
-                            <div class="name-with-esim">
-                                <span class="user-name">${firstName} ${lastName}</span>
-                                <span class="user-type user-type-${userType.toLowerCase()}">${userType}</span>
-                                <i class="fas fa-sim-card esim-icon" onclick="showEsimInfo(this, event)"></i>
-                                <div class="esim-info">
-                                    <div class="imei">IMEI: ${generateIMEI()}</div>
-                                    <div class="sim">SIM #: ${generateSIMNumber()}</div>
-                                    <div class="device">${generateDevice()}</div>
-                                </div>
-                            </div>
-                            <span class="user-email">${firstName.toLowerCase()}@example.com</span>
-                            <span class="timestamp">${timestamp}</span>
-                        </div>
-                        <div class="card-actions">
-                            <i class="fas fa-pause pause-play-icon" onclick="togglePausePlay(this)"></i>
-                            ${firstName !== 'John' ? '<i class="fas fa-times remove-icon"></i>' : ''}
-                        </div>
-                    </div>
-                    <div class="data-usage">
-                        <div class="usage-label">Data Usage</div>
-                        <div class="usage-amount">${usage}%</div>
-                    </div>
-                    <div class="policy-pills">
-                        ${getPolicies(userType).map(policy => `<span class="policy-pill">${policy}</span>`).join('')}
-                    </div>
-                    <div class="manage-section">
-                        <a href="#" class="manage-link">Manage ${userType.toLowerCase()} settings</a>
-                        <i class="fas fa-cog"></i>
-                    </div>
-                </div>
-            `;
-
-            const addUserContainer = document.querySelector('.add-user-container');
-            document.querySelector('.container').insertBefore(newCard, addUserContainer);
-
-            if (firstName !== 'John') {
-                const removeIcon = newCard.querySelector('.remove-icon');
-                if (removeIcon) {
-                    removeIcon.addEventListener('click', () => removeUserCard(newCard));
-                }
-            }
-
-            setTimeout(() => {
-                newCard.classList.add('visible');
-                updateUserCount(1);
-                updateSortControlsVisibility();
-            }, 50);
-        });
-    }
-
-    // Helper functions
-    const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
-    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
-    const userTypes = ['Admin', 'Parent', 'Child', 'Family', 'Friend', 'Device', 'Car', 'Pet'];
 
     function generateIMEI() {
         return Array.from({length: 20}, () => Math.floor(Math.random() * 10)).join('');
@@ -182,9 +103,84 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 300);
         }
     }
-    document.getElementById('backToTop')?.addEventListener('click', function(e) {
+
+    // Add User functionality
+    const addUserBtn = document.getElementById('addUserBtn');
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+            const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+            const usage = Math.floor(Math.random() * 100);
+            const timestamp = new Date().toLocaleString();
+            const userType = userTypes[Math.floor(Math.random() * userTypes.length)];
+
+            const newCard = document.createElement('div');
+            newCard.className = 'dashboard-content slide-in user-card';
+            newCard.innerHTML = `
+                <div class="user-info">
+                    <div class="email-container">
+                        <div class="user-info-header">
+                            <div class="name-with-esim">
+                                <span class="user-name">${firstName} ${lastName}</span>
+                                <span class="user-type user-type-${userType.toLowerCase()}">${userType}</span>
+                                <i class="fas fa-sim-card esim-icon" onclick="showEsimInfo(this, event)"></i>
+                                <div class="esim-info">
+                                    <div class="imei">IMEI: ${generateIMEI()}</div>
+                                    <div class="sim">SIM #: ${generateSIMNumber()}</div>
+                                    <div class="device">${generateDevice()}</div>
+                                </div>
+                            </div>
+                            <span class="user-email">${firstName.toLowerCase()}@example.com</span>
+                            <span class="timestamp">${timestamp}</span>
+                        </div>
+                        <div class="card-actions">
+                            <i class="fas fa-pause pause-play-icon" onclick="togglePausePlay(this)"></i>
+                            ${firstName !== 'John' ? '<i class="fas fa-times remove-icon"></i>' : ''}
+                        </div>
+                    </div>
+                    <div class="data-usage">
+                        <div class="usage-label">Data Usage</div>
+                        <div class="usage-amount">${usage}%</div>
+                    </div>
+                    <div class="policy-pills">
+                        ${getPolicies(userType).map(policy => `<span class="policy-pill">${policy}</span>`).join('')}
+                    </div>
+                    <div class="manage-section">
+                        <a href="#" class="manage-link">Manage ${userType.toLowerCase()} settings</a>
+                        <i class="fas fa-cog"></i>
+                    </div>
+                </div>
+            `;
+
+            const container = document.querySelector('.container');
+            const addUserContainer = document.querySelector('.add-user-container');
+            container.insertBefore(newCard, addUserContainer);
+
+            if (firstName !== 'John') {
+                const removeIcon = newCard.querySelector('.remove-icon');
+                if (removeIcon) {
+                    removeIcon.addEventListener('click', () => removeUserCard(newCard));
+                }
+            }
+
+            setTimeout(() => {
+                newCard.classList.add('visible');
+                updateUserCount(1);
+                updateSortControlsVisibility();
+            }, 50);
+        });
+    }
+
+    // Back to top functionality
+    const backToTopBtn = document.getElementById('backToTop');
+    if (backToTopBtn) {
+        backToTopBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             window.scrollTo({top: 0, behavior: 'smooth'});
         });
+    }
 });
