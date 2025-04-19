@@ -111,6 +111,9 @@ function createNewUserCard(firstName, lastName, usage, timestamp, userType) {
 
 function initializeSortControls() {
     const sortIcons = document.querySelectorAll('.sort-icon');
+    // Set newest as default active
+    document.querySelector('[data-sort="newest"]').classList.add('active');
+    
     sortIcons.forEach(icon => {
         icon.addEventListener('click', function() {
             sortIcons.forEach(i => i.classList.remove('active'));

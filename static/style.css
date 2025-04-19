@@ -773,12 +773,15 @@ body {
 .sort-icon {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: 20px;
+    gap: 4px;
+    padding: 8px;
+    border-radius: 50%;
     cursor: pointer;
     transition: all 0.3s ease;
     color: #666;
+    width: 36px;
+    height: 36px;
+    justify-content: center;
 }
 
 .sort-icon:hover {
@@ -786,13 +789,18 @@ body {
 }
 
 .sort-icon.active {
-    font-weight: bold;
     color: #333;
     background: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.sort-label {
+.sort-icon i {
     font-size: 14px;
+}
+
+.sort-icon i + i {
+    font-size: 10px;
+    margin-left: -4px;
 }
 
 .dashboard-content.sorting {
