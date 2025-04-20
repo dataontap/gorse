@@ -991,6 +991,11 @@ body {
     padding-top: 12px;
 }
 
+.manage-section .fa-cog {
+    display: flex;
+    align-items: center;
+}
+
 .user-type-admin { background: rgba(255, 99, 71, 0.2); color: #993322; }
 .user-type-parent { background: rgba(65, 105, 225, 0.2); color: #234990; }
 .user-type-child { background: rgba(50, 205, 50, 0.2); color: #1a661a; }
