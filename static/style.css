@@ -690,6 +690,15 @@ body {
     border-radius: 6px;
     transition: all 0.3s ease;
     text-align: center;
+    min-width: 100px;
+}
+
+.metric .usage-amount {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
 }
 
 .metric.highlighted {
