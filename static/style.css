@@ -991,10 +991,14 @@ body {
     padding-top: 12px;
 }
 
-.manage-section .fa-cog {
+.manage-section a {
     display: flex;
     align-items: center;
-    margin-top: -2px;
+    gap: 8px;
+}
+
+.manage-section .fa-cog {
+    font-size: 20px;
 }
 
 .user-type-admin { background: rgba(255, 99, 71, 0.2); color: #993322; }
