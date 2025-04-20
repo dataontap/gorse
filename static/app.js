@@ -93,7 +93,7 @@ function createNewUserCard(firstName, lastName, usage, screentime, dollars, time
                 </div>
             </div>
             <div class="manage-section">
-                <span class="settings-text">${userType.toLowerCase()} settings</span>
+                <span class="settings-text">Manage ${userType.toLowerCase()} settings</span>
                 <button class="cog-button" title="Manage user">
                     <i class="fas fa-cog"></i>
                 </button>
