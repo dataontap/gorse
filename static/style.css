@@ -987,18 +987,30 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 12px;
-    padding-top: 12px;
+    margin-bottom: 12px;
 }
 
-.manage-section a {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.settings-text {
+    color: #666;
+    font-size: 16px;
 }
 
-.manage-section .fa-cog {
+.cog-button {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.cog-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.cog-button .fa-cog {
     font-size: 20px;
+    color: #666;
 }
 
 .user-type-admin { background: rgba(255, 99, 71, 0.2); color: #993322; }

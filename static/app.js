@@ -92,12 +92,14 @@ function createNewUserCard(firstName, lastName, usage, screentime, dollars, time
                     </div>
                 </div>
             </div>
+            <div class="manage-section">
+                <span class="settings-text">${userType.toLowerCase()} settings</span>
+                <button class="cog-button" title="Manage user">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
             <div class="policy-pills">
                 ${getPolicies(userType).map(policy => `<span class="policy-pill">${policy}</span>`).join('')}
-            </div>
-            <div class="manage-section">
-                <a href="#" class="manage-link">Manage ${userType.toLowerCase()} settings</a>
-                <i class="fas fa-cog"></i>
             </div>
         </div>
     `;
