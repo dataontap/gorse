@@ -704,6 +704,8 @@ body {
     color: #333;
     font-weight: 600;
     text-align: center;
+    width: 100%;
+    display: block;
 }
 
 .usage-label .usage-amount {
