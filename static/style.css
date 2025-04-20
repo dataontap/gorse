@@ -670,12 +670,17 @@ body {
 
 .usage-metrics {
     display: flex;
-    gap: 10px;
+    gap: 20px;
     justify-content: center;
+    align-items: center;
     text-align: center;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 500px;
 }
 
 .metric {
+    flex: 1;
     flex: 1;
     background: rgba(200, 200, 200, 0.2);
     padding: 8px 12px;
