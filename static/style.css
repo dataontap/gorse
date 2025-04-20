@@ -586,7 +586,7 @@ body {
 
 .email-container {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     margin-bottom: 15px;
 }
@@ -602,7 +602,6 @@ body {
     display: flex;
     gap: 10px;
     align-items: center;
-    height: 24px;
 }
 
 .pause-play-icon {
