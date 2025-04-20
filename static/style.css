@@ -994,6 +994,7 @@ body {
 .manage-section .fa-cog {
     display: flex;
     align-items: center;
+    margin-top: -2px;
 }
 
 .user-type-admin { background: rgba(255, 99, 71, 0.2); color: #993322; }
