@@ -125,6 +125,8 @@ function createNewUserCard(firstName, lastName, usage, screentime, dollars, time
 
 function initializeSortControls() {
     const sortIcons = document.querySelectorAll('.sort-icon');
+    const sortSelect = document.querySelector('.sort-select');
+    
     // Set newest as default active
     document.querySelector('[data-sort="newest"]').classList.add('active');
     
@@ -132,7 +134,34 @@ function initializeSortControls() {
         icon.addEventListener('click', function() {
             sortIcons.forEach(i => i.classList.remove('active'));
             this.classList.add('active');
+            updateMetricHighlight(sortSelect.value);
             sortUsers(this.dataset.sort);
+        });
+    });
+
+    sortSelect.addEventListener('change', function() {
+        updateMetricHighlight(this.value);
+        const activeSort = document.querySelector('.sort-icon.active');
+        if (activeSort) {
+            sortUsers(activeSort.dataset.sort);
+        }
+    });
+
+    // Initial highlight
+    updateMetricHighlight(sortSelect.value);
+}
+
+function updateMetricHighlight(selectedMetric) {
+    document.querySelectorAll('.metric').forEach(metric => {
+        metric.classList.remove('highlighted');
+    });
+    
+    document.querySelectorAll('.user-card').forEach(card => {
+        const metrics = card.querySelectorAll('.metric');
+        metrics.forEach(metric => {
+            if (metric.classList.contains(selectedMetric)) {
+                metric.classList.add('highlighted');
+            }
         });
     });
 }

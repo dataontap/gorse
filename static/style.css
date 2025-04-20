@@ -671,7 +671,8 @@ body {
 .usage-metrics {
     display: flex;
     gap: 10px;
-    justify-content: space-between;
+    justify-content: center;
+    text-align: center;
 }
 
 .metric {
@@ -679,6 +680,12 @@ body {
     background: rgba(200, 200, 200, 0.2);
     padding: 8px 12px;
     border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.metric.highlighted {
+    background: rgba(255, 243, 113, 0.3);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .usage-label {
