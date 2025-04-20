@@ -668,17 +668,29 @@ body {
     margin-bottom: 15px;
 }
 
-.usage-label {
-    font-size: 14px;
-    color: #333;
-    font-weight: 600;
+.usage-metrics {
     display: flex;
-    align-items: center;
+    gap: 10px;
     justify-content: space-between;
-    background: rgba(255, 243, 113, 0.3);
+}
+
+.metric {
+    flex: 1;
+    background: rgba(200, 200, 200, 0.2);
     padding: 8px 12px;
     border-radius: 6px;
-    margin-bottom: 8px;
+}
+
+.usage-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.usage-amount {
+    font-size: 18px;
+    color: #333;
+    font-weight: 600;
 }
 
 .usage-label .usage-amount {

@@ -40,16 +40,18 @@ function initializeAddUser() {
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
             const usage = Math.floor(Math.random() * 100);
+            const screentime = (Math.random() * 12).toFixed(1); // Random hours up to 12
+            const dollars = (Math.random() * 50).toFixed(2); // Random amount up to $50
             const timestamp = new Date().toLocaleString();
             const userType = userTypes[Math.floor(Math.random() * userTypes.length)];
 
-            createNewUserCard(firstName, lastName, usage, timestamp, userType);
+            createNewUserCard(firstName, lastName, usage, screentime, dollars, timestamp, userType);
             return false;
         });
     }
 }
 
-function createNewUserCard(firstName, lastName, usage, timestamp, userType) {
+function createNewUserCard(firstName, lastName, usage, screentime, dollars, timestamp, userType) {
     const newCard = document.createElement('div');
     newCard.className = 'dashboard-content slide-in user-card';
     newCard.innerHTML = `
@@ -75,7 +77,20 @@ function createNewUserCard(firstName, lastName, usage, timestamp, userType) {
                 </div>
             </div>
             <div class="data-usage">
-                <div class="usage-label">Data Usage <span class="usage-amount">${usage}%</span></div>
+                <div class="usage-metrics">
+                    <div class="metric percentage">
+                        <div class="usage-label">Data Usage</div>
+                        <div class="usage-amount">${usage}%</div>
+                    </div>
+                    <div class="metric screentime">
+                        <div class="usage-label">Screentime</div>
+                        <div class="usage-amount">${screentime}h</div>
+                    </div>
+                    <div class="metric dollars">
+                        <div class="usage-label">Cost</div>
+                        <div class="usage-amount">$${dollars}</div>
+                    </div>
+                </div>
             </div>
             <div class="policy-pills">
                 ${getPolicies(userType).map(policy => `<span class="policy-pill">${policy}</span>`).join('')}
@@ -184,6 +199,26 @@ function sortUsers(sortType) {
     const addUserContainer = document.querySelector('.add-user-container');
 
     cards.sort((a, b) => {
+        const getMetricValue = (card) => {
+            const selectedMetric = document.querySelector('.sort-select').value;
+            switch(selectedMetric) {
+                case 'percentage':
+                    return parseInt(card.querySelector('.metric.percentage .usage-amount').textContent);
+                case 'screentime':
+                    return parseFloat(card.querySelector('.metric.screentime .usage-amount').textContent);
+                case 'dollars':
+                    return parseFloat(card.querySelector('.metric.dollars .usage-amount').textContent.substring(1));
+                default:
+                    return 0;
+            }
+        };
+
+        if (sortType === 'asc' || sortType === 'desc') {
+            return sortType === 'asc' 
+                ? getMetricValue(a) - getMetricValue(b)
+                : getMetricValue(b) - getMetricValue(a);
+        }
+        
         if (sortType === 'newest' || sortType === 'oldest') {
             const timeA = a.querySelector('.timestamp').textContent;
             const timeB = b.querySelector('.timestamp').textContent;
