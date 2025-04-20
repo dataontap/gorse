@@ -186,8 +186,20 @@ function sortUsers(sortType) {
 
     cards.sort((a, b) => {
         if (sortType === 'newest' || sortType === 'oldest') {
-            const dateA = new Date(a.querySelector('.timestamp').textContent);
-            const dateB = new Date(b.querySelector('.timestamp').textContent);
+            const timeA = a.querySelector('.timestamp').textContent;
+            const timeB = b.querySelector('.timestamp').textContent;
+            const dateA = new Date(timeA.replace(/(\d{4}-\d{2}-\d{2}),\s*(\d{1,2}):(\d{2}):(\d{2})\s*(a\.m\.|p\.m\.)/, function(match, date, hour, min, sec, period) {
+                hour = parseInt(hour);
+                if (period === 'p.m.' && hour !== 12) hour += 12;
+                if (period === 'a.m.' && hour === 12) hour = 0;
+                return `${date} ${hour}:${min}:${sec}`;
+            }));
+            const dateB = new Date(timeB.replace(/(\d{4}-\d{2}-\d{2}),\s*(\d{1,2}):(\d{2}):(\d{2})\s*(a\.m\.|p\.m\.)/, function(match, date, hour, min, sec, period) {
+                hour = parseInt(hour);
+                if (period === 'p.m.' && hour !== 12) hour += 12;
+                if (period === 'a.m.' && hour === 12) hour = 0;
+                return `${date} ${hour}:${min}:${sec}`;
+            }));
             return sortType === 'newest' ? dateB - dateA : dateA - dateB;
         } else {
             const usageA = parseInt(a.querySelector('.usage-amount').textContent);
