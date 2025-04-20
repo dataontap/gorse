@@ -75,7 +75,8 @@ function createNewUserCard(firstName, lastName, usage, timestamp, userType) {
                 </div>
             </div>
             <div class="data-usage">
-                <div class="usage-label">Data Usage ${usage}%</div>
+                <div class="usage-label">Data Usage</div>
+                <div class="usage-amount">${usage}%</div>
             </div>
             <div class="policy-pills">
                 ${getPolicies(userType).map(policy => `<span class="policy-pill">${policy}</span>`).join('')}
