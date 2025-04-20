@@ -1,4 +1,4 @@
-from flask import Flask, request, send_from_directory
+from flask import Flask, request, send_from_directory, render_template
 from flask_restx import Api, Resource, fields
 from flask_socketio import SocketIO, emit
 import os
@@ -10,7 +10,7 @@ import stripe
 # Initialize Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
-app = Flask(__name__, static_url_path='/static')
+app = Flask(__name__, static_url_path='/static', template_folder='templates') # Added template_folder
 socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
     description='Get android phone IMEI API with telephony permissions for eSIM activation',
@@ -36,11 +36,11 @@ class CustomerResource(Resource):
             data = request.get_json()
             if not data or 'email' not in data:
                 return {'message': 'Email is required', 'status': 'error'}, 400
-            
+
             # Store customer email in database
             timestamp = datetime.now().isoformat()
             db[f"customer_{timestamp}"] = {'email': data['email']}
-            
+
             return {
                 'message': 'Customer created successfully',
                 'status': 'success',
@@ -239,10 +239,25 @@ def stripe_webhook():
 
     return {'status': 'success'}, 200
 
-@app.route('/', endpoint='serve_index')
-def serve_index():
-    return send_from_directory('static', 'index.html')
+
+@app.route('/', methods=['GET'])
+def home():
+    return render_template('index.html')
+
+@app.route('/signup', methods=['GET'])
+def signup():
+    return render_template('signup.html')  # Assumes signup.html exists
+
+@app.route('/dashboard', methods=['GET'])
+def dashboard():
+    return render_template('dashboard.html')  # Direct access to dashboard
+
+
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True) # Added debug=True for development

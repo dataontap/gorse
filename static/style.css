@@ -1,7 +1,77 @@
 body {
     min-height: 100vh;
     margin: 0;
-    background: #FFF371;
+}
+
+.landing-page {
+    background: linear-gradient(135deg, #C3C3E5 0%, #FFF371 100%);
+}
+
+.hero-container {
+    height: 100vh;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('https://images.unsplash.com/photo-1517486808906-6ca8b3f04846') center/cover;
+    filter: brightness(0.9);
+}
+
+.content-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(195, 195, 229, 0.1);
+}
+
+.cta-container {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.signup-btn {
+    background: #C3C3E5;
+    border: none;
+    padding: 15px 50px;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    transition: transform 0.2s;
+}
+
+.signup-btn:hover {
+    background: #9797CC;
+    transform: translateY(-2px);
+}
+
+.signin-text {
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
+}
+
+.signin-link {
+    color: #6B6BA7;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.signin-link:hover {
+    text-decoration: underline;
 }
 
 .form-control {
