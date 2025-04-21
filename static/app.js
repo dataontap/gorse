@@ -280,18 +280,29 @@ function sortUsers(sortType) {
     });
     
     // Remove and reinsert cards
+    // Apply initial positions
     cards.forEach(card => {
         const newPosition = originalPositions.find(pos => pos.card === card);
         const rect = card.getBoundingClientRect();
         const moving = rect.top < newPosition.top ? 'sorting-down' : 'sorting-up';
         
+        // Force reflow
+        card.offsetHeight;
         card.classList.add(moving);
-        setTimeout(() => {
+    });
+
+    // Wait for animation
+    setTimeout(() => {
+        cards.forEach(card => {
+            card.style.transition = 'none';
+            card.classList.remove('sorting-up', 'sorting-down');
             card.remove();
             container.insertBefore(card, addUserContainer);
-            card.classList.remove(moving);
-        }, 600);
-    });
+            // Force reflow
+            card.offsetHeight;
+            card.style.transition = '';
+        });
+    }, 600);
 }
 
 function initializeBackToTop() {
