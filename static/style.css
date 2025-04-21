@@ -930,19 +930,21 @@ body {
 }
 
 .dashboard-content {
-    transition: transform 0.6s ease-in-out;
+    transition: all 0.6s ease-in-out;
     position: relative;
     z-index: 1;
 }
 
 .dashboard-content.sorting-up {
     z-index: 0;
-    transform: translateY(-100%);
+    transform: translateY(-100%) scale(0.98);
+    opacity: 0.8;
 }
 
 .dashboard-content.sorting-down {
     z-index: 2;
-    transform: translateY(100%);
+    transform: translateY(100%) scale(1.02);
+    opacity: 1;
 }
 
 .usage-chart {

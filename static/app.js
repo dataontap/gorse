@@ -280,27 +280,39 @@ function sortUsers(sortType) {
     });
     
     // Remove and reinsert cards
-    // Apply initial positions
-    cards.forEach(card => {
-        const newPosition = originalPositions.find(pos => pos.card === card);
-        const rect = card.getBoundingClientRect();
-        const moving = rect.top < newPosition.top ? 'sorting-down' : 'sorting-up';
+    // Store current positions
+    const currentPositions = cards.map(card => ({
+        card,
+        rect: card.getBoundingClientRect()
+    }));
+
+    // Remove all cards
+    cards.forEach(card => card.remove());
+
+    // Reinsert cards in new order
+    cards.forEach((card, index) => {
+        container.insertBefore(card, addUserContainer);
+        const oldPos = currentPositions.find(pos => pos.card === card);
+        const newPos = card.getBoundingClientRect();
+        const isMovingDown = oldPos.rect.top < newPos.top;
+        
+        // Set initial position
+        card.style.transform = `translateY(${oldPos.rect.top - newPos.top}px)`;
+        card.style.transition = 'none';
         
         // Force reflow
         card.offsetHeight;
-        card.classList.add(moving);
+        
+        // Apply animation class and reset transform
+        card.classList.add(isMovingDown ? 'sorting-down' : 'sorting-up');
+        card.style.transition = '';
+        card.style.transform = '';
     });
 
-    // Wait for animation
+    // Reset classes after animation
     setTimeout(() => {
         cards.forEach(card => {
-            card.style.transition = 'none';
             card.classList.remove('sorting-up', 'sorting-down');
-            card.remove();
-            container.insertBefore(card, addUserContainer);
-            // Force reflow
-            card.offsetHeight;
-            card.style.transition = '';
         });
     }, 600);
 }
