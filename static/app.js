@@ -273,8 +273,25 @@ function sortUsers(sortType) {
         }
     });
 
-    cards.forEach(card => card.remove());
-    cards.forEach(card => container.insertBefore(card, addUserContainer));
+    // Get original positions
+    const originalPositions = cards.map(card => {
+        const rect = card.getBoundingClientRect();
+        return { card, top: rect.top };
+    });
+    
+    // Remove and reinsert cards
+    cards.forEach(card => {
+        const newPosition = originalPositions.find(pos => pos.card === card);
+        const rect = card.getBoundingClientRect();
+        const moving = rect.top < newPosition.top ? 'sorting-down' : 'sorting-up';
+        
+        card.classList.add(moving);
+        setTimeout(() => {
+            card.remove();
+            container.insertBefore(card, addUserContainer);
+            card.classList.remove(moving);
+        }, 600);
+    });
 }
 
 function initializeBackToTop() {
