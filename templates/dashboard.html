@@ -33,7 +33,29 @@
         .fa-play {
             color: #007bff; /* Make play button more distinct */
         }
+        .online-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: yellow;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 1s ease-in-out infinite;
+        }
 
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
 
     </style>
 </head>
@@ -60,6 +82,7 @@
     <div class="container">
         <div class="dot-container">
             <div class="dot-indicator">
+                <div class="online-indicator"></div>
                 <div class="dot-content">
                     <div class="data-amount">1.0<span>GB</span></div>
                     <div class="status"><i class="fas fa-globe"></i> Global</div>
