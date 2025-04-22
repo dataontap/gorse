@@ -490,7 +490,8 @@ function initializeChart(canvas) {
                     },
                     backgroundColor: 'transparent'
                 }
-            }
+            },
+            backgroundColor: 'transparent'
         }
     });
 }
