@@ -396,16 +396,20 @@ window.addGlobalData = function() {
 };
 
 function initializeChart(card) {
-    const canvas = card.querySelector('canvas');
+    const chartDiv = card.querySelector('.usage-chart');
+    const canvas = chartDiv.querySelector('canvas');
+    
     if (!canvas) {
         console.error('Canvas element not found');
         return;
     }
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        console.error('Could not get 2d context');
-        return;
+    
+    // Clear any existing chart
+    if (canvas._chart) {
+        canvas._chart.destroy();
     }
+    
+    const ctx = canvas.getContext('2d');
     
     const data = {
         labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
