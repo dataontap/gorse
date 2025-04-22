@@ -458,8 +458,8 @@ function initializeChart(canvas) {
             datasets: [{
                 label: 'Data Usage (GB)',
                 data: [1.2, 0.8, 1.5, 2.1, 1.9, 3.2, 2.8],
-                borderColor: '#0066ff',
-                backgroundColor: 'rgba(0, 102, 255, 0.1)',
+                borderColor: '#FFC40C',
+                backgroundColor: 'rgba(255, 196, 12, 0.2)',
                 borderWidth: 2,
                 tension: 0.4,
                 fill: true
@@ -481,12 +481,14 @@ function initializeChart(canvas) {
                     beginAtZero: true,
                     grid: {
                         color: 'rgba(0, 0, 0, 0.1)'
-                    }
+                    },
+                    backgroundColor: 'transparent'
                 },
                 x: {
                     grid: {
                         display: false
-                    }
+                    },
+                    backgroundColor: 'transparent'
                 }
             }
         }
