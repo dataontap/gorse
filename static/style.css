@@ -930,7 +930,7 @@ body {
 }
 
 .dashboard-content {
-    transition: all 0.6s ease-in-out;
+    transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     z-index: 1;
 }

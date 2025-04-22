@@ -314,7 +314,7 @@ function sortUsers(sortType) {
         cards.forEach(card => {
             card.classList.remove('sorting-up', 'sorting-down');
         });
-    }, 600);
+    }, 2000);
 }
 
 function initializeBackToTop() {
