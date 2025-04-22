@@ -427,14 +427,15 @@ function initializeChart(card) {
 
 window.toggleChart = function(event) {
     event.preventDefault();
-    const chartDiv = event.target.closest('.insights-card').querySelector('.usage-chart');
+    const card = event.target.closest('.insights-card');
+    const chartDiv = card.querySelector('.usage-chart');
     const link = event.target;
 
     if (chartDiv.style.display === 'none') {
         chartDiv.style.display = 'block';
         link.textContent = 'Hide details';
         if (!chartDiv.hasAttribute('data-initialized')) {
-            initializeChart(chartDiv.closest('.insights-card'));
+            initializeChart(card);
             chartDiv.setAttribute('data-initialized', 'true');
         }
     } else {
