@@ -8,8 +8,31 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeSortControls();
     initializeBackToTop();
     initializeButtons();
+    initializeDarkMode();
     updateSortControlsVisibility();
 });
+
+function initializeDarkMode() {
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const body = document.body;
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    
+    if (isDarkMode) {
+        body.classList.add('dark-mode');
+        darkModeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
+    }
+
+    darkModeToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        body.classList.toggle('dark-mode');
+        const icon = darkModeToggle.querySelector('i');
+        const isDark = body.classList.contains('dark-mode');
+        
+        icon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', 
+                             isDark ? 'fa-sun' : 'fa-moon');
+        localStorage.setItem('darkMode', isDark);
+    });
+}
 
 function initializeButtons() {
     document.querySelectorAll('.btn-primary').forEach(btn => {

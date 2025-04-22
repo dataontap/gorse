@@ -268,6 +268,35 @@ body {
 
 .dashboard-body {
     background: #CCCCFF;  /* Periwinkle background */
+    transition: all 0.3s ease;
+}
+
+.dashboard-body.dark-mode {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.dark-mode .dashboard-content {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .top-bar {
+    background: rgba(26, 26, 46, 0.95);
+}
+
+.dark-mode .menu-dropdown,
+.dark-mode .profile-dropdown {
+    background: rgba(26, 26, 46, 0.95);
+}
+
+.dark-mode .menu-dropdown a,
+.dark-mode .profile-dropdown a {
+    color: #fff;
+}
+
+.dark-mode .menu-dropdown a:hover,
+.dark-mode .profile-dropdown a:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .top-bar {
