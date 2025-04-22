@@ -404,33 +404,46 @@ function initializeChart(card) {
         return;
     }
     
-    // Clear any existing chart
-    if (canvas._chart) {
-        canvas._chart.destroy();
-    }
-    
     const ctx = canvas.getContext('2d');
     
-    const data = {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        datasets: [{
-            label: 'Data Usage (GB)',
-            data: [1.2, 0.8, 1.5, 2.1, 1.9, 3.2, 2.8],
-            borderColor: '#C3C3E5',
-            backgroundColor: 'rgba(195, 195, 229, 0.2)',
-            tension: 0.4
-        }]
-    };
-
-    new Chart(ctx, {
+    // Destroy existing chart if it exists
+    if (window.usageChart) {
+        window.usageChart.destroy();
+    }
+    
+    window.usageChart = new Chart(ctx, {
         type: 'line',
-        data: data,
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Data Usage (GB)',
+                data: [1.2, 0.8, 1.5, 2.1, 1.9, 3.2, 2.8],
+                borderColor: '#0066ff',
+                backgroundColor: 'rgba(0, 102, 255, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true
+            }]
+        },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
                 }
             }
         }
