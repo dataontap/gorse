@@ -460,13 +460,14 @@ function toggleChart(event) {
         chartDiv.style.display = 'block';
         link.textContent = 'Hide details';
 
-        // Initialize chart when showing
-        if (canvas.chart) {
-            canvas.chart.destroy();
+        // Clear any existing chart
+        if (window.chartInstance) {
+            window.chartInstance.destroy();
         }
 
+        // Initialize chart when showing
         const ctx = canvas.getContext('2d');
-        canvas.chart = new Chart(ctx, {
+        window.chartInstance = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -483,6 +484,10 @@ function toggleChart(event) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: 750,
+                    easing: 'easeOutQuart'
+                },
                 plugins: {
                     legend: {
                         display: false
@@ -504,8 +509,8 @@ function toggleChart(event) {
             }
         });
     } else {
-        if (canvas.chart) {
-            canvas.chart.destroy();
+        if (window.chartInstance) {
+            window.chartInstance.destroy();
         }
         chartDiv.style.display = 'none';
         link.textContent = 'See details';
