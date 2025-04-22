@@ -1,4 +1,3 @@
-
 // Initialize arrays at the top level
 const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
 const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
@@ -36,7 +35,7 @@ function initializeAddUser() {
         addUserBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
             const usage = Math.floor(Math.random() * 100);
@@ -106,7 +105,7 @@ function createNewUserCard(firstName, lastName, usage, screentime, dollars, time
 
     const container = document.querySelector('.container');
     const addUserContainer = document.querySelector('.add-user-container');
-    
+
     if (container && addUserContainer) {
         container.insertBefore(newCard, addUserContainer);
 
@@ -128,10 +127,10 @@ function createNewUserCard(firstName, lastName, usage, screentime, dollars, time
 function initializeSortControls() {
     const sortIcons = document.querySelectorAll('.sort-icon');
     const sortSelect = document.querySelector('.sort-select');
-    
+
     // Set newest as default active
     document.querySelector('[data-sort="newest"]').classList.add('active');
-    
+
     sortIcons.forEach(icon => {
         icon.addEventListener('click', function() {
             sortIcons.forEach(i => i.classList.remove('active'));
@@ -157,7 +156,7 @@ function updateMetricHighlight(selectedMetric) {
     document.querySelectorAll('.metric').forEach(metric => {
         metric.classList.remove('highlighted');
     });
-    
+
     document.querySelectorAll('.user-card').forEach(card => {
         const metrics = card.querySelectorAll('.metric');
         metrics.forEach(metric => {
@@ -249,7 +248,7 @@ function sortUsers(sortType) {
                 ? getMetricValue(a) - getMetricValue(b)
                 : getMetricValue(b) - getMetricValue(a);
         }
-        
+
         if (sortType === 'newest' || sortType === 'oldest') {
             const timeA = a.querySelector('.timestamp').textContent;
             const timeB = b.querySelector('.timestamp').textContent;
@@ -278,7 +277,7 @@ function sortUsers(sortType) {
         const rect = card.getBoundingClientRect();
         return { card, top: rect.top };
     });
-    
+
     // Remove and reinsert cards
     // Store current positions
     const currentPositions = cards.map(card => ({
@@ -295,14 +294,14 @@ function sortUsers(sortType) {
         const oldPos = currentPositions.find(pos => pos.card === card);
         const newPos = card.getBoundingClientRect();
         const isMovingDown = oldPos.rect.top < newPos.top;
-        
+
         // Set initial position
         card.style.transform = `translateY(${oldPos.rect.top - newPos.top}px)`;
         card.style.transition = 'none';
-        
+
         // Force reflow
         card.offsetHeight;
-        
+
         // Apply animation class and reset transform
         card.classList.add(isMovingDown ? 'sorting-down' : 'sorting-up');
         card.style.transition = '';
@@ -347,13 +346,13 @@ window.togglePausePlay = function(icon) {
         icon.classList.remove('fa-pause');
         icon.classList.add('fa-play');
         card.classList.add('paused');
-        
+
         const pauseTime = new Date();
         const durationSpan = document.createElement('span');
         durationSpan.className = 'pause-duration';
         durationSpan.textContent = 'Paused just now';
         icon.parentElement.appendChild(durationSpan);
-        
+
         setInterval(() => {
             durationSpan.textContent = 'Paused ' + formatTimeDifference(pauseTime);
         }, 60000);
@@ -398,19 +397,19 @@ window.addGlobalData = function() {
 function initializeChart(card) {
     const chartDiv = card.querySelector('.usage-chart');
     const canvas = chartDiv.querySelector('canvas');
-    
+
     if (!canvas) {
         console.error('Canvas element not found');
         return;
     }
-    
+
     const ctx = canvas.getContext('2d');
-    
+
     // Destroy existing chart if it exists
     if (window.usageChart) {
         window.usageChart.destroy();
     }
-    
+
     window.usageChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -450,7 +449,7 @@ function initializeChart(card) {
     });
 }
 
-window.toggleChart = function(event) {
+function toggleChart(event) {
     event.preventDefault();
     const card = event.target.closest('.insights-card');
     const chartDiv = card.querySelector('.usage-chart');
@@ -460,10 +459,14 @@ window.toggleChart = function(event) {
     if (chartDiv.style.display === 'none') {
         chartDiv.style.display = 'block';
         link.textContent = 'Hide details';
-        
+
         // Initialize chart when showing
+        if (canvas.chart) {
+            canvas.chart.destroy();
+        }
+
         const ctx = canvas.getContext('2d');
-        const chart = new Chart(ctx, {
+        canvas.chart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -500,7 +503,6 @@ window.toggleChart = function(event) {
                 }
             }
         });
-        canvas.chart = chart;
     } else {
         if (canvas.chart) {
             canvas.chart.destroy();
@@ -508,4 +510,4 @@ window.toggleChart = function(event) {
         chartDiv.style.display = 'none';
         link.textContent = 'See details';
     }
-};
+}
