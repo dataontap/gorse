@@ -480,18 +480,32 @@ function initializeChart(canvas) {
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: 'rgba(0, 0, 0, 0.1)'
+                        color: 'rgba(0, 0, 0, 0.1)',
+                        drawTicks: false
                     },
-                    backgroundColor: 'transparent'
+                    backgroundColor: 'transparent',
+                    border: {
+                        display: false
+                    }
                 },
                 x: {
                     grid: {
-                        display: false
+                        display: false,
+                        drawTicks: false
                     },
-                    backgroundColor: 'transparent'
+                    backgroundColor: 'transparent',
+                    border: {
+                        display: false
+                    }
                 }
             },
-            backgroundColor: 'transparent'
+            backgroundColor: 'transparent',
+            elements: {
+                point: {
+                    radius: 4,
+                    backgroundColor: '#FFC40C'
+                }
+            }
         }
     });
 }
