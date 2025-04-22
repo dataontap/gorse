@@ -397,7 +397,15 @@ window.addGlobalData = function() {
 
 function initializeChart(card) {
     const canvas = card.querySelector('canvas');
+    if (!canvas) {
+        console.error('Canvas element not found');
+        return;
+    }
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get 2d context');
+        return;
+    }
     
     const data = {
         labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
