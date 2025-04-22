@@ -449,70 +449,74 @@ function initializeChart(card) {
     });
 }
 
-function toggleChart(event) {
-    event.preventDefault();
-    const card = event.target.closest('.insights-card');
-    const chartDiv = card.querySelector('.usage-chart');
-    const canvas = chartDiv.querySelector('canvas');
-    const link = event.target;
-
-    if (chartDiv.style.display === 'none') {
-        chartDiv.style.display = 'block';
-        link.textContent = 'Hide details';
-
-        // Clear any existing chart
-        if (window.chartInstance) {
-            window.chartInstance.destroy();
-        }
-
-        // Initialize chart when showing
-        const ctx = canvas.getContext('2d');
-        window.chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [{
-                    label: 'Data Usage (GB)',
-                    data: [1.2, 0.8, 1.5, 2.1, 1.9, 3.2, 2.8],
-                    borderColor: '#0066ff',
-                    backgroundColor: 'rgba(0, 102, 255, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                }]
+function initializeChart(canvas) {
+    const ctx = canvas.getContext('2d');
+    return new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Data Usage (GB)',
+                data: [1.2, 0.8, 1.5, 2.1, 1.9, 3.2, 2.8],
+                borderColor: '#0066ff',
+                backgroundColor: 'rgba(0, 102, 255, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 750
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: {
-                    duration: 750,
-                    easing: 'easeOutQuart'
-                },
-                plugins: {
-                    legend: {
-                        display: false
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
                     }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
+                x: {
+                    grid: {
+                        display: false
                     }
                 }
             }
-        });
-    } else {
-        if (window.chartInstance) {
-            window.chartInstance.destroy();
         }
-        chartDiv.style.display = 'none';
-        link.textContent = 'See details';
-    }
+    });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const insightLinks = document.querySelectorAll('.insight-link');
+    insightLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const card = this.closest('.insights-card');
+            const chartDiv = card.querySelector('.usage-chart');
+            const canvas = chartDiv.querySelector('canvas');
+
+            if (chartDiv.style.display === 'none') {
+                chartDiv.style.display = 'block';
+                this.textContent = 'Hide details';
+                
+                if (!canvas.chart) {
+                    canvas.chart = initializeChart(canvas);
+                }
+            } else {
+                if (canvas.chart) {
+                    canvas.chart.destroy();
+                    canvas.chart = null;
+                }
+                chartDiv.style.display = 'none';
+                this.textContent = 'See details';
+            }
+        });
+    });
+});
