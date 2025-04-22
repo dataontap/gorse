@@ -454,16 +454,57 @@ window.toggleChart = function(event) {
     event.preventDefault();
     const card = event.target.closest('.insights-card');
     const chartDiv = card.querySelector('.usage-chart');
+    const canvas = chartDiv.querySelector('canvas');
     const link = event.target;
 
     if (chartDiv.style.display === 'none') {
         chartDiv.style.display = 'block';
         link.textContent = 'Hide details';
-        if (!chartDiv.hasAttribute('data-initialized')) {
-            initializeChart(card);
-            chartDiv.setAttribute('data-initialized', 'true');
-        }
+        
+        // Initialize chart when showing
+        const ctx = canvas.getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Data Usage (GB)',
+                    data: [1.2, 0.8, 1.5, 2.1, 1.9, 3.2, 2.8],
+                    borderColor: '#0066ff',
+                    backgroundColor: 'rgba(0, 102, 255, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        canvas.chart = chart;
     } else {
+        if (canvas.chart) {
+            canvas.chart.destroy();
+        }
         chartDiv.style.display = 'none';
         link.textContent = 'See details';
     }
