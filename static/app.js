@@ -395,6 +395,36 @@ window.addGlobalData = function() {
     }
 };
 
+function initializeChart(card) {
+    const canvas = card.querySelector('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    const data = {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+            label: 'Data Usage (GB)',
+            data: [1.2, 0.8, 1.5, 2.1, 1.9, 3.2, 2.8],
+            borderColor: '#C3C3E5',
+            backgroundColor: 'rgba(195, 195, 229, 0.2)',
+            tension: 0.4
+        }]
+    };
+
+    new Chart(ctx, {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
 window.toggleChart = function(event) {
     event.preventDefault();
     const chartDiv = event.target.closest('.insights-card').querySelector('.usage-chart');
