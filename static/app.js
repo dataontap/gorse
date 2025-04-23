@@ -476,20 +476,26 @@ window.hideConfirmationDrawer = function() {
 
 window.confirmPurchase = function() {
     hideConfirmationDrawer();
-    addGlobalData();
-};
-
-window.addGlobalData = function() {
     const dataAmountElement = document.querySelector('.data-amount');
     const globalStatus = document.getElementById('globalStatus');
     
     if (dataAmountElement) {
         dataAmountElement.style.display = 'flex';
         globalStatus.style.display = 'block';
-        
-        let currentData = parseFloat(dataAmountElement.textContent || "0");
-        currentData += 10;
-        dataAmountElement.innerHTML = `${currentData.toFixed(1)}<span>GB</span>`;
+        dataAmountElement.innerHTML = `10.0<span>GB</span>`;
+
+        const dotIndicator = document.querySelector('.dot-indicator');
+        if (dotIndicator) {
+            dotIndicator.classList.add('pulse');
+            setTimeout(() => {
+                dotIndicator.classList.remove('pulse');
+            }, 1000);
+        }
+    }
+};
+
+window.addGlobalData = function() {
+    showConfirmationDrawer(10, 10);
 
         const dotIndicator = document.querySelector('.dot-indicator');
         if (dotIndicator) {
