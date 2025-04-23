@@ -20,11 +20,21 @@ function initializeMenu() {
     menuIcon.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (menuDropdown.classList.contains('visible')) {
-            menuDropdown.classList.remove('visible');
-        } else {
-            menuDropdown.classList.add('visible');
-            highlightCurrentPage();
+        menuDropdown.classList.toggle('visible');
+        highlightCurrentPage();
+    });
+
+    menuDropdown.addEventListener('click', (e) => {
+        const menuLink = e.target.closest('a');
+        if (menuLink) {
+            e.preventDefault();
+            if (menuLink.getAttribute('href') === window.location.pathname) {
+                menuDropdown.classList.remove('visible');
+            } else {
+                setTimeout(() => {
+                    window.location.href = menuLink.getAttribute('href');
+                }, 300);
+            }
         }
     });
 
