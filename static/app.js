@@ -81,9 +81,23 @@ function initializeMenu() {
 }
 
 function initializeDarkMode() {
+    const settingsToggle = document.getElementById('settingsToggle');
+    const settingsSubmenu = document.querySelector('.settings-submenu');
     const darkModeToggle = document.getElementById('darkModeToggle');
+    const logoutBtn = document.getElementById('logoutBtn');
     const body = document.body;
     const isDarkMode = localStorage.getItem('darkMode') === 'true';
+
+    settingsToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        settingsSubmenu.style.display = settingsSubmenu.style.display === 'none' ? 'block' : 'none';
+    });
+
+    logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.href = '/';
+    });
 
     if (isDarkMode) {
         body.classList.add('dark-mode');
