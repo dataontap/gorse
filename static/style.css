@@ -208,29 +208,45 @@ body {
 }
 
 .offer-card {
-    background: white;
+    background: transparent;
     border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 400px;
     position: relative;
     padding: 20px;
     margin: 20px 0;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.offer-card::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    border: 1px solid rgba(128, 128, 128, 0.15);
+    border-radius: 12px;
+    pointer-events: none;
+    background: 
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15 35c-2-2-3-5-3-8 0-6 4-10 10-10 4 0 7 2 9 5 2-3 5-5 9-5 6 0 10 4 10 10 0 3-1 6-3 8' stroke='rgba(128,128,128,0.1)' fill='none' stroke-width='1'%3E%3C/path%3E%3C/svg%3E") repeat;
+    z-index: 0;
 }
 
 .offer-button {
-    position: absolute;
-    top: -15px;
-    right: 20px;
+    text-align: center;
+    padding-bottom: 15px;
+    position: relative;
     z-index: 2;
 }
 
 .offer-content {
     text-align: center;
     padding: 15px;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.7);
     border-radius: 10px;
+    position: relative;
+    z-index: 1;
 }
 
 .carousel-controls {
