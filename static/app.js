@@ -16,19 +16,23 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeMenu() {
     const menuIcon = document.querySelector('.menu-icon');
     const menuDropdown = document.querySelector('.menu-dropdown');
+    let isMenuVisible = false;
 
     menuIcon.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        isMenuVisible = !isMenuVisible;
+        menuDropdown.style.display = isMenuVisible ? 'block' : 'none';
         menuDropdown.classList.toggle('visible');
-        if (menuDropdown.classList.contains('visible')) {
+        if (isMenuVisible) {
             highlightCurrentPage();
         }
     });
 
     document.addEventListener('click', function(e) {
-        const target = e.target;
-        if (!menuDropdown.contains(target) && !menuIcon.contains(target)) {
+        if (!menuDropdown.contains(e.target) && !menuIcon.contains(e.target) && isMenuVisible) {
+            isMenuVisible = false;
+            menuDropdown.style.display = 'none';
             menuDropdown.classList.remove('visible');
         }
     });
@@ -37,6 +41,8 @@ function initializeMenu() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             if (window.location.pathname === '/dashboard') {
+                isMenuVisible = false;
+                menuDropdown.style.display = 'none';
                 menuDropdown.classList.remove('visible');
             } else {
                 window.location.href = '/dashboard';
