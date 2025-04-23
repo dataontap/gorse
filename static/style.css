@@ -367,6 +367,13 @@ body {
     color: #fff;
 }
 
+.dark-mode .dot-indicator {
+    background: #333333;
+    box-shadow: 0 0 30px rgba(147, 112, 219, 0.4),
+                0 0 60px rgba(147, 112, 219, 0.2),
+                0 0 90px rgba(147, 112, 219, 0.1);
+}
+
 .dark-mode .dashboard-content {
     background: rgba(255, 255, 255, 0.05);
 }
