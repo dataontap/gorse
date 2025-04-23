@@ -95,13 +95,6 @@ function initializeButtons() {
             }
         });
     });
-
-    document.querySelectorAll('.insight-link').forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleChart(e);
-        });
-    });
 }
 
 function initializeAddUser() {
