@@ -479,61 +479,6 @@ window.addGlobalData = function() {
     }
 };
 
-function initializeChart(card) {
-    const chartDiv = card.querySelector('.usage-chart');
-    const canvas = chartDiv.querySelector('canvas');
-
-    if (!canvas) {
-        console.error('Canvas element not found');
-        return;
-    }
-
-    const ctx = canvas.getContext('2d');
-
-    // Destroy existing chart if it exists
-    if (window.usageChart) {
-        window.usageChart.destroy();
-    }
-
-    window.usageChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-                label: 'Data Usage (GB)',
-                data: [1.2, 0.8, 1.5, 2.1, 1.9, 3.2, 2.8],
-                borderColor: '#0066ff',
-                backgroundColor: 'rgba(0, 102, 255, 0.1)',
-                borderWidth: 2,
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.1)'
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
-            }
-        }
-    });
-}
-
 function initializeChart(canvas) {
     const ctx = canvas.getContext('2d');
     return new Chart(ctx, {
@@ -542,7 +487,7 @@ function initializeChart(canvas) {
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             datasets: [{
                 label: 'Data Usage (GB)',
-                data: [1.2, 0.8, 1.5, 2.1, 1.9, 3.2, 2.8],
+                data: [12, 19, 15, 25, 22, 30, 45],
                 borderColor: '#FFC40C',
                 backgroundColor: 'rgba(255, 196, 12, 0.2)',
                 borderWidth: 2,
@@ -595,7 +540,7 @@ function initializeChart(canvas) {
     });
 }
 
-function toggleChart(element) {
+window.toggleChart = function(element) {
     const card = element.closest('.insights-card');
     const chartDiv = card.querySelector('.usage-chart');
     const canvas = chartDiv.querySelector('canvas');
@@ -605,36 +550,7 @@ function toggleChart(element) {
         element.textContent = 'Hide details';
 
         if (!canvas.chart) {
-            const ctx = canvas.getContext('2d');
-            canvas.chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{
-                        label: 'Usage Trend',
-                        data: [12, 19, 15, 25, 22, 30, 45],
-                        borderColor: '#FFC40C',
-                        backgroundColor: 'rgba(255, 196, 12, 0.2)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
+            canvas.chart = initializeChart(canvas);
         }
     } else {
         if (canvas.chart) {
