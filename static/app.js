@@ -20,7 +20,6 @@ function initializeMenu() {
     let menuClickable = true;
 
     menuIcon.addEventListener('click', (e) => {
-        if (!menuClickable) return;
         e.stopPropagation();
         menuDropdown.classList.toggle('visible');
         highlightCurrentPage();
@@ -48,15 +47,11 @@ function initializeMenu() {
             const href = link.getAttribute('href');
             if (href && href !== '#') {
                 e.preventDefault();
-                menuClickable = false;
                 if (window.location.pathname !== href) {
                     setTimeout(() => {
                         window.location.href = href;
                     }, 300);
                 }
-                setTimeout(() => {
-                    menuClickable = true;
-                }, 400);
             }
             menuDropdown.classList.remove('visible');
         });
