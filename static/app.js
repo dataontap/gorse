@@ -482,7 +482,10 @@ window.confirmPurchase = function() {
     if (dataAmountElement) {
         dataAmountElement.style.display = 'flex';
         globalStatus.style.display = 'block';
-        dataAmountElement.innerHTML = `10.0<span>GB</span>`;
+        
+        let currentData = parseFloat(dataAmountElement.textContent || "0");
+        currentData += 10;
+        dataAmountElement.innerHTML = `${currentData.toFixed(1)}<span>GB</span>`;
 
         const dotIndicator = document.querySelector('.dot-indicator');
         if (dotIndicator) {
