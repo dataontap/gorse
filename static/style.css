@@ -1285,3 +1285,48 @@ align-items: center;
 .user-type-device { background: rgba(128, 128, 128, 0.2); color: #444; }
 .user-type-car { background: rgba(0, 139, 139, 0.2); color: #006666; }
 .user-type-pet { background: rgba(255, 20, 147, 0.2); color: #991466; }
+
+.confirmation-drawer {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    transition: bottom 0.3s ease-out;
+    z-index: 1000;
+}
+
+.confirmation-drawer.show {
+    bottom: 0;
+}
+
+.drawer-content {
+    padding: 24px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.purchase-details {
+    margin: 20px 0;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.drawer-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.dark-mode .confirmation-drawer {
+    background: #1a1a2e;
+    color: white;
+}

@@ -464,6 +464,21 @@ function formatTimeDifference(timestamp) {
     return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
 }
 
+window.showConfirmationDrawer = function(dataAmount, price) {
+    document.getElementById('confirmDataAmount').textContent = `${dataAmount}GB`;
+    document.getElementById('confirmPrice').textContent = `$${price}`;
+    document.getElementById('confirmationDrawer').classList.add('show');
+};
+
+window.hideConfirmationDrawer = function() {
+    document.getElementById('confirmationDrawer').classList.remove('show');
+};
+
+window.confirmPurchase = function() {
+    hideConfirmationDrawer();
+    addGlobalData();
+};
+
 window.addGlobalData = function() {
     const dataAmountElement = document.querySelector('.data-amount');
     const globalStatus = document.getElementById('globalStatus');
