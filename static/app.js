@@ -34,9 +34,11 @@ function initializeMenu() {
             const href = link.getAttribute('href');
             if (href && href !== '#') {
                 e.preventDefault();
-                setTimeout(() => {
-                    window.location.href = href;
-                }, 300);
+                if (window.location.pathname !== href) {
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 300);
+                }
             }
             menuDropdown.classList.remove('visible');
         });
