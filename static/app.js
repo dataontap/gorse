@@ -16,17 +16,19 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeMenu() {
     const menuIcon = document.querySelector('.menu-icon');
     const menuDropdown = document.querySelector('.menu-dropdown');
-    
-    let menuClickable = true;
 
     menuIcon.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
         menuDropdown.classList.toggle('visible');
         highlightCurrentPage();
     });
 
     document.addEventListener('click', (e) => {
-        if (!menuIcon.contains(e.target)) {
+        const isClickInsideMenu = menuDropdown.contains(e.target);
+        const isClickOnIcon = menuIcon.contains(e.target);
+        
+        if (!isClickInsideMenu && !isClickOnIcon) {
             menuDropdown.classList.remove('visible');
         }
     });
