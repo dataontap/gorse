@@ -41,12 +41,14 @@ function initializeMenu() {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             if (window.location.pathname === '/dashboard') {
-                isMenuVisible = false;
-                menuDropdown.style.display = 'none';
                 menuDropdown.classList.remove('visible');
             } else {
-                window.location.href = '/dashboard';
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 300);
             }
+            isMenuVisible = false;
+            menuDropdown.style.display = 'none';
         });
     });
 
