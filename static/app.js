@@ -582,8 +582,7 @@ function initializeChart(canvas) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const insightLinks = document.querySelectorAll('.insight-link');
-    insightLinks.forEach(link => {
+    document.querySelectorAll('.insight-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const card = this.closest('.insights-card');
@@ -595,7 +594,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.textContent = 'Hide details';
                 
                 if (!canvas.chart) {
-                    canvas.chart = initializeChart(canvas);
+                    const ctx = canvas.getContext('2d');
+                    canvas.chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                            datasets: [{
+                                label: 'Usage Trend',
+                                data: [12, 19, 15, 25, 22, 30, 45],
+                                borderColor: '#FFC40C',
+                                backgroundColor: 'rgba(255, 196, 12, 0.2)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
                 }
             } else {
                 if (canvas.chart) {
