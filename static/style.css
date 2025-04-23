@@ -464,6 +464,16 @@ body {
     height: calc(100vh - 40px);
     display: none;
     overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-out;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.menu-dropdown.visible {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .profile-dropdown {
@@ -1045,7 +1055,7 @@ body {
 .sort-icons {
     display: flex;
     gap: 20px;
-    align-items: center;
+align-items: center;
 }
 
 .sort-icon {
@@ -1200,7 +1210,7 @@ body {
     text-decoration: none;
     margin-top: 8px;
     padding-top: 8px;
-    
+
 }
 
 .manage-link:hover {
