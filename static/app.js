@@ -17,31 +17,28 @@ function initializeMenu() {
     const menuIcon = document.querySelector('.menu-icon');
     const menuDropdown = document.querySelector('.menu-dropdown');
 
-    menuIcon.addEventListener('click', (e) => {
+    menuIcon.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         menuDropdown.classList.toggle('visible');
-        highlightCurrentPage();
-    });
-
-    menuDropdown.addEventListener('click', (e) => {
-        const menuLink = e.target.closest('a');
-        if (menuLink) {
-            e.preventDefault();
-            if (menuLink.getAttribute('href') === window.location.pathname) {
-                menuDropdown.classList.remove('visible');
-            } else {
-                setTimeout(() => {
-                    window.location.href = menuLink.getAttribute('href');
-                }, 300);
-            }
+        if (menuDropdown.classList.contains('visible')) {
+            highlightCurrentPage();
         }
     });
 
-    document.addEventListener('click', (e) => {
-        if (!menuDropdown.contains(e.target) && !menuIcon.contains(e.target)) {
+    document.addEventListener('click', function(e) {
+        const target = e.target;
+        if (!menuDropdown.contains(target) && !menuIcon.contains(target)) {
             menuDropdown.classList.remove('visible');
         }
+    });
+
+    menuDropdown.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = '/dashboard';
+            menuDropdown.classList.remove('visible');
+        });
     });
 
     function highlightCurrentPage() {
@@ -61,7 +58,7 @@ function initializeMenu() {
             menuLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
             menuDropdown.classList.remove('visible');
-            
+
             if (window.location.pathname !== '/dashboard') {
                 setTimeout(() => {
                     window.location.href = '/dashboard';
@@ -78,7 +75,7 @@ function initializeDarkMode() {
     const darkModeToggle = document.getElementById('darkModeToggle');
     const body = document.body;
     const isDarkMode = localStorage.getItem('darkMode') === 'true';
-    
+
     if (isDarkMode) {
         body.classList.add('dark-mode');
         darkModeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
@@ -91,7 +88,7 @@ function initializeDarkMode() {
         const icon = darkModeToggle.querySelector('i');
         const textSpan = darkModeToggle.querySelector('span');
         const isDark = body.classList.contains('dark-mode');
-        
+
         icon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', 
                              isDark ? 'fa-sun' : 'fa-moon');
         textSpan.textContent = isDark ? 'Light Mode' : 'Dark Mode';
@@ -602,7 +599,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (chartDiv.style.display === 'none') {
                 chartDiv.style.display = 'block';
                 this.textContent = 'Hide details';
-                
+
                 if (!canvas.chart) {
                     const ctx = canvas.getContext('2d');
                     canvas.chart = new Chart(ctx, {
