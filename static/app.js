@@ -466,8 +466,13 @@ function formatTimeDifference(timestamp) {
 
 window.addGlobalData = function() {
     const dataAmountElement = document.querySelector('.data-amount');
+    const globalStatus = document.getElementById('globalStatus');
+    
     if (dataAmountElement) {
-        let currentData = parseFloat(dataAmountElement.textContent);
+        dataAmountElement.style.display = 'flex';
+        globalStatus.style.display = 'block';
+        
+        let currentData = parseFloat(dataAmountElement.textContent || "0");
         currentData += 10;
         dataAmountElement.innerHTML = `${currentData.toFixed(1)}<span>GB</span>`;
 
