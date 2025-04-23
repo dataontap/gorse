@@ -20,16 +20,19 @@ function initializeDarkMode() {
     if (isDarkMode) {
         body.classList.add('dark-mode');
         darkModeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
+        darkModeToggle.querySelector('span').textContent = 'Light Mode';
     }
 
     darkModeToggle.addEventListener('click', (e) => {
         e.preventDefault();
         body.classList.toggle('dark-mode');
         const icon = darkModeToggle.querySelector('i');
+        const textSpan = darkModeToggle.querySelector('span');
         const isDark = body.classList.contains('dark-mode');
         
         icon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', 
                              isDark ? 'fa-sun' : 'fa-moon');
+        textSpan.textContent = isDark ? 'Light Mode' : 'Dark Mode';
         localStorage.setItem('darkMode', isDark);
     });
 }
