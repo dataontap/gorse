@@ -262,14 +262,14 @@ body {
     height: 12px;
     border-radius: 50%;
     border: none;
-    background: #ddd;
+    background: #444444;
     padding: 0;
     cursor: pointer;
     transition: background-color 0.3s;
 }
 
 .carousel-controls button.active {
-    background: #FFF371;
+    background: #666666;
 }
 
 .carousel-item.active {
@@ -563,23 +563,23 @@ body {
 }
 
 .carousel-item .btn-primary {
-    background: #FFF371;
-    color: #333;
+    background: #666666;
+    color: #fff;
     border: none;
     padding: 8px 24px;
 }
 
 .carousel-item .btn-primary:hover {
-    background: #FFE945;
+    background: #808080;
 }
 
 .carousel-item h3 {
     margin-bottom: 15px;
-    color: #333;
+    color: #666666;
 }
 
 .carousel-item p {
-    color: #666;
+    color: #808080;
     margin-bottom: 20px;
 }
 
