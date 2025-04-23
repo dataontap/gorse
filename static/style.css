@@ -233,13 +233,6 @@ body {
     z-index: 0;
 }
 
-.offer-button {
-    text-align: center;
-    padding-bottom: 15px;
-    position: relative;
-    z-index: 2;
-}
-
 .offer-content {
     text-align: center;
     padding: 15px;
@@ -247,6 +240,13 @@ body {
     border-radius: 10px;
     position: relative;
     z-index: 1;
+}
+
+.offer-button {
+    text-align: center;
+    padding: 15px 0;
+    position: relative;
+    z-index: 2;
 }
 
 .carousel-controls {
