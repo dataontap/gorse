@@ -180,6 +180,7 @@ body {
     opacity: 0;
     visibility: hidden;
     padding: 20px;
+    background: transparent;
 }
 
 .offer-content h3,
