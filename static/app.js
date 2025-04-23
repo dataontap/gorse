@@ -37,12 +37,14 @@ function initializeMenu() {
     menuDropdown.querySelectorAll('a').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopPropagation();
+            const href = this.getAttribute('href');
             menuDropdown.classList.remove('visible');
             menuDropdown.style.display = 'none';
             
-            if (window.location.pathname !== '/dashboard') {
+            if (href && href !== window.location.pathname) {
                 setTimeout(() => {
-                    window.location.href = '/dashboard';
+                    window.location.href = href;
                 }, 300);
             }
         });
