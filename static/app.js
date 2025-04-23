@@ -36,8 +36,11 @@ function initializeMenu() {
     menuDropdown.querySelectorAll('a').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            window.location.href = '/dashboard';
-            menuDropdown.classList.remove('visible');
+            if (window.location.pathname === '/dashboard') {
+                menuDropdown.classList.remove('visible');
+            } else {
+                window.location.href = '/dashboard';
+            }
         });
     });
 
