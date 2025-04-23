@@ -180,6 +180,55 @@ body {
     transform: translateX(0);
     opacity: 0;
     visibility: hidden;
+    padding: 20px;
+}
+
+.offer-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    position: relative;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.offer-button {
+    position: absolute;
+    top: -15px;
+    right: 20px;
+    z-index: 2;
+}
+
+.offer-content {
+    text-align: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+}
+
+.carousel-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.carousel-controls button {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: none;
+    background: #ddd;
+    padding: 0;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.carousel-controls button.active {
+    background: #FFF371;
 }
 
 .carousel-item.active {

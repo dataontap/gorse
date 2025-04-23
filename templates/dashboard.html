@@ -93,25 +93,43 @@
         <div id="promotionsCarousel" class="carousel slide" data-bs-touch="true">
             <div class="carousel-inner">
                 <div class="carousel-item active">
-                    <h3>Global Data Package</h3>
-                    <p>Add 10GB global data</p>
-                    <p><strong>$10</strong></p>
-                    <button class="btn btn-primary" onclick="addGlobalData()">Buy</button>
+                    <div class="offer-card">
+                        <div class="offer-button">
+                            <button class="btn btn-primary" onclick="addGlobalData()">Buy</button>
+                        </div>
+                        <div class="offer-content">
+                            <h3>Global Data Package</h3>
+                            <p>Add 10GB global data</p>
+                            <p><strong>$10</strong></p>
+                        </div>
+                    </div>
                 </div>
                 <div class="carousel-item">
-                    <h3>Secure Network</h3>
-                    <p>Annual secure network subscription</p>
-                    <p><strong>$50/year</strong></p>
-                    <button class="btn btn-primary">Buy</button>
+                    <div class="offer-card">
+                        <div class="offer-button">
+                            <button class="btn btn-primary">Buy</button>
+                        </div>
+                        <div class="offer-content">
+                            <h3>Secure Network</h3>
+                            <p>Annual secure network subscription</p>
+                            <p><strong>$50/year</strong></p>
+                        </div>
+                    </div>
                 </div>
                 <div class="carousel-item">
-                    <h3>New User Bundle</h3>
-                    <p>eSIM + 1 year service</p>
-                    <p><strong>$61</strong></p>
-                    <button class="btn btn-primary" onclick="document.getElementById('addUserBtn').click()">Get Started</button>
+                    <div class="offer-card">
+                        <div class="offer-button">
+                            <button class="btn btn-primary" onclick="document.getElementById('addUserBtn').click()">Get Started</button>
+                        </div>
+                        <div class="offer-content">
+                            <h3>New User Bundle</h3>
+                            <p>eSIM + 1 year service</p>
+                            <p><strong>$61</strong></p>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="carousel-indicators">
+            <div class="carousel-controls">
                 <button type="button" data-bs-target="#promotionsCarousel" data-bs-slide-to="0" class="active"></button>
                 <button type="button" data-bs-target="#promotionsCarousel" data-bs-slide-to="1"></button>
                 <button type="button" data-bs-target="#promotionsCarousel" data-bs-slide-to="2"></button>
