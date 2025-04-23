@@ -607,7 +607,7 @@ body {
     overflow: hidden;
     cursor: pointer;
     user-select: none;
-    animation: glow 2s ease-in-out infinite;
+    animation: glow 4s ease-in-out infinite;
 }
 
 @keyframes glow {
