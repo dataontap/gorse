@@ -16,39 +16,35 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeMenu() {
     const menuIcon = document.querySelector('.menu-icon');
     const menuDropdown = document.querySelector('.menu-dropdown');
-    let isMenuVisible = false;
 
     menuIcon.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        isMenuVisible = !isMenuVisible;
-        menuDropdown.style.display = isMenuVisible ? 'block' : 'none';
         menuDropdown.classList.toggle('visible');
-        if (isMenuVisible) {
+        menuDropdown.style.display = menuDropdown.classList.contains('visible') ? 'block' : 'none';
+        if (menuDropdown.classList.contains('visible')) {
             highlightCurrentPage();
         }
     });
 
     document.addEventListener('click', function(e) {
-        if (!menuDropdown.contains(e.target) && !menuIcon.contains(e.target) && isMenuVisible) {
-            isMenuVisible = false;
-            menuDropdown.style.display = 'none';
+        if (!menuDropdown.contains(e.target) && !menuIcon.contains(e.target)) {
             menuDropdown.classList.remove('visible');
+            menuDropdown.style.display = 'none';
         }
     });
 
     menuDropdown.querySelectorAll('a').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            if (window.location.pathname === '/dashboard') {
-                menuDropdown.classList.remove('visible');
-            } else {
+            menuDropdown.classList.remove('visible');
+            menuDropdown.style.display = 'none';
+            
+            if (window.location.pathname !== '/dashboard') {
                 setTimeout(() => {
                     window.location.href = '/dashboard';
                 }, 300);
             }
-            isMenuVisible = false;
-            menuDropdown.style.display = 'none';
         });
     });
 
