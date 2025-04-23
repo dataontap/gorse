@@ -47,16 +47,16 @@ function initializeMenu() {
     const menuLinks = menuDropdown.querySelectorAll('a');
     menuLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            const href = link.getAttribute('href');
-            if (href && href !== '#') {
-                e.preventDefault();
-                if (window.location.pathname !== href) {
-                    setTimeout(() => {
-                        window.location.href = href;
-                    }, 300);
-                }
-            }
+            e.preventDefault();
+            menuLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
             menuDropdown.classList.remove('visible');
+            
+            if (window.location.pathname !== '/dashboard') {
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 300);
+            }
         });
     });
 
