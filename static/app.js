@@ -496,15 +496,6 @@ window.confirmPurchase = function() {
 
 window.addGlobalData = function() {
     showConfirmationDrawer(10, 10);
-
-        const dotIndicator = document.querySelector('.dot-indicator');
-        if (dotIndicator) {
-            dotIndicator.classList.add('pulse');
-            setTimeout(() => {
-                dotIndicator.classList.remove('pulse');
-            }, 1000);
-        }
-    }
 };
 
 function initializeChart(canvas) {
