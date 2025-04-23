@@ -212,10 +212,10 @@ body {
     background: transparent;
     border-radius: 15px;
     width: 100%;
-    max-width: 400px;
+    max-width: 450px;
     position: relative;
-    padding: 20px;
-    margin: 20px 0;
+    padding: 25px;
+    margin: 20px auto;
     border: 1px solid rgba(128, 128, 128, 0.2);
 }
 
@@ -236,9 +236,9 @@ body {
 
 .offer-content {
     text-align: center;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.7);
-    border-radius: 10px;
+    padding: 20px;
+    background: transparent;
+    border-radius: 12px;
     position: relative;
     z-index: 1;
 }
