@@ -17,9 +17,13 @@ function initializeMenu() {
     const menuIcon = document.querySelector('.menu-icon');
     const menuDropdown = document.querySelector('.menu-dropdown');
     
+    let menuClickable = true;
+
     menuIcon.addEventListener('click', (e) => {
+        if (!menuClickable) return;
         e.stopPropagation();
         menuDropdown.classList.toggle('visible');
+        highlightCurrentPage();
     });
 
     document.addEventListener('click', (e) => {
@@ -28,21 +32,38 @@ function initializeMenu() {
         }
     });
 
+    function highlightCurrentPage() {
+        const currentPath = window.location.pathname;
+        menuDropdown.querySelectorAll('a').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('active');
+            }
+        });
+    }
+
     const menuLinks = menuDropdown.querySelectorAll('a');
     menuLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             const href = link.getAttribute('href');
             if (href && href !== '#') {
                 e.preventDefault();
+                menuClickable = false;
                 if (window.location.pathname !== href) {
                     setTimeout(() => {
                         window.location.href = href;
                     }, 300);
                 }
+                setTimeout(() => {
+                    menuClickable = true;
+                }, 400);
             }
             menuDropdown.classList.remove('visible');
         });
     });
+
+    // Initial highlight
+    highlightCurrentPage();
 }
 
 function initializeDarkMode() {
