@@ -9,8 +9,25 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeBackToTop();
     initializeButtons();
     initializeDarkMode();
+    initializeMenu();
     updateSortControlsVisibility();
 });
+
+function initializeMenu() {
+    const menuIcon = document.querySelector('.menu-icon');
+    const menuDropdown = document.querySelector('.menu-dropdown');
+    
+    menuIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuDropdown.style.display = menuDropdown.style.display === 'block' ? 'none' : 'block';
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!menuIcon.contains(e.target)) {
+            menuDropdown.style.display = 'none';
+        }
+    });
+}
 
 function initializeDarkMode() {
     const darkModeToggle = document.getElementById('darkModeToggle');
