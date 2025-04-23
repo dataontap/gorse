@@ -595,58 +595,62 @@ function initializeChart(canvas) {
     });
 }
 
+function toggleChart(element) {
+    const card = element.closest('.insights-card');
+    const chartDiv = card.querySelector('.usage-chart');
+    const canvas = chartDiv.querySelector('canvas');
+
+    if (chartDiv.style.display === 'none') {
+        chartDiv.style.display = 'block';
+        element.textContent = 'Hide details';
+
+        if (!canvas.chart) {
+            const ctx = canvas.getContext('2d');
+            canvas.chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Usage Trend',
+                        data: [12, 19, 15, 25, 22, 30, 45],
+                        borderColor: '#FFC40C',
+                        backgroundColor: 'rgba(255, 196, 12, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    } else {
+        if (canvas.chart) {
+            canvas.chart.destroy();
+            canvas.chart = null;
+        }
+        chartDiv.style.display = 'none';
+        element.textContent = 'See details';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.insight-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            const card = this.closest('.insights-card');
-            const chartDiv = card.querySelector('.usage-chart');
-            const canvas = chartDiv.querySelector('canvas');
-
-            if (chartDiv.style.display === 'none') {
-                chartDiv.style.display = 'block';
-                this.textContent = 'Hide details';
-
-                if (!canvas.chart) {
-                    const ctx = canvas.getContext('2d');
-                    canvas.chart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                            datasets: [{
-                                label: 'Usage Trend',
-                                data: [12, 19, 15, 25, 22, 30, 45],
-                                borderColor: '#FFC40C',
-                                backgroundColor: 'rgba(255, 196, 12, 0.2)',
-                                borderWidth: 2,
-                                tension: 0.4,
-                                fill: true
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true
-                                }
-                            }
-                        }
-                    });
-                }
-            } else {
-                if (canvas.chart) {
-                    canvas.chart.destroy();
-                    canvas.chart = null;
-                }
-                chartDiv.style.display = 'none';
-                this.textContent = 'See details';
-            }
+            toggleChart(this);
         });
     });
 });
