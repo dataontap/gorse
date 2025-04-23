@@ -484,7 +484,7 @@ window.confirmPurchase = function() {
         globalStatus.style.display = 'block';
         
         let currentText = dataAmountElement.textContent || "0";
-        let currentData = parseFloat(currentText.replace('GB', ''));
+        let currentData = parseFloat(currentText.replace('GB', '') || "0");
         currentData += 10;
         dataAmountElement.innerHTML = `${currentData.toFixed(1)}<span>GB</span>`;
 
