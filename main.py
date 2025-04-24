@@ -248,6 +248,10 @@ def home():
 def signup():
     return render_template('signup.html')  # Assumes signup.html exists
 
+@app.route('/profile', methods=['GET'])
+def profile():
+    return render_template('profile.html')
+
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
     return render_template('dashboard.html')  # Direct access to dashboard
