@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,33 +7,12 @@
     <link href="/static/style.css" rel="stylesheet">
 </head>
 <body class="dashboard-body">
-    <div class="top-bar">
-        <div class="menu-icon">
-            <i class="fas fa-bars"></i>
-            <div class="menu-dropdown">
-                <a href="/dashboard"><i class="fas fa-database"></i> Data</a>
-                <a href="#"><i class="fas fa-network-wired"></i> Network</a>
-                <a href="#"><i class="fas fa-store"></i> Marketplace</a>
+    <div class="container-fluid p-0">
+        <div class="dashboard-content w-100 min-vh-100 m-0">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-user-circle"></i> Profile</h2>
+                <a href="/dashboard" class="btn-close" aria-label="Close"></a>
             </div>
-        </div>
-        <div class="profile-section">
-            <i class="fas fa-user-circle"></i>
-            <div class="profile-dropdown">
-                <div class="profile-info">My Account</div>
-                <a href="/profile"><i class="fas fa-user"></i> Profile</a>
-                <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
-                <a href="#"><i class="fas fa-credit-card"></i> Payments</a>
-                <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
-                <div class="settings-submenu" style="display: none;">
-                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
-                </div>
-                <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
-            </div>
-        </div>
-    </div>
-    <div class="container">
-        <div class="dashboard-content">
-            <h2><i class="fas fa-user-circle"></i> Profile</h2>
             <div class="profile-details">
                 <div class="user-info">
                     <h3>Account Information</h3>
