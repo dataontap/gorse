@@ -93,6 +93,55 @@ function initializeMenu() {
     highlightCurrentPage();
 }
 
+window.editAddress = function(button) {
+    const addressDiv = button.closest('.address-card').querySelector('div > div');
+    const addressLines = Array.from(addressDiv.querySelectorAll('p')).map(p => p.textContent);
+    
+    const form = document.createElement('form');
+    form.className = 'edit-address-form';
+    
+    addressLines.forEach((line, index) => {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-control mb-2';
+        input.value = line;
+        form.appendChild(input);
+    });
+    
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'btn btn-primary btn-sm me-2';
+    saveBtn.textContent = 'Save';
+    saveBtn.onclick = () => {
+        const newLines = Array.from(form.querySelectorAll('input')).map(input => input.value);
+        const newAddressDiv = document.createElement('div');
+        newLines.forEach(line => {
+            const p = document.createElement('p');
+            p.className = 'mb-1';
+            p.textContent = line;
+            newAddressDiv.appendChild(p);
+        });
+        addressDiv.innerHTML = newAddressDiv.innerHTML;
+    };
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn btn-secondary btn-sm';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick = () => {
+        addressDiv.innerHTML = addressLines.map(line => `<p class="mb-1">${line}</p>`).join('');
+    };
+    
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'mt-2';
+    btnGroup.appendChild(saveBtn);
+    btnGroup.appendChild(cancelBtn);
+    form.appendChild(btnGroup);
+    
+    addressDiv.innerHTML = '';
+    addressDiv.appendChild(form);
+};
+
 function initializeDarkMode() {
     const settingsToggle = document.getElementById('settingsToggle');
     const settingsSubmenu = document.querySelector('.settings-submenu');
