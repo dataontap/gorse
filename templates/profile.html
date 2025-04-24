@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,20 +8,74 @@
     <link href="/static/style.css" rel="stylesheet">
 </head>
 <body class="dashboard-body">
-    <div class="container-fluid p-0">
-        <div class="dashboard-content w-100 min-vh-100 m-0">
+    <div class="top-bar">
+        <div class="menu-icon">
+            <i class="fas fa-bars"></i>
+            <div class="menu-dropdown">
+                <a href="/dashboard"><i class="fas fa-database"></i> Data</a>
+                <a href="#"><i class="fas fa-network-wired"></i> Network</a>
+                <a href="#"><i class="fas fa-store"></i> Marketplace</a>
+            </div>
+        </div>
+        <div class="profile-section">
+            <i class="fas fa-user-circle"></i>
+            <div class="profile-dropdown">
+                <div class="profile-info">My Account</div>
+                <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+                <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="#"><i class="fas fa-credit-card"></i> Payments</a>
+                <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
+                <div class="settings-submenu" style="display: none;">
+                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
+                </div>
+                <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="dashboard-content">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-user-circle"></i> Profile</h2>
                 <a href="/dashboard" class="btn-close" aria-label="Close"></a>
             </div>
             <div class="profile-details">
-                <div class="user-info">
-                    <h3>Account Information</h3>
+                <div class="user-info mb-4">
                     <div class="email-container">
                         <div class="user-info-header">
                             <span class="user-name">John Doe</span>
                             <span class="user-email">john@example.com</span>
+                            <span class="user-type user-type-admin">Admin Account</span>
                         </div>
+                    </div>
+                </div>
+                
+                <div class="address-section mb-4">
+                    <h3 class="mb-3"><i class="fas fa-shipping-fast"></i> Shipping Address</h3>
+                    <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                        <p class="mb-1">123 John Street, Unit 45</p>
+                        <p class="mb-1">Toronto, ON M5V 2T6</p>
+                        <p class="mb-1">Canada</p>
+                    </div>
+                    
+                    <h3 class="mb-3"><i class="fas fa-file-invoice"></i> Billing Address</h3>
+                    <div class="address-card p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                        <p class="mb-1">789 Dufferin Street</p>
+                        <p class="mb-1">Toronto, ON M6H 4B2</p>
+                        <p class="mb-1">Canada</p>
+                    </div>
+                </div>
+
+                <div class="alternate-addresses">
+                    <h3 class="mb-3"><i class="fas fa-map-marker-alt"></i> Alternate Addresses</h3>
+                    <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                        <p class="mb-1">456 Gladstone Avenue</p>
+                        <p class="mb-1">Toronto, ON M6H 3H9</p>
+                        <p class="mb-1">Canada</p>
+                    </div>
+                    <div class="address-card p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                        <p class="mb-1">321 Front Street West</p>
+                        <p class="mb-1">Toronto, ON M5V 2T6</p>
+                        <p class="mb-1">Canada</p>
                     </div>
                 </div>
             </div>
