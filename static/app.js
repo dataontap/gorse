@@ -10,8 +10,21 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeButtons();
     initializeDarkMode();
     initializeMenu();
+    initializeProfileDropdown();
     updateSortControlsVisibility();
 });
+
+function initializeProfileDropdown() {
+    const profileDropdown = document.querySelector('.profile-dropdown');
+    
+    window.hideProfileDropdown = (event) => {
+        event.preventDefault();
+        profileDropdown.style.display = 'none';
+        setTimeout(() => {
+            window.location.href = event.target.closest('a').getAttribute('href');
+        }, 300);
+    };
+}
 
 function initializeMenu() {
     const menuIcon = document.querySelector('.menu-icon');
