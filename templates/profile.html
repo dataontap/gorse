@@ -5,6 +5,21 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
+    <style>
+        .address-card {
+            min-height: 150px; /* Increased height for larger cards */
+            padding: 20px; /* Increased padding for better spacing */
+        }
+        .address-content {
+            flex: 1; /* Allow address content to expand */
+            margin-right: 20px; /* Add space between address and icon */
+        }
+        .address-card .fas.fa-edit {
+            padding: 10px; /* Add padding to the edit icon */
+            font-size: 1.2em;
+        }
+
+    </style>
 </head>
 <body class="dashboard-body">
     <div class="top-bar">
@@ -52,24 +67,24 @@
                     <h3 class="mb-3"><i class="fas fa-shipping-fast"></i> Shipping Address</h3>
                     <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
                         <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <p class="mb-1">123 John Street, Unit 45</p>
-                                <p class="mb-1">Toronto, ON M5V 2T6</p>
-                                <p class="mb-1">Canada</p>
+                            <div class="address-content">
+                                <p>123 John Street, Unit 45</p>
+                                <p>Toronto, ON M5V 2T6</p>
+                                <p>Canada</p>
                             </div>
-                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)" style="cursor: pointer; color: #666; padding: 8px;"></i>
+                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)"></i>
                         </div>
                     </div>
 
                     <h3 class="mb-3"><i class="fas fa-file-invoice"></i> Billing Address</h3>
                     <div class="address-card p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
                         <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <p class="mb-1">789 Dufferin Street</p>
-                                <p class="mb-1">Toronto, ON M6H 4B2</p>
-                                <p class="mb-1">Canada</p>
+                            <div class="address-content">
+                                <p>789 Dufferin Street</p>
+                                <p>Toronto, ON M6H 4B2</p>
+                                <p>Canada</p>
                             </div>
-                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)" style="cursor: pointer; color: #666; padding: 8px;"></i>
+                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)"></i>
                         </div>
                     </div>
                 </div>
@@ -78,22 +93,22 @@
                     <h3 class="mb-3"><i class="fas fa-map-marker-alt"></i> Alternate Addresses</h3>
                     <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
                         <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <p class="mb-1">456 Gladstone Avenue</p>
-                                <p class="mb-1">Toronto, ON M6H 3H9</p>
-                                <p class="mb-1">Canada</p>
+                            <div class="address-content">
+                                <p>456 Gladstone Avenue</p>
+                                <p>Toronto, ON M6H 3H9</p>
+                                <p>Canada</p>
                             </div>
-                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)" style="cursor: pointer; color: #666; padding: 8px;"></i>
+                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)"></i>
                         </div>
                     </div>
                     <div class="address-card p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
                         <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <p class="mb-1">321 Front Street West</p>
-                                <p class="mb-1">Toronto, ON M5V 2T6</p>
-                                <p class="mb-1">Canada</p>
+                            <div class="address-content">
+                                <p>321 Front Street West</p>
+                                <p>Toronto, ON M5V 2T6</p>
+                                <p>Canada</p>
                             </div>
-                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)" style="cursor: pointer; color: #666; padding: 8px;"></i>
+                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)"></i>
                         </div>
                     </div>
                 </div>
