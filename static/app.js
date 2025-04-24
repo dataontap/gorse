@@ -93,8 +93,8 @@ function initializeMenu() {
     highlightCurrentPage();
 }
 
-window.editAddress = function(button) {
-    const addressDiv = button.closest('.address-card').querySelector('div > div');
+window.editAddress = function(icon) {
+    const addressDiv = icon.closest('.address-card').querySelector('div > div');
     const addressLines = Array.from(addressDiv.querySelectorAll('p')).map(p => p.textContent);
     
     const form = document.createElement('form');
