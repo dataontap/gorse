@@ -85,6 +85,7 @@ function initializeDarkMode() {
     const settingsSubmenu = document.querySelector('.settings-submenu');
     const darkModeToggle = document.getElementById('darkModeToggle');
     const logoutBtn = document.getElementById('logoutBtn');
+    const profileLink = document.querySelector('.profile-dropdown a[href="/profile"]');
     const body = document.body;
     const isDarkMode = localStorage.getItem('darkMode') === 'true';
 
@@ -93,6 +94,13 @@ function initializeDarkMode() {
         e.stopPropagation();
         settingsSubmenu.style.display = settingsSubmenu.style.display === 'none' ? 'block' : 'none';
     });
+
+    if (profileLink) {
+        profileLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = '/profile';
+        });
+    }
 
     logoutBtn.addEventListener('click', (e) => {
         e.preventDefault();
