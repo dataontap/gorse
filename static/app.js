@@ -114,14 +114,22 @@ window.editAddress = function(icon) {
     saveBtn.textContent = 'Save';
     saveBtn.onclick = () => {
         const newLines = Array.from(form.querySelectorAll('input')).map(input => input.value);
-        const newAddressDiv = document.createElement('div');
+        addressDiv.innerHTML = '';
         newLines.forEach(line => {
             const p = document.createElement('p');
             p.className = 'mb-1';
             p.textContent = line;
-            newAddressDiv.appendChild(p);
+            addressDiv.appendChild(p);
         });
-        addressDiv.innerHTML = newAddressDiv.innerHTML;
+        
+        // Restore the edit icon
+        const parentCard = addressDiv.closest('.address-card');
+        const editDiv = parentCard.querySelector('.d-flex');
+        const editIcon = document.createElement('i');
+        editIcon.className = 'fas fa-edit edit-icon';
+        editIcon.style.cssText = 'cursor: pointer; color: #666; padding: 8px;';
+        editIcon.onclick = function() { editAddress(this); };
+        editDiv.appendChild(editIcon);
     };
     
     const cancelBtn = document.createElement('button');
