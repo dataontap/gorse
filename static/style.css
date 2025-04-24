@@ -1367,6 +1367,16 @@ align-items: center;
     line-height: 1.5;
 }
 
+.address-card h4 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
 .address-card .edit-icon {
     font-size: 18px;
     padding: 8px;
