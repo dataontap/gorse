@@ -240,15 +240,14 @@ body {
     background: transparent;
     border-radius: 15px;
     width: 100%;
-    max-width: 450px;
     position: relative;
     padding: 25px;
     margin: 20px auto;
-    border: 1px solid rgba(128, 128, 128, 0.2);
 }
 
 .offer-card {
     background: rgba(255, 255, 255, 0.8);
+    z-index: 3;
 }
 
 .offer-card::before {
@@ -262,7 +261,7 @@ body {
     pointer-events: none;
     background: url('/static/tropical-border.png') center/cover;
     opacity: 0.5;
-    z-index: 1;
+    z-index: 4;
 }
 
 .offer-content {
@@ -271,7 +270,7 @@ body {
     background: transparent;
     border-radius: 12px;
     position: relative;
-    z-index: 2;
+    z-index: 5;
 }
 
 .offer-button {
