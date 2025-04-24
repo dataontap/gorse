@@ -82,10 +82,18 @@ function initializeMenu() {
 
 function initializeDarkMode() {
     const settingsToggle = document.getElementById('settingsToggle');
+    const subscriptionsToggle = document.getElementById('subscriptionsToggle');
     const settingsSubmenu = document.querySelector('.settings-submenu');
+    const subscriptionsSubmenu = document.querySelector('.subscriptions-submenu');
     const darkModeToggle = document.getElementById('darkModeToggle');
     const logoutBtn = document.getElementById('logoutBtn');
     const body = document.body;
+
+    subscriptionsToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        subscriptionsSubmenu.style.display = subscriptionsSubmenu.style.display === 'none' ? 'block' : 'none';
+    });
     const isDarkMode = localStorage.getItem('darkMode') === 'true';
 
     settingsToggle.addEventListener('click', (e) => {
