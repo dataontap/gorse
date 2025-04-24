@@ -248,7 +248,7 @@ body {
 }
 
 .offer-card {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgb(255, 255, 255);
 }
 
 .offer-card::before {
