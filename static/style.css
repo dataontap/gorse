@@ -127,6 +127,17 @@ body {
     color: #333;
 }
 
+.promo-text {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+    color: #6B6BA7;
+    font-size: 1.25rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    max-width: 600px;
+    line-height: 1.5;
+}
+
 .onboarding-content {
     text-align: center;
     padding: 2rem 1rem;
