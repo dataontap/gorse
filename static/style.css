@@ -53,12 +53,16 @@ body {
     text-align: center;
     margin: 0 auto 2rem;
     max-width: 600px;
-    position: relative;
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 1005;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: block !important;
 }
 
 .cta-container {
