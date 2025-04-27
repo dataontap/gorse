@@ -44,10 +44,16 @@ body {
     background: transparent;
 }
 
+.menu-dropdown, 
+.profile-dropdown {
+    display: block;
+    background: rgba(255, 255, 255, 0.95);
+}
+
 .cta-container {
     text-align: center;
     padding: 3rem;
-    background: rgba(255, 255, 255, 0.95);
+    background: transparent;
     border-radius: 24px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1),
                 0 16px 48px rgba(0, 0, 0, 0.05);
