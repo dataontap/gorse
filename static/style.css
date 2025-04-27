@@ -46,15 +46,8 @@ body {
 
 .menu-dropdown, 
 .profile-dropdown {
-    display: none;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 8px 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.menu-dropdown.visible,
-.profile-dropdown.visible {
     display: block;
+    background: rgba(255, 255, 255, 0.95);
 }
 
 .cta-container {
