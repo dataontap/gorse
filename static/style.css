@@ -145,7 +145,10 @@ body {
     text-align: center;
     max-width: 600px;
     line-height: 1.5;
-    position: relative;
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 1005;
     display: block;
     background: rgba(255, 255, 255, 0.95);
@@ -153,9 +156,8 @@ body {
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     width: 90%;
-    margin: 20px auto;
-    visibility: visible;
-    opacity: 1;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .onboarding-content {
