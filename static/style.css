@@ -133,11 +133,12 @@ body {
     color: #6B6BA7;
     font-size: 1.25rem;
     text-align: center;
-    margin-bottom: 2rem;
+    margin: 0 auto 2rem;
     max-width: 600px;
     line-height: 1.5;
     position: relative;
     z-index: 1005;
+    display: block;
     background: rgba(255, 255, 255, 0.9);
     padding: 20px;
     border-radius: 8px;
