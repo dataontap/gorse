@@ -48,23 +48,25 @@ body {
 
 .landing-tagline {
     font-family: 'Roboto', sans-serif;
-    color: #6B6BA7;
-    font-size: 1.25rem;
+    color: #333333;
+    font-size: 1.5rem;
+    font-weight: 500;
     text-align: center;
     margin: 0 auto;
     max-width: 600px;
-    position: absolute;
-    top: 15vh;
+    position: fixed;
+    top: 20%;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 9999;
-    background: #FFFFFF;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
     width: 90%;
     display: block !important;
     opacity: 1 !important;
+    pointer-events: auto;
 }
 
 .cta-container {
