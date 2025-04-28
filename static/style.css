@@ -117,11 +117,10 @@ body {
 
 .promo-text {
     position: absolute;
-    top: 0;
+    top: 20px;
     left: 0;
     right: 0;
     height: 70vh;
-    padding-top: 20px;
     font-family: 'Roboto', sans-serif;
     font-weight: 700;
     color: #FFF371;
