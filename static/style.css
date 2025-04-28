@@ -120,11 +120,11 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 80vh;
+    height: 70vh;
     font-family: 'Roboto', sans-serif;
     font-weight: 700;
     color: #FFF371;
-    font-size: 3.5rem;
+    font-size: 4.2rem;
     text-align: left;
     background: transparent;
     padding: 40px;
@@ -133,6 +133,7 @@ body {
     pointer-events: none;
     display: flex;
     align-items: center;
+    line-height: 0.75;
 }
 
 .cta-container {
@@ -140,7 +141,7 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 20vh;
+    height: 30vh;
     text-align: center;
     padding: 0;
     background: transparent;
