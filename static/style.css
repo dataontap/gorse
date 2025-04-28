@@ -116,49 +116,38 @@ body {
 }
 
 .promo-text {
-    flex: 1;
-    margin-bottom: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80vh;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+    color: #FFF371;
+    font-size: 3.5rem;
+    text-align: left;
+    background: transparent;
+    padding: 40px;
+    z-index: 100000;
+    margin: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
 }
 
 .cta-container {
-    width: 100%;
-    padding: 40px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20vh;
+    text-align: center;
+    padding: 0;
+    background: transparent;
     display: flex;
     flex-direction: column;
+    justify-content: center;
     align-items: center;
-    margin-top: auto;
-}
-
-.landing-tagline {
-    font-family: 'Roboto', sans-serif;
-    color: #333333;
-    font-size: 1.5rem;
-    font-weight: 500;
-    text-align: center;
-    margin: 0 auto;
-    max-width: 600px;
-    position: fixed;
-    top: 20%;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10000;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    width: 90%;
-    display: block !important;
-    opacity: 1 !important;
-    pointer-events: auto;
-}
-
-.cta-container {
-    text-align: center;
-    padding: 3rem;
-    background: transparent;
-    transform: none;
-    transition: none;
-    margin-top: 40px;
 }
 
 .signup-btn {
@@ -216,31 +205,8 @@ body {
     color: #333;
 }
 
-.promo-text {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    font-family: 'Roboto', sans-serif;
-    font-weight: 700;
-    color: #FFF371;
-    font-size: 3.5rem;
-    text-align: left;
-    background: transparent;
-    padding: 40px;
-    z-index: 100000;
-    margin: 0;
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-}
-
 .onboarding-content {
     position: relative;
-}
-
-.onboarding-content {
     text-align: center;
     padding: 2rem 1rem;
     background: rgba(255, 255, 255, 0.9);
@@ -1104,7 +1070,7 @@ body {
 .usage-amount {
     font-size: 18px;
     color: #333;
-    font-weight: 600;
+    fontweight: 600;
     text-align: center;
     width: 100%;
     display: block;
@@ -1202,7 +1168,7 @@ body {
 .sort-icons {
     display: flex;
     gap: 20px;
-align-items: center;
+    align-items: center;
 }
 
 .sort-icon {
