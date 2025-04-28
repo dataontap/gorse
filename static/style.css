@@ -210,16 +210,15 @@ body {
     font-family: 'Roboto', sans-serif;
     font-weight: 700;
     color: #FFF371;
-    font-size: 1.5rem;
-    text-align: center;
+    font-size: 3.5rem;
+    text-align: left;
     background: transparent;
-    padding: 20px;
+    padding: 40px;
     z-index: 100000;
     margin: 0;
     pointer-events: none;
     display: flex;
     align-items: center;
-    justify-content: center;
 }
 
 .onboarding-content {
