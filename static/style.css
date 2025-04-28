@@ -112,7 +112,19 @@ body {
     align-items: center;
     justify-content: space-between;
     background: transparent;
-    padding: 20px 0 40px 0;
+    padding: 0;
+    height: 100vh;
+}
+
+.promo-text {
+    height: 80vh;
+}
+
+.cta-container {
+    height: 20vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .landing-tagline {
