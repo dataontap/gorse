@@ -112,7 +112,7 @@ body {
     align-items: center;
     justify-content: flex-end;
     background: transparent;
-    padding-bottom: 40px;
+    padding-bottom: 0px;
 }
 
 .landing-tagline {
