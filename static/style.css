@@ -127,7 +127,10 @@ body {
     font-size: 4.2rem;
     text-align: left;
     background: transparent;
-    padding: 40px;
+    padding-top: 40px;
+    padding-right: 40px;
+    padding-bottom: 40px;
+    padding-left: 40px;
     z-index: 100000;
     margin: 0;
     pointer-events: none;
@@ -1070,15 +1073,6 @@ body {
 
 .usage-amount {
     font-size: 18px;
-    color: #333;
-    fontweight: 600;
-    text-align: center;
-    width: 100%;
-    display: block;
-}
-
-.usage-label .usage-amount {
-    font-size: 16px;
     color: #333;
     font-weight: bold;
 }
