@@ -145,17 +145,16 @@ body {
     text-align: center;
     max-width: 600px;
     line-height: 1.5;
-    position: fixed;
-    top: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9999;
-    display: block;
+    position: relative;
+    margin: 0 auto 2rem;
     background: #FFF;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     width: 90%;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .onboarding-content {
