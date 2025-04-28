@@ -154,6 +154,20 @@ body {
     align-items: center;
 }
 
+.cta-area {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    padding-bottom: 40px;
+}
+
 .signup-btn {
     background: linear-gradient(45deg, #6B6BA7, #9797CC);
     border: none;
