@@ -3,6 +3,24 @@ body {
     margin: 0;
 }
 
+.promo-message {
+    position: fixed;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 600px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 9999;
+    color: #333;
+}
+
 .promo-container {
     position: fixed;
     top: 20%;
