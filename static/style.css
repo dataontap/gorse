@@ -106,25 +106,27 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     background: transparent;
     padding: 0;
-    height: 100vh;
 }
 
 .promo-text {
-    height: 80vh;
+    flex: 1;
+    margin-bottom: auto;
 }
 
 .cta-container {
-    height: 20vh;
+    width: 100%;
+    padding: 40px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    align-items: center;
+    margin-top: auto;
 }
 
 .landing-tagline {
