@@ -1,6 +1,28 @@
 body {
     min-height: 100vh;
     margin: 0;
+    overflow-x: hidden;
+}
+
+.main-content {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+.promo-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    color: #333;
+    text-align: center;
+    padding: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 10000;
 }
 
 .promo-message {
