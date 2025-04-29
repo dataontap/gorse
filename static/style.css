@@ -242,12 +242,13 @@ body {
     position: relative;
     z-index: 2;
     color: #F5F5F5;
-    animation: fadeIn 3s ease-in-out;
+    animation: fadeInOut 3s ease-in-out infinite;
 }
 
-@keyframes fadeIn {
+@keyframes fadeInOut {
     0% { opacity: 0; }
-    100% { opacity: 1; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
 }
 
 .cable-effect {
