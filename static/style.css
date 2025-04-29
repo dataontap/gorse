@@ -241,6 +241,7 @@ body {
     font-weight: 700;
     position: relative;
     z-index: 2;
+    color: #F5F5F5;
 }
 
 .cable-effect {
