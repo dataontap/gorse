@@ -80,10 +80,12 @@ function initializeMenu() {
             menuLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
             menuDropdown.classList.remove('visible');
+            menuDropdown.style.display = 'none';
 
-            if (window.location.pathname !== '/dashboard') {
+            const href = link.getAttribute('href');
+            if (href && href !== window.location.pathname) {
                 setTimeout(() => {
-                    window.location.href = '/dashboard';
+                    window.location.href = href;
                 }, 300);
             }
         });
