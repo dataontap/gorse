@@ -212,10 +212,10 @@ body {
     width: 100%;
     height: 100%;
     text-decoration: none;
-    color: #E8E8E8;
+    color: #0066ff;
     position: relative;
     transition: background-color 0.3s ease;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     padding: 0 20px;
 }
