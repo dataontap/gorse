@@ -254,11 +254,8 @@ def profile():
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
-    return render_template('dashboard.html')
+    return render_template('dashboard.html')  # Direct access to dashboard
 
-@app.route('/network', methods=['GET'])
-def network():
-    return render_template('network.html')
 
 @app.route('/static/<path:path>')
 def serve_static(path):
