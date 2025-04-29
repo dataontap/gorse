@@ -241,7 +241,7 @@ body {
     font-weight: 700;
     position: relative;
     z-index: 2;
-    color: #F5F5F5;
+    color: #E0E0E0;
     animation: fadeInOut 10s ease-in-out infinite;
 }
 
