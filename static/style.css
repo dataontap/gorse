@@ -220,16 +220,6 @@ body {
     padding: 0 20px;
 }
 
-.bottom-content-link::after {
-    content: '';
-    width: 24px;
-    height: 24px;
-    background: linear-gradient(45deg, transparent 50%, #E8E8E8 50%);
-    transform: rotate(-10deg);
-    box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-    border-radius: 2px;
-}
-
 .bottom-content-link:active {
     background-color: rgba(0, 0, 0, 0.1);
 }
