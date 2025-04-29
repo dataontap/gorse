@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>dot Network</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+    <div class="top-bar">
+        <div class="menu-icon">
+            <i class="fas fa-bars"></i>
+            <div class="menu-dropdown">
+                <a href="/dashboard"><i class="fas fa-database"></i> Data</a>
+                <a href="/network" class="active"><i class="fas fa-network-wired"></i> Network</a>
+                <a href="#"><i class="fas fa-store"></i> Marketplace</a>
+            </div>
+        </div>
+        <div class="profile-section">
+            <i class="fas fa-user-circle"></i>
+            <div class="profile-dropdown">
+                <div class="profile-info">My Account</div>
+                <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+                <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="#"><i class="fas fa-credit-card"></i> Payments</a>
+                <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
+                <div class="settings-submenu" style="display: none;">
+                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
+                </div>
+                <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="dashboard-content">
+            <h2><i class="fas fa-network-wired"></i> Network Settings</h2>
+            <div class="network-settings mt-4">
+                <p>Network configuration and status will appear here.</p>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
