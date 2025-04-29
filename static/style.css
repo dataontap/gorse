@@ -242,7 +242,7 @@ body {
     position: relative;
     z-index: 2;
     color: #F5F5F5;
-    animation: fadeInOut 3s ease-in-out infinite;
+    animation: fadeInOut 10s ease-in-out infinite;
 }
 
 @keyframes fadeInOut {
