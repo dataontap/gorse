@@ -12,7 +12,49 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeMenu();
     initializeProfileDropdown();
     updateSortControlsVisibility();
+    initializeCarousel();
 });
+
+function initializeCarousel() {
+    const carousel = document.getElementById('promotionsCarousel');
+    if (!carousel) return;
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    carousel.addEventListener('touchstart', e => {
+        touchStartX = e.touches[0].clientX;
+    }, false);
+    
+    carousel.addEventListener('touchmove', e => {
+        touchEndX = e.touches[0].clientX;
+    }, false);
+    
+    carousel.addEventListener('touchend', () => {
+        handleSwipe();
+    }, false);
+    
+    function handleSwipe() {
+        const swipeThreshold = 50;
+        const diff = touchStartX - touchEndX;
+        
+        if (Math.abs(diff) > swipeThreshold) {
+            const items = carousel.querySelectorAll('.carousel-item');
+            const activeItem = carousel.querySelector('.carousel-item.active');
+            const currentIndex = Array.from(items).indexOf(activeItem);
+            
+            items.forEach(item => item.classList.remove('active'));
+            
+            if (diff > 0) { // Swipe left
+                const nextIndex = (currentIndex + 1) % items.length;
+                items[nextIndex].classList.add('active');
+            } else { // Swipe right
+                const prevIndex = (currentIndex - 1 + items.length) % items.length;
+                items[prevIndex].classList.add('active');
+            }
+        }
+    }
+}
 
 function initializeProfileDropdown() {
     const profileDropdown = document.querySelector('.profile-dropdown');
