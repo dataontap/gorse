@@ -365,8 +365,8 @@ function createNewUserCard(firstName, lastName, usage, screentime, dollars, time
     const container = document.querySelector('.container');
     const addUserContainer = document.querySelector('.add-user-container');
 
-    if (container && addUserContainer) {
-        container.insertBefore(newCard, addUserContainer);
+    if (container && addUserContainer && addUserContainer.parentNode) {
+        addUserContainer.parentNode.insertBefore(newCard, addUserContainer);
 
         if (firstName !== 'John') {
             const removeIcon = newCard.querySelector('.remove-icon');
