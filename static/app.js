@@ -649,10 +649,8 @@ window.showConfirmationDrawer = function(dataAmount, price) {
     if (!drawer) return;
     
     drawer.style.display = 'block';
-    setTimeout(() => {
-        drawer.classList.add('show');
-        drawer.style.bottom = '0';
-    }, 10);
+    drawer.style.bottom = '0';
+    drawer.classList.add('show');
     
     const amountEl = document.getElementById('confirmDataAmount');
     const priceEl = document.getElementById('confirmPrice');
@@ -664,11 +662,15 @@ window.hideConfirmationDrawer = function() {
     const drawer = document.getElementById('confirmationDrawer');
     if (drawer) {
         drawer.classList.remove('show');
+        drawer.style.bottom = '-100%';
+        setTimeout(() => {
+            drawer.style.display = 'none';
+        }, 300);
     }
 };
 
 window.confirmPurchase = function() {
-    window.hideConfirmationDrawer();
+    hideConfirmationDrawer();
     const dataAmountElement = document.querySelector('.data-amount');
     const globalStatus = document.getElementById('globalStatus');
 
