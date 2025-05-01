@@ -391,7 +391,8 @@ function initializeSortControls() {
     document.querySelector('[data-sort="newest"]').classList.add('active');
 
     sortIcons.forEach(icon => {
-        icon.addEventListener('click', function() {
+        icon.addEventListener('click', function(e) {
+            e.preventDefault();
             sortIcons.forEach(i => i.classList.remove('active'));
             this.classList.add('active');
             updateMetricHighlight(sortSelect.value);
