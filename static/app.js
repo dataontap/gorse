@@ -133,14 +133,17 @@ function initializeMenu() {
         });
     });
 
-    // Handle payment link click
-    const paymentLink = document.querySelector('.profile-dropdown a[href="/payments"]');
-    if (paymentLink) {
-        paymentLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.href = '/payments';
+    // Handle profile dropdown links
+    const profileLinks = document.querySelectorAll('.profile-dropdown a');
+    profileLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            const href = link.getAttribute('href');
+            if (href && href !== '#') {
+                e.preventDefault();
+                window.location.href = href;
+            }
         });
-    }
+    });
 
     // Initial highlight
     highlightCurrentPage();
