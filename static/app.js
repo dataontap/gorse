@@ -648,17 +648,16 @@ window.showConfirmationDrawer = function(dataAmount, price) {
     const drawer = document.getElementById('confirmationDrawer');
     if (!drawer) return;
     
+    drawer.style.display = 'block';
+    setTimeout(() => {
+        drawer.classList.add('show');
+        drawer.style.bottom = '0';
+    }, 10);
+    
     const amountEl = document.getElementById('confirmDataAmount');
     const priceEl = document.getElementById('confirmPrice');
     if (amountEl) amountEl.textContent = `${dataAmount}GB`;
     if (priceEl) priceEl.textContent = `$${price}`;
-    
-    drawer.style.bottom = '0';
-    drawer.classList.add('show');
-    
-    // Ensure the drawer is visible
-    drawer.style.display = 'block';
-    drawer.style.zIndex = '1000';
 };
 
 window.hideConfirmationDrawer = function() {
