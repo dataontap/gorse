@@ -133,24 +133,38 @@ function initializeMenu() {
         });
     });
 
-    // Handle profile dropdown links
-    const profileLinks = document.querySelectorAll('.profile-dropdown a');
-    profileLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            const href = link.getAttribute('href');
-            if (href && href !== '#' && !link.id.includes('Toggle')) {
-                e.preventDefault();
-                e.stopPropagation();
-                const profileDropdown = document.querySelector('.profile-dropdown');
-                if (profileDropdown) {
+    // Handle profile section click
+    const profileSection = document.querySelector('.profile-section');
+    const profileDropdown = document.querySelector('.profile-dropdown');
+    
+    if (profileSection && profileDropdown) {
+        profileSection.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Handle profile dropdown links
+        const profileLinks = document.querySelectorAll('.profile-dropdown a');
+        profileLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                const href = link.getAttribute('href');
+                if (href && href !== '#' && !link.id.includes('Toggle')) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     profileDropdown.style.display = 'none';
-                }
-                setTimeout(() => {
                     window.location.href = href;
-                }, 100);
+                }
+            });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!profileSection.contains(e.target)) {
+                profileDropdown.style.display = 'none';
             }
         });
-    });
+    }
 
     // Initial highlight
     highlightCurrentPage();
