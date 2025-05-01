@@ -337,11 +337,11 @@ function createNewUserCard(firstName, lastName, usage, screentime, dollars, time
             <div class="data-usage">
                 <div class="usage-metrics">
                     <div class="metric percentage">
-                        <div class="usage-label">Data Usage</div>
+                        <div class="usage-label">Data</div>
                         <div class="usage-amount">${usage}%</div>
                     </div>
                     <div class="metric screentime">
-                        <div class="usage-label">Screentime</div>
+                        <div class="usage-label">Time</div>
                         <div class="usage-amount">${screentime}h</div>
                     </div>
                     <div class="metric dollars">
