@@ -1115,19 +1115,18 @@ body {
 
 .usage-metrics {
     display: flex;
-    gap: 20px;
-    justify-content: space-evenly;
+    justify-content: space-between;
     align-items: center;
     text-align: center;
     margin: 0 auto;
     width: 100%;
-    padding: 0 20px;
+    padding: 0 10px;
 }
 
 .metric {
-    flex: 1;
+    flex: 1 1 100px;
     background: rgba(200, 200, 200, 0.2);
-    padding: 16px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1135,9 +1134,7 @@ body {
     border-radius: 8px;
     transition: all 0.3s ease;
     text-align: center;
-    min-width: 120px;
-    max-width: 200px;
-    margin: 0 8px;
+    margin: 0 4px;
 }
 
 .metric .usage-amount {
