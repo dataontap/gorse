@@ -138,9 +138,16 @@ function initializeMenu() {
     profileLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             const href = link.getAttribute('href');
-            if (href && href !== '#') {
+            if (href && href !== '#' && !link.id.includes('Toggle')) {
                 e.preventDefault();
-                window.location.href = href;
+                e.stopPropagation();
+                const profileDropdown = document.querySelector('.profile-dropdown');
+                if (profileDropdown) {
+                    profileDropdown.style.display = 'none';
+                }
+                setTimeout(() => {
+                    window.location.href = href;
+                }, 100);
             }
         });
     });
