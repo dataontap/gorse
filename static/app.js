@@ -416,13 +416,11 @@ function updateMetricHighlight(selectedMetric) {
         metric.classList.remove('highlighted');
     });
 
-    document.querySelectorAll('.user-card').forEach(card => {
-        const metrics = card.querySelectorAll('.metric');
-        metrics.forEach(metric => {
-            if (metric.classList.contains(selectedMetric)) {
-                metric.classList.add('highlighted');
-            }
-        });
+    document.querySelectorAll('.dashboard-content').forEach(card => {
+        const metric = card.querySelector(`.metric.${selectedMetric}`);
+        if (metric) {
+            metric.classList.add('highlighted');
+        }
     });
 }
 
@@ -484,19 +482,19 @@ function removeUserCard(card) {
 
 function sortUsers(sortType) {
     const container = document.querySelector('.container');
-    const cards = Array.from(document.getElementsByClassName('user-card'));
+    const cards = Array.from(document.getElementsByClassName('dashboard-content'));
     const addUserContainer = document.querySelector('.add-user-container');
+    const selectedMetric = document.querySelector('.sort-select').value;
 
     cards.sort((a, b) => {
         const getMetricValue = (card) => {
-            const selectedMetric = document.querySelector('.sort-select').value;
             switch(selectedMetric) {
                 case 'percentage':
                     return parseInt(card.querySelector('.metric.percentage .usage-amount').textContent);
                 case 'screentime':
-                    return parseFloat(card.querySelector('.metric.screentime .usage-amount').textContent);
+                    return parseFloat(card.querySelector('.metric.screentime .usage-amount').textContent.replace('h', ''));
                 case 'dollars':
-                    return parseFloat(card.querySelector('.metric.dollars .usage-amount').textContent.substring(1));
+                    return parseFloat(card.querySelector('.metric.dollars .usage-amount').textContent.replace('$', ''));
                 default:
                     return 0;
             }
