@@ -133,6 +133,15 @@ function initializeMenu() {
         });
     });
 
+    // Handle payment link click
+    const paymentLink = document.querySelector('.profile-dropdown a[href="/payments"]');
+    if (paymentLink) {
+        paymentLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = '/payments';
+        });
+    }
+
     // Initial highlight
     highlightCurrentPage();
 }
