@@ -311,7 +311,7 @@ function initializeAddUser() {
 
 function createNewUserCard(firstName, lastName, usage, screentime, dollars, timestamp, userType) {
     const newCard = document.createElement('div');
-    newCard.className = 'dashboard-content user-card slide-in';
+    newCard.className = 'dashboard-content slide-in user-card';
     newCard.innerHTML = `
         <div class="user-info">
             <div class="email-container">
@@ -337,11 +337,11 @@ function createNewUserCard(firstName, lastName, usage, screentime, dollars, time
             <div class="data-usage">
                 <div class="usage-metrics">
                     <div class="metric percentage">
-                        <div class="usage-label">Data</div>
+                        <div class="usage-label">Data Usage</div>
                         <div class="usage-amount">${usage}%</div>
                     </div>
                     <div class="metric screentime">
-                        <div class="usage-label">Time</div>
+                        <div class="usage-label">Screentime</div>
                         <div class="usage-amount">${screentime}h</div>
                     </div>
                     <div class="metric dollars">
@@ -365,8 +365,8 @@ function createNewUserCard(firstName, lastName, usage, screentime, dollars, time
     const container = document.querySelector('.container');
     const addUserContainer = document.querySelector('.add-user-container');
 
-    if (container && addUserContainer && addUserContainer.parentNode) {
-        addUserContainer.parentNode.insertBefore(newCard, addUserContainer);
+    if (container && addUserContainer) {
+        container.insertBefore(newCard, addUserContainer);
 
         if (firstName !== 'John') {
             const removeIcon = newCard.querySelector('.remove-icon');
@@ -391,8 +391,7 @@ function initializeSortControls() {
     document.querySelector('[data-sort="newest"]').classList.add('active');
 
     sortIcons.forEach(icon => {
-        icon.addEventListener('click', function(e) {
-            e.preventDefault();
+        icon.addEventListener('click', function() {
             sortIcons.forEach(i => i.classList.remove('active'));
             this.classList.add('active');
             updateMetricHighlight(sortSelect.value);
@@ -417,11 +416,13 @@ function updateMetricHighlight(selectedMetric) {
         metric.classList.remove('highlighted');
     });
 
-    document.querySelectorAll('.dashboard-content').forEach(card => {
-        const metric = card.querySelector(`.metric.${selectedMetric}`);
-        if (metric) {
-            metric.classList.add('highlighted');
-        }
+    document.querySelectorAll('.user-card').forEach(card => {
+        const metrics = card.querySelectorAll('.metric');
+        metrics.forEach(metric => {
+            if (metric.classList.contains(selectedMetric)) {
+                metric.classList.add('highlighted');
+            }
+        });
     });
 }
 
@@ -485,24 +486,17 @@ function sortUsers(sortType) {
     const container = document.querySelector('.container');
     const cards = Array.from(document.getElementsByClassName('user-card'));
     const addUserContainer = document.querySelector('.add-user-container');
-    const selectedMetric = document.querySelector('.sort-select').value;
 
-    // Filter out non-user cards
-    const userCards = cards.filter(card => card.classList.contains('user-card'));
-
-    userCards.sort((a, b) => {
+    cards.sort((a, b) => {
         const getMetricValue = (card) => {
-            const metricElement = card.querySelector(`.metric.${selectedMetric} .usage-amount`);
-            if (!metricElement) return 0;
-            
-            const value = metricElement.textContent.trim();
+            const selectedMetric = document.querySelector('.sort-select').value;
             switch(selectedMetric) {
                 case 'percentage':
-                    return parseInt(value) || 0;
+                    return parseInt(card.querySelector('.metric.percentage .usage-amount').textContent);
                 case 'screentime':
-                    return parseFloat(value.replace('h', '')) || 0;
+                    return parseFloat(card.querySelector('.metric.screentime .usage-amount').textContent);
                 case 'dollars':
-                    return parseFloat(value.replace('$', '')) || 0;
+                    return parseFloat(card.querySelector('.metric.dollars .usage-amount').textContent.substring(1));
                 default:
                     return 0;
             }
