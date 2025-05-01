@@ -21,30 +21,30 @@ function initializeCarousel() {
 
     let touchStartX = 0;
     let touchEndX = 0;
-    
+
     carousel.addEventListener('touchstart', e => {
         touchStartX = e.touches[0].clientX;
     }, false);
-    
+
     carousel.addEventListener('touchmove', e => {
         touchEndX = e.touches[0].clientX;
     }, false);
-    
+
     carousel.addEventListener('touchend', () => {
         handleSwipe();
     }, false);
-    
+
     function handleSwipe() {
         const swipeThreshold = 50;
         const diff = touchStartX - touchEndX;
-        
+
         if (Math.abs(diff) > swipeThreshold) {
             const items = carousel.querySelectorAll('.carousel-item');
             const activeItem = carousel.querySelector('.carousel-item.active');
             const currentIndex = Array.from(items).indexOf(activeItem);
-            
+
             items.forEach(item => item.classList.remove('active'));
-            
+
             if (diff > 0) { // Swipe left
                 const nextIndex = (currentIndex + 1) % items.length;
                 items[nextIndex].classList.add('active');
@@ -58,7 +58,7 @@ function initializeCarousel() {
 
 function initializeProfileDropdown() {
     const profileDropdown = document.querySelector('.profile-dropdown');
-    
+
     window.hideProfileDropdown = (event) => {
         event.preventDefault();
         profileDropdown.style.display = 'none';
@@ -96,7 +96,7 @@ function initializeMenu() {
             const href = this.getAttribute('href');
             menuDropdown.classList.remove('visible');
             menuDropdown.style.display = 'none';
-            
+
             if (href && href !== window.location.pathname) {
                 setTimeout(() => {
                     window.location.href = href;
@@ -136,7 +136,7 @@ function initializeMenu() {
     // Handle profile section click
     const profileSection = document.querySelector('.profile-section');
     const profileDropdown = document.querySelector('.profile-dropdown');
-    
+
     if (profileSection && profileDropdown) {
         profileSection.addEventListener('click', (e) => {
             e.preventDefault();
@@ -149,11 +149,14 @@ function initializeMenu() {
         profileLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 const href = link.getAttribute('href');
-                if (href && href !== '#' && !link.id.includes('Toggle')) {
+                const id = link.getAttribute('id');
+                if (href && href !== '#' && id !== 'settingsToggle') {
                     e.preventDefault();
                     e.stopPropagation();
                     profileDropdown.style.display = 'none';
-                    window.location.href = href;
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 100);
                 }
             });
         });
@@ -173,10 +176,10 @@ function initializeMenu() {
 window.editAddress = function(icon) {
     const addressDiv = icon.closest('.address-card').querySelector('div > div');
     const addressLines = Array.from(addressDiv.querySelectorAll('p')).map(p => p.textContent);
-    
+
     const form = document.createElement('form');
     form.className = 'edit-address-form';
-    
+
     addressLines.forEach((line, index) => {
         const input = document.createElement('input');
         input.type = 'text';
@@ -184,7 +187,7 @@ window.editAddress = function(icon) {
         input.value = line;
         form.appendChild(input);
     });
-    
+
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button';
     saveBtn.className = 'btn btn-primary btn-sm me-2';
@@ -198,7 +201,7 @@ window.editAddress = function(icon) {
             p.textContent = line;
             addressDiv.appendChild(p);
         });
-        
+
         // Restore the edit icon
         const parentCard = addressDiv.closest('.address-card');
         const editDiv = parentCard.querySelector('.d-flex');
@@ -208,7 +211,7 @@ window.editAddress = function(icon) {
         editIcon.onclick = function() { editAddress(this); };
         editDiv.appendChild(editIcon);
     };
-    
+
     const cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.className = 'btn btn-secondary btn-sm';
@@ -216,13 +219,13 @@ window.editAddress = function(icon) {
     cancelBtn.onclick = () => {
         addressDiv.innerHTML = addressLines.map(line => `<p class="mb-1">${line}</p>`).join('');
     };
-    
+
     const btnGroup = document.createElement('div');
     btnGroup.className = 'mt-2';
     btnGroup.appendChild(saveBtn);
     btnGroup.appendChild(cancelBtn);
     form.appendChild(btnGroup);
-    
+
     addressDiv.innerHTML = '';
     addressDiv.appendChild(form);
 };
@@ -647,11 +650,11 @@ window.confirmPurchase = function() {
     hideConfirmationDrawer();
     const dataAmountElement = document.querySelector('.data-amount');
     const globalStatus = document.getElementById('globalStatus');
-    
+
     if (dataAmountElement) {
         dataAmountElement.style.display = 'flex';
         globalStatus.style.display = 'block';
-        
+
         let currentText = dataAmountElement.textContent || "0";
         let currentData = parseFloat(currentText.replace('GB', '') || "0");
         currentData += 10;
