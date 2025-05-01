@@ -637,17 +637,25 @@ function formatTimeDifference(timestamp) {
 }
 
 window.showConfirmationDrawer = function(dataAmount, price) {
-    document.getElementById('confirmDataAmount').textContent = `${dataAmount}GB`;
-    document.getElementById('confirmPrice').textContent = `$${price}`;
-    document.getElementById('confirmationDrawer').classList.add('show');
+    const drawer = document.getElementById('confirmationDrawer');
+    if (drawer) {
+        const amountEl = document.getElementById('confirmDataAmount');
+        const priceEl = document.getElementById('confirmPrice');
+        if (amountEl) amountEl.textContent = `${dataAmount}GB`;
+        if (priceEl) priceEl.textContent = `$${price}`;
+        drawer.classList.add('show');
+    }
 };
 
 window.hideConfirmationDrawer = function() {
-    document.getElementById('confirmationDrawer').classList.remove('show');
+    const drawer = document.getElementById('confirmationDrawer');
+    if (drawer) {
+        drawer.classList.remove('show');
+    }
 };
 
 window.confirmPurchase = function() {
-    hideConfirmationDrawer();
+    window.hideConfirmationDrawer();
     const dataAmountElement = document.querySelector('.data-amount');
     const globalStatus = document.getElementById('globalStatus');
 
