@@ -59,12 +59,20 @@ function initializeCarousel() {
 function initializeProfileDropdown() {
     const profileDropdown = document.querySelector('.profile-dropdown');
 
-    window.hideProfileDropdown = (event) => {
-        event.preventDefault();
-        profileDropdown.style.display = 'none';
-        setTimeout(() => {
-            window.location.href = event.target.closest('a').getAttribute('href');
-        }, 300);
+    window.hideProfileDropdown = function(event) {
+        if (event) {
+            event.preventDefault();
+            const profileDropdown = document.querySelector('.profile-dropdown');
+            if (profileDropdown) {
+                profileDropdown.style.display = 'none';
+                const link = event.target.closest('a');
+                if (link) {
+                    setTimeout(() => {
+                        window.location.href = link.getAttribute('href');
+                    }, 300);
+                }
+            }
+        }
     };
 }
 
