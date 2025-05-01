@@ -362,7 +362,7 @@ function createNewUserCard(firstName, lastName, usage, screentime, dollars, time
         </div>
     `;
 
-    const container = document.querySelector('.container');
+    const container = document.querySelector('.dashboard-content');
     const addUserContainer = document.querySelector('.add-user-container');
 
     if (container && addUserContainer) {
