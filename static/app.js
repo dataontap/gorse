@@ -311,7 +311,7 @@ function initializeAddUser() {
 
 function createNewUserCard(firstName, lastName, usage, screentime, dollars, timestamp, userType) {
     const newCard = document.createElement('div');
-    newCard.className = 'dashboard-content slide-in user-card';
+    newCard.className = 'dashboard-content user-card slide-in';
     newCard.innerHTML = `
         <div class="user-info">
             <div class="email-container">
@@ -483,19 +483,26 @@ function removeUserCard(card) {
 
 function sortUsers(sortType) {
     const container = document.querySelector('.container');
-    const cards = Array.from(document.getElementsByClassName('dashboard-content'));
+    const cards = Array.from(document.getElementsByClassName('user-card'));
     const addUserContainer = document.querySelector('.add-user-container');
     const selectedMetric = document.querySelector('.sort-select').value;
 
-    cards.sort((a, b) => {
+    // Filter out non-user cards
+    const userCards = cards.filter(card => card.classList.contains('user-card'));
+
+    userCards.sort((a, b) => {
         const getMetricValue = (card) => {
+            const metricElement = card.querySelector(`.metric.${selectedMetric} .usage-amount`);
+            if (!metricElement) return 0;
+            
+            const value = metricElement.textContent.trim();
             switch(selectedMetric) {
                 case 'percentage':
-                    return parseInt(card.querySelector('.metric.percentage .usage-amount').textContent);
+                    return parseInt(value) || 0;
                 case 'screentime':
-                    return parseFloat(card.querySelector('.metric.screentime .usage-amount').textContent.replace('h', ''));
+                    return parseFloat(value.replace('h', '')) || 0;
                 case 'dollars':
-                    return parseFloat(card.querySelector('.metric.dollars .usage-amount').textContent.replace('$', ''));
+                    return parseFloat(value.replace('$', '')) || 0;
                 default:
                     return 0;
             }
