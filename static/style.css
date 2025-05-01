@@ -713,17 +713,16 @@ body {
 
 .dashboard-content {
     text-align: center;
-    padding: 40px 20px;
+    padding: 24px;
     background: rgba(255, 255, 255, 0.15);
     border-radius: 8px;
     margin: 20px auto;
-    max-width: 600px;
+    width: 100%;
+    max-width: 800px;
     position: relative;
     backdrop-filter: blur(5px);
     z-index: 2;
     transition: all 0.3s ease-out;
-    max-width: 700px; /* Updated max-width */
-    padding: 32px; /* Updated padding */
 }
 
 .dashboard-content.slide-in {
@@ -1126,17 +1125,19 @@ body {
 }
 
 .metric {
-    flex: 0 1 120px;
+    flex: 1;
     background: rgba(200, 200, 200, 0.2);
-    padding: 12px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 6px;
+    border-radius: 8px;
     transition: all 0.3s ease;
     text-align: center;
-    min-width: 100px;
+    min-width: 120px;
+    max-width: 200px;
+    margin: 0 8px;
 }
 
 .metric .usage-amount {
