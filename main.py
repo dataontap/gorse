@@ -260,6 +260,10 @@ def dashboard():
 def network():
     return render_template('network.html')
 
+@app.route('/payments', methods=['GET'])
+def payments():
+    return render_template('payments.html')
+
 @app.route('/static/<path:path>')
 def serve_static(path):
     return send_from_directory('static', path)
