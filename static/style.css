@@ -1534,16 +1534,28 @@ body {
     transition: bottom 0.3s ease-out;
     z-index: 1000;
     transform: translateZ(0);
+    display: none;
 }
 
 .confirmation-drawer.show {
     bottom: 0;
+    display: block;
 }
 
 .drawer-content {
     padding: 24px;
     max-width: 600px;
     margin: 0 auto;
+}
+
+.dark-mode .confirmation-drawer {
+    background: #1a1a2e;
+    color: white;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .detail-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .purchase-details {

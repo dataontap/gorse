@@ -648,9 +648,12 @@ window.showConfirmationDrawer = function(dataAmount, price) {
     const drawer = document.getElementById('confirmationDrawer');
     if (!drawer) return;
     
-    drawer.style.display = 'block';
-    drawer.style.bottom = '0';
-    drawer.classList.add('show');
+    requestAnimationFrame(() => {
+        drawer.style.display = 'block';
+        requestAnimationFrame(() => {
+            drawer.classList.add('show');
+        });
+    });
     
     const amountEl = document.getElementById('confirmDataAmount');
     const priceEl = document.getElementById('confirmPrice');
