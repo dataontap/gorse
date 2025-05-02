@@ -1552,10 +1552,27 @@ body {
     background: #1a1a2e;
     color: white;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    display: none;
+}
+
+.dark-mode .confirmation-drawer.show {
+    display: block;
 }
 
 .dark-mode .detail-row {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.dark-mode .drawer-actions .btn {
+    background: #333;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark-mode .drawer-actions .btn-primary {
+    background: #0066ff;
+    border: none;
 }
 
 .purchase-details {
