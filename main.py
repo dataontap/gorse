@@ -224,6 +224,11 @@ class IMEIResource(Resource):
 
 @app.route('/webhook', methods=['GET', 'POST'])
 def stripe_webhook():
+    if request.method == 'GET':
+        # For polling payment status
+        return {'status': 'pending'}, 200
+        
+    # Handle POST webhook from Stripe
     payload = request.get_data()
     sig_header = request.headers.get('Stripe-Signature')
 
@@ -244,14 +249,13 @@ def stripe_webhook():
             customer_id = invoice.customer
             customer = stripe.Customer.retrieve(customer_id)
             print(f"Processing eSIM activation for customer {customer.email}")
-            # Redirect customer to dashboard
-            return {'status': 'success', 'redirect': '/static/dashboard.html'}, 200
+            return {'status': 'paid', 'redirect': '/static/dashboard.html'}, 200
     elif event.type == 'invoice.payment_failed':
         invoice = event.data.object
         print(f"Invoice payment failed: {invoice.id}")
-        # Handle failed payment here
+        return {'status': 'failed'}, 200
 
-    return {'status': 'success'}, 200
+    return {'status': 'pending'}, 200
 
 
 @app.route('/', methods=['GET'])

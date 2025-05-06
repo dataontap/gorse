@@ -23,16 +23,31 @@
         // Check payment status every 5 seconds
         const checkPayment = setInterval(() => {
             fetch('/webhook', {
-                method: 'GET'
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.status === 'paid') {
                     clearInterval(checkPayment);
-                    window.location.href = '/static/dashboard.html';
+                    window.location.href = data.redirect || '/static/dashboard.html';
+                } else if (data.status === 'failed') {
+                    clearInterval(checkPayment);
+                    alert('Payment failed. Please try again.');
+                    window.location.href = '/signup';
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                clearInterval(checkPayment);
+            });
         }, 5000);
     </script>
 </body>
