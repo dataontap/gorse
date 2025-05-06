@@ -23,26 +23,16 @@
         // Check payment status every 5 seconds
         const checkPayment = setInterval(() => {
             fetch('/webhook', {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
+                method: 'GET'
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.status === 'paid') {
                     clearInterval(checkPayment);
                     window.location.href = '/static/dashboard.html';
                 }
             })
-            .catch(error => {
-                console.error('Error checking payment status:', error);
-            });
+            .catch(error => console.error('Error:', error));
         }, 5000);
     </script>
 </body>

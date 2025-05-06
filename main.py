@@ -3,7 +3,21 @@ from flask_restx import Api, Resource, fields
 from flask_socketio import SocketIO, emit
 import os
 from typing import Optional
-from replit import db
+import psycopg2
+from psycopg2.pool import SimpleConnectionPool
+from contextlib import contextmanager
+
+# Initialize connection pool
+database_url = os.environ.get('DATABASE_URL')
+pool = SimpleConnectionPool(1, 20, database_url)
+
+@contextmanager
+def get_db_connection():
+    connection = pool.getconn()
+    try:
+        yield connection
+    finally:
+        pool.putconn(connection)
 from datetime import datetime
 import stripe
 
@@ -210,9 +224,6 @@ class IMEIResource(Resource):
 
 @app.route('/webhook', methods=['GET', 'POST'])
 def stripe_webhook():
-    if request.method == 'GET':
-        return {'status': 'pending'}, 200
-        
     payload = request.get_data()
     sig_header = request.headers.get('Stripe-Signature')
 
@@ -255,12 +266,22 @@ def signup():
 def submit_signup():
     email = request.form.get('email')
     imei = request.form.get('imei')
-    # Store in database
-    timestamp = datetime.now().isoformat()
-    db[timestamp] = {
-        'email': email,
-        'imei': imei
-    }
+    
+    try:
+        # Create customer in Stripe
+        customer = stripe.Customer.create(
+            email=email,
+            description='eSIM activation customer'
+        )
+        
+        # Store in PostgreSQL database
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO users (email, stripe_customer_id, imei) VALUES (%s, %s, %s)",
+                    (email, customer.id, imei)
+                )
+                conn.commit()
     
     # Create and send invoice first
     try:
