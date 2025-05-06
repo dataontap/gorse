@@ -116,11 +116,27 @@ body {
 }
 
 .promo-text {
-    margin: 0;
-    overflow-x: hidden;
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 70vh;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
     color: #FFF371;
-    font-size: 2rem;
-    margin-bottom: 2rem;
+    font-size: 4.2rem;
+    text-align: left;
+    background: transparent;
+    padding-top: 60px;
+    padding-right: 40px;
+    padding-bottom: 40px;
+    padding-left: 40px;
+    z-index: 100000;
+    margin: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    line-height: 1;
 }
 
 .cta-container {
