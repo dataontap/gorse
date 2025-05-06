@@ -3,6 +3,7 @@ modules = ["python-3.11", "postgresql-16"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["libxcrypt"]
 
 [unitTest]
 language = "python3"
