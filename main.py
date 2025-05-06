@@ -1,4 +1,4 @@
-from flask import Flask, request, send_from_directory, render_template
+from flask import Flask, request, send_from_directory, render_template, redirect
 from flask_restx import Api, Resource, fields
 from flask_socketio import SocketIO, emit
 import os
