@@ -248,6 +248,18 @@ def home():
 def signup():
     return render_template('signup.html')  # Assumes signup.html exists
 
+@app.route('/submit-signup', methods=['POST'])
+def submit_signup():
+    email = request.form.get('email')
+    imei = request.form.get('imei')
+    # Store in database
+    timestamp = datetime.now().isoformat()
+    db[timestamp] = {
+        'email': email,
+        'imei': imei
+    }
+    return redirect('/dashboard')
+
 @app.route('/profile', methods=['GET'])
 def profile():
     return render_template('profile.html')
