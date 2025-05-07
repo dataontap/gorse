@@ -615,7 +615,7 @@ body {
 }
 
 .dashboard-body.dark-mode {
-    background: #1a1a2e;
+    background: #222222;
     color: #fff;
 }
 
@@ -627,7 +627,8 @@ body {
 }
 
 .dark-mode .dashboard-content {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(40, 40, 40, 0.9);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
 .dark-mode .top-bar {
@@ -636,7 +637,8 @@ body {
 
 .dark-mode .menu-dropdown,
 .dark-mode .profile-dropdown {
-    background: rgba(26, 26, 46, 0.95);
+    background: rgba(50, 50, 50, 0.95);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .dark-mode .menu-dropdown a,
