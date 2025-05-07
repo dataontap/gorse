@@ -9,15 +9,23 @@ from contextlib import contextmanager
 
 # Initialize connection pool
 database_url = os.environ.get('DATABASE_URL')
-pool = SimpleConnectionPool(1, 20, database_url)
-
-@contextmanager
-def get_db_connection():
-    connection = pool.getconn()
-    try:
-        yield connection
-    finally:
-        pool.putconn(connection)
+try:
+    pool = SimpleConnectionPool(1, 20, database_url)
+    print("Database connection pool initialized successfully")
+    
+    @contextmanager
+    def get_db_connection():
+        connection = pool.getconn()
+        try:
+            yield connection
+        finally:
+            pool.putconn(connection)
+except Exception as e:
+    print(f"Error initializing database connection pool: {str(e)}")
+    # Fallback for development without DB
+    @contextmanager
+    def get_db_connection():
+        yield None
 from datetime import datetime
 import stripe
 
@@ -369,4 +377,10 @@ def serve_static(path):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True) # Added debug=True for development
+    print(f"Starting server on http://0.0.0.0:{port}")
+    try:
+        socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
+    except Exception as e:
+        print(f"Error starting server: {str(e)}")
+        # Fallback to standard Flask run
+        app.run(host='0.0.0.0', port=port, debug=True)
