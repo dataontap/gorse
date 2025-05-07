@@ -70,23 +70,29 @@ imei_model = api.model('IMEI', {
 def record_purchase(stripe_id, product_id, price_id, amount, user_id=None):
     """Records a purchase in the database"""
     try:
+        print(f"Attempting to record purchase: StripeID={stripe_id}, ProductID={product_id}, PriceID={price_id}, Amount={amount}")
         with get_db_connection() as conn:
             if conn:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        "INSERT INTO purchases (StripeID, StripeProductID, PriceID, TotalAmount, UserID) "
-                        "VALUES (%s, %s, %s, %s, %s) RETURNING PurchaseID",
-                        (stripe_id, product_id, price_id, amount, user_id)
-                    )
-                    purchase_id = cur.fetchone()[0]
-                    conn.commit()
-                    print(f"Purchase recorded: {purchase_id}")
-                    return purchase_id
+                try:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "INSERT INTO purchases (StripeID, StripeProductID, PriceID, TotalAmount, UserID) "
+                            "VALUES (%s, %s, %s, %s, %s) RETURNING PurchaseID",
+                            (stripe_id, product_id, price_id, amount, user_id)
+                        )
+                        purchase_id = cur.fetchone()[0]
+                        conn.commit()
+                        print(f"Purchase successfully recorded: {purchase_id}")
+                        return purchase_id
+                except psycopg2.Error as db_err:
+                    print(f"Database error recording purchase: {str(db_err)}")
+                    conn.rollback()
+                    return None
             else:
                 print("No database connection available, purchase not recorded")
                 return None
     except Exception as e:
-        print(f"Error recording purchase: {str(e)}")
+        print(f"Unexpected error recording purchase: {str(e)}")
         return None
 
 
@@ -288,22 +294,34 @@ def stripe_webhook():
         session = event.data.object
         print(f"Checkout completed: {session.id}")
         
-        # For one-time payments, record the purchase
-        if session.mode == 'payment':
+        try:
+            # For both one-time payments and subscriptions, record the purchase
             line_items = stripe.checkout.Session.list_line_items(session.id)
             
+            print(f"Processing {len(line_items.data)} line items for session {session.id}")
+            
             for item in line_items.data:
-                price_id = item.price.id
-                product_id = item.price.product
-                amount = item.amount_total
-                
-                record_purchase(
-                    stripe_id=session.id,
-                    product_id=product_id,
-                    price_id=price_id,
-                    amount=amount,
-                    user_id=None  # We'll need to lookup the user ID from the customer ID
-                )
+                try:
+                    # Get the price object to access product details
+                    price = stripe.Price.retrieve(item.price.id)
+                    price_id = price.id
+                    product_id = price.product
+                    amount = item.amount_total
+                    
+                    purchase_id = record_purchase(
+                        stripe_id=session.id,
+                        product_id=product_id,
+                        price_id=price_id,
+                        amount=amount,
+                        user_id=session.customer  # Use Stripe customer ID until we link to our user ID
+                    )
+                    
+                    print(f"Recorded purchase {purchase_id} for product {product_id}, price {price_id}, amount {amount}")
+                except Exception as e:
+                    print(f"Error processing line item: {str(e)}")
+                    continue
+        except Exception as e:
+            print(f"Error processing checkout session: {str(e)}")
         
         return {'status': 'paid', 'redirect': '/dashboard'}, 200
         
@@ -428,6 +446,7 @@ def create_checkout_session():
         
         product_id = data.get('productId')
         is_subscription = data.get('isSubscription', False)
+        email = data.get('email')
         
         # Get price ID for the product
         prices = stripe.Price.list(product=product_id, active=True)
@@ -440,6 +459,19 @@ def create_checkout_session():
         success_url = request.url_root + 'dashboard?session_id={CHECKOUT_SESSION_ID}'
         cancel_url = request.url_root + 'dashboard'
         
+        # Create or get customer
+        customer_params = {}
+        if email:
+            # Try to find existing customer by email
+            customers = stripe.Customer.list(email=email, limit=1)
+            if customers and customers.data:
+                customer_id = customers.data[0].id
+            else:
+                # Create a new customer
+                customer = stripe.Customer.create(email=email)
+                customer_id = customer.id
+            customer_params['customer'] = customer_id
+        
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -449,8 +481,10 @@ def create_checkout_session():
             mode='subscription' if is_subscription else 'payment',
             success_url=success_url,
             cancel_url=cancel_url,
+            **customer_params  # Add customer ID if available
         )
         
+        print(f"Created checkout session: {checkout_session.id} for product: {product_id}")
         return jsonify({'url': checkout_session.url})
     except Exception as e:
         print(f"Error creating checkout session: {str(e)}")
