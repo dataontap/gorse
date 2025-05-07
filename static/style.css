@@ -76,6 +76,12 @@ body {
     animation: gradientShift 15s ease infinite;
 }
 
+/* Ensure dark mode overrides landing page gradient */
+.landing-page.dark-mode {
+    background: #222222 !important;
+    animation: none !important;
+}
+
 @keyframes gradientShift {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
@@ -617,6 +623,7 @@ body {
 .dashboard-body.dark-mode {
     background: #222222;
     color: #fff;
+    background-image: none !important;  /* Override any gradient backgrounds */
 }
 
 .dark-mode .dot-indicator {
