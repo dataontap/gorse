@@ -117,7 +117,6 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                                 create_table_sql = """
                                 CREATE TABLE IF NOT EXISTS purchases (
                                     PurchaseID SERIAL PRIMARY KEY,
-                                    TransactionID VARCHAR(100) UNIQUE,
                                     StripeID VARCHAR(100),
                                     StripeProductID VARCHAR(100) NOT NULL,
                                     PriceID VARCHAR(100) NOT NULL,
@@ -128,7 +127,6 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                                 
                                 CREATE INDEX IF NOT EXISTS idx_purchases_stripe ON purchases(StripeID);
                                 CREATE INDEX IF NOT EXISTS idx_purchases_product ON purchases(StripeProductID);
-                                CREATE INDEX IF NOT EXISTS idx_purchases_transaction ON purchases(TransactionID);
                                 """
                                 cur.execute(create_table_sql)
                                 conn.commit()
@@ -140,9 +138,9 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                                 
                             # Now insert the purchase record
                             cur.execute(
-                                "INSERT INTO purchases (TransactionID, StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated) "
-                                "VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING PurchaseID",
-                                (transaction_id, stripe_id, product_id, price_id, amount, user_id)
+                                "INSERT INTO purchases (StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated) "
+                                "VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING PurchaseID",
+                                (stripe_id, product_id, price_id, amount, user_id)
                             )
                             purchase_id = cur.fetchone()[0]
                             conn.commit()
@@ -664,7 +662,6 @@ def create_tables_route():
                     create_purchases_sql = """
                     CREATE TABLE IF NOT EXISTS purchases (
                         PurchaseID SERIAL PRIMARY KEY,
-                        TransactionID VARCHAR(100) UNIQUE,
                         StripeID VARCHAR(100),
                         StripeProductID VARCHAR(100) NOT NULL,
                         PriceID VARCHAR(100) NOT NULL,
@@ -675,7 +672,6 @@ def create_tables_route():
                     
                     CREATE INDEX IF NOT EXISTS idx_purchases_stripe ON purchases(StripeID);
                     CREATE INDEX IF NOT EXISTS idx_purchases_product ON purchases(StripeProductID);
-                    CREATE INDEX IF NOT EXISTS idx_purchases_transaction ON purchases(TransactionID);
                     """
                     cur.execute(create_purchases_sql)
                     
