@@ -709,42 +709,83 @@ class RecordGlobalPurchase(Resource):
         product_id = data.get('productId')
         print(f"===== RECORDING PURCHASE FOR PRODUCT: {product_id} =====")
         try:
-                with get_db_connection() as conn:
-                    if conn:
-                        with conn.cursor() as cur:
-                            # Simple test query
-                            cur.execute("SELECT 1")
-                            test_result = cur.fetchone()
-                            print(f"Database connection test result: {test_result}")
-                    else:
-                        print("WARNING: Could not get database connection for test")
-            except Exception as test_err:
-                print(f"WARNING: Database connection test failed: {str(test_err)}")
-            
-            # Record the purchase
-            purchase_id = record_purchase(
-                stripe_id=None,  # No stripe id in this case
-                product_id=product_id,
-                price_id=price_id,
-                amount=amount,
-                user_id=user_id,
-                transaction_id=transaction_id
-            )
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Simple test query
+                        cur.execute("SELECT 1")
+                        test_result = cur.fetchone()
+                        print(f"Database connection test result: {test_result}")
+                else:
+                    print("WARNING: Could not get database connection for test")
+        except Exception as test_err:
+            print(f"WARNING: Database connection test failed: {str(test_err)}")
+        
+        # Default values in case product info isn't available
+        default_prices = {
+            'global_data_10gb': 1000,  # $10.00
+            'basic_membership': 2400,  # $24.00
+            'full_membership': 6600,   # $66.00
+        }
+        default_price_ids = {
+            'global_data_10gb': 'price_global_10gb',
+            'basic_membership': 'price_basic_membership',
+            'full_membership': 'price_full_membership',
+        }
+
+        # In a real application, fetch the user ID from a secure session or authentication system.
+        user_id = 1  # Placeholder user ID
+
+        # Try to get price from Stripe if available
+        price_id = None
+        amount = None
+
+        try:
+            if stripe.api_key:
+                prices = stripe.Price.list(product=product_id, active=True)
+                if prices and prices.data:
+                    price_id = prices.data[0].id
+                    amount = prices.data[0].unit_amount
+                    print(f"Found Stripe price: {price_id}, amount: {amount}")
+                else:
+                    print("No active prices found for this product in Stripe")
+            else:
+                print("Stripe API key not configured, using default prices")
+        except Exception as stripe_err:
+            print(f"Stripe price lookup failed, using defaults: {str(stripe_err)}")
+
+        # Use defaults if Stripe lookup failed
+        if not price_id:
+            price_id = default_price_ids.get(product_id, 'unknown_price_id')
+            print(f"Using default price ID: {price_id}")
+        if not amount:
+            amount = default_prices.get(product_id, 1000)  # Default $10.00
+            print(f"Using default amount: {amount}")
+
+        # Generate a unique transaction ID
+        transaction_id = f"API_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        print(f"Generated transaction ID: {transaction_id}")
+        
+        # Record the purchase
+        purchase_id = record_purchase(
+            stripe_id=None,  # No stripe id in this case
+            product_id=product_id,
+            price_id=price_id,
+            amount=amount,
+            user_id=user_id,
+            transaction_id=transaction_id
+        )
 
             if purchase_id:
-                print(f"Successfully recorded purchase: {purchase_id} for product: {product_id}")
-                return {'status': 'success', 'purchaseId': purchase_id}
-            else:
-                print(f"Failed to record purchase for product: {product_id}")
-                # For demo purposes, we'll still create a simulated purchase ID
-                # This ensures the UI updates even if the database has issues
-                simulated_purchase_id = f"SIM_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                print(f"Created simulated purchase ID: {simulated_purchase_id}")
-                return {'status': 'success', 'purchaseId': simulated_purchase_id, 'simulated': True}
-        except Exception as e:
-            print(f"Error recording purchase: {str(e)}")
-            # Even if there's an error, return success to the client for demo purposes
-            return {'status': 'success', 'purchaseId': 0, 'note': 'Demo mode'}
+            print(f"Successfully recorded purchase: {purchase_id} for product: {product_id}")
+            return {'status': 'success', 'purchaseId': purchase_id}
+        else:
+            print(f"Failed to record purchase for product: {product_id}")
+            # For demo purposes, we'll still create a simulated purchase ID
+            # This ensures the UI updates even if the database has issues
+            simulated_purchase_id = f"SIM_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            print(f"Created simulated purchase ID: {simulated_purchase_id}")
+            return {'status': 'success', 'purchaseId': simulated_purchase_id, 'simulated': True}
 
 
 @app.route('/db-test', methods=['GET'])
