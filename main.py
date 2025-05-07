@@ -1,4 +1,4 @@
-from flask import Flask, request, send_from_directory, render_template, redirect
+from flask import Flask, request, send_from_directory, render_template, redirect, jsonify
 from flask_restx import Api, Resource, fields
 from flask_socketio import SocketIO, emit
 import os
@@ -12,7 +12,7 @@ database_url = os.environ.get('DATABASE_URL')
 try:
     pool = SimpleConnectionPool(1, 20, database_url)
     print("Database connection pool initialized successfully")
-    
+
     @contextmanager
     def get_db_connection():
         connection = pool.getconn()
@@ -253,7 +253,7 @@ def stripe_webhook():
     if request.method == 'GET':
         # For polling payment status
         return {'status': 'pending'}, 200
-        
+
     # Handle POST webhook from Stripe
     payload = request.get_data()
     sig_header = request.headers.get('Stripe-Signature')
@@ -272,7 +272,7 @@ def stripe_webhook():
         print(f"Invoice paid: {invoice.id}")
         customer_id = invoice.customer
         customer = stripe.Customer.retrieve(customer_id)
-        
+
         # Record the purchase
         for line in invoice.lines.data:
             price_id = line.price.id
@@ -288,20 +288,20 @@ def stripe_webhook():
                 user_id=None,  # We'll need to lookup the user ID from the customer ID
                 transaction_id=transaction_id
             )
-            
+
         print(f"Processing payment for customer {customer.email}")
         return {'status': 'paid', 'redirect': '/dashboard'}, 200
-        
+
     elif event.type == 'checkout.session.completed':
         session = event.data.object
         print(f"Checkout completed: {session.id}")
-        
+
         try:
             # For both one-time payments and subscriptions, record the purchase
             line_items = stripe.checkout.Session.list_line_items(session.id)
-            
+
             print(f"Processing {len(line_items.data)} line items for session {session.id}")
-            
+
             for item in line_items.data:
                 try:
                     # Get the price object to access product details
@@ -309,7 +309,7 @@ def stripe_webhook():
                     price_id = price.id
                     product_id = price.product
                     amount = item.amount_total
-                    
+
                     transaction_id = f"SESS_{session.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
                     purchase_id = record_purchase(
                         stripe_id=session.id,
@@ -319,16 +319,16 @@ def stripe_webhook():
                         user_id=session.customer,  # Use Stripe customer ID until we link to our user ID
                         transaction_id=transaction_id
                     )
-                    
+
                     print(f"Recorded purchase {purchase_id} for product {product_id}, price {price_id}, amount {amount}")
                 except Exception as e:
                     print(f"Error processing line item: {str(e)}")
                     continue
         except Exception as e:
             print(f"Error processing checkout session: {str(e)}")
-        
+
         return {'status': 'paid', 'redirect': '/dashboard'}, 200
-        
+
     elif event.type == 'invoice.payment_failed':
         invoice = event.data.object
         print(f"Invoice payment failed: {invoice.id}")
@@ -349,14 +349,14 @@ def signup():
 def submit_signup():
     email = request.form.get('email')
     imei = request.form.get('imei')
-    
+
     try:
         # Create customer in Stripe
         customer = stripe.Customer.create(
             email=email,
             description='eSIM activation customer'
         )
-        
+
         # Store in PostgreSQL database
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -387,7 +387,7 @@ def submit_signup():
         # Finalize and send invoice
         invoice = stripe.Invoice.finalize_invoice(invoice.id, auto_advance=False)
         invoice = stripe.Invoice.send_invoice(invoice.id)
-        
+
         return send_from_directory('static', 'success.html')
     except Exception as e:
         print(f"Error processing signup: {str(e)}")
@@ -419,7 +419,7 @@ def submit_signup():
         # Finalize and send invoice
         invoice = stripe.Invoice.finalize_invoice(invoice.id, auto_advance=False)
         invoice = stripe.Invoice.send_invoice(invoice.id)
-        
+
         return send_from_directory('static', 'success.html')
     except Exception as e:
         print(f"Error sending invoice: {str(e)}")
@@ -447,22 +447,22 @@ def create_checkout_session():
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
-        
+
         product_id = data.get('productId')
         is_subscription = data.get('isSubscription', False)
         email = data.get('email')
-        
+
         # Get price ID for the product
         prices = stripe.Price.list(product=product_id, active=True)
         if not prices.data:
             return jsonify({'error': f'No price found for product {product_id}'}), 400
-        
+
         price_id = prices.data[0].id
-        
+
         # Create a checkout session
         success_url = request.url_root + 'dashboard?session_id={CHECKOUT_SESSION_ID}'
         cancel_url = request.url_root + 'dashboard'
-        
+
         # Create or get customer
         customer_params = {}
         if email:
@@ -475,7 +475,7 @@ def create_checkout_session():
                 customer = stripe.Customer.create(email=email)
                 customer_id = customer.id
             customer_params['customer'] = customer_id
-        
+
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -487,7 +487,7 @@ def create_checkout_session():
             cancel_url=cancel_url,
             **customer_params  # Add customer ID if available
         )
-        
+
         print(f"Created checkout session: {checkout_session.id} for product: {product_id}")
         return jsonify({'url': checkout_session.url})
     except Exception as e:
@@ -497,6 +497,45 @@ def create_checkout_session():
 @app.route('/static/<path:path>')
 def serve_static(path):
     return send_from_directory('static', path)
+
+# New API endpoint to record global data purchases
+purchase_model = api.model('Purchase', {
+    'productId': fields.String(required=True, description='Product ID')
+})
+
+@api.route('/record-global-purchase')
+class RecordGlobalPurchase(Resource):
+    @api.expect(purchase_model)
+    def post(self):
+        data = request.get_json()
+        product_id = data.get('productId')
+        try:
+            #  In a real application, fetch the user ID from a secure session or authentication system.
+            #  For this example, we'll use a placeholder.  This is crucial for proper purchase tracking.
+            user_id = 1 # Placeholder user ID - REPLACE THIS!
+
+            # Assuming global_data_10gb has a corresponding price ID in Stripe
+            prices = stripe.Price.list(product=product_id, active=True)
+            if not prices.data:
+                return {'status': 'error', 'message': f'No price found for product {product_id}'}, 400
+            price_id = prices.data[0].id
+            amount = prices.data[0].unit_amount
+            transaction_id = f"API_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            purchase_id = record_purchase(
+                stripe_id=None, # No stripe id in this case.
+                product_id=product_id,
+                price_id=price_id,
+                amount=amount,
+                user_id=user_id,
+                transaction_id=transaction_id
+            )
+            if purchase_id:
+                return {'status': 'success', 'purchaseId': purchase_id}
+            else:
+                return {'status': 'error', 'message': 'Failed to record purchase'}, 500
+        except Exception as e:
+            print(f"Error recording global data purchase: {str(e)}")
+            return {'status': 'error', 'message': str(e)}, 500
 
 
 if __name__ == '__main__':

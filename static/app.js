@@ -644,71 +644,37 @@ function formatTimeDifference(timestamp) {
     return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
 }
 
-window.showConfirmationDrawer = function(dataAmount, price, productId) {
+function showConfirmationDrawer(dataAmount, price, productId) {
     const drawer = document.getElementById('confirmationDrawer');
-    if (!drawer) return;
+    const dataAmountElement = document.getElementById('confirmDataAmount');
+    const priceElement = document.getElementById('confirmPrice');
 
-    requestAnimationFrame(() => {
-        drawer.style.display = 'block';
-        requestAnimationFrame(() => {
-            drawer.classList.add('show');
-        });
-    });
+    if (drawer && dataAmountElement && priceElement) {
+        dataAmountElement.textContent = `${dataAmount}GB`;
+        priceElement.textContent = `$${price}`;
+        drawer.classList.add('show');
+        drawer.setAttribute('data-product-id', productId);
+    } else {
+        console.error('Confirmation drawer elements not found');
+        // Fall back to direct purchase if drawer elements aren't available
+        confirmPurchase(productId);
+    }
+}
 
-    const amountEl = document.getElementById('confirmDataAmount');
-    const priceEl = document.getElementById('confirmPrice');
-    if (amountEl) amountEl.textContent = `${dataAmount}GB`;
-    if (priceEl) priceEl.textContent = `$${price}`;
-
-    // Store the product ID for later use
-    drawer.dataset.productId = productId;
-};
-
-window.showSubscriptionDrawer = function(productId, price, interval) {
-    const drawer = document.getElementById('confirmationDrawer');
-    if (!drawer) return;
-
-    requestAnimationFrame(() => {
-        drawer.style.display = 'block';
-        requestAnimationFrame(() => {
-            drawer.classList.add('show');
-        });
-    });
-
-    const amountEl = document.getElementById('confirmDataAmount');
-    const priceEl = document.getElementById('confirmPrice');
-    if (amountEl) amountEl.textContent = `Membership`;
-    if (priceEl) priceEl.textContent = `$${price}/${interval}`;
-
-    // Store the product ID and subscription info for later use
-    drawer.dataset.productId = productId;
-    drawer.dataset.isSubscription = 'true';
-    drawer.dataset.interval = interval;
-};
-
-window.confirmPurchase = function() {
-    hideConfirmationDrawer();
-    const dataAmountElement = document.querySelector('.data-amount');
-    const globalStatus = document.getElementById('globalStatus');
-
-    if (dataAmountElement) {
-        dataAmountElement.style.display = 'flex';
-        globalStatus.style.display = 'block';
-
-        let currentText = dataAmountElement.textContent || "0";
-        let currentData = parseFloat(currentText.replace('GB', '') || "0");
-        currentData += 10;
-        dataAmountElement.innerHTML = `${currentData.toFixed(1)}<span>GB</span>`;
-
-        const dotIndicator = document.querySelector('.dot-indicator');
-        if (dotIndicator) {
-            dotIndicator.classList.add('pulse');
-            setTimeout(() => {
-                dotIndicator.classList.remove('pulse');
-            }, 1000);
+function confirmPurchase(productId) {
+    // If called from drawer, get product ID from there
+    if (!productId) {
+        const drawer = document.getElementById('confirmationDrawer');
+        if (drawer) {
+            productId = drawer.getAttribute('data-product-id');
+            hideConfirmationDrawer();
         }
     }
-};
+
+    if (productId === 'global_data_10gb') {
+        addGlobalData();
+    }
+}
 
 window.addGlobalData = function() {
     showConfirmationDrawer(10, 10, 'global_data_10gb');
