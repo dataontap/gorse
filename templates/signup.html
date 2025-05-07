@@ -16,7 +16,7 @@
                 <form action="/submit-signup" method="POST">
                     <div class="form-group">
                         <label class="form-label">Where should we send eSIM activation email?</label>
-                        <input type="email" class="form-control" name="email" placeholder="Provide valid email" required>
+                        <input type="email" class="form-control" name="email" placeholder="Provide valid email" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" title="Please enter a valid email address" required>
                     </div>
                     <div class="form-group mt-3">
                         <label class="form-label">What phone will you use it with?</label>
