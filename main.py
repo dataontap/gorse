@@ -701,8 +701,14 @@ def create_tables_route():
     
     return jsonify(results)
 
-
-            try:
+@api.route('/record-global-purchase')
+class RecordGlobalPurchase(Resource):
+    @api.expect(purchase_model)
+    def post(self):
+        data = request.get_json()
+        product_id = data.get('productId')
+        print(f"===== RECORDING PURCHASE FOR PRODUCT: {product_id} =====")
+        try:
                 with get_db_connection() as conn:
                     if conn:
                         with conn.cursor() as cur:
