@@ -20,7 +20,12 @@
         <div class="profile-section">
             <i class="fas fa-user-circle"></i>
             <div class="profile-dropdown">
-                <div class="profile-info">My Account</div>
+                <div class="profile-info">My Account <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
+                    <div id="qrCodePopup" class="qr-code-popup">
+                        <div id="qrcode"></div>
+                        <p>Scan to link accounts</p>
+                    </div>
+                </div>
                 <a href="/profile"><i class="fas fa-user"></i> Profile</a>
                 <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
                 <a href="/payments" class="active"><i class="fas fa-credit-card"></i> Payments</a>
