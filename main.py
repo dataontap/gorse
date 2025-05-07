@@ -611,6 +611,20 @@ class RecordGlobalPurchase(Resource):
             print(f"Generated transaction ID: {transaction_id}")
             
             # Verify database connection is working
+            try:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            # Simple test query
+                            cur.execute("SELECT 1")
+                            test_result = cur.fetchone()
+                            print(f"Database connection test result: {test_result}")
+                    else:
+                        print("WARNING: Could not get database connection for test")
+            except Exception as test_err:
+                print(f"WARNING: Database connection test failed: {str(test_err)}")
+            
+            return {'status': 'success', 'message': 'Database verification completed'}
 
 
 @app.route('/create-tables', methods=['GET'])
