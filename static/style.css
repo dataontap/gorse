@@ -497,6 +497,30 @@ body {
     width: 100%;
     overflow: hidden;
     padding-bottom: 50px;
+
+/* Payment Method Card Styles */
+.payment-title {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    color: #333;
+    min-height: 27px;
+}
+
+.payment-detail {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    min-height: 24px;
+}
+
+.payment-status {
+    margin: 0;
+    min-height: 24px;
+}
+
+.dark-mode .payment-title {
+    color: #fff;
+}
+
     min-height: 200px;
 }
 
