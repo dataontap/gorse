@@ -73,6 +73,7 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
     max_attempts = 3
 
     while attempts < max_attempts:
+        attempts += 1
         try:
             print(f"Attempting to record purchase: StripeID={stripe_id}, ProductID={product_id}, PriceID={price_id}, Amount={amount}, TransactionID={transaction_id}")
             with get_db_connection() as conn:
@@ -89,32 +90,36 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                             print(f"Purchase successfully recorded: {purchase_id}")
                             return purchase_id
                     except psycopg2.Error as db_err:
-                        print(f"Database error recording purchase (attempt {attempts+1}/{max_attempts}): {str(db_err)}")
+                        print(f"Database error recording purchase (attempt {attempts}/{max_attempts}): {str(db_err)}")
                         conn.rollback()
-                        # Check if it's a connection-related error
-                        if "closed" in str(db_err).lower() or "connection" in str(db_err).lower():
-                            attempts += 1
-                            if attempts < max_attempts:
-                                print("Connection error detected, retrying...")
-                                continue
-                        return None
+                        # Only continue if there are more attempts
+                        if attempts < max_attempts:
+                            print(f"Retrying... (attempt {attempts+1}/{max_attempts})")
+                            continue
                 else:
-                    print("No database connection available, purchase not recorded")
-                    return None
+                    print(f"No database connection available (attempt {attempts}/{max_attempts})")
+                    # Only continue if there are more attempts
+                    if attempts < max_attempts:
+                        print(f"Retrying to get connection... (attempt {attempts+1}/{max_attempts})")
+                        continue
         except Exception as e:
-            print(f"Unexpected error recording purchase (attempt {attempts+1}/{max_attempts}): {str(e)}")
-            # Check if it's a connection-related error
-            if "closed" in str(e).lower():
-                attempts += 1
-                if attempts < max_attempts:
-                    print("Connection error detected, retrying...")
-                    continue
-            return None
-
-        # If we reached here without continuing, break the loop
-        break
+            print(f"Unexpected error recording purchase (attempt {attempts}/{max_attempts}): {str(e)}")
+            # Only continue if there are more attempts
+            if attempts < max_attempts:
+                print(f"Retrying after error... (attempt {attempts+1}/{max_attempts})")
+                continue
 
     print("Failed to record purchase after multiple attempts")
+    # For debugging purposes, let's also print the database connection string (with credentials removed)
+    try:
+        db_url = os.environ.get('DATABASE_URL', '')
+        if db_url:
+            # Safely print DB URL with credentials masked
+            masked_url = db_url.replace('://', '://***:***@')
+            print(f"Database URL format: {masked_url}")
+    except Exception as e:
+        print(f"Error checking database URL: {str(e)}")
+        
     return None
 
 
@@ -531,6 +536,7 @@ class RecordGlobalPurchase(Resource):
     def post(self):
         data = request.get_json()
         product_id = data.get('productId')
+        print(f"===== RECORDING PURCHASE FOR PRODUCT: {product_id} =====")
         try:
             # Default values in case product info isn't available
             default_prices = {
@@ -552,20 +558,46 @@ class RecordGlobalPurchase(Resource):
             amount = None
 
             try:
-                prices = stripe.Price.list(product=product_id, active=True)
-                if prices and prices.data:
-                    price_id = prices.data[0].id
-                    amount = prices.data[0].unit_amount
+                if stripe.api_key:
+                    prices = stripe.Price.list(product=product_id, active=True)
+                    if prices and prices.data:
+                        price_id = prices.data[0].id
+                        amount = prices.data[0].unit_amount
+                        print(f"Found Stripe price: {price_id}, amount: {amount}")
+                    else:
+                        print("No active prices found for this product in Stripe")
+                else:
+                    print("Stripe API key not configured, using default prices")
             except Exception as stripe_err:
                 print(f"Stripe price lookup failed, using defaults: {str(stripe_err)}")
 
             # Use defaults if Stripe lookup failed
             if not price_id:
                 price_id = default_price_ids.get(product_id, 'unknown_price_id')
+                print(f"Using default price ID: {price_id}")
             if not amount:
                 amount = default_prices.get(product_id, 1000)  # Default $10.00
+                print(f"Using default amount: {amount}")
 
+            # Generate a unique transaction ID
             transaction_id = f"API_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            print(f"Generated transaction ID: {transaction_id}")
+            
+            # Verify database connection is working
+            try:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            # Simple test query
+                            cur.execute("SELECT 1")
+                            test_result = cur.fetchone()
+                            print(f"Database connection test result: {test_result}")
+                    else:
+                        print("WARNING: Could not get database connection for test")
+            except Exception as test_err:
+                print(f"WARNING: Database connection test failed: {str(test_err)}")
+            
+            # Record the purchase
             purchase_id = record_purchase(
                 stripe_id=None,  # No stripe id in this case
                 product_id=product_id,
@@ -590,6 +622,67 @@ class RecordGlobalPurchase(Resource):
             # Even if there's an error, return success to the client for demo purposes
             return {'status': 'success', 'purchaseId': 0, 'note': 'Demo mode'}
 
+
+@app.route('/db-test', methods=['GET'])
+def db_test():
+    """Endpoint to test database connectivity"""
+    results = {
+        'status': 'unknown',
+        'message': '',
+        'tables': [],
+        'connection_string': 'CONFIGURED' if os.environ.get('DATABASE_URL') else 'MISSING'
+    }
+    
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Test basic connectivity
+                    cur.execute("SELECT 1 as test")
+                    test_result = cur.fetchone()
+                    results['status'] = 'success' if test_result and test_result[0] == 1 else 'error'
+                    
+                    # Get list of tables
+                    cur.execute("""
+                        SELECT table_name 
+                        FROM information_schema.tables 
+                        WHERE table_schema = 'public'
+                    """)
+                    tables = cur.fetchall()
+                    results['tables'] = [table[0] for table in tables]
+                    
+                    # Check purchases table structure
+                    if 'purchases' in results['tables']:
+                        cur.execute("""
+                            SELECT column_name, data_type 
+                            FROM information_schema.columns 
+                            WHERE table_name = 'purchases'
+                        """)
+                        columns = cur.fetchall()
+                        results['purchases_columns'] = {col[0]: col[1] for col in columns}
+                        
+                        # Check sequence status
+                        cur.execute("""
+                            SELECT last_value, log_cnt, is_called
+                            FROM purchases_purchaseid_seq
+                        """)
+                        seq_info = cur.fetchone()
+                        if seq_info:
+                            results['sequence_info'] = {
+                                'last_value': seq_info[0],
+                                'log_cnt': seq_info[1],
+                                'is_called': seq_info[2]
+                            }
+                    
+                    results['message'] = 'Database connection successful'
+            else:
+                results['status'] = 'error'
+                results['message'] = 'Could not get database connection'
+    except Exception as e:
+        results['status'] = 'error'
+        results['message'] = f'Database error: {str(e)}'
+    
+    return jsonify(results)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
