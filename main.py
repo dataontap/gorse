@@ -76,8 +76,8 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                 try:
                     with conn.cursor() as cur:
                         cur.execute(
-                            "INSERT INTO purchases (TransactionID, StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated) "
-                            "VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING PurchaseID",
+                            "INSERT INTO purchases (transactionid, stripeid, stripeproductid, priceid, totalamount, userid, datecreated) "
+                            "VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING purchaseid",
                             (transaction_id, stripe_id, product_id, price_id, amount, user_id)
                         )
                         purchase_id = cur.fetchone()[0]
@@ -521,14 +521,14 @@ class RecordGlobalPurchase(Resource):
                 'basic_membership': 'price_basic_membership',
                 'full_membership': 'price_full_membership',
             }
-            
+
             #  In a real application, fetch the user ID from a secure session or authentication system.
             user_id = 1  # Placeholder user ID
-            
+
             # Try to get price from Stripe if available
             price_id = None
             amount = None
-            
+
             try:
                 prices = stripe.Price.list(product=product_id, active=True)
                 if prices and prices.data:
@@ -536,13 +536,13 @@ class RecordGlobalPurchase(Resource):
                     amount = prices.data[0].unit_amount
             except Exception as stripe_err:
                 print(f"Stripe price lookup failed, using defaults: {str(stripe_err)}")
-            
+
             # Use defaults if Stripe lookup failed
             if not price_id:
                 price_id = default_price_ids.get(product_id, 'unknown_price_id')
             if not amount:
                 amount = default_prices.get(product_id, 1000)  # Default $10.00
-                
+
             transaction_id = f"API_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
             purchase_id = record_purchase(
                 stripe_id=None,  # No stripe id in this case
@@ -552,7 +552,7 @@ class RecordGlobalPurchase(Resource):
                 user_id=user_id,
                 transaction_id=transaction_id
             )
-            
+
             if purchase_id:
                 print(f"Successfully recorded purchase: {purchase_id} for product: {product_id}")
                 return {'status': 'success', 'purchaseId': purchase_id}
