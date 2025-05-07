@@ -42,6 +42,34 @@ if stripe.api_key:
     except Exception as e:
         print(f"Error setting up Stripe products: {str(e)}")
 
+# Create database tables on startup
+try:
+    with get_db_connection() as conn:
+        if conn:
+            print("Attempting to create database tables...")
+            with conn.cursor() as cur:
+                # Check if purchases table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'purchases')")
+                purchases_exists = cur.fetchone()[0]
+                
+                if not purchases_exists:
+                    print("Creating purchases table...")
+                    with open('create_purchases_table.sql', 'r') as sql_file:
+                        sql_script = sql_file.read()
+                        cur.execute(sql_script)
+                    print("Purchases table created successfully")
+                else:
+                    print("Purchases table already exists")
+                
+                conn.commit()
+        else:
+            print("No database connection available for table creation")
+except Exception as e:
+    print(f"Error creating tables on startup: {str(e)}")
+    print("Continuing without table creation...")
+
+
+
 app = Flask(__name__, static_url_path='/static', template_folder='templates') # Added template_folder
 socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
@@ -80,6 +108,38 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                 if conn:
                     try:
                         with conn.cursor() as cur:
+                            # First, check if the purchases table exists
+                            cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'purchases')")
+                            table_exists = cur.fetchone()[0]
+                            
+                            # Create the table if it doesn't exist
+                            if not table_exists:
+                                print("Purchases table does not exist. Creating it now...")
+                                create_table_sql = """
+                                CREATE TABLE IF NOT EXISTS purchases (
+                                    PurchaseID SERIAL PRIMARY KEY,
+                                    TransactionID VARCHAR(100) UNIQUE,
+                                    StripeID VARCHAR(100),
+                                    StripeProductID VARCHAR(100) NOT NULL,
+                                    PriceID VARCHAR(100) NOT NULL,
+                                    TotalAmount INTEGER NOT NULL,
+                                    DateCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                    UserID INTEGER
+                                );
+                                
+                                CREATE INDEX IF NOT EXISTS idx_purchases_stripe ON purchases(StripeID);
+                                CREATE INDEX IF NOT EXISTS idx_purchases_product ON purchases(StripeProductID);
+                                CREATE INDEX IF NOT EXISTS idx_purchases_transaction ON purchases(TransactionID);
+                                """
+                                cur.execute(create_table_sql)
+                                conn.commit()
+                                print("Purchases table created successfully")
+                            
+                            # Handle null StripeID (make it empty string instead)
+                            if stripe_id is None:
+                                stripe_id = ''
+                                
+                            # Now insert the purchase record
                             cur.execute(
                                 "INSERT INTO purchases (TransactionID, StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated) "
                                 "VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING PurchaseID",
@@ -584,6 +644,64 @@ class RecordGlobalPurchase(Resource):
             print(f"Generated transaction ID: {transaction_id}")
             
             # Verify database connection is working
+
+
+@app.route('/create-tables', methods=['GET'])
+def create_tables_route():
+    """Endpoint to manually create database tables"""
+    results = {
+        'status': 'error',
+        'message': 'Failed to create tables'
+    }
+    
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Create the purchases table
+                    create_purchases_sql = """
+                    CREATE TABLE IF NOT EXISTS purchases (
+                        PurchaseID SERIAL PRIMARY KEY,
+                        TransactionID VARCHAR(100) UNIQUE,
+                        StripeID VARCHAR(100),
+                        StripeProductID VARCHAR(100) NOT NULL,
+                        PriceID VARCHAR(100) NOT NULL,
+                        TotalAmount INTEGER NOT NULL,
+                        DateCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UserID INTEGER
+                    );
+                    
+                    CREATE INDEX IF NOT EXISTS idx_purchases_stripe ON purchases(StripeID);
+                    CREATE INDEX IF NOT EXISTS idx_purchases_product ON purchases(StripeProductID);
+                    CREATE INDEX IF NOT EXISTS idx_purchases_transaction ON purchases(TransactionID);
+                    """
+                    cur.execute(create_purchases_sql)
+                    
+                    # Create the users table
+                    create_users_sql = """
+                    CREATE TABLE IF NOT EXISTS users (
+                        UserID SERIAL PRIMARY KEY,
+                        email VARCHAR(255) UNIQUE NOT NULL,
+                        stripe_customer_id VARCHAR(100),
+                        imei VARCHAR(100),
+                        DateCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                    """
+                    cur.execute(create_users_sql)
+                    
+                    conn.commit()
+                    results = {
+                        'status': 'success',
+                        'message': 'Tables created successfully'
+                    }
+            else:
+                results['message'] = 'Could not get database connection'
+    except Exception as e:
+        results['message'] = f'Error creating tables: {str(e)}'
+    
+    return jsonify(results)
+
+
             try:
                 with get_db_connection() as conn:
                     if conn:
