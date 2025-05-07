@@ -776,7 +776,7 @@ class RecordGlobalPurchase(Resource):
             transaction_id=transaction_id
         )
 
-            if purchase_id:
+        if purchase_id:
             print(f"Successfully recorded purchase: {purchase_id} for product: {product_id}")
             return {'status': 'success', 'purchaseId': purchase_id}
         else:
