@@ -6,10 +6,9 @@ CREATE TABLE IF NOT EXISTS purchases (
     PriceID VARCHAR(100) NOT NULL,
     TotalAmount INTEGER NOT NULL,
     DateCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UserID INTEGER,
-    FOREIGN KEY (UserID) REFERENCES users(UserID)
+    UserID INTEGER
 );
 
 -- Create index on frequently queried fields
-CREATE INDEX idx_purchases_stripe ON purchases(StripeID);
-CREATE INDEX idx_purchases_product ON purchases(StripeProductID);
+CREATE INDEX IF NOT EXISTS idx_purchases_stripe ON purchases(StripeID);
+CREATE INDEX IF NOT EXISTS idx_purchases_product ON purchases(StripeProductID);

@@ -45,6 +45,30 @@ if stripe.api_key:
 app = Flask(__name__, static_url_path='/static', template_folder='templates') # Added template_folder
 socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
+
+def record_purchase(stripe_id, product_id, price_id, amount, user_id=None):
+    """Records a purchase in the database"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "INSERT INTO purchases (StripeID, StripeProductID, PriceID, TotalAmount, UserID) "
+                        "VALUES (%s, %s, %s, %s, %s) RETURNING PurchaseID",
+                        (stripe_id, product_id, price_id, amount, user_id)
+                    )
+                    purchase_id = cur.fetchone()[0]
+                    conn.commit()
+                    print(f"Purchase recorded: {purchase_id}")
+                    return purchase_id
+            else:
+                print("No database connection available, purchase not recorded")
+                return None
+    except Exception as e:
+        print(f"Error recording purchase: {str(e)}")
+        return None
+
+
     description='Get android phone IMEI API with telephony permissions for eSIM activation',
     doc='/api', 
     prefix='/api')  # Move all API endpoints under /api path
@@ -90,31 +114,6 @@ delivery_model = api.model('Delivery', {
 class DeliveryResource(Resource):
     @delivery_ns.expect(delivery_model)
     @delivery_ns.response(200, 'Success')
-
-
-def record_purchase(stripe_id, product_id, price_id, amount, user_id=None):
-    """Records a purchase in the database"""
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        "INSERT INTO purchases (StripeID, StripeProductID, PriceID, TotalAmount, UserID) "
-                        "VALUES (%s, %s, %s, %s, %s) RETURNING PurchaseID",
-                        (stripe_id, product_id, price_id, amount, user_id)
-                    )
-                    purchase_id = cur.fetchone()[0]
-                    conn.commit()
-                    print(f"Purchase recorded: {purchase_id}")
-                    return purchase_id
-            else:
-                print("No database connection available, purchase not recorded")
-                return None
-    except Exception as e:
-        print(f"Error recording purchase: {str(e)}")
-        return None
-
-
     @delivery_ns.response(400, 'Bad Request')
     def post(self):
         """Submit eSIM delivery preferences"""
