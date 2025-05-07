@@ -644,32 +644,46 @@ function formatTimeDifference(timestamp) {
     return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
 }
 
-window.showConfirmationDrawer = function(dataAmount, price) {
+window.showConfirmationDrawer = function(dataAmount, price, productId) {
     const drawer = document.getElementById('confirmationDrawer');
     if (!drawer) return;
-    
+
     requestAnimationFrame(() => {
         drawer.style.display = 'block';
         requestAnimationFrame(() => {
             drawer.classList.add('show');
         });
     });
-    
+
     const amountEl = document.getElementById('confirmDataAmount');
     const priceEl = document.getElementById('confirmPrice');
     if (amountEl) amountEl.textContent = `${dataAmount}GB`;
     if (priceEl) priceEl.textContent = `$${price}`;
+
+    // Store the product ID for later use
+    drawer.dataset.productId = productId;
 };
 
-window.hideConfirmationDrawer = function() {
+window.showSubscriptionDrawer = function(productId, price, interval) {
     const drawer = document.getElementById('confirmationDrawer');
-    if (drawer) {
-        drawer.classList.remove('show');
-        drawer.style.bottom = '-100%';
-        setTimeout(() => {
-            drawer.style.display = 'none';
-        }, 300);
-    }
+    if (!drawer) return;
+
+    requestAnimationFrame(() => {
+        drawer.style.display = 'block';
+        requestAnimationFrame(() => {
+            drawer.classList.add('show');
+        });
+    });
+
+    const amountEl = document.getElementById('confirmDataAmount');
+    const priceEl = document.getElementById('confirmPrice');
+    if (amountEl) amountEl.textContent = `Membership`;
+    if (priceEl) priceEl.textContent = `$${price}/${interval}`;
+
+    // Store the product ID and subscription info for later use
+    drawer.dataset.productId = productId;
+    drawer.dataset.isSubscription = 'true';
+    drawer.dataset.interval = interval;
 };
 
 window.confirmPurchase = function() {
@@ -697,7 +711,18 @@ window.confirmPurchase = function() {
 };
 
 window.addGlobalData = function() {
-    showConfirmationDrawer(10, 10);
+    showConfirmationDrawer(10, 10, 'global_data_10gb');
+};
+
+window.hideConfirmationDrawer = function() {
+    const drawer = document.getElementById('confirmationDrawer');
+    if (drawer) {
+        drawer.classList.remove('show');
+        drawer.style.bottom = '-100%';
+        setTimeout(() => {
+            drawer.style.display = 'none';
+        }, 300);
+    }
 };
 
 function initializeChart(canvas) {

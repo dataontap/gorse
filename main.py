@@ -32,6 +32,16 @@ import stripe
 # Initialize Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
+# Import product setup function
+from stripe_products import create_stripe_products
+
+# Create products in Stripe if they don't exist
+if stripe.api_key:
+    try:
+        create_stripe_products()
+    except Exception as e:
+        print(f"Error setting up Stripe products: {str(e)}")
+
 app = Flask(__name__, static_url_path='/static', template_folder='templates') # Added template_folder
 socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
@@ -369,6 +379,43 @@ def network():
 @app.route('/payments', methods=['GET'])
 def payments():
     return render_template('payments.html')
+
+@app.route('/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        product_id = data.get('productId')
+        is_subscription = data.get('isSubscription', False)
+        
+        # Get price ID for the product
+        prices = stripe.Price.list(product=product_id, active=True)
+        if not prices.data:
+            return jsonify({'error': f'No price found for product {product_id}'}), 400
+        
+        price_id = prices.data[0].id
+        
+        # Create a checkout session
+        success_url = request.url_root + 'dashboard?session_id={CHECKOUT_SESSION_ID}'
+        cancel_url = request.url_root + 'dashboard'
+        
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': price_id,
+                'quantity': 1,
+            }],
+            mode='subscription' if is_subscription else 'payment',
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+        
+        return jsonify({'url': checkout_session.url})
+    except Exception as e:
+        print(f"Error creating checkout session: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/static/<path:path>')
 def serve_static(path):
