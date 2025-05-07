@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSortControlsVisibility();
     initializeCarousel();
     checkPurchasedMemberships();
+    updateCarouselControlsVisibility();
 });
 
 function initializeCarousel() {
@@ -919,6 +920,23 @@ function updateOffersCarousel(membershipType = null) {
                 carouselContainer.style.display = 'none';
             }
         }
+    }
+    
+    // Check if only one offer remains and hide controls if needed
+    updateCarouselControlsVisibility();
+}
+
+function updateCarouselControlsVisibility() {
+    const carousel = document.getElementById('promotionsCarousel');
+    if (!carousel) return;
+    
+    const items = carousel.querySelectorAll('.carousel-item');
+    const controlsContainer = document.querySelector('.carousel-controls');
+    
+    if (controlsContainer && items.length <= 1) {
+        controlsContainer.style.display = 'none';
+    } else if (controlsContainer) {
+        controlsContainer.style.display = 'flex';
     }
 }
 
