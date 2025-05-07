@@ -1094,6 +1094,7 @@ body {
     justify-content: space-between;
     padding: 10px 0;
     border-bottom: 1px solid #eee;
+    text-align: left;
 }
 
 .purchase-empty-state {
@@ -1109,6 +1110,22 @@ body {
 
 .purchase-amount {
     font-weight: bold;
+    text-align: right;
+}
+
+.purchase-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    position: relative;
+}
+
+.purchase-item .purchase-amount {
+    position: absolute;
+    right: 0;
+    top: 10px;
 }
 
 .dark-mode .purchase-history {
