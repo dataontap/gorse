@@ -592,7 +592,7 @@ body {
 }
 
 .dark-mode .top-bar {
-    background: rgba(26, 26, 46, 0.95);
+    background: transparent;
 }
 
 .dark-mode .menu-dropdown,
@@ -611,7 +611,7 @@ body {
 }
 
 .top-bar {
-    background: rgba(204, 204, 255, 0.95);
+    background: transparent;
     backdrop-filter: blur(5px);
     padding: 15px;
     display: flex;
