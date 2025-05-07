@@ -95,7 +95,7 @@ def create_stripe_products():
             full_membership_product = stripe.Product.create(
                 id='full_membership',
                 name='Full Membership',
-                description='Unlimited Talk + Text, Global Wi-Fi Calling, $66/year',
+                description='Unlimited Talk + Text, Global Wi-Fi Calling & Satellite eTXT, $66/year',
                 metadata={
                     'type': 'subscription',
                     'product_catalog': 'memberships',
