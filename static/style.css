@@ -820,7 +820,8 @@ body {
 .qr-code-popup {
     display: none;
     position: absolute;
-    right: 15px;
+    left: 50%;
+    transform: translateX(-50%);
     top: 40px;
     background: white;
     padding: 15px;
