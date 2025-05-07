@@ -478,38 +478,6 @@ def submit_signup():
     except Exception as e:
         print(f"Error processing signup: {str(e)}")
         return redirect('/signup')
-        # Create customer
-        customer = stripe.Customer.create(
-            email=email,
-            description='eSIM activation customer'
-        )
-
-        # Create invoice
-        invoice = stripe.Invoice.create(
-            customer=customer.id,
-            collection_method='send_invoice',
-            days_until_due=1,
-            auto_advance=False,
-            description='eSIM Activation Service'
-        )
-
-        # Add invoice item
-        stripe.InvoiceItem.create(
-            customer=customer.id,
-            amount=100,  # $1.00 in cents
-            currency='cad',
-            description='eSIM Activation',
-            invoice=invoice.id
-        )
-
-        # Finalize and send invoice
-        invoice = stripe.Invoice.finalize_invoice(invoice.id, auto_advance=False)
-        invoice = stripe.Invoice.send_invoice(invoice.id)
-
-        return send_from_directory('static', 'success.html')
-    except Exception as e:
-        print(f"Error sending invoice: {str(e)}")
-        return redirect('/signup')
 
 @app.route('/profile', methods=['GET'])
 def profile():
