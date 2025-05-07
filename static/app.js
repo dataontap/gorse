@@ -680,6 +680,25 @@ window.addGlobalData = function() {
     showConfirmationDrawer(10, 10, 'global_data_10gb');
 };
 
+window.showConfirmationDrawer = function(dataAmount, price, productId) {
+    const drawer = document.getElementById('confirmationDrawer');
+    const dataAmountElement = document.getElementById('confirmDataAmount');
+    const priceElement = document.getElementById('confirmPrice');
+
+    if (drawer && dataAmountElement && priceElement) {
+        dataAmountElement.textContent = `${dataAmount}GB`;
+        priceElement.textContent = `$${price}`;
+        drawer.setAttribute('data-product-id', productId);
+        drawer.style.display = 'block';
+        drawer.classList.add('show');
+        drawer.style.bottom = '0';
+    } else {
+        console.error('Confirmation drawer elements not found');
+        // Fall back to direct purchase if drawer elements aren't available
+        confirmPurchase(productId);
+    }
+};
+
 window.hideConfirmationDrawer = function() {
     const drawer = document.getElementById('confirmationDrawer');
     if (drawer) {
@@ -690,6 +709,109 @@ window.hideConfirmationDrawer = function() {
         }, 300);
     }
 };
+
+window.confirmPurchase = function(productId) {
+    // If called from drawer, get product ID from there
+    if (!productId) {
+        const drawer = document.getElementById('confirmationDrawer');
+        if (drawer) {
+            productId = drawer.getAttribute('data-product-id');
+            hideConfirmationDrawer();
+        }
+    }
+    
+    // Send API request to record purchase
+    fetch('/api/record-global-purchase', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ productId: productId || 'global_data_10gb' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Show purchase in history
+            addPurchaseToHistory(productId, data.purchaseId);
+            // Show data added
+            showDataAdded(productId);
+        } else {
+            console.error('Purchase failed:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error recording purchase:', error);
+    });
+};
+
+function addPurchaseToHistory(productId, purchaseId) {
+    const purchaseList = document.getElementById('purchaseList');
+    if (!purchaseList) return;
+    
+    // Remove empty state if present
+    const emptyState = purchaseList.querySelector('.purchase-empty-state');
+    if (emptyState) {
+        emptyState.remove();
+    }
+    
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+    const productName = getProductName(productId);
+    const amount = getProductPrice(productId);
+    
+    const purchaseItem = document.createElement('div');
+    purchaseItem.className = 'purchase-item';
+    purchaseItem.innerHTML = `
+        <div>
+            <div>${productName}</div>
+            <div class="purchase-date">${formattedDate}</div>
+        </div>
+        <div class="purchase-amount">$${amount}</div>
+    `;
+    
+    purchaseList.prepend(purchaseItem);
+}
+
+function getProductName(productId) {
+    const products = {
+        'global_data_10gb': '10GB Global Data',
+        'basic_membership': 'Basic Membership',
+        'full_membership': 'Full Membership'
+    };
+    return products[productId] || 'Unknown Product';
+}
+
+function getProductPrice(productId) {
+    const prices = {
+        'global_data_10gb': '10.00',
+        'basic_membership': '24.00',
+        'full_membership': '66.00'
+    };
+    return prices[productId] || '0.00';
+}
+
+function showDataAdded(productId) {
+    // Show data has been added to the account
+    const dataDisplay = document.getElementById('dataDisplay');
+    const globalStatus = document.getElementById('globalStatus');
+    
+    if (dataDisplay && globalStatus) {
+        let amount = '1.0';
+        if (productId === 'global_data_10gb') {
+            amount = '10.0';
+        }
+        
+        dataDisplay.innerHTML = `${amount}<span>GB</span>`;
+        dataDisplay.style.display = 'block';
+        globalStatus.style.display = 'block';
+        
+        // Add animation
+        dataDisplay.classList.add('pulse');
+        setTimeout(() => {
+            dataDisplay.classList.remove('pulse');
+        }, 1000);
+    }
+}
 
 function initializeChart(canvas) {
     const ctx = canvas.getContext('2d');

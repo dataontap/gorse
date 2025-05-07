@@ -107,29 +107,6 @@
                                 <button class="btn btn-primary" onclick="showConfirmationDrawer(10, 10, 'global_data_10gb')">Buy</button>
                             </div>
                         </div>
-                        <div id="confirmationDrawer" class="confirmation-drawer">
-                            <div class="drawer-content">
-                                <h3>Confirm Purchase</h3>
-                                <div class="purchase-details">
-                                    <div class="detail-row">
-                                        <span>Data Amount:</span>
-                                        <span id="confirmDataAmount">10GB</span>
-                                    </div>
-                                    <div class="detail-row">
-                                        <span>Price:</span>
-                                        <span id="confirmPrice">$10</span>
-                                    </div>
-                                    <div class="detail-row">
-                                        <span>Payment Method:</span>
-                                        <span>Visa •••• 4242</span>
-                                    </div>
-                                </div>
-                                <div class="drawer-actions">
-                                    <button class="btn" onclick="hideConfirmationDrawer()">Cancel</button>
-                                    <button class="btn btn-primary" onclick="confirmPurchase()">Confirm</button>
-                                </div>
-                            </div>
-                            </div>
                     </div>
                 </div>
                 <div class="carousel-item">
@@ -140,7 +117,7 @@
                             <p>Global Wi-Fi Calling</p>
                             <p><strong>$66/year</strong></p>
                             <div class="offer-button">
-                                <button class="btn btn-primary">Subscribe</button>
+                                <button class="btn btn-primary" onclick="showConfirmationDrawer(100, 66, 'full_membership')">Subscribe</button>
                             </div>
                         </div>
                     </div>
@@ -153,7 +130,7 @@
                             <p>Shareable</p>
                             <p><strong>$24/year</strong></p>
                             <div class="offer-button">
-                                <button class="btn btn-primary" onclick="document.getElementById('addUserBtn').click()">Subscribe</button>
+                                <button class="btn btn-primary" onclick="showConfirmationDrawer(10, 24, 'basic_membership')">Subscribe</button>
                             </div>
                         </div>
                     </div>
@@ -165,6 +142,31 @@
                 <button type="button" data-bs-target="#promotionsCarousel" data-bs-slide-to="2"></button>
             </div>
         </div>
+        
+        <div id="confirmationDrawer" class="confirmation-drawer">
+            <div class="drawer-content">
+                <h3>Confirm Purchase</h3>
+                <div class="purchase-details">
+                    <div class="detail-row">
+                        <span>Data Amount:</span>
+                        <span id="confirmDataAmount">10GB</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Price:</span>
+                        <span id="confirmPrice">$10</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Payment Method:</span>
+                        <span>Visa •••• 4242</span>
+                    </div>
+                </div>
+                <div class="drawer-actions">
+                    <button class="btn" onclick="hideConfirmationDrawer()">Cancel</button>
+                    <button class="btn btn-primary" onclick="confirmPurchase()">Confirm</button>
+                </div>
+            </div>
+        </div>
+        
         <div class="section-header">
             <h2><i class="fas fa-chart-line"></i> Insights</h2>
         </div>
