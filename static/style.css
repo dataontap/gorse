@@ -1642,16 +1642,16 @@ body {
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 24px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 16px;
-    align-items: start;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
 }
 
 .address-card .address-content {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    flex: 1;
 }
 
 .address-card p {

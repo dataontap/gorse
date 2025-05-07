@@ -39,54 +39,49 @@
                 <a href="/dashboard" class="btn-close" aria-label="Close"></a>
             </div>
 
+            <!-- Default Payment Method Section -->
             <div class="address-section mb-4">
                 <h3 class="mb-3"><i class="fas fa-star"></i> Default Payment Method</h3>
-                <div class="address-card p-3 mb-3">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="address-content">
-                            <h4 class="payment-title">Visa ending in 4242</h4>
-                            <p class="payment-detail">Expires 12/25</p>
-                            <p class="payment-status text-success">Default payment method</p>
-                        </div>
-                        <i class="fas fa-edit edit-icon" onclick="editPaymentMethod(this)"></i>
+                <div class="address-card">
+                    <div class="address-content">
+                        <h4 class="payment-title">Visa ending in 4242</h4>
+                        <p class="payment-detail">Expires 12/25</p>
+                        <p class="text-success">Default payment method</p>
                     </div>
+                    <i class="fas fa-edit edit-icon" onclick="editPaymentMethod(this)"></i>
                 </div>
             </div>
 
+            <!-- Other Payment Methods Section -->
             <div class="address-section mb-4">
                 <h3 class="mb-3"><i class="fas fa-credit-card"></i> Other Payment Methods</h3>
-                <div class="address-card p-3 mb-3">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="address-content">
-                            <h4 class="payment-title">Mastercard ending in 5555</h4>
-                            <p class="payment-detail">Expires 08/24</p>
-                            <p class="payment-status">&nbsp;</p>
-                        </div>
-                        <i class="fas fa-edit edit-icon" onclick="editPaymentMethod(this)"></i>
+                <div class="address-card mb-3">
+                    <div class="address-content">
+                        <h4 class="payment-title">Mastercard ending in 5555</h4>
+                        <p class="payment-detail">Expires 08/24</p>
+                        <p class="payment-status">&nbsp;</p>
                     </div>
+                    <i class="fas fa-edit edit-icon" onclick="editPaymentMethod(this)"></i>
                 </div>
 
-                <div class="address-card p-3 mb-3">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="address-content">
-                            <h4 class="payment-title">Bitcoin Wallet</h4>
-                            <p class="payment-detail">Connected via Stripe</p>
-                            <p class="payment-status">&nbsp;</p>
-                        </div>
-                        <i class="fas fa-edit edit-icon" onclick="editPaymentMethod(this)"></i>
+                <div class="address-card">
+                    <div class="address-content">
+                        <h4 class="payment-title">Bitcoin Wallet</h4>
+                        <p class="payment-detail">Connected via Stripe</p>
+                        <p class="payment-status">&nbsp;</p>
                     </div>
+                    <i class="fas fa-edit edit-icon" onclick="editPaymentMethod(this)"></i>
                 </div>
             </div>
 
+            <!-- Add Payment Method Section -->
             <div class="address-section mb-4">
                 <h3 class="mb-3"><i class="fas fa-plus-circle"></i> Add Payment Method</h3>
-                <div class="address-card p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="address-content">
-                            <button class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Add New Payment Method
-                            </button>
-                        </div>
+                <div class="address-card">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add New Payment Method
+                        </button>
                     </div>
                 </div>
             </div>
