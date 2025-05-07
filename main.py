@@ -90,6 +90,31 @@ delivery_model = api.model('Delivery', {
 class DeliveryResource(Resource):
     @delivery_ns.expect(delivery_model)
     @delivery_ns.response(200, 'Success')
+
+
+def record_purchase(stripe_id, product_id, price_id, amount, user_id=None):
+    """Records a purchase in the database"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "INSERT INTO purchases (StripeID, StripeProductID, PriceID, TotalAmount, UserID) "
+                        "VALUES (%s, %s, %s, %s, %s) RETURNING PurchaseID",
+                        (stripe_id, product_id, price_id, amount, user_id)
+                    )
+                    purchase_id = cur.fetchone()[0]
+                    conn.commit()
+                    print(f"Purchase recorded: {purchase_id}")
+                    return purchase_id
+            else:
+                print("No database connection available, purchase not recorded")
+                return None
+    except Exception as e:
+        print(f"Error recording purchase: {str(e)}")
+        return None
+
+
     @delivery_ns.response(400, 'Bad Request')
     def post(self):
         """Submit eSIM delivery preferences"""
@@ -262,12 +287,49 @@ def stripe_webhook():
     if event.type == 'invoice.paid':
         invoice = event.data.object
         print(f"Invoice paid: {invoice.id}")
-        # Verify payment amount is $1
-        if invoice.amount_paid == 100:  # 100 cents = $1
-            customer_id = invoice.customer
-            customer = stripe.Customer.retrieve(customer_id)
-            print(f"Processing eSIM activation for customer {customer.email}")
-            return {'status': 'paid', 'redirect': '/static/dashboard.html'}, 200
+        customer_id = invoice.customer
+        customer = stripe.Customer.retrieve(customer_id)
+        
+        # Record the purchase
+        for line in invoice.lines.data:
+            price_id = line.price.id
+            product_id = line.price.product
+            amount = line.amount
+
+            record_purchase(
+                stripe_id=invoice.id,
+                product_id=product_id,
+                price_id=price_id,
+                amount=amount,
+                user_id=None  # We'll need to lookup the user ID from the customer ID
+            )
+            
+        print(f"Processing payment for customer {customer.email}")
+        return {'status': 'paid', 'redirect': '/dashboard'}, 200
+        
+    elif event.type == 'checkout.session.completed':
+        session = event.data.object
+        print(f"Checkout completed: {session.id}")
+        
+        # For one-time payments, record the purchase
+        if session.mode == 'payment':
+            line_items = stripe.checkout.Session.list_line_items(session.id)
+            
+            for item in line_items.data:
+                price_id = item.price.id
+                product_id = item.price.product
+                amount = item.amount_total
+                
+                record_purchase(
+                    stripe_id=session.id,
+                    product_id=product_id,
+                    price_id=price_id,
+                    amount=amount,
+                    user_id=None  # We'll need to lookup the user ID from the customer ID
+                )
+        
+        return {'status': 'paid', 'redirect': '/dashboard'}, 200
+        
     elif event.type == 'invoice.payment_failed':
         invoice = event.data.object
         print(f"Invoice payment failed: {invoice.id}")
