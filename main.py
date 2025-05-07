@@ -71,7 +71,7 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
     """Records a purchase in the database"""
     attempts = 0
     max_attempts = 3
-    
+
     while attempts < max_attempts:
         try:
             print(f"Attempting to record purchase: StripeID={stripe_id}, ProductID={product_id}, PriceID={price_id}, Amount={amount}, TransactionID={transaction_id}")
@@ -80,8 +80,8 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                     try:
                         with conn.cursor() as cur:
                             cur.execute(
-                                "INSERT INTO purchases (transactionid, stripeid, stripeproductid, priceid, totalamount, userid, datecreated) "
-                                "VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING purchaseid",
+                                "INSERT INTO purchases (TransactionID, StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated) "
+                                "VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING PurchaseID",
                                 (transaction_id, stripe_id, product_id, price_id, amount, user_id)
                             )
                             purchase_id = cur.fetchone()[0]
@@ -110,10 +110,10 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                     print("Connection error detected, retrying...")
                     continue
             return None
-        
+
         # If we reached here without continuing, break the loop
         break
-    
+
     print("Failed to record purchase after multiple attempts")
     return None
 
