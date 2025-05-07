@@ -172,11 +172,9 @@ function initializeMenu() {
                 const id = link.getAttribute('id');
                 if (href && href !== '#' && id !== 'settingsToggle') {
                     e.preventDefault();
-                    e.stopPropagation();
                     profileDropdown.style.display = 'none';
-                    setTimeout(() => {
-                        window.location.href = href;
-                    }, 100);
+                    // Ensure profile page navigation works correctly
+                    window.location.href = href;
                 }
             });
         });
