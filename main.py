@@ -701,6 +701,7 @@ def create_tables_route():
     
     return jsonify(results)
 
+
 @api.route('/record-global-purchase')
 class RecordGlobalPurchase(Resource):
     @api.expect(purchase_model)
