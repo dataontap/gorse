@@ -45,6 +45,27 @@ if stripe.api_key:
 app = Flask(__name__, static_url_path='/static', template_folder='templates') # Added template_folder
 socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
+    description='Get android phone IMEI API with telephony permissions for eSIM activation',
+    doc='/api', 
+    prefix='/api')  # Move all API endpoints under /api path
+
+ns = api.namespace('imei', description='IMEI operations')
+delivery_ns = api.namespace('delivery', description='eSIM delivery operations')
+customer_ns = api.namespace('customer', description='Customer operations')
+
+customer_model = api.model('Customer', {
+    'email': fields.String(required=True, description='Customer email address')
+})
+
+delivery_model = api.model('Delivery', {
+    'method': fields.String(required=True, description='Delivery method (email or sms)'),
+    'contact': fields.String(required=True, description='Email address or phone number')
+})
+
+imei_model = api.model('IMEI', {
+    'imei1': fields.String(required=True, description='Primary IMEI number'),
+    'imei2': fields.String(required=False, description='Secondary IMEI number (dual SIM devices)')
+})
 
 def record_purchase(stripe_id, product_id, price_id, amount, user_id=None):
     """Records a purchase in the database"""
@@ -69,51 +90,6 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None):
         return None
 
 
-    description='Get android phone IMEI API with telephony permissions for eSIM activation',
-    doc='/api', 
-    prefix='/api')  # Move all API endpoints under /api path
-
-ns = api.namespace('imei', description='IMEI operations')
-delivery_ns = api.namespace('delivery', description='eSIM delivery operations')
-customer_ns = api.namespace('customer', description='Customer operations')
-
-customer_model = api.model('Customer', {
-    'email': fields.String(required=True, description='Customer email address')
-})
-
-@customer_ns.route('')
-class CustomerResource(Resource):
-    @customer_ns.expect(customer_model)
-    @customer_ns.response(200, 'Success')
-    @customer_ns.response(400, 'Bad Request')
-    def post(self):
-        """Create a new customer"""
-        try:
-            data = request.get_json()
-            if not data or 'email' not in data:
-                return {'message': 'Email is required', 'status': 'error'}, 400
-
-            # Store customer email in database
-            timestamp = datetime.now().isoformat()
-            db[f"customer_{timestamp}"] = {'email': data['email']}
-
-            return {
-                'message': 'Customer created successfully',
-                'status': 'success',
-                'data': {'email': data['email']}
-            }
-        except Exception as e:
-            return {'message': str(e), 'status': 'error'}, 500
-
-delivery_model = api.model('Delivery', {
-    'method': fields.String(required=True, description='Delivery method (email or sms)'),
-    'contact': fields.String(required=True, description='Email address or phone number')
-})
-
-@delivery_ns.route('')
-class DeliveryResource(Resource):
-    @delivery_ns.expect(delivery_model)
-    @delivery_ns.response(200, 'Success')
     @delivery_ns.response(400, 'Bad Request')
     def post(self):
         """Submit eSIM delivery preferences"""
