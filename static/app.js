@@ -880,6 +880,10 @@ function updateOffersCarousel(membershipType = null) {
         localStorage.setItem('has_membership', 'true');
     }
     
+    // Only proceed with removing offers if user has a membership
+    const hasMembership = localStorage.getItem('has_membership') === 'true' || membershipType;
+    if (!hasMembership) return;
+    
     // Remove membership offers from carousel
     const items = carousel.querySelectorAll('.carousel-item');
     const controls = document.querySelectorAll('.carousel-controls button');
@@ -890,7 +894,7 @@ function updateOffersCarousel(membershipType = null) {
         if (offerContent && (offerContent.textContent.includes('Basic Membership') || 
                              offerContent.textContent.includes('Full Membership'))) {
             item.remove();
-            if (controls[index]) {
+            if (controls && controls[index]) {
                 controls[index].remove();
             }
             removedCount++;
@@ -912,7 +916,10 @@ function updateOffersCarousel(membershipType = null) {
             }
         } else {
             // No offers remain, hide the carousel
-            carousel.closest('.carousel').style.display = 'none';
+            const carouselContainer = carousel.closest('.carousel');
+            if (carouselContainer) {
+                carouselContainer.style.display = 'none';
+            }
         }
     }
 }
