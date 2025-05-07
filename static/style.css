@@ -1079,10 +1079,10 @@ body {
 }
 
 .purchase-history {
-    background-color: #fff;
+    background-color: transparent;
     border-radius: 10px;
     padding: 15px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
 }
 
 .purchase-list {
@@ -1112,7 +1112,7 @@ body {
 }
 
 .dark-mode .purchase-history {
-    background-color: #2a2a3a;
+    background-color: transparent;
 }
 
 .dark-mode .purchase-item {
