@@ -832,12 +832,25 @@ function showDataAdded(productId) {
     const globalStatus = document.getElementById('globalStatus');
     
     if (dataDisplay && globalStatus) {
-        let amount = '1.0';
-        if (productId === 'global_data_10gb') {
-            amount = '10.0';
+        // Get current data amount if displayed
+        let currentAmount = 0;
+        if (dataDisplay.style.display === 'block') {
+            const currentText = dataDisplay.textContent.replace('GB', '').trim();
+            currentAmount = parseFloat(currentText) || 0;
         }
         
-        dataDisplay.innerHTML = `${amount}<span>GB</span>`;
+        // Add new data to current amount
+        let addedAmount = 0;
+        if (productId === 'global_data_10gb') {
+            addedAmount = 10.0;
+        } else {
+            addedAmount = 1.0;
+        }
+        
+        // Calculate new total and update display
+        const newTotal = currentAmount + addedAmount;
+        
+        dataDisplay.innerHTML = `${newTotal.toFixed(1)}<span>GB</span>`;
         dataDisplay.style.display = 'block';
         globalStatus.style.display = 'block';
         
