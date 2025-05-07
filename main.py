@@ -90,6 +90,8 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None):
         return None
 
 
+@delivery_ns.route('')
+class DeliveryResource(Resource):
     @delivery_ns.response(400, 'Bad Request')
     def post(self):
         """Submit eSIM delivery preferences"""
