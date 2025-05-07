@@ -1,7 +1,6 @@
-from flask import Flask, request, send_from_directory, render_template, redirect, jsonify, session
+from flask import Flask, request, send_from_directory, render_template, redirect, jsonify
 from flask_restx import Api, Resource, fields
 from flask_socketio import SocketIO, emit
-import secrets
 import os
 from typing import Optional
 import psycopg2
@@ -71,7 +70,6 @@ except Exception as e:
 
 
 app = Flask(__name__, static_url_path='/static', template_folder='templates') # Added template_folder
-app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))  # Generate secret key for sessions
 socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
     description='Get android phone IMEI API with telephony permissions for eSIM activation',
@@ -447,16 +445,10 @@ def submit_signup():
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "INSERT INTO users (email, stripe_customer_id, imei) VALUES (%s, %s, %s) RETURNING userid",
+                    "INSERT INTO users (email, stripe_customer_id, imei) VALUES (%s, %s, %s)",
                     (email, customer.id, imei)
                 )
-                user_id = cur.fetchone()[0]
                 conn.commit()
-                
-                # Store user in session
-                session['user_id'] = user_id
-                session['email'] = email
-                session['stripe_customer_id'] = customer.id
 
         # Create and send invoice
         invoice = stripe.Invoice.create(
@@ -480,7 +472,7 @@ def submit_signup():
         invoice = stripe.Invoice.finalize_invoice(invoice.id, auto_advance=False)
         invoice = stripe.Invoice.send_invoice(invoice.id)
 
-        return redirect('/dashboard')
+        return send_from_directory('static', 'success.html')
     except Exception as e:
         print(f"Error processing signup: {str(e)}")
         return redirect('/signup')
@@ -491,10 +483,7 @@ def profile():
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
-    # Check if user is logged in
-    if 'user_id' not in session:
-        return redirect('/')
-    return render_template('dashboard.html', user_email=session.get('email'))
+    return render_template('dashboard.html')
 
 @app.route('/network', methods=['GET'])
 def network():
@@ -678,46 +667,6 @@ def create_tables_route():
                         PriceID VARCHAR(100) NOT NULL,
                         TotalAmount INTEGER NOT NULL,
                         DateCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-@app.route('/login', methods=['POST'])
-def login():
-    email = request.form.get('email')
-    
-    try:
-        # Look up user in database
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        "SELECT userid, email, stripe_customer_id FROM users WHERE email = %s",
-                        (email,)
-                    )
-                    user = cur.fetchone()
-                    
-                    if user:
-                        # Store user info in session
-                        session['user_id'] = user[0]
-                        session['email'] = user[1]
-                        session['stripe_customer_id'] = user[2]
-                        return redirect('/dashboard')
-                    else:
-                        # User not found, redirect to signup
-                        return redirect('/signup')
-            else:
-                # No database connection, create a demo session
-                session['user_id'] = 999  # Demo user ID
-                session['email'] = email
-                return redirect('/dashboard')
-    except Exception as e:
-        print(f"Error during login: {str(e)}")
-        return redirect('/')
-
-@app.route('/logout')
-def logout():
-    # Clear the session
-    session.clear()
-    return redirect('/')
-
                         UserID INTEGER
                     );
                     
@@ -755,10 +704,8 @@ def logout():
 class CheckMemberships(Resource):
     def get(self):
         try:
-            # Get user ID from session
-            user_id = session.get('user_id')
-            if not user_id:
-                return {'has_membership': False, 'error': 'User not logged in'} 
+            # Try to get user ID from session (in a real app)
+            user_id = 1  # Default for demo 
             
             with get_db_connection() as conn:
                 if conn:
@@ -815,8 +762,8 @@ class RecordGlobalPurchase(Resource):
             'full_membership': 'price_full_membership',
         }
 
-        # Get user ID from session if available
-        user_id = session.get('user_id', None)
+        # In a real application, fetch the user ID from a secure session or authentication system.
+        user_id = 1  # Placeholder user ID
 
         # Try to get price from Stripe if available
         price_id = None

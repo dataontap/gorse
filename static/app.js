@@ -781,36 +781,6 @@ window.confirmPurchase = function(productId) {
     });
 };
 
-// Function to check if user has purchased memberships
-function checkPurchasedMemberships() {
-    // Check localStorage first for faster response
-    if (localStorage.getItem('has_membership') === 'true') {
-        updateOffersCarousel();
-        return;
-    }
-    
-    // Make API request to check memberships
-    fetch('/api/check-memberships')
-        .then(response => response.json())
-        .then(data => {
-            console.log('Membership check result:', data);
-            if (data.has_membership) {
-                localStorage.setItem('has_membership', 'true');
-                updateOffersCarousel(data.membership_type);
-            }
-        })
-        .catch(error => {
-            console.error('Error checking memberships:', error);
-        });
-}
-
-// Call this function when the page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the dashboard
-    checkPurchasedMemberships();
-});
-};
-
 function addPurchaseToHistory(productId, purchaseId) {
     const purchaseList = document.getElementById('purchaseList');
     if (!purchaseList) return;
