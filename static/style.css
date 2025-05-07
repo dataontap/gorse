@@ -655,8 +655,11 @@ body {
 
 .dark-mode .menu-dropdown a i,
 .dark-mode .profile-dropdown a i,
+.dark-mode .menu-dropdown div i,
+.dark-mode .profile-dropdown div i,
 .dark-mode .menu-icon i, 
-.dark-mode .profile-section i {
+.dark-mode .profile-section i,
+.dark-mode .profile-info {
     color: #cccccc; /* Lighter grey for icons in dark mode */
 }
 
