@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeProfileDropdown();
     updateSortControlsVisibility();
     initializeCarousel();
+    checkPurchasedMemberships();
 });
 
 function initializeCarousel() {
@@ -41,16 +42,27 @@ function initializeCarousel() {
         if (Math.abs(diff) > swipeThreshold) {
             const items = carousel.querySelectorAll('.carousel-item');
             const activeItem = carousel.querySelector('.carousel-item.active');
+            
+            if (!activeItem || items.length === 0) return;
+            
             const currentIndex = Array.from(items).indexOf(activeItem);
 
-            items.forEach(item => item.classList.remove('active'));
+            items.forEach(item => {
+                if (item && item.classList) {
+                    item.classList.remove('active');
+                }
+            });
 
             if (diff > 0) { // Swipe left
                 const nextIndex = (currentIndex + 1) % items.length;
-                items[nextIndex].classList.add('active');
+                if (items[nextIndex] && items[nextIndex].classList) {
+                    items[nextIndex].classList.add('active');
+                }
             } else { // Swipe right
                 const prevIndex = (currentIndex - 1 + items.length) % items.length;
-                items[prevIndex].classList.add('active');
+                if (items[prevIndex] && items[prevIndex].classList) {
+                    items[prevIndex].classList.add('active');
+                }
             }
         }
     }
@@ -750,6 +762,11 @@ window.confirmPurchase = function(productId) {
             if (data.simulated) {
                 console.info('Note: Using simulated purchase ID due to database issue');
             }
+            
+            // Check if this was a membership purchase and update offers
+            if (productId === 'basic_membership' || productId === 'full_membership') {
+                updateOffersCarousel(productId);
+            }
         } else {
             console.error('Purchase failed:', data.message);
             // Show a user-friendly error message
@@ -830,6 +847,73 @@ function showDataAdded(productId) {
         setTimeout(() => {
             dataDisplay.classList.remove('pulse');
         }, 1000);
+    }
+}
+
+function checkPurchasedMemberships() {
+    // Check local storage first for quick response
+    if (localStorage.getItem('has_membership') === 'true') {
+        updateOffersCarousel();
+        return;
+    }
+    
+    // Make an API call to check if user has a membership
+    fetch('/api/check-memberships')
+        .then(response => response.json())
+        .then(data => {
+            if (data.has_membership) {
+                localStorage.setItem('has_membership', 'true');
+                updateOffersCarousel(data.membership_type);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking memberships:', error);
+        });
+}
+
+function updateOffersCarousel(membershipType = null) {
+    const carousel = document.getElementById('promotionsCarousel');
+    if (!carousel) return;
+    
+    // If a membership was just purchased, update localStorage
+    if (membershipType && (membershipType === 'basic_membership' || membershipType === 'full_membership')) {
+        localStorage.setItem('has_membership', 'true');
+    }
+    
+    // Remove membership offers from carousel
+    const items = carousel.querySelectorAll('.carousel-item');
+    const controls = document.querySelectorAll('.carousel-controls button');
+    let removedCount = 0;
+    
+    items.forEach((item, index) => {
+        const offerContent = item.querySelector('.offer-content h3');
+        if (offerContent && (offerContent.textContent.includes('Basic Membership') || 
+                             offerContent.textContent.includes('Full Membership'))) {
+            item.remove();
+            if (controls[index]) {
+                controls[index].remove();
+            }
+            removedCount++;
+        }
+    });
+    
+    // If we removed items, make sure the first remaining item is active
+    if (removedCount > 0) {
+        const remainingItems = carousel.querySelectorAll('.carousel-item');
+        if (remainingItems.length > 0) {
+            remainingItems.forEach(item => item.classList.remove('active'));
+            remainingItems[0].classList.add('active');
+            
+            // Update the controls
+            const remainingControls = document.querySelectorAll('.carousel-controls button');
+            if (remainingControls.length > 0) {
+                remainingControls.forEach(btn => btn.classList.remove('active'));
+                remainingControls[0].classList.add('active');
+            }
+        } else {
+            // No offers remain, hide the carousel
+            carousel.closest('.carousel').style.display = 'none';
+        }
     }
 }
 

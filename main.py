@@ -700,6 +700,36 @@ def create_tables_route():
     return jsonify(results)
 
 
+@api.route('/check-memberships')
+class CheckMemberships(Resource):
+    def get(self):
+        try:
+            # Try to get user ID from session (in a real app)
+            user_id = 1  # Default for demo 
+            
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Check if user has purchased any membership products
+                        cur.execute("""
+                            SELECT StripeProductID 
+                            FROM purchases 
+                            WHERE UserID = %s AND StripeProductID IN ('basic_membership', 'full_membership')
+                            LIMIT 1
+                        """, (user_id,))
+                        
+                        membership = cur.fetchone()
+                        if membership:
+                            return {
+                                'has_membership': True,
+                                'membership_type': membership[0]
+                            }
+                        
+                return {'has_membership': False}
+        except Exception as e:
+            print(f"Error checking memberships: {str(e)}")
+            return {'has_membership': False, 'error': str(e)}
+
 @api.route('/record-global-purchase')
 class RecordGlobalPurchase(Resource):
     @api.expect(purchase_model)
