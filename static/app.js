@@ -697,7 +697,7 @@ window.confirmPurchase = function() {
 };
 
 window.addGlobalData = function() {
-    showConfirmationDrawer(10, 20);
+    showConfirmationDrawer(10, 10);
 };
 
 function initializeChart(canvas) {
