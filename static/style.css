@@ -653,6 +653,13 @@ body {
     color: #fff;
 }
 
+.dark-mode .menu-dropdown a i,
+.dark-mode .profile-dropdown a i,
+.dark-mode .menu-icon i, 
+.dark-mode .profile-section i {
+    color: #cccccc; /* Lighter grey for icons in dark mode */
+}
+
 .dark-mode .menu-dropdown a:hover,
 .dark-mode .profile-dropdown a:hover {
     background: rgba(255, 255, 255, 0.1);
