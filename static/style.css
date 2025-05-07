@@ -802,6 +802,53 @@ body {
     padding: 10px 15px;
     border-bottom: 1px solid #eee;
     font-weight: bold;
+    position: relative;
+}
+
+.qr-code-icon {
+    cursor: pointer;
+    margin-left: 8px;
+    font-size: 14px;
+    color: #555;
+    transition: color 0.3s;
+}
+
+.qr-code-icon:hover {
+    color: #0066ff;
+}
+
+.qr-code-popup {
+    display: none;
+    position: absolute;
+    right: 15px;
+    top: 40px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.2);
+    z-index: 1010;
+    text-align: center;
+}
+
+.dark-mode .qr-code-popup {
+    background: #2a2a3a;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.4);
+}
+
+.qr-code-popup p {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #666;
+}
+
+.dark-mode .qr-code-popup p {
+    color: #aaa;
+}
+
+#qrcode {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
 }
 
 .menu-dropdown i, .profile-dropdown i {
