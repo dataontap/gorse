@@ -57,7 +57,7 @@ def create_stripe_products():
             basic_membership_product = stripe.Product.create(
                 id='basic_membership',
                 name='Basic Membership',
-                description='Global data access, Shareable, $24/year',
+                description='Global data access, 2FA & Satellite eTXT, $24/year',
                 metadata={
                     'type': 'subscription',
                     'product_catalog': 'memberships',
@@ -95,7 +95,7 @@ def create_stripe_products():
             full_membership_product = stripe.Product.create(
                 id='full_membership',
                 name='Full Membership',
-                description='Unlimited Talk + Text, Global WiFi Calling & Satellite eTXT, $66/year',
+                description='Unlimited Talk + Text, Global Wi-Fi Calling, $66/year',
                 metadata={
                     'type': 'subscription',
                     'product_catalog': 'memberships',
