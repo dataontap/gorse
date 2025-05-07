@@ -67,18 +67,18 @@ imei_model = api.model('IMEI', {
     'imei2': fields.String(required=False, description='Secondary IMEI number (dual SIM devices)')
 })
 
-def record_purchase(stripe_id, product_id, price_id, amount, user_id=None):
+def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, transaction_id=None):
     """Records a purchase in the database"""
     try:
-        print(f"Attempting to record purchase: StripeID={stripe_id}, ProductID={product_id}, PriceID={price_id}, Amount={amount}")
+        print(f"Attempting to record purchase: StripeID={stripe_id}, ProductID={product_id}, PriceID={price_id}, Amount={amount}, TransactionID={transaction_id}")
         with get_db_connection() as conn:
             if conn:
                 try:
                     with conn.cursor() as cur:
                         cur.execute(
-                            "INSERT INTO purchases (StripeID, StripeProductID, PriceID, TotalAmount, UserID) "
-                            "VALUES (%s, %s, %s, %s, %s) RETURNING PurchaseID",
-                            (stripe_id, product_id, price_id, amount, user_id)
+                            "INSERT INTO purchases (TransactionID, StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated) "
+                            "VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING PurchaseID",
+                            (transaction_id, stripe_id, product_id, price_id, amount, user_id)
                         )
                         purchase_id = cur.fetchone()[0]
                         conn.commit()
@@ -279,12 +279,14 @@ def stripe_webhook():
             product_id = line.price.product
             amount = line.amount
 
+            transaction_id = f"INV_{invoice.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
             record_purchase(
                 stripe_id=invoice.id,
                 product_id=product_id,
                 price_id=price_id,
                 amount=amount,
-                user_id=None  # We'll need to lookup the user ID from the customer ID
+                user_id=None,  # We'll need to lookup the user ID from the customer ID
+                transaction_id=transaction_id
             )
             
         print(f"Processing payment for customer {customer.email}")
@@ -308,12 +310,14 @@ def stripe_webhook():
                     product_id = price.product
                     amount = item.amount_total
                     
+                    transaction_id = f"SESS_{session.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
                     purchase_id = record_purchase(
                         stripe_id=session.id,
                         product_id=product_id,
                         price_id=price_id,
                         amount=amount,
-                        user_id=session.customer  # Use Stripe customer ID until we link to our user ID
+                        user_id=session.customer,  # Use Stripe customer ID until we link to our user ID
+                        transaction_id=transaction_id
                     )
                     
                     print(f"Recorded purchase {purchase_id} for product {product_id}, price {price_id}, amount {amount}")
