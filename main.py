@@ -69,7 +69,6 @@ except Exception as e:
     print("Continuing without table creation...")
 
 
-
 app = Flask(__name__, static_url_path='/static', template_folder='templates') # Added template_folder
 socketio = SocketIO(app, cors_allowed_origins="*")
 api = Api(app, version='1.0', title='IMEI API',
