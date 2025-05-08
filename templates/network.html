@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,7 +14,7 @@
             width: 100%;
             padding: 0;
         }
-        
+
         .metric {
             flex: 1;
             background: rgba(200, 200, 200, 0.2);
@@ -25,7 +24,7 @@
             text-align: center;
             min-width: 90px;
         }
-        
+
         .metric .usage-amount {
             width: 100%;
             display: flex;
@@ -34,24 +33,24 @@
             font-size: 24px;
             white-space: nowrap;
         }
-        
+
         .usage-label {
             font-size: 14px;
             margin-bottom: 2px;
         }
-        
+
         .network-scan-toggle {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-top: 10px;
         }
-        
+
         .network-scan-toggle span {
             font-size: 14px;
             color: #333;
         }
-        
+
         /* Toggle switch styles */
         .switch {
             position: relative;
@@ -59,13 +58,13 @@
             width: 40px;
             height: 20px;
         }
-        
+
         .switch input {
             opacity: 0;
             width: 0;
             height: 0;
         }
-        
+
         .slider {
             position: absolute;
             cursor: pointer;
@@ -76,7 +75,7 @@
             background-color: #ccc;
             transition: .4s;
         }
-        
+
         .slider:before {
             position: absolute;
             content: "";
@@ -87,34 +86,40 @@
             background-color: white;
             transition: .4s;
         }
-        
+
         input:checked + .slider {
             background-color: #0066ff;
         }
-        
+
         input:focus + .slider {
             box-shadow: 0 0 1px #0066ff;
         }
-        
+
         input:checked + .slider:before {
             transform: translateX(20px);
         }
-        
+
         .slider.round {
             border-radius: 34px;
         }
-        
+
         .slider.round:before {
             border-radius: 50%;
         }
-        
+
         .network-scan-content.disabled {
-            opacity: 0.5;
+            opacity: 0.7; /* Increased opacity */
             pointer-events: none;
         }
-        
+
         .dark-mode .network-scan-toggle span {
             color: #fff;
+        }
+        .usage-header {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            width: 100%;
         }
     </style>
 </head>
@@ -191,7 +196,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="dashboard-content">
             <h2><i class="fas fa-network-wired"></i> Network Settings</h2>
             <div class="network-settings mt-4">
@@ -208,29 +213,29 @@
         function toggleMenu(element) {
             element.querySelector('.menu-dropdown').classList.toggle('visible');
         }
-        
+
         // Toggle profile dropdown
         function toggleProfileDropdown() {
             document.querySelector('.profile-dropdown').classList.toggle('visible');
         }
-        
+
         // Hide profile dropdown
         function hideProfileDropdown(event) {
             event.preventDefault();
             document.querySelector('.profile-dropdown').classList.remove('visible');
             window.location.href = event.target.closest('a').getAttribute('href');
         }
-        
+
         // Toggle QR code popup
         function toggleQRCode(event) {
             event.stopPropagation();
             const popup = document.getElementById('qrCodePopup');
-            
+
             if (popup.style.display === 'block') {
                 popup.style.display = 'none';
             } else {
                 popup.style.display = 'block';
-                
+
                 // Generate QR code if it doesn't exist yet
                 if (!document.querySelector('#qrcode canvas')) {
                     new QRCode(document.getElementById("qrcode"), {
@@ -244,20 +249,20 @@
                 }
             }
         }
-        
+
         function generateRandomLinkCode() {
             return Math.random().toString(36).substring(2, 12);
         }
-        
+
         // Toggle chart visibility
         function toggleChart(link) {
             const dataUsage = link.closest('.data-usage');
             const chart = dataUsage.querySelector('.usage-chart');
-            
+
             if (chart.style.display === 'none') {
                 chart.style.display = 'block';
                 link.textContent = 'Hide details';
-                
+
                 // Initialize chart if needed
                 if (!chart.querySelector('canvas').chart) {
                     const ctx = chart.querySelector('canvas').getContext('2d');
@@ -285,29 +290,29 @@
                 link.textContent = 'See details';
             }
         }
-        
+
         // Close QR code popup when clicking outside
         document.addEventListener('click', function(e) {
             const popup = document.getElementById('qrCodePopup');
             const icon = document.querySelector('.qr-code-icon');
-            
+
             if (popup && popup.style.display === 'block' && !popup.contains(e.target) && e.target !== icon) {
                 popup.style.display = 'none';
             }
         });
-        
+
         // Document ready
         function toggleNetworkScan() {
             const content = document.getElementById('networkScanContent');
             const isEnabled = document.getElementById('scanToggle').checked;
-            
+
             if (isEnabled) {
                 content.classList.remove('disabled');
             } else {
                 content.classList.add('disabled');
             }
         }
-        
+
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize insight link click handlers
             document.querySelectorAll('.insight-link').forEach(link => {
@@ -316,10 +321,10 @@
                     toggleChart(this);
                 });
             });
-            
+
             // Set device count to 3 to match the network status display
             document.getElementById('deviceCount').textContent = '3';
-            
+
             // Alternative method to fetch user count from dashboard (commented out for now)
             /*
             fetch('/dashboard')
@@ -336,21 +341,21 @@
                     console.error('Error fetching user count:', error);
                 });
             */
-            
+
             // Settings toggle
             document.getElementById('settingsToggle').addEventListener('click', function(e) {
                 e.preventDefault();
                 const submenu = document.querySelector('.settings-submenu');
                 submenu.style.display = submenu.style.display === 'none' ? 'block' : 'none';
             });
-            
+
             // Dark mode toggle
             document.getElementById('darkModeToggle').addEventListener('click', function(e) {
                 e.preventDefault();
                 document.body.classList.toggle('dark-mode');
                 const moonIcon = this.querySelector('i');
                 const modeText = this.querySelector('span');
-                
+
                 if (document.body.classList.contains('dark-mode')) {
                     moonIcon.classList.remove('fa-moon');
                     moonIcon.classList.add('fa-sun');
