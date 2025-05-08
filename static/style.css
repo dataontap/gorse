@@ -467,14 +467,15 @@ body {
 .offer-card {
     background: rgba(255, 255, 255, 0.25);
     border-radius: 15px;
-    width: 100%;
+    width: 90%;
     max-width: 450px;
     position: relative;
-    padding: 25px;
+    padding: 20px;
     margin: 20px auto;
     border: 1px solid rgba(128, 128, 128, 0.3);
     transition: transform 0.3s ease-out;
     will-change: transform;
+    box-sizing: border-box;
 }
 
 .offer-card.in-view {
@@ -497,11 +498,13 @@ body {
 
 .offer-content {
     text-align: center;
-    padding: 20px;
+    padding: 10px;
     background: transparent;
     border-radius: 12px;
     position: relative;
     z-index: 2;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .offer-button {
@@ -937,6 +940,8 @@ body {
     max-width: 600px;
     margin: 0 auto;
     position: relative;
+    padding: 0 10px;
+    box-sizing: border-box;
 }
 
 .carousel-inner {
