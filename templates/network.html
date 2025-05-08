@@ -108,7 +108,7 @@
         }
 
         .network-scan-content.disabled {
-            opacity: 0.7; /* Increased opacity */
+            opacity: 0.9; /* Further increased opacity */
             pointer-events: none;
         }
 
@@ -160,9 +160,9 @@
         <div class="dashboard-content mb-4">
             <div class="insights-card">
                 <div class="data-usage">
-                    <div class="usage-header centered-header">
+                    <div class="usage-header centered-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="usage-label trend-alert"><i class="fas fa-wifi"></i> Network Status</div>
-                        <div class="network-scan-toggle">
+                        <div class="network-scan-toggle" style="margin: 0;">
                             <span>Network Scans</span>
                             <label class="switch">
                                 <input type="checkbox" id="scanToggle" onchange="toggleNetworkScan()">
