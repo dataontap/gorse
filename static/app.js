@@ -96,6 +96,70 @@ function initializeCarousel() {
 
 function initializeProfileDropdown() {
     const profileDropdown = document.querySelector('.profile-dropdown');
+    let helpTimerInterval;
+    let helpStartTime;
+    
+    // Help section toggle
+    const helpToggle = document.getElementById('helpToggle');
+    const helpSection = document.querySelector('.help-section');
+    const helpTimer = document.getElementById('helpTimer');
+    
+    if (helpToggle && helpSection && helpTimer) {
+        helpToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const isExpanded = helpSection.classList.contains('expanded');
+            
+            // Toggle help section
+            helpSection.style.display = isExpanded ? 'none' : 'block';
+            helpSection.classList.toggle('expanded');
+            
+            // Handle timer
+            if (!isExpanded) {
+                // Start timer
+                helpTimer.style.display = 'inline';
+                helpStartTime = new Date();
+                updateHelpTimer();
+                helpTimerInterval = setInterval(updateHelpTimer, 1000);
+            } else {
+                // Stop timer
+                clearInterval(helpTimerInterval);
+                helpTimer.style.display = 'none';
+            }
+            
+            // For menu expansion
+            if (profileDropdown) {
+                // Calculate dynamic height based on current dropdown height
+                const originalHeight = profileDropdown.scrollHeight;
+                if (!isExpanded) {
+                    profileDropdown.style.height = (originalHeight * 1.25) + 'px';
+                } else {
+                    profileDropdown.style.height = '';
+                }
+            }
+        });
+    }
+    
+    function updateHelpTimer() {
+        if (!helpStartTime) return;
+        
+        const now = new Date();
+        const diff = now - helpStartTime;
+        
+        // Convert to hours, minutes, seconds
+        const hours = Math.floor(diff / 3600000);
+        const minutes = Math.floor((diff % 3600000) / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        
+        // Format time as HH:MM:SS
+        const formattedTime = 
+            (hours < 10 ? '0' : '') + hours + ':' +
+            (minutes < 10 ? '0' : '') + minutes + ':' +
+            (seconds < 10 ? '0' : '') + seconds;
+        
+        helpTimer.textContent = formattedTime;
+    }
 
     window.hideProfileDropdown = function(event) {
         if (event) {

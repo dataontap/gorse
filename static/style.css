@@ -798,9 +798,76 @@ body {
     border-left: 2px solid #eee;
 }
 
-.dark-mode .settings-submenu {
+.dark-mode .settings-submenu,
+.dark-mode .help-section {
     background: rgba(26, 26, 46, 0.5);
     border-left: 2px solid #333;
+}
+
+.help-section {
+    padding-left: 15px;
+    background: rgba(245, 245, 245, 0.5);
+    border-left: 2px solid #eee;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.help-section.expanded {
+    max-height: 300px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.help-content {
+    padding: 5px 0;
+}
+
+.help-content h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.help-content ul {
+    list-style-type: none;
+    padding-left: 5px;
+    margin-bottom: 10px;
+}
+
+.help-content ul li {
+    padding: 3px 0;
+}
+
+.help-link {
+    color: #0066ff;
+    text-decoration: none;
+}
+
+.help-note {
+    font-size: 12px;
+    color: #888;
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.help-timer {
+    font-size: 12px;
+    color: #666;
+    margin-left: 8px;
+    font-family: monospace;
+}
+
+.dark-mode .help-timer {
+    color: #aaa;
+}
+
+.dark-mode .help-link {
+    color: #4d9aff;
+}
+
+.dark-mode .help-note {
+    color: #aaa;
 }
 
 .menu-dropdown a.active {
