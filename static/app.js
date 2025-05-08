@@ -115,6 +115,9 @@ function initializeProfileDropdown() {
             helpSection.style.display = isExpanded ? 'none' : 'block';
             helpSection.classList.toggle('expanded');
             
+            // Toggle active class for red color
+            helpToggle.classList.toggle('active', !isExpanded);
+            
             // Handle timer
             if (!isExpanded) {
                 // Start timer

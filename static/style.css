@@ -858,6 +858,10 @@ body {
     font-family: monospace;
 }
 
+#helpToggle.active {
+    color: #ff0000;
+}
+
 .dark-mode .help-timer {
     color: #aaa;
 }
