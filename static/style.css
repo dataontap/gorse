@@ -1800,7 +1800,7 @@ body {
     border-radius: 20px 20px 0 0;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
     transition: bottom 0.3s ease-out;
-    z-index: 1000;
+    z-index: 9999;
     transform: translateZ(0);
     display: none;
 }
