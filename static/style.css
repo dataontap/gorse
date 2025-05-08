@@ -465,18 +465,20 @@ body {
 }
 
 .offer-card {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.25);
     border-radius: 15px;
     width: 100%;
     max-width: 450px;
     position: relative;
     padding: 25px;
     margin: 20px auto;
-    border: 1px solid rgba(128, 128, 128, 0.2);
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    transition: transform 0.3s ease-out;
+    will-change: transform;
 }
 
-.offer-card {
-    background: transparent;
+.offer-card.in-view {
+    transform: scale(1.1);
 }
 
 .offer-card::before {
@@ -963,12 +965,14 @@ body {
 
 .carousel-item h3 {
     margin-bottom: 15px;
-    color: #666666;
+    color: #444444;
+    font-weight: 600;
 }
 
 .carousel-item p {
-    color: #808080;
+    color: #555555;
     margin-bottom: 20px;
+    font-weight: 500;
 }
 
 @keyframes pulse {
