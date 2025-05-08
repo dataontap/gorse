@@ -988,6 +988,8 @@ body {
 .dot-indicator {
     width: 75vw;
     height: 75vw;
+    max-width: 300px;
+    max-height: 300px;
     background: #FFF371;
     border-radius: 50%;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
@@ -1000,6 +1002,7 @@ body {
     cursor: pointer;
     user-select: none;
     animation: glow 4s ease-in-out infinite;
+    margin: 0 auto;
 }
 
 @keyframes glow {
@@ -1917,4 +1920,12 @@ body {
 
 .address-section h3 i {
     color: #666;
+}
+
+.container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
 }
