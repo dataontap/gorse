@@ -39,6 +39,83 @@
             font-size: 14px;
             margin-bottom: 2px;
         }
+        
+        .network-scan-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .network-scan-toggle span {
+            font-size: 14px;
+            color: #333;
+        }
+        
+        /* Toggle switch styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+        }
+        
+        input:checked + .slider {
+            background-color: #0066ff;
+        }
+        
+        input:focus + .slider {
+            box-shadow: 0 0 1px #0066ff;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        
+        .slider.round {
+            border-radius: 34px;
+        }
+        
+        .slider.round:before {
+            border-radius: 50%;
+        }
+        
+        .network-scan-content.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .dark-mode .network-scan-toggle span {
+            color: #fff;
+        }
     </style>
 </head>
 <body class="landing-page">
@@ -80,27 +157,36 @@
                 <div class="data-usage">
                     <div class="usage-header centered-header">
                         <div class="usage-label trend-alert"><i class="fas fa-wifi"></i> Network Status</div>
+                        <div class="network-scan-toggle">
+                            <span>Network Scans</span>
+                            <label class="switch">
+                                <input type="checkbox" id="scanToggle" onchange="toggleNetworkScan()">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
                     </div>
                     <div class="insight-message" style="margin-bottom: 15px;">Your network connection is stable with 95% uptime.</div>
                     <div class="usage-chart" style="display: none;">
                         <canvas></canvas>
                     </div>
-                    <div class="usage-metrics">
-                        <div class="metric percentage">
-                            <div class="usage-label">Speed</div>
-                            <div class="usage-amount">35 Mbps</div>
+                    <div id="networkScanContent" class="network-scan-content disabled">
+                        <div class="usage-metrics">
+                            <div class="metric percentage">
+                                <div class="usage-label">Speed</div>
+                                <div class="usage-amount">35 Mbps</div>
+                            </div>
+                            <div class="metric screentime">
+                                <div class="usage-label">Uptime</div>
+                                <div class="usage-amount">95%</div>
+                            </div>
+                            <div class="metric dollars">
+                                <div class="usage-label">Devices</div>
+                                <div class="usage-amount" id="deviceCount">0</div>
+                            </div>
                         </div>
-                        <div class="metric screentime">
-                            <div class="usage-label">Uptime</div>
-                            <div class="usage-amount">95%</div>
+                        <div style="text-align: center; margin-top: 15px;">
+                            <a href="#" class="insight-link">See details</a>
                         </div>
-                        <div class="metric dollars">
-                            <div class="usage-label">Devices</div>
-                            <div class="usage-amount" id="deviceCount">0</div>
-                        </div>
-                    </div>
-                    <div style="text-align: center; margin-top: 15px;">
-                        <a href="#" class="insight-link">See details</a>
                     </div>
                 </div>
             </div>
@@ -211,6 +297,17 @@
         });
         
         // Document ready
+        function toggleNetworkScan() {
+            const content = document.getElementById('networkScanContent');
+            const isEnabled = document.getElementById('scanToggle').checked;
+            
+            if (isEnabled) {
+                content.classList.remove('disabled');
+            } else {
+                content.classList.add('disabled');
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize insight link click handlers
             document.querySelectorAll('.insight-link').forEach(link => {
