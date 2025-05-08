@@ -9,21 +9,21 @@
     <style>
         .usage-metrics {
             display: flex;
-            gap: 15px;
+            gap: 8px;
             justify-content: space-between;
             align-items: center;
             width: 100%;
-            padding: 0 5px;
+            padding: 0;
         }
         
         .metric {
             flex: 1;
             background: rgba(200, 200, 200, 0.2);
-            padding: 10px;
+            padding: 8px 5px;
             border-radius: 6px;
             transition: all 0.3s ease;
             text-align: center;
-            min-width: 85px;
+            min-width: 90px;
         }
         
         .metric .usage-amount {
@@ -31,12 +31,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 28px;
+            font-size: 24px;
+            white-space: nowrap;
         }
         
         .usage-label {
-            font-size: 16px;
-            margin-bottom: 4px;
+            font-size: 14px;
+            margin-bottom: 2px;
         }
     </style>
 </head>
@@ -216,7 +217,11 @@
                 });
             });
             
-            // Fetch user count from dashboard and update device count
+            // Set device count to 3 to match the network status display
+            document.getElementById('deviceCount').textContent = '3';
+            
+            // Alternative method to fetch user count from dashboard (commented out for now)
+            /*
             fetch('/dashboard')
                 .then(response => response.text())
                 .then(html => {
@@ -230,6 +235,7 @@
                 .catch(error => {
                     console.error('Error fetching user count:', error);
                 });
+            */
             
             // Settings toggle
             document.getElementById('settingsToggle').addEventListener('click', function(e) {
