@@ -439,7 +439,13 @@ body {
     background: transparent;
 }
 
-.offer-content h3,
+.offer-content h3 {
+    margin-bottom: 12px; /* Adding 2px more padding after the title */
+    transition: transform 0.5s ease-out, opacity 0.4s ease-out;
+    transform: translateY(20px);
+    opacity: 0;
+}
+
 .offer-content p {
     transition: transform 0.5s ease-out, opacity 0.4s ease-out;
     transform: translateY(20px);
