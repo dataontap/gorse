@@ -7,7 +7,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
 </head>
-<body class="dashboard-body">
+<body class="landing-page">
     <div class="top-bar">
         <div class="menu-icon" onclick="this.querySelector('.menu-dropdown').classList.toggle('visible');">
             <i class="fas fa-bars"></i>
@@ -38,6 +38,37 @@
         </div>
     </div>
     <div class="container">
+        <div class="section-header">
+            <h2><i class="fas fa-chart-line"></i> Insights</h2>
+        </div>
+        <div class="dashboard-content mb-4">
+            <div class="insights-card">
+                <div class="data-usage">
+                    <div class="usage-header centered-header">
+                        <div class="usage-label trend-alert"><i class="fas fa-wifi"></i> Network Status</div>
+                    </div>
+                    <div class="insight-message">Your network connection is stable with 95% uptime. <a href="#" class="insight-link">See details</a></div>
+                    <div class="usage-chart" style="display: none;">
+                        <canvas></canvas>
+                    </div>
+                    <div class="usage-metrics">
+                        <div class="metric percentage">
+                            <div class="usage-label">Speed</div>
+                            <div class="usage-amount">35 Mbps</div>
+                        </div>
+                        <div class="metric screentime">
+                            <div class="usage-label">Uptime</div>
+                            <div class="usage-amount">95%</div>
+                        </div>
+                        <div class="metric dollars">
+                            <div class="usage-label">Devices</div>
+                            <div class="usage-amount">3</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="dashboard-content">
             <h2><i class="fas fa-network-wired"></i> Network Settings</h2>
             <div class="network-settings mt-4">
@@ -46,6 +77,55 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/static/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.insight-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    toggleChart(this);
+                });
+            });
+            
+            // Initialize QR code functionality
+            function toggleQRCode(event) {
+                event.stopPropagation();
+                const popup = document.getElementById('qrCodePopup');
+                
+                if (popup.style.display === 'block') {
+                    popup.style.display = 'none';
+                } else {
+                    popup.style.display = 'block';
+                    
+                    // Generate QR code if it doesn't exist yet
+                    if (!document.querySelector('#qrcode canvas')) {
+                        new QRCode(document.getElementById("qrcode"), {
+                            text: "https://replit.dev/link/" + generateRandomLinkCode(),
+                            width: 150,
+                            height: 150,
+                            colorDark: "#333333",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                    }
+                }
+            }
+            
+            function generateRandomLinkCode() {
+                return Math.random().toString(36).substring(2, 12);
+            }
+            
+            // Close QR code popup when clicking outside
+            document.addEventListener('click', function(e) {
+                const popup = document.getElementById('qrCodePopup');
+                const icon = document.querySelector('.qr-code-icon');
+                
+                if (popup && popup.style.display === 'block' && !popup.contains(e.target) && e.target !== icon) {
+                    popup.style.display = 'none';
+                }
+            });
+        });
+    </script>
 </body>
 </html>
