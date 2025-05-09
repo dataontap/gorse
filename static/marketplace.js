@@ -208,6 +208,23 @@ function initializeAuctionCountdown() {
 
     // Initialize long-press bid functionality
     const bidButtons = document.querySelectorAll('.place-bid');
+    
+    // Replace static gavel icons with animated gavels
+    document.querySelectorAll('.bids-count').forEach(bidsCount => {
+        // Remove the static icon
+        const iconElement = bidsCount.querySelector('i.fas.fa-gavel');
+        if (iconElement) {
+            iconElement.remove();
+        }
+        
+        // Create animated gavel element
+        const bidGavelAnimation = document.createElement('div');
+        bidGavelAnimation.className = 'bid-gavel-animation';
+        bidGavelAnimation.innerHTML = '<i class="fas fa-gavel"></i>';
+        
+        // Insert at the beginning of bids-count
+        bidsCount.insertBefore(bidGavelAnimation, bidsCount.firstChild);
+    });
 
     bidButtons.forEach(button => {
         let pressTimer;
@@ -303,7 +320,19 @@ function initializeAuctionCountdown() {
             // Update bid count
             const bidsCount = auctionCard.querySelector('.bids-count');
             const currentBids = parseInt(bidsCount.textContent.match(/\d+/)[0]);
-            bidsCount.innerHTML = `<i class="fas fa-gavel"></i> ${currentBids + 1} bids`;
+            
+            // Keep the animated gavel
+            const bidGavelAnimation = bidsCount.querySelector('.bid-gavel-animation');
+            bidsCount.innerHTML = '';
+            if (bidGavelAnimation) {
+                bidsCount.appendChild(bidGavelAnimation);
+            } else {
+                const newGavelAnimation = document.createElement('div');
+                newGavelAnimation.className = 'bid-gavel-animation';
+                newGavelAnimation.innerHTML = '<i class="fas fa-gavel"></i>';
+                bidsCount.appendChild(newGavelAnimation);
+            }
+            bidsCount.appendChild(document.createTextNode(` ${currentBids + 1} bids`));
 
             // Button text confirms action
             button.textContent = 'Bid Placed!';

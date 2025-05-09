@@ -467,6 +467,18 @@
     animation: pulsate 1s ease-in-out;
 }
 
+.bid-gavel-animation {
+    display: inline-block;
+    margin-right: 3px;
+    animation: float 2s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-3px); }
+    100% { transform: translateY(0px); }
+}
+
 .count-number {
     position: absolute;
     top: -20px;
