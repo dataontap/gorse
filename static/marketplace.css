@@ -399,7 +399,7 @@
     justify-content: space-between;
     font-size: 0.9rem;
     color: #666;
-    margin-bottom: 15px;
+    margin-bottom: 30px; /* Increased from 15px to 30px to make room for the TOP BID pill */
 }
 
 /* Bid Button Container */
