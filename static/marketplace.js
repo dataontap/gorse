@@ -218,35 +218,35 @@ function initializeAuctionCountdown() {
         gavelAnimation.className = 'gavel-animation';
         gavelAnimation.innerHTML = '<i class="fas fa-gavel"></i>';
         button.parentElement.appendChild(gavelAnimation);
-
+        
         // Create count number element
         const countNumber = document.createElement('div');
         countNumber.className = 'count-number';
         gavelAnimation.appendChild(countNumber);
-
+        
         let countInterval;
         let currentCount = 0;
-
+        
         // Start timer when mouse/touch is down
         const startPress = () => {
             isPressed = true;
             button.classList.add('pressing');
-
+            
             // Show gavel and start counting
             gavelAnimation.classList.add('show');
             currentCount = 0;
-
+            
             // Animate gavel and update count every second
             countInterval = setInterval(() => {
                 if (isPressed) {
                     currentCount++;
                     countNumber.textContent = currentCount;
-
+                    
                     // Pulsate the gavel
                     gavelAnimation.classList.remove('pulsate');
                     void gavelAnimation.offsetWidth; // Force reflow
                     gavelAnimation.classList.add('pulsate');
-
+                    
                     // After 3 counts, complete the bid
                     if (currentCount === 3) {
                         clearInterval(countInterval);
@@ -278,7 +278,7 @@ function initializeAuctionCountdown() {
             // Make the button stay blue
             button.classList.remove('pressing');
             button.classList.add('bid-complete');
-
+            
             // Hide the gavel animation
             const gavelAnimation = button.parentElement.querySelector('.gavel-animation');
             if (gavelAnimation) {
@@ -303,68 +303,7 @@ function initializeAuctionCountdown() {
             // Update bid count
             const bidsCount = auctionCard.querySelector('.bids-count');
             const currentBids = parseInt(bidsCount.textContent.match(/\d+/)[0]);
-
-            // Add static gavels to bid counts
-            document.querySelectorAll('.bids-count').forEach(bidsCount => {
-                // Get the static icon
-                const staticIcon = bidsCount.querySelector('i.fas.fa-gavel');
-
-                if (staticIcon) {
-                    // Keep the static icon as is
-                }
-            });
-
-            // Add animated gavels to prices
-            document.querySelectorAll('.bid-amount').forEach(bidAmount => {
-                // Create price gavel container
-                const priceGavel = document.createElement('div');
-                priceGavel.className = 'price-gavel';
-
-                // Create animated gavel element (initially hidden)
-                const bidGavelAnimation = document.createElement('div');
-                bidGavelAnimation.className = 'bid-gavel-animation';
-                bidGavelAnimation.innerHTML = '<i class="fas fa-gavel"></i>';
-
-                // Add to price gavel container
-                priceGavel.appendChild(bidGavelAnimation);
-
-                // Insert next to bid amount
-                bidAmount.insertAdjacentElement('afterend', priceGavel);
-            });
-            // Update the bid count
-            const bidCount = currentBids + 1;
-            bidsCount.innerHTML = '<i class="fas fa-gavel"></i> ' + bidCount + ' bids';
-
-            // Show the animated gavel next to the price
-            const bidAmount2 = auctionCard.querySelector('.bid-amount');
-            const priceGavel = bidAmount2.nextElementSibling;
-            if (priceGavel && priceGavel.classList.contains('price-gavel')) {
-                const animatedGavel = priceGavel.querySelector('.bid-gavel-animation');
-                if (animatedGavel) {
-                    animatedGavel.classList.add('active');
-
-                    // Reset animation after 3 seconds
-                    setTimeout(() => {
-                        animatedGavel.classList.remove('active');
-                    }, 3000);
-                }
-            } else {
-                // Create new price gavel if it doesn't exist
-                const newPriceGavel = document.createElement('div');
-                newPriceGavel.className = 'price-gavel';
-
-                const animatedGavel = document.createElement('div');
-                animatedGavel.className = 'bid-gavel-animation active';
-                animatedGavel.innerHTML = '<i class="fas fa-gavel"></i>';
-
-                newPriceGavel.appendChild(animatedGavel);
-                bidAmount2.insertAdjacentElement('afterend', newPriceGavel);
-
-                // Reset animation after 3 seconds
-                setTimeout(() => {
-                    animatedGavel.classList.remove('active');
-                }, 3000);
-            }
+            bidsCount.innerHTML = `<i class="fas fa-gavel"></i> ${currentBids + 1} bids`;
 
             // Button text confirms action
             button.textContent = 'Bid Placed!';
@@ -375,7 +314,7 @@ function initializeAuctionCountdown() {
                 button.classList.remove('bid-complete');
                 button.classList.add('disabled');
                 button.disabled = true;
-
+                
                 // Keep MY TOP BID showing to indicate user is current top bidder
             }, 3000);
         };

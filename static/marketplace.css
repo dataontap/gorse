@@ -1,3 +1,4 @@
+
 /* Marketplace Styles */
 .container {
     max-width: 1200px;
@@ -724,16 +725,16 @@ body.dark-mode .quantity-btn {
         align-items: center;
         text-align: center;
     }
-
+    
     .device-image {
         margin-right: 0;
         margin-bottom: 15px;
     }
-
+    
     .accessories-grid {
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     }
-
+    
     .cart-preview {
         width: 300px;
         right: 10px;
@@ -744,57 +745,13 @@ body.dark-mode .quantity-btn {
     .accessories-grid {
         grid-template-columns: 1fr;
     }
-
+    
     .action-buttons {
         flex-direction: column;
     }
-
+    
     .cart-preview {
         width: 280px;
         right: 5px;
     }
-}
-
-/* Remove the gavel container from the bids count */
-.gavel-container {
-    position: relative;
-    display: inline-block;
-    width: 20px; /* Adjusted width for better icon display */
-}
-
-.static-gavel {
-    position: relative;
-    z-index: 1;
-}
-
-.bid-gavel-animation {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2;
-    opacity: 0;
-    animation: float 2s ease-in-out infinite;
-    pointer-events: none;
-}
-
-.bid-gavel-animation.active {
-    opacity: 1;
-}
-
-/* Ensure icons inside gavels have consistent positioning */
-.static-gavel i, 
-.bid-gavel-animation i {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-    text-align: center;
-}
-
-/* Price gavel animation styling */
-.price-gavel {
-    display: inline-block;
-    margin-left: 8px;
-    vertical-align: middle;
-    position: relative;
 }
