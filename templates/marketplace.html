@@ -7,6 +7,25 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
     <link href="/static/marketplace.css" rel="stylesheet">
+    <style>
+        .auction-info .current-bid {
+            display: flex;
+            align-items: center;
+        }
+
+        .auction-info .current-bid .top-bid-indicator {
+            margin-left: 5px; /* Adjust spacing as needed */
+            background-color: #007bff; /* Example: Bootstrap primary color */
+            color: white;
+            padding: 2px 5px;
+            border-radius: 5px;
+            font-size: 0.75em;
+        }
+
+        .auction-card .auction-info .current-bid .bid-amount {
+            color: green;
+        }
+    </style>
 </head>
 <body class="landing-page">
     <div class="top-bar">
@@ -254,7 +273,8 @@
                     <p class="condition">Mint Condition</p>
                     <div class="current-bid">
                         <span class="bid-label">Current Bid:</span>
-                        <span class="bid-amount">$452</span>
+                        <span class="bid-amount" style="color: green;">$452</span>
+                        <span class="top-bid-indicator">MY TOP BID</span>
                     </div>
                     <div class="auction-meta">
                         <span class="bids-count"><i class="fas fa-gavel"></i> 18 bids</span>
@@ -263,7 +283,6 @@
                 </div>
                 <div class="bid-button-container">
                     <button class="btn btn-outline-primary place-bid">Place $5+ bid</button>
-                    <span class="top-bid-indicator">TOP BID</span>
                 </div>
             </div>
             <div class="auction-card">
@@ -275,7 +294,8 @@
                     <p class="condition">Good Condition</p>
                     <div class="current-bid">
                         <span class="bid-label">Current Bid:</span>
-                        <span class="bid-amount">$100</span>
+                        <span class="bid-amount" style="color: green;">$100</span>
+                         <span class="top-bid-indicator">MY TOP BID</span>
                     </div>
                     <div class="auction-meta">
                         <span class="bids-count"><i class="fas fa-gavel"></i> 12 bids</span>
@@ -284,7 +304,6 @@
                 </div>
                 <div class="bid-button-container">
                     <button class="btn btn-outline-primary place-bid">Place $5+ bid</button>
-                    <span class="top-bid-indicator">TOP BID</span>
                 </div>
             </div>
             <div class="auction-card">
@@ -296,7 +315,8 @@
                     <p class="condition">Like New</p>
                     <div class="current-bid">
                         <span class="bid-label">Current Bid:</span>
-                        <span class="bid-amount">$385</span>
+                        <span class="bid-amount" style="color: green;">$385</span>
+                        <span class="top-bid-indicator">MY TOP BID</span>
                     </div>
                     <div class="auction-meta">
                         <span class="bids-count"><i class="fas fa-gavel"></i> 9 bids</span>
@@ -305,7 +325,6 @@
                 </div>
                 <div class="bid-button-container">
                     <button class="btn btn-outline-primary place-bid">Place $5+ bid</button>
-                    <span class="top-bid-indicator">TOP BID</span>
                 </div>
             </div>
         </div>
@@ -388,3 +407,4 @@
     <script src="/static/marketplace.js"></script>
 </body>
 </html>
+```The requested changes have been applied: The "TOP BID" indicator is now "MY TOP BID" and is positioned next to the price, and the price color in the auction cards is green.

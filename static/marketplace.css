@@ -392,6 +392,7 @@
     font-size: 1.3rem;
     font-weight: 700;
     margin-left: 5px;
+    color: #27ae60;
 }
 
 .auction-meta {
@@ -441,8 +442,8 @@
 }
 
 .top-bid-indicator {
-    position: absolute;
-    top: -30px;
+    display: inline-block;
+    margin-left: 10px;
     background-color: #0d6efd;
     color: white;
     padding: 3px 10px;
@@ -450,16 +451,15 @@
     font-size: 0.8rem;
     font-weight: bold;
     opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.3s, transform 0.3s;
+    transition: opacity 0.3s;
     pointer-events: none;
+    vertical-align: middle;
     display: none;
 }
 
 .top-bid-indicator.show {
     opacity: 1;
-    transform: translateY(0);
-    display: block;
+    display: inline-block;
 }
 
 /* Recently Viewed */

@@ -240,16 +240,15 @@ function initializeAuctionCountdown() {
             button.classList.remove('pressing');
             button.classList.add('bid-complete');
 
-            // Show TOP BID indicator
-            const container = button.closest('.bid-button-container');
-            const topBidIndicator = container.querySelector('.top-bid-indicator');
-            topBidIndicator.classList.add('show');
-
             // Simulate successful bid
             const auctionCard = button.closest('.auction-card');
             const bidAmount = auctionCard.querySelector('.bid-amount');
             const currentAmount = parseInt(bidAmount.textContent.replace('$', ''));
             bidAmount.textContent = '$' + (currentAmount + 5); // Add $5 to current bid
+
+            // Show MY TOP BID indicator next to the price
+            const topBidIndicator = auctionCard.querySelector('.top-bid-indicator');
+            topBidIndicator.classList.add('show');
 
             // Update bid count
             const bidsCount = auctionCard.querySelector('.bids-count');
@@ -264,7 +263,7 @@ function initializeAuctionCountdown() {
                 button.textContent = 'Place $5+ bid';
                 button.classList.remove('bid-complete');
 
-                // Keep TOP BID showing to indicate user is current top bidder
+                // Keep MY TOP BID showing to indicate user is current top bidder
             }, 3000);
         };
 
