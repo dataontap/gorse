@@ -1308,6 +1308,25 @@ body {
     font-weight: bold;
 }
 
+.wallet-value-pill {
+    color: #666;
+    font-size: 12px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    padding: 2px 8px;
+    margin-left: 8px;
+    display: inline-block;
+    font-weight: bold;
+    text-decoration: none;
+    transition: transform 0.2s ease;
+}
+
+.wallet-value-pill:hover {
+    transform: scale(1.05);
+    text-decoration: none;
+    color: #333;
+}
+
 .wallet-actions {
     display: flex;
     gap: 10px;
