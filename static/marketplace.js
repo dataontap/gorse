@@ -213,46 +213,10 @@ function initializeAuctionCountdown() {
         let pressTimer;
         let isPressed = false;
 
-        // Create gavel animation element
-        const gavelAnimation = document.createElement('div');
-        gavelAnimation.className = 'gavel-animation';
-        gavelAnimation.innerHTML = '<i class="fas fa-gavel"></i>';
-        button.parentElement.appendChild(gavelAnimation);
-        
-        // Create count number element
-        const countNumber = document.createElement('div');
-        countNumber.className = 'count-number';
-        gavelAnimation.appendChild(countNumber);
-        
-        let countInterval;
-        let currentCount = 0;
-        
         // Start timer when mouse/touch is down
         const startPress = () => {
             isPressed = true;
             button.classList.add('pressing');
-            
-            // Show gavel and start counting
-            gavelAnimation.classList.add('show');
-            currentCount = 0;
-            
-            // Animate gavel and update count every second
-            countInterval = setInterval(() => {
-                if (isPressed) {
-                    currentCount++;
-                    countNumber.textContent = currentCount;
-                    
-                    // Pulsate the gavel
-                    gavelAnimation.classList.remove('pulsate');
-                    void gavelAnimation.offsetWidth; // Force reflow
-                    gavelAnimation.classList.add('pulsate');
-                    
-                    // After 3 counts, complete the bid
-                    if (currentCount === 3) {
-                        clearInterval(countInterval);
-                    }
-                }
-            }, 1000);
 
             pressTimer = setTimeout(() => {
                 if (isPressed) {
@@ -265,10 +229,7 @@ function initializeAuctionCountdown() {
         const cancelPress = () => {
             if (isPressed) {
                 clearTimeout(pressTimer);
-                clearInterval(countInterval);
                 button.classList.remove('pressing');
-                gavelAnimation.classList.remove('show');
-                countNumber.textContent = '';
                 isPressed = false;
             }
         };
@@ -278,17 +239,6 @@ function initializeAuctionCountdown() {
             // Make the button stay blue
             button.classList.remove('pressing');
             button.classList.add('bid-complete');
-            
-            // Hide the gavel animation
-            const gavelAnimation = button.parentElement.querySelector('.gavel-animation');
-            if (gavelAnimation) {
-                gavelAnimation.classList.remove('show');
-                gavelAnimation.classList.remove('pulsate');
-                const countNumber = gavelAnimation.querySelector('.count-number');
-                if (countNumber) {
-                    countNumber.textContent = '';
-                }
-            }
 
             // Simulate successful bid
             const auctionCard = button.closest('.auction-card');

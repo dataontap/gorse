@@ -448,41 +448,6 @@
     opacity: 0.65;
 }
 
-.gavel-animation {
-    position: absolute;
-    top: -60px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 24px;
-    opacity: 0;
-    transition: opacity 0.2s, transform 0.2s;
-    z-index: 10;
-}
-
-.gavel-animation.show {
-    opacity: 1;
-}
-
-.gavel-animation.pulsate {
-    animation: pulsate 1s ease-in-out;
-}
-
-.count-number {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-weight: bold;
-    color: #0d6efd;
-    font-size: 18px;
-}
-
-@keyframes pulsate {
-    0% { transform: translateX(-50%) scale(1); }
-    50% { transform: translateX(-50%) scale(1.5); }
-    100% { transform: translateX(-50%) scale(1); }
-}
-
 .top-bid-indicator {
     display: inline-block;
     margin-left: 10px;
