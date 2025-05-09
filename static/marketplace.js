@@ -217,7 +217,11 @@ function initializeAuctionCountdown() {
         const gavelAnimation = document.createElement('div');
         gavelAnimation.className = 'gavel-animation';
         gavelAnimation.innerHTML = '<i class="fas fa-gavel"></i>';
-        button.parentElement.appendChild(gavelAnimation);
+        
+        // Find the current-bid element to place the gavel next to the price
+        const auctionCard = button.closest('.auction-card');
+        const currentBidElement = auctionCard.querySelector('.current-bid');
+        currentBidElement.appendChild(gavelAnimation);
         
         // Create count number element
         const countNumber = document.createElement('div');
