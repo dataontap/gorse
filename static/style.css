@@ -1298,14 +1298,15 @@ body {
 
 .wallet-value {
     color: #666;
-    font-size: 14px;
+    font-size: 12px;
     margin: 0;
     background-color: rgba(0, 0, 0, 0.1);
-    border-radius: 20px;
-    padding: 4px 12px;
+    border-radius: 16px;
+    padding: 3px 8px;
     margin-left: auto;
     display: inline-block;
     font-weight: bold;
+    white-space: nowrap;
 }
 
 .wallet-value-pill {
