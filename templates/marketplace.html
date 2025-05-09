@@ -1,0 +1,369 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Phone Marketplace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <link href="/static/marketplace.css" rel="stylesheet">
+</head>
+<body class="landing-page">
+    <div class="top-bar">
+        <div class="menu-icon">
+            <i class="fas fa-bars"></i>
+            <div class="menu-dropdown">
+                <a href="/dashboard"><i class="fas fa-database"></i> Data</a>
+                <a href="/network"><i class="fas fa-network-wired"></i> Network</a>
+                <a href="/marketplace" class="active"><i class="fas fa-store"></i> Marketplace</a>
+            </div>
+        </div>
+        <div class="profile-section">
+            <i class="fas fa-user-circle"></i>
+            <div class="profile-dropdown">
+                <div class="profile-info">My Account <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
+                    <div id="qrCodePopup" class="qr-code-popup">
+                        <div id="qrcode"></div>
+                        <p>Scan to link accounts</p>
+                    </div>
+                </div>
+                <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+                <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="/payments"><i class="fas fa-credit-card"></i> Payments</a>
+                <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
+                <div class="settings-submenu" style="display: none;">
+                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
+                </div>
+                <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="#" id="helpToggle"><i class="fas fa-question-circle"></i> Help <span id="helpTimer" class="help-timer" style="display: none;">00:00:00</span></a>
+                <div class="help-section" style="display: none;">
+                    <div class="help-content">
+                        <p>Talk to ChatGPT or Gemini or Other AI instead.</p>
+                        <ul>
+                            <li><a href="https://chat.openai.com" class="help-link" target="_blank">ChatGPT</a></li>
+                            <li><a href="https://gemini.google.com" class="help-link" target="_blank">Google Gemini</a></li>
+                        </ul>
+                        <p class="help-note">Timer shows how long you've had help open</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Phone Value Section -->
+        <div class="phone-value-section">
+            <div class="device-value-card">
+                <h2>Your Device Value</h2>
+                <div class="device-details">
+                    <div class="device-image">
+                        <img src="https://images.pexels.com/photos/47261/pexels-photo-47261.jpeg" alt="Your Device">
+                    </div>
+                    <div class="device-info">
+                        <h3>iPhone 14 Pro Max</h3>
+                        <p class="device-specs">256GB - Sierra Blue</p>
+                        <div class="device-condition">
+                            <span class="condition-badge excellent">Excellent</span>
+                        </div>
+                        <div class="device-price">
+                            <span class="current-value">$699</span>
+                            <span class="price-trend up"><i class="fas fa-arrow-up"></i> 2.5%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-outline-primary"><i class="fas fa-sync-alt"></i> Trade-in</button>
+                    <button class="btn btn-primary"><i class="fas fa-tag"></i> Sell</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Services Carousel -->
+        <div class="section-header">
+            <h2><i class="fas fa-tools"></i> Device Services</h2>
+        </div>
+        <div class="services-carousel">
+            <div class="service-card">
+                <div class="service-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3>Screen Repair</h3>
+                <p>From $89</p>
+                <p class="service-description">Same-day repair for cracked or damaged screens</p>
+                <button class="btn btn-primary">Book Service</button>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">
+                    <i class="fas fa-battery-full"></i>
+                </div>
+                <h3>Battery Replacement</h3>
+                <p>From $69</p>
+                <p class="service-description">Restore your battery life to peak performance</p>
+                <button class="btn btn-primary">Book Service</button>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">
+                    <i class="fas fa-broom"></i>
+                </div>
+                <h3>Cleaning & Check</h3>
+                <p>From $29</p>
+                <p class="service-description">Professional cleaning and performance optimization</p>
+                <button class="btn btn-primary">Book Service</button>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>Insurance</h3>
+                <p>From $8.99/month</p>
+                <p class="service-description">Comprehensive coverage for accidents & theft</p>
+                <button class="btn btn-primary">Get Protected</button>
+            </div>
+        </div>
+
+        <!-- Accessories Section -->
+        <div class="section-header">
+            <h2><i class="fas fa-shopping-bag"></i> Curated Accessories</h2>
+        </div>
+        <div class="accessories-grid">
+            <div class="product-card">
+                <div class="product-badge new">New</div>
+                <div class="product-image">
+                    <img src="https://images.pexels.com/photos/1294886/pexels-photo-1294886.jpeg" alt="Premium Case">
+                </div>
+                <div class="product-info">
+                    <h3>Premium Leather Case</h3>
+                    <p class="product-description">Genuine leather with microfiber lining</p>
+                    <div class="product-price">
+                        <span class="current-price">$49.99</span>
+                        <span class="original-price">$59.99</span>
+                    </div>
+                    <div class="product-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                        <span class="rating-count">(128)</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary add-to-cart">Add to Cart</button>
+            </div>
+            <div class="product-card">
+                <div class="product-badge bestseller">Bestseller</div>
+                <div class="product-image">
+                    <img src="https://images.pexels.com/photos/1037999/pexels-photo-1037999.jpeg" alt="Glass Screen Protector">
+                </div>
+                <div class="product-info">
+                    <h3>Tempered Glass Screen Protector</h3>
+                    <p class="product-description">9H hardness with oleophobic coating</p>
+                    <div class="product-price">
+                        <span class="current-price">$19.99</span>
+                        <span class="original-price">$24.99</span>
+                    </div>
+                    <div class="product-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <span class="rating-count">(342)</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary add-to-cart">Add to Cart</button>
+            </div>
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://images.pexels.com/photos/3756306/pexels-photo-3756306.jpeg" alt="Wireless Charger">
+                </div>
+                <div class="product-info">
+                    <h3>15W Fast Wireless Charger</h3>
+                    <p class="product-description">Qi-certified with cooling technology</p>
+                    <div class="product-price">
+                        <span class="current-price">$34.99</span>
+                    </div>
+                    <div class="product-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="far fa-star"></i>
+                        <span class="rating-count">(87)</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary add-to-cart">Add to Cart</button>
+            </div>
+            <div class="product-card">
+                <div class="product-badge sale">Sale</div>
+                <div class="product-image">
+                    <img src="https://images.pexels.com/photos/3780681/pexels-photo-3780681.jpeg" alt="Premium Earbuds">
+                </div>
+                <div class="product-info">
+                    <h3>Premium Wireless Earbuds</h3>
+                    <p class="product-description">Active noise cancellation, 36-hour battery</p>
+                    <div class="product-price">
+                        <span class="current-price">$129.99</span>
+                        <span class="original-price">$179.99</span>
+                    </div>
+                    <div class="product-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                        <span class="rating-count">(211)</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary add-to-cart">Add to Cart</button>
+            </div>
+        </div>
+
+        <!-- Trade-in Promotion -->
+        <div class="trade-in-promo">
+            <div class="promo-content">
+                <h2>Trade in your old phone</h2>
+                <p>Get up to $500 credit toward your next device</p>
+                <button class="btn btn-light">Check Trade-in Value</button>
+            </div>
+        </div>
+
+        <!-- Auction Section -->
+        <div class="section-header">
+            <h2><i class="fas fa-gavel"></i> Trending Auctions</h2>
+        </div>
+        <div class="auctions-container">
+            <div class="auction-card">
+                <div class="auction-image">
+                    <img src="https://images.pexels.com/photos/404280/pexels-photo-404280.jpeg" alt="iPhone 13 Pro">
+                </div>
+                <div class="auction-info">
+                    <h3>iPhone 13 Pro - 256GB</h3>
+                    <p class="condition">Mint Condition</p>
+                    <div class="current-bid">
+                        <span class="bid-label">Current Bid:</span>
+                        <span class="bid-amount">$452</span>
+                    </div>
+                    <div class="auction-meta">
+                        <span class="bids-count"><i class="fas fa-gavel"></i> 18 bids</span>
+                        <span class="time-left"><i class="fas fa-clock"></i> 4h 26m left</span>
+                    </div>
+                </div>
+                <button class="btn btn-outline-primary place-bid">Place Bid</button>
+            </div>
+            <div class="auction-card">
+                <div class="auction-image">
+                    <img src="https://images.pexels.com/photos/699122/pexels-photo-699122.jpeg" alt="Samsung Galaxy S22">
+                </div>
+                <div class="auction-info">
+                    <h3>Samsung Galaxy S22 - 128GB</h3>
+                    <p class="condition">Good Condition</p>
+                    <div class="current-bid">
+                        <span class="bid-label">Current Bid:</span>
+                        <span class="bid-amount">$315</span>
+                    </div>
+                    <div class="auction-meta">
+                        <span class="bids-count"><i class="fas fa-gavel"></i> 12 bids</span>
+                        <span class="time-left"><i class="fas fa-clock"></i> 8h 15m left</span>
+                    </div>
+                </div>
+                <button class="btn btn-outline-primary place-bid">Place Bid</button>
+            </div>
+            <div class="auction-card">
+                <div class="auction-image">
+                    <img src="https://images.pexels.com/photos/7821485/pexels-photo-7821485.jpeg" alt="Google Pixel 6">
+                </div>
+                <div class="auction-info">
+                    <h3>Google Pixel 6 - 256GB</h3>
+                    <p class="condition">Like New</p>
+                    <div class="current-bid">
+                        <span class="bid-label">Current Bid:</span>
+                        <span class="bid-amount">$385</span>
+                    </div>
+                    <div class="auction-meta">
+                        <span class="bids-count"><i class="fas fa-gavel"></i> 9 bids</span>
+                        <span class="time-left"><i class="fas fa-clock"></i> 16h 42m left</span>
+                    </div>
+                </div>
+                <button class="btn btn-outline-primary place-bid">Place Bid</button>
+            </div>
+        </div>
+
+        <!-- Recently Viewed -->
+        <div class="section-header recently-viewed-header">
+            <h2><i class="fas fa-history"></i> Recently Viewed</h2>
+        </div>
+        <div class="recently-viewed-container">
+            <div class="recently-viewed-item">
+                <img src="https://images.pexels.com/photos/3825517/pexels-photo-3825517.jpeg" alt="Clear Case">
+                <div class="item-name">Clear MagSafe Case</div>
+            </div>
+            <div class="recently-viewed-item">
+                <img src="https://images.pexels.com/photos/4526407/pexels-photo-4526407.jpeg" alt="Power Bank">
+                <div class="item-name">20000mAh Power Bank</div>
+            </div>
+            <div class="recently-viewed-item">
+                <img src="https://images.pexels.com/photos/5750001/pexels-photo-5750001.jpeg" alt="Car Mount">
+                <div class="item-name">Wireless Car Mount</div>
+            </div>
+        </div>
+
+        <!-- Shopping Cart Preview -->
+        <div class="cart-preview">
+            <div class="cart-header">
+                <i class="fas fa-shopping-cart"></i> Your Cart (3)
+            </div>
+            <div class="cart-items">
+                <div class="cart-item">
+                    <div class="item-image">
+                        <img src="https://images.pexels.com/photos/1294886/pexels-photo-1294886.jpeg" alt="Leather Case">
+                    </div>
+                    <div class="item-details">
+                        <div class="item-name">Premium Leather Case</div>
+                        <div class="item-price">$49.99</div>
+                    </div>
+                    <div class="item-quantity">
+                        <button class="quantity-btn minus">-</button>
+                        <span class="quantity">1</span>
+                        <button class="quantity-btn plus">+</button>
+                    </div>
+                </div>
+                <div class="cart-item">
+                    <div class="item-image">
+                        <img src="https://images.pexels.com/photos/1037999/pexels-photo-1037999.jpeg" alt="Screen Protector">
+                    </div>
+                    <div class="item-details">
+                        <div class="item-name">Tempered Glass Screen Protector</div>
+                        <div class="item-price">$19.99</div>
+                    </div>
+                    <div class="item-quantity">
+                        <button class="quantity-btn minus">-</button>
+                        <span class="quantity">2</span>
+                        <button class="quantity-btn plus">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="cart-totals">
+                <div class="subtotal">
+                    <span>Subtotal:</span>
+                    <span>$89.97</span>
+                </div>
+                <div class="shipping">
+                    <span>Shipping:</span>
+                    <span>Free</span>
+                </div>
+                <div class="total">
+                    <span>Total:</span>
+                    <span>$89.97</span>
+                </div>
+            </div>
+            <button class="btn btn-primary checkout-btn">Checkout</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="/static/app.js"></script>
+    <script src="/static/marketplace.js"></script>
+</body>
+</html>

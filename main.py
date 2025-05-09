@@ -493,6 +493,10 @@ def network():
 def payments():
     return render_template('payments.html')
 
+@app.route('/marketplace', methods=['GET'])
+def marketplace():
+    return render_template('marketplace.html')
+
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
     try:
