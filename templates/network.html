@@ -121,6 +121,30 @@
             align-items: center;
             width: 100%;
         }
+        .dark-mode .help-timer {
+            color: #aaa;
+        }
+
+        .network-setting-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 5px;
+            border-bottom: 1px solid rgba(200, 200, 200, 0.3);
+        }
+
+        .network-setting-option:last-child {
+            border-bottom: none;
+        }
+
+        .setting-name {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .dark-mode .setting-name {
+            color: #fff;
+        }
     </style>
 </head>
 <body class="landing-page">
@@ -197,10 +221,39 @@
             </div>
         </div>
 
-        <div class="dashboard-content">
+        <div class="section-header">
             <h2><i class="fas fa-network-wired"></i> Network Settings</h2>
+        </div>
+
+        <div class="dashboard-content">
             <div class="network-settings mt-4">
-                <p>Network configuration and status will appear here.</p>
+                <div class="insights-card">
+                    <div class="data-usage">
+                        <div id="networkScanContent" class="network-scan-content">
+                            <div class="network-setting-option">
+                                <span class="setting-name">Video optimization</span>
+                            </div>
+                            <div class="network-setting-option">
+                                <span class="setting-name">Priority access</span>
+                            </div>
+                            <div class="network-setting-option">
+                                <span class="setting-name">Private relay</span>
+                            </div>
+                            <div class="network-setting-option">
+                                <span class="setting-name">VPN / Home route</span>
+                            </div>
+                            <div class="network-setting-option">
+                                <span class="setting-name">Do not call list</span>
+                            </div>
+                            <div class="network-setting-option">
+                                <span class="setting-name">Global Wi-Fi Calling</span>
+                            </div>
+                            <div class="network-setting-option">
+                                <span class="setting-name">ETXT on SAT</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
