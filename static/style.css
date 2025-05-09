@@ -862,6 +862,17 @@ body {
     color: #ff0000;
 }
 
+#helpPhoneIcon {
+    margin-left: 8px;
+    animation: pulse-icon 1.5s infinite;
+}
+
+@keyframes pulse-icon {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
 .dark-mode .help-timer {
     color: #aaa;
 }

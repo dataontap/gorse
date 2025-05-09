@@ -98,11 +98,13 @@ function initializeProfileDropdown() {
     const profileDropdown = document.querySelector('.profile-dropdown');
     let helpTimerInterval;
     let helpStartTime;
+    let helpTimeRemaining = 260; // 4 minutes and 20 seconds
     
     // Help section toggle
     const helpToggle = document.getElementById('helpToggle');
     const helpSection = document.querySelector('.help-section');
     const helpTimer = document.getElementById('helpTimer');
+    const phoneIcon = document.getElementById('helpPhoneIcon');
     
     if (helpToggle && helpSection && helpTimer) {
         helpToggle.addEventListener('click', (e) => {
@@ -122,13 +124,23 @@ function initializeProfileDropdown() {
             if (!isExpanded) {
                 // Start timer
                 helpTimer.style.display = 'inline';
-                helpStartTime = new Date();
+                helpTimeRemaining = 260; // Reset to 4 minutes and 20 seconds
                 updateHelpTimer();
                 helpTimerInterval = setInterval(updateHelpTimer, 1000);
+                
+                // Hide phone icon initially
+                if (phoneIcon) {
+                    phoneIcon.style.display = 'none';
+                }
             } else {
                 // Stop timer
                 clearInterval(helpTimerInterval);
                 helpTimer.style.display = 'none';
+                
+                // Hide phone icon when help is closed
+                if (phoneIcon) {
+                    phoneIcon.style.display = 'none';
+                }
             }
             
             // For menu expansion
@@ -145,15 +157,32 @@ function initializeProfileDropdown() {
     }
     
     function updateHelpTimer() {
-        if (!helpStartTime) return;
+        if (helpTimeRemaining <= 0) {
+            // Timer reached zero
+            clearInterval(helpTimerInterval);
+            helpTimer.textContent = '00:00:00';
+            
+            // Show the help section if it's not already shown
+            if (!helpSection.classList.contains('expanded')) {
+                helpSection.style.display = 'none';
+            }
+            
+            // Show phone icon in green when timer is done
+            if (phoneIcon) {
+                phoneIcon.style.display = 'inline';
+                phoneIcon.style.color = '#4CAF50'; // Green color
+            }
+            
+            return;
+        }
         
-        const now = new Date();
-        const diff = now - helpStartTime;
+        // Decrement the remaining time
+        helpTimeRemaining--;
         
         // Convert to hours, minutes, seconds
-        const hours = Math.floor(diff / 3600000);
-        const minutes = Math.floor((diff % 3600000) / 60000);
-        const seconds = Math.floor((diff % 60000) / 1000);
+        const hours = Math.floor(helpTimeRemaining / 3600);
+        const minutes = Math.floor((helpTimeRemaining % 3600) / 60);
+        const seconds = helpTimeRemaining % 60;
         
         // Format time as HH:MM:SS
         const formattedTime = 
