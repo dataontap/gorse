@@ -209,21 +209,32 @@ function initializeAuctionCountdown() {
     // Initialize long-press bid functionality
     const bidButtons = document.querySelectorAll('.place-bid');
     
-    // Replace static gavel icons with animated gavels
+    // Create gavel container with both static and animated versions
     document.querySelectorAll('.bids-count').forEach(bidsCount => {
-        // Remove the static icon
-        const iconElement = bidsCount.querySelector('i.fas.fa-gavel');
-        if (iconElement) {
-            iconElement.remove();
+        // Get the static icon
+        const staticIcon = bidsCount.querySelector('i.fas.fa-gavel');
+        
+        if (staticIcon) {
+            // Create gavel container for overlay effect
+            const gavelContainer = document.createElement('div');
+            gavelContainer.className = 'gavel-container';
+            
+            // Move the static icon to the container
+            staticIcon.remove();
+            const staticGavel = document.createElement('div');
+            staticGavel.className = 'static-gavel';
+            staticGavel.innerHTML = '<i class="fas fa-gavel"></i>';
+            gavelContainer.appendChild(staticGavel);
+            
+            // Create animated gavel element (initially hidden)
+            const bidGavelAnimation = document.createElement('div');
+            bidGavelAnimation.className = 'bid-gavel-animation';
+            bidGavelAnimation.innerHTML = '<i class="fas fa-gavel"></i>';
+            gavelContainer.appendChild(bidGavelAnimation);
+            
+            // Insert the container at the beginning of bids-count
+            bidsCount.insertBefore(gavelContainer, bidsCount.firstChild);
         }
-        
-        // Create animated gavel element
-        const bidGavelAnimation = document.createElement('div');
-        bidGavelAnimation.className = 'bid-gavel-animation';
-        bidGavelAnimation.innerHTML = '<i class="fas fa-gavel"></i>';
-        
-        // Insert at the beginning of bids-count
-        bidsCount.insertBefore(bidGavelAnimation, bidsCount.firstChild);
     });
 
     bidButtons.forEach(button => {
@@ -321,18 +332,41 @@ function initializeAuctionCountdown() {
             const bidsCount = auctionCard.querySelector('.bids-count');
             const currentBids = parseInt(bidsCount.textContent.match(/\d+/)[0]);
             
-            // Keep the animated gavel
-            const bidGavelAnimation = bidsCount.querySelector('.bid-gavel-animation');
-            bidsCount.innerHTML = '';
-            if (bidGavelAnimation) {
-                bidsCount.appendChild(bidGavelAnimation);
+            // Show the animated gavel
+            const gavelContainer = bidsCount.querySelector('.gavel-container');
+            const bidCount = currentBids + 1;
+            
+            if (gavelContainer) {
+                // Show animated gavel
+                const animatedGavel = gavelContainer.querySelector('.bid-gavel-animation');
+                if (animatedGavel) {
+                    animatedGavel.classList.add('active');
+                }
+                
+                // Clear and rebuild the bid count text
+                bidsCount.innerHTML = '';
+                bidsCount.appendChild(gavelContainer);
+                bidsCount.appendChild(document.createTextNode(` ${bidCount} bids`));
             } else {
-                const newGavelAnimation = document.createElement('div');
-                newGavelAnimation.className = 'bid-gavel-animation';
-                newGavelAnimation.innerHTML = '<i class="fas fa-gavel"></i>';
-                bidsCount.appendChild(newGavelAnimation);
+                // Fallback if container not found
+                bidsCount.innerHTML = '';
+                const newGavelContainer = document.createElement('div');
+                newGavelContainer.className = 'gavel-container';
+                
+                const staticGavel = document.createElement('div');
+                staticGavel.className = 'static-gavel';
+                staticGavel.innerHTML = '<i class="fas fa-gavel"></i>';
+                
+                const animatedGavel = document.createElement('div');
+                animatedGavel.className = 'bid-gavel-animation active';
+                animatedGavel.innerHTML = '<i class="fas fa-gavel"></i>';
+                
+                newGavelContainer.appendChild(staticGavel);
+                newGavelContainer.appendChild(animatedGavel);
+                
+                bidsCount.appendChild(newGavelContainer);
+                bidsCount.appendChild(document.createTextNode(` ${bidCount} bids`));
             }
-            bidsCount.appendChild(document.createTextNode(` ${currentBids + 1} bids`));
 
             // Button text confirms action
             button.textContent = 'Bid Placed!';
