@@ -1259,6 +1259,72 @@ body {
     position: relative;
 }
 
+/* Wallet Styling */
+.wallet-card {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.wallet-content {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.wallet-balance {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.balance-amount {
+    font-size: 32px;
+    font-weight: 700;
+    color: #333;
+}
+
+.wallet-symbol {
+    font-weight: 700;
+    color: #f7931a;
+    font-size: 18px;
+}
+
+.wallet-value {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+}
+
+.wallet-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.wallet-btn {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.dark-mode .wallet-card {
+    background-color: rgba(40, 40, 40, 0.9);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .balance-amount {
+    color: #f0f0f0;
+}
+
+.dark-mode .wallet-value {
+    color: #aaa;
+}
+
 .purchase-item .purchase-amount {
     position: absolute;
     right: 0;
