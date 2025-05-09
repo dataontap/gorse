@@ -145,6 +145,60 @@
         .dark-mode .setting-name {
             color: #fff;
         }
+        
+        /* New Network Settings Styles */
+        .network-settings-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+        
+        .setting-box {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(200, 200, 200, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .setting-box:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .setting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .setting-name {
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .setting-description {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+            line-height: 1.4;
+        }
+        
+        .dark-mode .setting-box {
+            background: rgba(40, 40, 40, 0.3);
+            border-color: rgba(60, 60, 60, 0.5);
+        }
+        
+        .dark-mode .setting-box:hover {
+            background: rgba(50, 50, 50, 0.4);
+        }
+        
+        .dark-mode .setting-description {
+            color: #aaa;
+        }
     </style>
 </head>
 <body class="landing-page">
@@ -229,27 +283,82 @@
             <div class="network-settings mt-4">
                 <div class="insights-card">
                     <div class="data-usage">
-                        <div id="networkScanContent" class="network-scan-content">
-                            <div class="network-setting-option">
-                                <span class="setting-name">Video optimization</span>
+                        <div id="networkSettings" class="network-settings-container">
+                            <div class="setting-box">
+                                <div class="setting-header">
+                                    <span class="setting-name">Video optimization</span>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <p class="setting-description">Optimizes video streaming quality to reduce data usage while maintaining a good viewing experience.</p>
                             </div>
-                            <div class="network-setting-option">
-                                <span class="setting-name">Priority access</span>
+                            
+                            <div class="setting-box">
+                                <div class="setting-header">
+                                    <span class="setting-name">Priority access</span>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <p class="setting-description">Provides prioritized network access during high congestion periods for more reliable connectivity.</p>
                             </div>
-                            <div class="network-setting-option">
-                                <span class="setting-name">Private relay</span>
+                            
+                            <div class="setting-box">
+                                <div class="setting-header">
+                                    <span class="setting-name">Private relay</span>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <p class="setting-description">Routes your internet traffic through multiple relays to enhance privacy and hide your IP address.</p>
                             </div>
-                            <div class="network-setting-option">
-                                <span class="setting-name">VPN / Home route</span>
+                            
+                            <div class="setting-box">
+                                <div class="setting-header">
+                                    <span class="setting-name">VPN / Home route</span>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <p class="setting-description">Creates a secure encrypted tunnel for your data and allows remote access to your home network.</p>
                             </div>
-                            <div class="network-setting-option">
-                                <span class="setting-name">Do not call list</span>
+                            
+                            <div class="setting-box">
+                                <div class="setting-header">
+                                    <span class="setting-name">Do not call list</span>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <p class="setting-description">Blocks unwanted calls from telemarketers and known spam numbers to reduce interruptions.</p>
                             </div>
-                            <div class="network-setting-option">
-                                <span class="setting-name">Global Wi-Fi Calling</span>
+                            
+                            <div class="setting-box">
+                                <div class="setting-header">
+                                    <span class="setting-name">Global Wi-Fi Calling</span>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <p class="setting-description">Enables making and receiving calls over Wi-Fi networks worldwide when cellular service is limited.</p>
                             </div>
-                            <div class="network-setting-option">
-                                <span class="setting-name">ETXT on SAT</span>
+                            
+                            <div class="setting-box">
+                                <div class="setting-header">
+                                    <span class="setting-name">ETXT on SAT</span>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <p class="setting-description">Allows sending text messages via satellite when outside of cellular coverage areas.</p>
                             </div>
                         </div>
                     </div>
