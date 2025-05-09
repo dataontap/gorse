@@ -84,8 +84,10 @@
 
 .device-price {
     display: flex;
+    flex-direction: column;
     align-items: center;
     flex-wrap: wrap;
+    text-align: center;
 }
 
 .estimated-value {
@@ -93,6 +95,14 @@
     font-size: 0.9rem;
     color: #666;
     margin-bottom: 5px;
+    text-align: center;
+}
+
+.price-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
 }
 
 .current-value {
