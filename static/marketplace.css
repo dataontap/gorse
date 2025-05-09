@@ -467,38 +467,6 @@
     animation: pulsate 1s ease-in-out;
 }
 
-.gavel-container {
-    position: relative;
-    display: inline-block;
-    margin-right: 3px;
-    width: 14px; /* Adjust based on your font-awesome icon size */
-}
-
-.static-gavel {
-    position: relative;
-    z-index: 1;
-}
-
-.bid-gavel-animation {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 2;
-    opacity: 0;
-    animation: float 2s ease-in-out infinite;
-    pointer-events: none;
-}
-
-.bid-gavel-animation.active {
-    opacity: 1;
-}
-
-@keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-3px); }
-    100% { transform: translateY(0px); }
-}
-
 .count-number {
     position: absolute;
     top: -20px;
