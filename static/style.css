@@ -1291,7 +1291,7 @@ body {
 
 .wallet-symbol {
     font-weight: 700;
-    color: #f7931a;
+    color: #0066ff; /* Changed from #f7931a to blue */
     font-size: 18px;
 }
 
@@ -1299,6 +1299,11 @@ body {
     color: #666;
     font-size: 14px;
     margin: 0;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    padding: 4px 12px;
+    margin-left: 8px;
+    display: inline-block;
 }
 
 .wallet-actions {
