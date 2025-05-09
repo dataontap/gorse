@@ -1069,7 +1069,7 @@ body {
 }
 
 @keyframes pulse {
-    0% { transform: scale(1); }
+    0% { transform: scale(1); opacity: 1; }
     20% { transform: scale(1.03); }
     33% { transform: scale(1); }
     53% { transform: scale(1.05); }
@@ -2115,3 +2115,37 @@ body {
     padding: 0 10px;
     box-sizing: border-box;
 }
+
+.online-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            margin-left: 6px;
+            animation: pulse 1.2s ease-in-out infinite;
+            vertical-align: middle;
+        }
+
+        .chatgpt-indicator {
+            background-color: #74aa9c;
+        }
+
+        .gemini-indicator {
+            background-color: #8E44AD;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);```text
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }

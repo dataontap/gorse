@@ -173,6 +173,12 @@ function initializeProfileDropdown() {
                 phoneIcon.style.color = '#4CAF50'; // Green color
             }
             
+            // Update indicators to show online status
+            document.querySelectorAll('.online-indicator').forEach(indicator => {
+                indicator.style.animation = 'pulse 1s ease-in-out infinite';
+                indicator.style.opacity = '1';
+            });
+            
             return;
         }
         
