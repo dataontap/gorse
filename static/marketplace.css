@@ -85,6 +85,14 @@
 .device-price {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+}
+
+.estimated-value {
+    width: 100%;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 5px;
 }
 
 .current-value {
@@ -99,9 +107,14 @@
     border-radius: 4px;
 }
 
+.price-trend strong {
+    color: inherit;
+}
+
 .price-trend.up {
-    background-color: rgba(46, 204, 113, 0.2);
+    background-color: transparent;
     color: #27ae60;
+    font-weight: bold;
 }
 
 .price-trend.down {
