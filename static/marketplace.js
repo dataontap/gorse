@@ -206,6 +206,82 @@ function initializeAuctionCountdown() {
             }, 1000);
         }
     });
+    
+    // Initialize long-press bid functionality
+    const bidButtons = document.querySelectorAll('.place-bid');
+    
+    bidButtons.forEach(button => {
+        let pressTimer;
+        let isPressed = false;
+        
+        // Start timer when mouse/touch is down
+        const startPress = () => {
+            isPressed = true;
+            button.classList.add('pressing');
+            
+            pressTimer = setTimeout(() => {
+                if (isPressed) {
+                    completeBid(button);
+                }
+            }, 3000); // 3 second press required
+        };
+        
+        // Cancel timer if mouse/touch is up or leaves button
+        const cancelPress = () => {
+            if (isPressed) {
+                clearTimeout(pressTimer);
+                button.classList.remove('pressing');
+                isPressed = false;
+            }
+        };
+        
+        // Complete the bid process
+        const completeBid = (button) => {
+            // Make the button stay blue
+            button.classList.remove('pressing');
+            button.classList.add('bid-complete');
+            
+            // Show TOP BID indicator
+            const container = button.closest('.bid-button-container');
+            const topBidIndicator = container.querySelector('.top-bid-indicator');
+            topBidIndicator.classList.add('show');
+            
+            // Simulate successful bid
+            const auctionCard = button.closest('.auction-card');
+            const bidAmount = auctionCard.querySelector('.bid-amount');
+            const currentAmount = parseInt(bidAmount.textContent.replace('$', ''));
+            bidAmount.textContent = '$' + (currentAmount + 5); // Add $5 to current bid
+            
+            // Update bid count
+            const bidsCount = auctionCard.querySelector('.bids-count');
+            const currentBids = parseInt(bidsCount.textContent.match(/\d+/)[0]);
+            bidsCount.innerHTML = `<i class="fas fa-gavel"></i> ${currentBids + 1} bids`;
+            
+            // Button text confirms action
+            button.textContent = 'Bid Placed!';
+            
+            // Reset after 3 seconds
+            setTimeout(() => {
+                button.textContent = 'Place $5+ bid';
+                button.classList.remove('bid-complete');
+                
+                // Keep TOP BID showing to indicate user is current top bidder
+            }, 3000);
+        };
+        
+        // Add event listeners for mouse
+        button.addEventListener('mousedown', startPress);
+        button.addEventListener('mouseup', cancelPress);
+        button.addEventListener('mouseleave', cancelPress);
+        
+        // Add event listeners for touch
+        button.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent default touch behavior
+            startPress();
+        });
+        button.addEventListener('touchend', cancelPress);
+        button.addEventListener('touchcancel', cancelPress);
+    });
 }
 
 function initializeCartPreview() {

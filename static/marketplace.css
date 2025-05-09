@@ -402,6 +402,66 @@
     margin-bottom: 15px;
 }
 
+/* Bid Button Container */
+.bid-button-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.place-bid {
+    position: relative;
+    width: 100%;
+    transition: background-color 0.3s, color 0.3s;
+    overflow: hidden;
+}
+
+.place-bid::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    background-color: rgba(13, 110, 253, 0.2);
+    transition: none;
+    z-index: -1;
+}
+
+.place-bid.pressing::before {
+    width: 100%;
+    transition: width 3s linear;
+}
+
+.place-bid.bid-complete {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.top-bid-indicator {
+    position: absolute;
+    top: -30px;
+    background-color: #0d6efd;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+    display: none;
+}
+
+.top-bid-indicator.show {
+    opacity: 1;
+    transform: translateY(0);
+    display: block;
+}
+
 /* Recently Viewed */
 .recently-viewed-container {
     display: flex;
