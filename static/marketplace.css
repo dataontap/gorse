@@ -441,6 +441,13 @@
     color: white;
 }
 
+.place-bid.disabled {
+    background-color: #6c757d;
+    color: white;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
 .top-bid-indicator {
     display: inline-block;
     margin-left: 10px;

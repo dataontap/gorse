@@ -258,11 +258,13 @@ function initializeAuctionCountdown() {
             // Button text confirms action
             button.textContent = 'Bid Placed!';
 
-            // Reset after 3 seconds
+            // Reset after 3 seconds and disable the button
             setTimeout(() => {
-                button.textContent = 'Place $5+ bid';
+                button.textContent = 'You are top bidder';
                 button.classList.remove('bid-complete');
-
+                button.classList.add('disabled');
+                button.disabled = true;
+                
                 // Keep MY TOP BID showing to indicate user is current top bidder
             }, 3000);
         };
