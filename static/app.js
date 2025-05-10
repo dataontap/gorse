@@ -382,15 +382,21 @@ function initializeDarkMode() {
     const darkModeToggle = document.getElementById('darkModeToggle');
     const logoutBtn = document.getElementById('logoutBtn');
     const profileLink = document.querySelector('.profile-dropdown a[href="/profile"]');
+    const helpToggle = document.getElementById('helpToggle');
+    const helpSection = document.querySelector('.help-section');
     const body = document.body;
     const isDarkMode = localStorage.getItem('darkMode') === 'true';
 
-    settingsToggle.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        settingsSubmenu.style.display = settingsSubmenu.style.display === 'none' ? 'block' : 'none';
-    });
+    // Initialize settings toggle
+    if (settingsToggle) {
+        settingsToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            settingsSubmenu.style.display = settingsSubmenu.style.display === 'none' ? 'block' : 'none';
+        });
+    }
 
+    // Initialize profile link
     if (profileLink) {
         profileLink.addEventListener('click', (e) => {
             e.preventDefault();
@@ -398,15 +404,63 @@ function initializeDarkMode() {
         });
     }
 
-    logoutBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.location.href = '/';
-    });
+    // Initialize logout button
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = '/';
+        });
+    }
+    
+    // Initialize help toggle
+    if (helpToggle && helpSection) {
+        helpToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            helpSection.style.display = helpSection.style.display === 'none' ? 'block' : 'none';
+            
+            // Toggle help timer display
+            const helpTimer = document.getElementById('helpTimer');
+            const helpPhoneIcon = document.getElementById('helpPhoneIcon');
+            
+            if (helpTimer && helpPhoneIcon) {
+                if (helpSection.style.display === 'block') {
+                    helpTimer.style.display = 'inline';
+                    helpPhoneIcon.style.display = 'inline';
+                    
+                    // Start a countdown timer (just for demonstration)
+                    let minutes = 4;
+                    let seconds = 20;
+                    const timerInterval = setInterval(() => {
+                        seconds--;
+                        if (seconds < 0) {
+                            minutes--;
+                            seconds = 59;
+                        }
+                        if (minutes < 0) {
+                            clearInterval(timerInterval);
+                            helpTimer.textContent = "Available";
+                        } else {
+                            helpTimer.textContent = `00:0${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                        }
+                    }, 1000);
+                } else {
+                    helpTimer.style.display = 'none';
+                    helpPhoneIcon.style.display = 'none';
+                }
+            }
+        });
+    }
 
+    // Apply dark mode if needed
     if (isDarkMode) {
         body.classList.add('dark-mode');
-        darkModeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
-        darkModeToggle.querySelector('span').textContent = 'Light Mode';
+        if (darkModeToggle) {
+            const moonIcon = darkModeToggle.querySelector('i');
+            const modeText = darkModeToggle.querySelector('span');
+            if (moonIcon) moonIcon.classList.replace('fa-moon', 'fa-sun');
+            if (modeText) modeText.textContent = 'Light Mode';
+        }
     }
 
     darkModeToggle.addEventListener('click', (e) => {

@@ -214,20 +214,44 @@
         <div class="profile-section">
             <i class="fas fa-user-circle" onclick="toggleProfileDropdown()"></i>
             <div class="profile-dropdown">
-                <div class="profile-info">My Account <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
+                <div class="profile-info">
+                    My Account 
+                    <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
+                    <a href="/payments" class="wallet-value-pill">$542.00 USD</a>
                     <div id="qrCodePopup" class="qr-code-popup">
                         <div id="qrcode"></div>
                         <p>Scan to link accounts</p>
                     </div>
                 </div>
-                <a href="/profile" onclick="hideProfileDropdown(event)"><i class="fas fa-user"></i> Profile</a>
+                <a href="/profile"><i class="fas fa-user"></i> Profile</a>
                 <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
-                <a href="#"><i class="fas fa-credit-card"></i> Payments</a>
+                <a href="/payments"><i class="fas fa-credit-card"></i> Payments</a>
                 <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
                 <div class="settings-submenu" style="display: none;">
                     <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
                 </div>
                 <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="#" id="helpToggle">
+                    <i class="fas fa-question-circle"></i> Help 
+                    <span id="helpTimer" class="help-timer" style="display: none;">00:04:20</span>
+                    <i id="helpPhoneIcon" class="fas fa-phone-alt" style="display: none;"></i>
+                </a>
+                <div class="help-section" style="display: none;">
+                    <div class="help-content">
+                        <p>Talk to AI instead:</p>
+                        <ul>
+                            <li style="display: flex; align-items: center;">
+                                <span class="online-indicator chatgpt-indicator"></span>
+                                <a href="https://chat.openai.com" class="help-link" target="_blank">ChatGPT</a>
+                            </li>
+                            <li style="display: flex; align-items: center;">
+                                <span class="online-indicator gemini-indicator"></span>
+                                <a href="https://gemini.google.com" class="help-link" target="_blank">Google Gemini</a>
+                            </li>
+                        </ul>
+                        <p class="help-note">Timer when live help is available. Cancel anytime.<br>Powered by mcp.dotmobile.app</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
