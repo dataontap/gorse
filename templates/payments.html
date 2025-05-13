@@ -76,7 +76,10 @@
             <!-- Wallet Section -->
             <div class="address-section mb-4">
                 <h3 class="mb-3"><i class="fab fa-bitcoin"></i> My Wallet</h3>
-                <div class="wallet-card">
+                <div class="wallet-card token-stats position-relative">
+                    <button class="btn btn-sm btn-outline-secondary token-refresh-btn" title="Refresh balance" onclick="refreshBalance()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                     <div class="wallet-content">
                         <div class="wallet-balance" style="display: flex; align-items: center; width: 100%;">
                             <span class="balance-amount">5,420</span>
@@ -143,7 +146,59 @@
             </div>
         </div>
     </div>
+    <style>
+        .token-refresh-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .rotating {
+            animation: rotate 1s linear infinite;
+        }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .token-stats {
+            position: relative;
+        }
+    </style>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/app.js"></script>
+    <script>
+        function refreshBalance() {
+            const refreshButton = document.querySelector('.token-refresh-btn');
+            refreshButton.classList.add('rotating');
+
+            // Simulate refreshing data after a delay
+            setTimeout(() => {
+                // Here we would normally fetch the updated balance from the server
+                // For demo purposes, we'll just animate the button
+                refreshButton.classList.remove('rotating');
+            }, 1500);
+
+            // In a real implementation, you would call your API endpoint
+            fetch('/api/token/balance/current_user')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.error) {
+                        document.querySelector('.balance-amount').textContent = data.balance.toFixed(2);
+                        document.querySelector('.wallet-value').textContent = '$' + data.value_usd.toFixed(2) + ' USD';
+                    }
+                    refreshButton.classList.remove('rotating');
+                })
+                .catch(error => {
+                    console.error('Error fetching balance:', error);
+                    refreshButton.classList.remove('rotating');
+                });
+        }
+    </script>
 </body>
 </html>
