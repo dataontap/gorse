@@ -1,9 +1,8 @@
-
 // Add scroll animation for offer cards
 function checkOfferCardsInView() {
     const offerCards = document.querySelectorAll('.offer-card');
     const windowHeight = window.innerHeight;
-    
+
     offerCards.forEach(card => {
         const rect = card.getBoundingClientRect();
         // Check if card is in the center of the viewport
@@ -18,7 +17,7 @@ function checkOfferCardsInView() {
 // Add scroll event listener
 document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('scroll', checkOfferCardsInView, { passive: true });
-    
+
     // Check on initial load as well
     setTimeout(checkOfferCardsInView, 500);
 });
@@ -68,9 +67,9 @@ function initializeCarousel() {
         if (Math.abs(diff) > swipeThreshold) {
             const items = carousel.querySelectorAll('.carousel-item');
             const activeItem = carousel.querySelector('.carousel-item.active');
-            
+
             if (!activeItem || items.length === 0) return;
-            
+
             const currentIndex = Array.from(items).indexOf(activeItem);
 
             items.forEach(item => {
@@ -99,27 +98,27 @@ function initializeProfileDropdown() {
     let helpTimerInterval;
     let helpStartTime;
     let helpTimeRemaining = 260; // 4 minutes and 20 seconds
-    
+
     // Help section toggle
     const helpToggle = document.getElementById('helpToggle');
     const helpSection = document.querySelector('.help-section');
     const helpTimer = document.getElementById('helpTimer');
     const phoneIcon = document.getElementById('helpPhoneIcon');
-    
+
     if (helpToggle && helpSection && helpTimer) {
         helpToggle.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            
+
             const isExpanded = helpSection.classList.contains('expanded');
-            
+
             // Toggle help section
             helpSection.style.display = isExpanded ? 'none' : 'block';
             helpSection.classList.toggle('expanded');
-            
+
             // Toggle active class for red color
             helpToggle.classList.toggle('active', !isExpanded);
-            
+
             // Handle timer
             if (!isExpanded) {
                 // Start timer
@@ -127,7 +126,7 @@ function initializeProfileDropdown() {
                 helpTimeRemaining = 260; // Reset to 4 minutes and 20 seconds
                 updateHelpTimer();
                 helpTimerInterval = setInterval(updateHelpTimer, 1000);
-                
+
                 // Hide phone icon initially
                 if (phoneIcon) {
                     phoneIcon.style.display = 'none';
@@ -136,7 +135,7 @@ function initializeProfileDropdown() {
                 // Stop timer
                 clearInterval(helpTimerInterval);
                 helpTimer.style.display = 'none';
-                
+
                 // Hide phone icon when help is closed
                 if (phoneIcon) {
                     phoneIcon.style.display = 'none';
@@ -154,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationToggle.checked = false;
             notificationToggle.disabled = true;
         }
-        
+
         // Handle toggle changes
         notificationToggle.addEventListener('change', function() {
             if (this.checked) {
@@ -190,7 +189,7 @@ window.sendTestNotification = function() {
     });
 };
 
-            
+
             // For menu expansion
             if (profileDropdown) {
                 // Calculate dynamic height based on current dropdown height
@@ -203,47 +202,47 @@ window.sendTestNotification = function() {
             }
         });
     }
-    
+
     function updateHelpTimer() {
         if (helpTimeRemaining <= 0) {
             // Timer reached zero
             clearInterval(helpTimerInterval);
             helpTimer.textContent = '00:00:00';
-            
+
             // Show the help section if it's not already shown
             if (!helpSection.classList.contains('expanded')) {
                 helpSection.style.display = 'none';
             }
-            
+
             // Show phone icon in green when timer is done
             if (phoneIcon) {
                 phoneIcon.style.display = 'inline';
                 phoneIcon.style.color = '#4CAF50'; // Green color
             }
-            
+
             // Update indicators to show online status
             document.querySelectorAll('.online-indicator').forEach(indicator => {
                 indicator.style.animation = 'pulse 1s ease-in-out infinite';
                 indicator.style.opacity = '1';
             });
-            
+
             return;
         }
-        
+
         // Decrement the remaining time
         helpTimeRemaining--;
-        
+
         // Convert to hours, minutes, seconds
         const hours = Math.floor(helpTimeRemaining / 3600);
         const minutes = Math.floor((helpTimeRemaining % 3600) / 60);
         const seconds = helpTimeRemaining % 60;
-        
+
         // Format time as HH:MM:SS
         const formattedTime = 
             (hours < 10 ? '0' : '') + hours + ':' +
             (minutes < 10 ? '0' : '') + minutes + ':' +
             (seconds < 10 ? '0' : '') + seconds;
-        
+
         helpTimer.textContent = formattedTime;
     }
 
@@ -459,23 +458,23 @@ function initializeDarkMode() {
             window.location.href = '/';
         });
     }
-    
+
     // Initialize help toggle
     if (helpToggle && helpSection) {
         helpToggle.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             helpSection.style.display = helpSection.style.display === 'none' ? 'block' : 'none';
-            
+
             // Toggle help timer display
             const helpTimer = document.getElementById('helpTimer');
             const helpPhoneIcon = document.getElementById('helpPhoneIcon');
-            
+
             if (helpTimer && helpPhoneIcon) {
                 if (helpSection.style.display === 'block') {
                     helpTimer.style.display = 'inline';
                     helpPhoneIcon.style.display = 'inline';
-                    
+
                     // Start a countdown timer (just for demonstration)
                     let minutes = 4;
                     let seconds = 20;
@@ -959,7 +958,7 @@ window.confirmPurchase = function(productId) {
             hideConfirmationDrawer();
         }
     }
-    
+
     // Send API request to record purchase
     fetch('/api/record-global-purchase', {
         method: 'POST',
@@ -986,11 +985,11 @@ window.confirmPurchase = function(productId) {
             addPurchaseToHistory(productId, data.purchaseId);
             // Show data added
             showDataAdded(productId);
-            
+
             if (data.simulated) {
                 console.info('Note: Using simulated purchase ID due to database issue');
             }
-            
+
             // Check if this was a membership purchase and update offers
             if (productId === 'basic_membership' || productId === 'full_membership') {
                 updateOffersCarousel(productId);
@@ -1012,18 +1011,18 @@ window.confirmPurchase = function(productId) {
 function addPurchaseToHistory(productId, purchaseId) {
     const purchaseList = document.getElementById('purchaseList');
     if (!purchaseList) return;
-    
+
     // Remove empty state if present
     const emptyState = purchaseList.querySelector('.purchase-empty-state');
     if (emptyState) {
         emptyState.remove();
     }
-    
+
     const now = new Date();
     const formattedDate = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
     const productName = getProductName(productId);
     const amount = getProductPrice(productId);
-    
+
     const purchaseItem = document.createElement('div');
     purchaseItem.className = 'purchase-item';
     purchaseItem.innerHTML = `
@@ -1033,7 +1032,7 @@ function addPurchaseToHistory(productId, purchaseId) {
         </div>
         <div class="purchase-amount">$${amount}</div>
     `;
-    
+
     purchaseList.prepend(purchaseItem);
 }
 
@@ -1059,7 +1058,7 @@ function showDataAdded(productId) {
     // Show data has been added to the account
     const dataDisplay = document.getElementById('dataDisplay');
     const globalStatus = document.getElementById('globalStatus');
-    
+
     if (dataDisplay && globalStatus) {
         // Get current data amount if displayed
         let currentAmount = 0;
@@ -1067,7 +1066,7 @@ function showDataAdded(productId) {
             const currentText = dataDisplay.textContent.replace('GB', '').trim();
             currentAmount = parseFloat(currentText) || 0;
         }
-        
+
         // Add new data to current amount
         let addedAmount = 0;
         if (productId === 'global_data_10gb') {
@@ -1075,14 +1074,14 @@ function showDataAdded(productId) {
         } else {
             addedAmount = 1.0;
         }
-        
+
         // Calculate new total and update display
         const newTotal = currentAmount + addedAmount;
-        
+
         dataDisplay.innerHTML = `${newTotal.toFixed(1)}<span>GB</span>`;
         dataDisplay.style.display = 'block';
         globalStatus.style.display = 'block';
-        
+
         // Add animation
         dataDisplay.classList.add('pulse');
         setTimeout(() => {
@@ -1097,7 +1096,7 @@ function checkPurchasedMemberships() {
         updateOffersCarousel();
         return;
     }
-    
+
     // Make an API call to check if user has a membership
     fetch('/api/check-memberships')
         .then(response => response.json())
@@ -1115,21 +1114,21 @@ function checkPurchasedMemberships() {
 function updateOffersCarousel(membershipType = null) {
     const carousel = document.getElementById('promotionsCarousel');
     if (!carousel) return;
-    
+
     // If a membership was just purchased, update localStorage
     if (membershipType && (membershipType === 'basic_membership' || membershipType === 'full_membership')) {
         localStorage.setItem('has_membership', 'true');
     }
-    
+
     // Only proceed with removing offers if user has a membership
     const hasMembership = localStorage.getItem('has_membership') === 'true' || membershipType;
     if (!hasMembership) return;
-    
+
     // Remove membership offers from carousel
     const items = carousel.querySelectorAll('.carousel-item');
     const controls = document.querySelectorAll('.carousel-controls button');
     let removedCount = 0;
-    
+
     items.forEach((item, index) => {
         const offerContent = item.querySelector('.offer-content h3');
         if (offerContent && (offerContent.textContent.includes('Basic Membership') || 
@@ -1141,14 +1140,14 @@ function updateOffersCarousel(membershipType = null) {
             removedCount++;
         }
     });
-    
+
     // If we removed items, make sure the first remaining item is active
     if (removedCount > 0) {
         const remainingItems = carousel.querySelectorAll('.carousel-item');
         if (remainingItems.length > 0) {
             remainingItems.forEach(item => item.classList.remove('active'));
             remainingItems[0].classList.add('active');
-            
+
             // Update the controls
             const remainingControls = document.querySelectorAll('.carousel-controls button');
             if (remainingControls.length > 0) {
@@ -1163,7 +1162,7 @@ function updateOffersCarousel(membershipType = null) {
             }
         }
     }
-    
+
     // Check if only one offer remains and hide controls if needed
     updateCarouselControlsVisibility();
 }
@@ -1171,10 +1170,10 @@ function updateOffersCarousel(membershipType = null) {
 function updateCarouselControlsVisibility() {
     const carousel = document.getElementById('promotionsCarousel');
     if (!carousel) return;
-    
+
     const items = carousel.querySelectorAll('.carousel-item');
     const controlsContainer = document.querySelector('.carousel-controls');
-    
+
     if (controlsContainer && items.length <= 1) {
         controlsContainer.style.display = 'none';
     } else if (controlsContainer) {
@@ -1272,4 +1271,88 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleChart(this);
         });
     });
+});
+
+// Your JavaScript code here
+
+// Function to send a test notification
+function sendTestNotification() {
+  fetch('/api/send-notification', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      title: 'Test Notification',
+      body: 'This is a test notification from your application!',
+      target: document.getElementById('notification-target').value
+    }),
+  })
+  .then(response => response.json())
+  .then(data => {
+    document.getElementById('notification-status').textContent = 'Notification sent: ' + data.message;
+    setTimeout(() => {
+      document.getElementById('notification-status').textContent = '';
+    }, 5000);
+  })
+  .catch(error => {
+    console.error('Error sending notification:', error);
+    document.getElementById('notification-status').textContent = 'Error: ' + error.message;
+  });
+}
+
+// Add notification testing UI when document is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Check if we're on the dashboard page
+  if (window.location.pathname === '/dashboard') {
+    const dashboardContainer = document.querySelector('.dashboard-container');
+    if (dashboardContainer) {
+      const notificationTester = document.createElement('div');
+      notificationTester.className = 'notification-tester';
+      notificationTester.innerHTML = `
+        <h3>Test Push Notifications</h3>
+        <p>Send a test notification to verify your FCM setup:</p>
+        <select id="notification-target">
+          <option value="all">All Devices (Web & App)</option>
+          <option value="web">Web Only</option>
+          <option value="app">App Only</option>
+        </select>
+        <button onclick="sendTestNotification()">Send Test Notification</button>
+        <p id="notification-status"></p>
+      `;
+
+      // Add some basic styling
+      const style = document.createElement('style');
+      style.textContent = `
+        .notification-tester {
+          margin-top: 20px;
+          padding: 15px;
+          background-color: #f0f8ff;
+          border-radius: 8px;
+          border: 1px solid #ccc;
+        }
+        .notification-tester button {
+          margin-top: 10px;
+          padding: 5px 10px;
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+        .notification-tester select {
+          padding: 5px;
+          margin-right: 10px;
+        }
+        #notification-status {
+          margin-top: 10px;
+          font-weight: bold;
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Add the notification tester to the dashboard
+      dashboardContainer.appendChild(notificationTester);
+    }
+  }
 });

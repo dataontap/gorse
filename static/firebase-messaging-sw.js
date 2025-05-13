@@ -5,7 +5,7 @@ importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
 
 firebase.initializeApp({
-  apiKey: "",
+  apiKey: "AIzaSyAb1pMMVxPvRDIKE_kHU7vFLzW_3Iy2G0Y", // Use your actual Firebase API key here
   authDomain: "gorse-24e76.firebaseapp.com",
   projectId: "gorse-24e76",
   storageBucket: "gorse-24e76.firebasestorage.app",

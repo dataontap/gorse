@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Firebase configuration
   const firebaseConfig = {
-    apiKey: "",
+    apiKey: "AIzaSyAb1pMMVxPvRDIKE_kHU7vFLzW_3Iy2G0Y", // Use your actual Firebase API key here
     authDomain: "gorse-24e76.firebaseapp.com",
     projectId: "gorse-24e76",
     storageBucket: "gorse-24e76.firebasestorage.app",
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
         messaging.useServiceWorker(registration);
         
         // Request permission and get token
-        messaging.getToken({ vapidKey: 'YOUR_VAPID_KEY' })
+        messaging.getToken({ vapidKey: 'BL-eBEYO9fXmsdQy9xKHrq6p2a_MuKQB4-WSnFYUbh-dCuOPOFLFouTYwF9stPGAA3_N9KQcRWzQz8F4mZFE9Kw' })
           .then((currentToken) => {
             if (currentToken) {
               console.log('FCM token:', currentToken);
