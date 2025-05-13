@@ -1,0 +1,52 @@
+const Web3 = require('web3');
+
+// Connect to Ethereum node using the provided Infura URL
+const web3 = new Web3('https://mainnet.infura.io/v3/6f96bf5ea43641a7a21a11a7beaed1af');
+
+// Smart contract address (replace with your token's contract address)
+const contractAddress = 'https://mainnet.infura.io/v3/6f96bf5ea43641a7a21a11a7beaed1af'; // Replace with your token's smart contract address
+
+// ABI of the ERC20 token, replace with actual ABI obtained from compile output
+const abi ='6f96bf5ea43641a7a21a11a7beaed1af';
+
+// Create contract instance
+const tokenContract = new web3.eth.Contract(abi, contractAddress);
+
+// Function to get token balance of an address
+async function getTokenBalance(address) {
+    try {
+        const balance = await tokenContract.methods.balanceOf(address).call();
+        console.log(`Balance of ${address}: ${balance}`);
+    } catch (error) {
+        console.error('Error fetching balance:', error);
+    }
+}
+
+// Function to transfer tokens
+async function transferTokens(fromAddress, privateKey, toAddress, amount) {
+    const tx = {
+        from: fromAddress,
+        to: contractAddress,
+        gas: 2000000,
+        data: tokenContract.methods.transfer(toAddress, amount).encodeABI(),
+    };
+
+    // Sign the transaction
+    const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
+
+    // Send the transaction
+    web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+        .on('receipt', console.log)
+        .on('error', console.error);
+}
+
+// Example usage
+(async () => {
+    const myAddress = '0xYourAddress'; // Your Ethereum address
+    const myPrivateKey = '0xYourPrivateKey'; // Your private key
+    const recipientAddress = '0xRecipientAddress'; // Recipient address
+    const amountToSend = 100; // Amount to send
+
+    await getTokenBalance(myAddress);
+    await transferTokens(myAddress, myPrivateKey, recipientAddress, amountToSend);
+})();

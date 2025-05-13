@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DOTM Tokens</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <link href="/static/tokens.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <nav class="navbar">
+            <div class="company-logo">
+                <a href="/">
+                    <img src="/static/tropical-border.png" alt="Logo" class="logo-img">
+                </a>
+            </div>
+            <div class="menu-icon" style="cursor:pointer">
+                <i class="fas fa-bars"></i>
+            </div>
+            <div class="menu-dropdown">
+                <a href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="/network"><i class="fas fa-wifi"></i> Network</a>
+                <a href="/tokens" class="active"><i class="fas fa-coins"></i> Tokens</a>
+                <a href="/payments"><i class="fas fa-credit-card"></i> Payments</a>
+                <a href="/marketplace"><i class="fas fa-shopping-cart"></i> Marketplace</a>
+            </div>
+            <div class="profile-section">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="profile-dropdown">
+                <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+                <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
+                <div class="settings-submenu" style="display: none;">
+                    <a href="#" id="darkModeToggle">
+                        <i class="fas fa-moon"></i> <span>Dark Mode</span>
+                    </a>
+                    <a href="#" id="notificationsToggle">
+                        <i class="fas fa-bell"></i> <span>Notifications</span>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="notificationToggle">
+                            <label for="notificationToggle"></label>
+                        </div>
+                    </a>
+                </div>
+                <div class="divider"></div>
+                <a href="#" id="helpToggle">
+                    <i class="fas fa-question-circle"></i> Help
+                    <i class="fas fa-phone" id="helpPhoneIcon" style="display:none;"></i>
+                    <span id="helpTimer" style="display:none;">00:04:20</span>
+                </a>
+                <div class="help-section" style="display: none;">
+                    <p><strong>Need assistance?</strong></p>
+                    <p>Contact our support team:</p>
+                    <p><i class="fas fa-envelope"></i> support@dotwireless.com</p>
+                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                    <div class="support-status">
+                        <span class="online-indicator"></span>
+                        <span>Support available 24/7</span>
+                    </div>
+                </div>
+                <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </nav>
+
+        <div class="container mt-4">
+            <div class="token-dashboard">
+                <h1>DOTM Tokens</h1>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="token-overview card">
+                            <div class="card-body">
+                                <h3>Token Overview</h3>
+                                <div class="token-stats">
+                                    <div class="token-balance">
+                                        <span class="balance-amount">0.00</span>
+                                        <span class="balance-label">DOTM</span>
+                                    </div>
+                                    <div class="token-value">
+                                        <span class="value-label">Value:</span>
+                                        <span class="value-amount">$0.00</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="wallet-section">
+                                    <h4>Connect Wallet</h4>
+                                    <p>Link your Ethereum wallet to manage your DOTM tokens:</p>
+                                    <div class="wallet-connect-options">
+                                        <button id="connectMetamask" class="btn btn-primary">
+                                            <i class="fab fa-ethereum"></i> Connect MetaMask
+                                        </button>
+                                        <button id="connectWalletConnect" class="btn btn-secondary">
+                                            <i class="fas fa-wallet"></i> WalletConnect
+                                        </button>
+                                    </div>
+                                    <div id="walletStatus" class="wallet-status mt-3" style="display: none;">
+                                        <div class="connected-address">
+                                            <span>Connected:</span>
+                                            <span id="connectedAddress" class="address">0x0000...0000</span>
+                                            <button id="disconnectWallet" class="btn btn-sm btn-outline-danger">Disconnect</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="token-history card mt-4">
+                            <div class="card-body">
+                                <h3>Token History</h3>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Type</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tokenTransactionsList">
+                                            <tr>
+                                                <td colspan="4" class="text-center">No transactions yet</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="founding-member card">
+                            <div class="card-body">
+                                <h3>Founding Member</h3>
+                                <p>As a founding member, you are eligible to receive 1 DOTM token valued at $100.</p>
+                                <button id="claimFoundingToken" class="btn btn-success btn-block w-100">
+                                    Claim Founding Token
+                                </button>
+                                <div id="foundingClaimStatus" class="mt-2" style="display: none;"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="token-info card mt-4">
+                            <div class="card-body">
+                                <h3>About DOTM Tokens</h3>
+                                <p>DOTM tokens are the native cryptocurrency of the dot wireless ecosystem.</p>
+                                <ul>
+                                    <li>Total Supply: 100,000 DOTM</li>
+                                    <li>Current Value: $100 per DOTM</li>
+                                    <li>Earn 10% of your data purchases back in DOTM</li>
+                                    <li>Use tokens for premium services and data</li>
+                                </ul>
+                                <p>Contract Address:</p>
+                                <code id="contractAddress" class="contract-address">0x0000000000000000000000000000000000000000</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script src="/static/app.js"></script>
+    <script src="/static/tokens.js"></script>
+</body>
+</html>

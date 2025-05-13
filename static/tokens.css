@@ -1,0 +1,130 @@
+
+.token-dashboard {
+    padding: 20px 0;
+}
+
+.token-overview {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.token-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #f6f9fc 0%, #eef2f7 100%);
+    border-radius: 8px;
+}
+
+.token-balance {
+    display: flex;
+    flex-direction: column;
+}
+
+.balance-amount {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #4CAF50;
+}
+
+.balance-label {
+    font-size: 1rem;
+    color: #666;
+}
+
+.token-value {
+    text-align: right;
+}
+
+.value-amount {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.wallet-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.wallet-connect-options {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.connected-address {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 5px;
+}
+
+.address {
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.token-history {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.founding-member {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%);
+    border-left: 4px solid #FFC107;
+}
+
+.token-info {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.contract-address {
+    display: block;
+    padding: 8px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    word-break: break-all;
+}
+
+/* Dark mode support */
+body.dark-mode .token-stats {
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+}
+
+body.dark-mode .balance-amount {
+    color: #81c784;
+}
+
+body.dark-mode .balance-label,
+body.dark-mode .value-label {
+    color: #a0aec0;
+}
+
+body.dark-mode .value-amount {
+    color: #e2e8f0;
+}
+
+body.dark-mode .connected-address {
+    background-color: #2d3748;
+}
+
+body.dark-mode .contract-address {
+    background-color: #2d3748;
+    color: #e2e8f0;
+}
+
+body.dark-mode .founding-member {
+    background: linear-gradient(135deg, #4a3404 0%, #4a3c19 100%);
+    border-left: 4px solid #FFC107;
+}

@@ -34,6 +34,7 @@ stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
 # Import product setup function
 from stripe_products import create_stripe_products
+import ethereum_helper
 
 # Create products in Stripe if they don't exist
 if stripe.api_key:
@@ -566,6 +567,10 @@ def payments():
 def marketplace():
     return render_template('marketplace.html')
 
+@app.route('/tokens', methods=['GET'])
+def tokens():
+    return render_template('tokens.html')
+
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
     try:
@@ -707,6 +712,23 @@ class RecordGlobalPurchase(Resource):
             
             if purchase_id:
                 print(f"Successfully recorded purchase: {purchase_id} for product: {product_id}")
+                
+                # If we have the user's ETH address, reward them with tokens (10% of purchase)
+                try:
+                    with get_db_connection() as conn:
+                        if conn:
+                            with conn.cursor() as cur:
+                                cur.execute("SELECT eth_address FROM users WHERE UserID = %s", (user_id,))
+                                user_data = cur.fetchone()
+                                
+                                if user_data and user_data[0]:
+                                    eth_address = user_data[0]
+                                    # Reward 10% of purchase as tokens
+                                    tx_hash = ethereum_helper.reward_data_purchase(eth_address, amount)
+                                    print(f"Rewarded token for purchase: {tx_hash}")
+                except Exception as e:
+                    print(f"Failed to reward tokens: {str(e)}")
+                
                 return {'status': 'success', 'purchaseId': purchase_id}
             else:
                 print(f"Failed to record purchase for product: {product_id}")
@@ -802,6 +824,44 @@ class CheckMemberships(Resource):
         except Exception as e:
             print(f"Error checking memberships: {str(e)}")
             return {'has_membership': False, 'error': str(e)}
+
+# Token related endpoints
+token_ns = api.namespace('token', description='DOTM Token operations')
+
+@token_ns.route('/balance/<string:address>')
+class TokenBalance(Resource):
+    def get(self, address):
+        try:
+            balance = ethereum_helper.get_token_balance(address)
+            return {
+                'address': address,
+                'balance': balance,
+                'value_usd': balance * 100  # $100 per token
+            }
+        except Exception as e:
+            print(f"Error getting token balance: {str(e)}")
+            return {'error': str(e)}, 500
+
+@token_ns.route('/founding-token')
+class FoundingToken(Resource):
+    def post(self):
+        data = request.get_json()
+        address = data.get('address')
+        
+        if not address:
+            return {'error': 'Ethereum address is required'}, 400
+            
+        try:
+            tx_hash = ethereum_helper.assign_founding_token(address)
+            return {
+                'status': 'success',
+                'message': 'Founding member token assigned',
+                'tx_hash': tx_hash,
+                'address': address
+            }
+        except Exception as e:
+            print(f"Error assigning founding token: {str(e)}")
+            return {'error': str(e)}, 500
 
 @api.route('/record-global-purchase')
 class RecordGlobalPurchase(Resource):
