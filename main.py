@@ -77,6 +77,75 @@ api = Api(app, version='1.0', title='IMEI API',
     prefix='/api')  # Move all API endpoints under /api path
 
 ns = api.namespace('imei', description='IMEI operations')
+
+# FCM token registration endpoint
+@app.route('/api/register-fcm-token', methods=['POST'])
+def register_fcm_token():
+    data = request.json
+    token = data.get('token')
+    user_agent = request.headers.get('User-Agent', '')
+    platform = 'web' if 'Mozilla' in user_agent else 'android'
+    
+    # In production, you'd want to store this token in your database
+    # associated with the user's account
+    print(f"Registered FCM token for {platform}: {token}")
+    
+    # For demonstration purposes
+    return jsonify({"status": "success", "platform": platform})
+
+# Send notifications to both web and app users
+@app.route('/api/send-notification', methods=['POST'])
+def send_notification():
+    if not request.json:
+        return jsonify({"error": "No data provided"}), 400
+        
+    title = request.json.get('title', 'Notification')
+    body = request.json.get('body', 'You have a new notification')
+    target = request.json.get('target', 'all')  # 'all', 'web', 'app'
+    
+    try:
+        # In a real implementation, you would fetch tokens from your database
+        # For demonstration, we're showing the structure
+        
+        # Example of sending to specific platforms
+        if target == 'all' or target == 'app':
+            # Send to Android app users
+            send_to_android(title, body)
+            
+        if target == 'all' or target == 'web':
+            # Send to Web users
+            send_to_web(title, body)
+            
+        return jsonify({"status": "success", "message": f"Notification sent to {target}"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def send_to_android(title, body):
+    # Normally, you would use the Firebase Admin SDK here
+    print(f"Sending to Android: {title} - {body}")
+    
+    # Example with Firebase Admin SDK (commented out)
+    """
+    from firebase_admin import messaging
+    
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title=title,
+            body=body,
+        ),
+        token='device_token_here',  # or topic='topic_name'
+    )
+    
+    response = messaging.send(message)
+    print('Successfully sent message:', response)
+    """
+    
+def send_to_web(title, body):
+    # Normally, you would use the Firebase Admin SDK here
+    print(f"Sending to Web: {title} - {body}")
+    
+    # Similar implementation as send_to_android, targeting web tokens
+
 delivery_ns = api.namespace('delivery', description='eSIM delivery operations')
 customer_ns = api.namespace('customer', description='Customer operations')
 

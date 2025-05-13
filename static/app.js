@@ -142,6 +142,54 @@ function initializeProfileDropdown() {
                     phoneIcon.style.display = 'none';
                 }
             }
+
+// Handle notification permission
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationToggle = document.getElementById('notificationToggle');
+    if (notificationToggle) {
+        // Check initial permission status
+        if (Notification.permission === 'granted') {
+            notificationToggle.checked = true;
+        } else if (Notification.permission === 'denied') {
+            notificationToggle.checked = false;
+            notificationToggle.disabled = true;
+        }
+        
+        // Handle toggle changes
+        notificationToggle.addEventListener('change', function() {
+            if (this.checked) {
+                Notification.requestPermission().then(function(permission) {
+                    if (permission !== 'granted') {
+                        notificationToggle.checked = false;
+                    }
+                });
+            }
+        });
+    }
+});
+
+// Test notification function (for testing purposes)
+window.sendTestNotification = function() {
+    fetch('/api/send-notification', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: 'Test Notification',
+            body: 'This is a test notification',
+            target: 'all'
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Notification sent:', data);
+    })
+    .catch(error => {
+        console.error('Error sending notification:', error);
+    });
+};
+
             
             // For menu expansion
             if (profileDropdown) {
