@@ -122,15 +122,15 @@
         </div>
     </div>
     <div class="container">
-        <div class="dot-container">
-            <div class="dot-indicator">
-                <div class="dot-content">
-                    <div class="data-amount" id="dataDisplay" style="display: none">1.0<span>GB</span></div>
-                    <div class="status" id="globalStatus" style="display: none"><i class="fas fa-globe"></i> Global</div>
+        <div id="dashboard-content" class="main-content">
+            <div class="dot-container">
+                <div class="dot-indicator">
+                    <div class="dot-content">
+                        <div class="data-amount" id="dataDisplay" style="display: none">1.0<span>GB</span></div>
+                        <div class="status" id="globalStatus" style="display: none"><i class="fas fa-globe"></i> Global</div>
+                    </div>
                 </div>
-
             </div>
-        </div>
         <div id="promotionsCarousel" class="carousel slide" data-bs-touch="true">
             <div class="carousel-inner">
                 <div class="carousel-item active">
@@ -284,6 +284,10 @@
             <a href="#" class="add-user-link" id="addUserBtn">
                 <i class="fas fa-plus-circle"></i> Add User
             </a>
+        </div>
+        </div>
+        <div id="subpage-content" class="subpage-frame" style="display: none;">
+            <iframe id="subpage-iframe" frameborder="0" width="100%" height="100%"></iframe>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

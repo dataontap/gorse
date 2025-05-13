@@ -35,6 +35,9 @@ stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 # Import product setup function
 from stripe_products import create_stripe_products
 import ethereum_helper
+from web3 import Web3
+
+# web3 = Web3(Web3.HTTPProvider(os.environ.get('INFURA_URL')))
 
 # Create products in Stripe if they don't exist
 if stripe.api_key:
@@ -52,7 +55,7 @@ try:
                 # Check if purchases table exists
                 cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'purchases')")
                 purchases_exists = cur.fetchone()[0]
-                
+
                 if not purchases_exists:
                     print("Creating purchases table...")
                     with open('create_purchases_table.sql', 'r') as sql_file:
@@ -61,7 +64,7 @@ try:
                     print("Purchases table created successfully")
                 else:
                     print("Purchases table already exists")
-                
+
                 conn.commit()
         else:
             print("No database connection available for table creation")
@@ -86,11 +89,11 @@ def register_fcm_token():
     token = data.get('token')
     user_agent = request.headers.get('User-Agent', '')
     platform = 'web' if 'Mozilla' in user_agent else 'android'
-    
+
     # In production, you'd want to store this token in your database
     # associated with the user's account
     print(f"Registered FCM token for {platform}: {token}")
-    
+
     # For demonstration purposes
     return jsonify({"status": "success", "platform": platform})
 
@@ -99,24 +102,24 @@ def register_fcm_token():
 def send_notification():
     if not request.json:
         return jsonify({"error": "No data provided"}), 400
-        
+
     title = request.json.get('title', 'Notification')
     body = request.json.get('body', 'You have a new notification')
     target = request.json.get('target', 'all')  # 'all', 'web', 'app'
-    
+
     try:
         # In a real implementation, you would fetch tokens from your database
         # For demonstration, we're showing the structure
-        
+
         # Example of sending to specific platforms
         if target == 'all' or target == 'app':
             # Send to Android app users
             send_to_android(title, body)
-            
+
         if target == 'all' or target == 'web':
             # Send to Web users
             send_to_web(title, body)
-            
+
         return jsonify({"status": "success", "message": f"Notification sent to {target}"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -124,11 +127,11 @@ def send_notification():
 def send_to_android(title, body):
     # Normally, you would use the Firebase Admin SDK here
     print(f"Sending to Android: {title} - {body}")
-    
+
     # Example with Firebase Admin SDK (commented out)
     """
     from firebase_admin import messaging
-    
+
     message = messaging.Message(
         notification=messaging.Notification(
             title=title,
@@ -136,15 +139,15 @@ def send_to_android(title, body):
         ),
         token='device_token_here',  # or topic='topic_name'
     )
-    
+
     response = messaging.send(message)
     print('Successfully sent message:', response)
     """
-    
+
 def send_to_web(title, body):
     # Normally, you would use the Firebase Admin SDK here
     print(f"Sending to Web: {title} - {body}")
-    
+
     # Similar implementation as send_to_android, targeting web tokens
 
 delivery_ns = api.namespace('delivery', description='eSIM delivery operations')
@@ -180,7 +183,7 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                             # First, check if the purchases table exists
                             cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'purchases')")
                             table_exists = cur.fetchone()[0]
-                            
+
                             # Create the table if it doesn't exist
                             if not table_exists:
                                 print("Purchases table does not exist. Creating it now...")
@@ -194,18 +197,18 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                                     DateCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                     UserID INTEGER
                                 );
-                                
+
                                 CREATE INDEX IF NOT EXISTS idx_purchases_stripe ON purchases(StripeID);
                                 CREATE INDEX IF NOT EXISTS idx_purchases_product ON purchases(StripeProductID);
                                 """
                                 cur.execute(create_table_sql)
                                 conn.commit()
                                 print("Purchases table created successfully")
-                            
+
                             # Handle null StripeID (make it empty string instead)
                             if stripe_id is None:
                                 stripe_id = ''
-                                
+
                             # Now insert the purchase record
                             cur.execute(
                                 "INSERT INTO purchases (StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated) "
@@ -246,7 +249,7 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
             print(f"Database URL format: {masked_url}")
     except Exception as e:
         print(f"Error checking database URL: {str(e)}")
-        
+
     return None
 
 
@@ -547,9 +550,11 @@ def submit_signup():
         print(f"Error processing signup: {str(e)}")
         return redirect('/signup')
 
-@app.route('/profile', methods=['GET'])
+@app.route('/profile')
 def profile():
-    return render_template('profile.html')
+    # Check if this is an AJAX request or iframe load
+    is_subpage = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('subpage') == 'true'
+    return render_template('profile.html', is_subpage=is_subpage)
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
@@ -559,9 +564,11 @@ def dashboard():
 def network():
     return render_template('network.html')
 
-@app.route('/payments', methods=['GET'])
+@app.route('/payments')
 def payments():
-    return render_template('payments.html')
+    # Check if this is an AJAX request or iframe load
+    is_subpage = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('subpage') == 'true'
+    return render_template('payments.html', is_subpage=is_subpage)
 
 @app.route('/marketplace', methods=['GET'])
 def marketplace():
@@ -685,7 +692,7 @@ class RecordGlobalPurchase(Resource):
             # Generate a unique transaction ID
             transaction_id = f"API_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
             print(f"Generated transaction ID: {transaction_id}")
-            
+
             # Verify database connection is working
             try:
                 with get_db_connection() as conn:
@@ -699,7 +706,7 @@ class RecordGlobalPurchase(Resource):
                         print("WARNING: Could not get database connection for test")
             except Exception as test_err:
                 print(f"WARNING: Database connection test failed: {str(test_err)}")
-            
+
             # Record the purchase
             purchase_id = record_purchase(
                 stripe_id=None,  # No stripe id in this case
@@ -709,13 +716,13 @@ class RecordGlobalPurchase(Resource):
                 user_id=user_id,
                 transaction_id=transaction_id
             )
-            
+
             if purchase_id:
                 print(f"Successfully recorded purchase: {purchase_id} for product: {product_id}")
-                
+
                 # Store the product ID in environment variable for token reward calculation
                 os.environ['LAST_PURCHASE_PRODUCT'] = product_id
-                
+
                 # If we have the user's ETH address, reward them with tokens
                 try:
                     with get_db_connection() as conn:
@@ -723,7 +730,7 @@ class RecordGlobalPurchase(Resource):
                             with conn.cursor() as cur:
                                 cur.execute("SELECT eth_address FROM users WHERE UserID = %s", (user_id,))
                                 user_data = cur.fetchone()
-                                
+
                                 if user_data and user_data[0]:
                                     eth_address = user_data[0]
                                     # Reward tokens based on purchase - special case for global data
@@ -731,7 +738,7 @@ class RecordGlobalPurchase(Resource):
                                     print(f"Rewarded token for purchase: {tx_hash}")
                 except Exception as e:
                     print(f"Failed to reward tokens: {str(e)}")
-                
+
                 return {'status': 'success', 'purchaseId': purchase_id}
             else:
                 print(f"Failed to record purchase for product: {product_id}")
@@ -751,7 +758,7 @@ def create_tables_route():
         'status': 'error',
         'message': 'Failed to create tables'
     }
-    
+
     try:
         with get_db_connection() as conn:
             if conn:
@@ -767,12 +774,12 @@ def create_tables_route():
                         DateCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         UserID INTEGER
                     );
-                    
+
                     CREATE INDEX IF NOT EXISTS idx_purchases_stripe ON purchases(StripeID);
                     CREATE INDEX IF NOT EXISTS idx_purchases_product ON purchases(StripeProductID);
                     """
                     cur.execute(create_purchases_sql)
-                    
+
                     # Create the users table
                     create_users_sql = """
                     CREATE TABLE IF NOT EXISTS users (
@@ -784,7 +791,7 @@ def create_tables_route():
                     );
                     """
                     cur.execute(create_users_sql)
-                    
+
                     conn.commit()
                     results = {
                         'status': 'success',
@@ -794,7 +801,7 @@ def create_tables_route():
                 results['message'] = 'Could not get database connection'
     except Exception as e:
         results['message'] = f'Error creating tables: {str(e)}'
-    
+
     return jsonify(results)
 
 
@@ -804,7 +811,7 @@ class CheckMemberships(Resource):
         try:
             # Try to get user ID from session (in a real app)
             user_id = 1  # Default for demo 
-            
+
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
@@ -815,14 +822,14 @@ class CheckMemberships(Resource):
                             WHERE UserID = %s AND StripeProductID IN ('basic_membership', 'full_membership')
                             LIMIT 1
                         """, (user_id,))
-                        
+
                         membership = cur.fetchone()
                         if membership:
                             return {
                                 'has_membership': True,
                                 'membership_type': membership[0]
                             }
-                        
+
                 return {'has_membership': False}
         except Exception as e:
             print(f"Error checking memberships: {str(e)}")
@@ -850,10 +857,10 @@ class FoundingToken(Resource):
     def post(self):
         data = request.get_json()
         address = data.get('address')
-        
+
         if not address:
             return {'error': 'Ethereum address is required'}, 400
-            
+
         try:
             tx_hash = ethereum_helper.assign_founding_token(address)
             return {
@@ -885,7 +892,7 @@ class RecordGlobalPurchase(Resource):
                     print("WARNING: Could not get database connection for test")
         except Exception as test_err:
             print(f"WARNING: Database connection test failed: {str(test_err)}")
-        
+
         # Default values in case product info isn't available
         default_prices = {
             'global_data_10gb': 1000,  # $10.00
@@ -930,7 +937,7 @@ class RecordGlobalPurchase(Resource):
         # Generate a unique transaction ID
         transaction_id = f"API_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
         print(f"Generated transaction ID: {transaction_id}")
-        
+
         # Record the purchase
         purchase_id = record_purchase(
             stripe_id=None,  # No stripe id in this case
@@ -962,7 +969,7 @@ def db_test():
         'tables': [],
         'connection_string': 'CONFIGURED' if os.environ.get('DATABASE_URL') else 'MISSING'
     }
-    
+
     try:
         with get_db_connection() as conn:
             if conn:
@@ -971,7 +978,7 @@ def db_test():
                     cur.execute("SELECT 1 as test")
                     test_result = cur.fetchone()
                     results['status'] = 'success' if test_result and test_result[0] == 1 else 'error'
-                    
+
                     # Get list of tables
                     cur.execute("""
                         SELECT table_name 
@@ -980,7 +987,7 @@ def db_test():
                     """)
                     tables = cur.fetchall()
                     results['tables'] = [table[0] for table in tables]
-                    
+
                     # Check purchases table structure
                     if 'purchases' in results['tables']:
                         cur.execute("""
@@ -990,7 +997,7 @@ def db_test():
                         """)
                         columns = cur.fetchall()
                         results['purchases_columns'] = {col[0]: col[1] for col in columns}
-                        
+
                         # Check sequence status
                         cur.execute("""
                             SELECT last_value, log_cnt, is_called
@@ -1003,7 +1010,7 @@ def db_test():
                                 'log_cnt': seq_info[1],
                                 'is_called': seq_info[2]
                             }
-                    
+
                     results['message'] = 'Database connection successful'
             else:
                 results['status'] = 'error'
@@ -1011,7 +1018,7 @@ def db_test():
     except Exception as e:
         results['status'] = 'error'
         results['message'] = f'Database error: {str(e)}'
-    
+
     return jsonify(results)
 
 if __name__ == '__main__':
@@ -1030,10 +1037,10 @@ class UpdateEthAddress(Resource):
             data = request.json
             user_id = 1  # Default for demo, should be from session
             eth_address = data.get('address')
-            
+
             if not eth_address or not web3.isAddress(eth_address):
                 return {'error': 'Invalid Ethereum address'}, 400
-                
+
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
@@ -1047,7 +1054,7 @@ class UpdateEthAddress(Resource):
                             'status': 'success',
                             'message': 'Ethereum address updated'
                         }
-                        
+
             return {'error': 'Database connection error'}, 500
         except Exception as e:
             print(f"Error updating Ethereum address: {str(e)}")

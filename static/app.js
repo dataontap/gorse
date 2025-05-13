@@ -171,16 +171,16 @@ document.addEventListener('DOMContentLoaded', function() {
 window.sendTestNotification = function() {
     const statusElement = document.getElementById('notification-status');
     statusElement.textContent = 'Sending notification...';
-    
+
     // Check if we have notification permission first
     if (Notification.permission !== 'granted') {
         statusElement.textContent = 'Error: Notification permission not granted. Please enable notifications first.';
         return;
     }
-    
+
     const target = document.getElementById('notification-target').value;
     const timestamp = new Date().toLocaleTimeString();
-    
+
     fetch('/api/send-notification', {
         method: 'POST',
         headers: {
@@ -196,25 +196,25 @@ window.sendTestNotification = function() {
     .then(data => {
         console.log('Notification sent:', data);
         statusElement.textContent = 'Success: ' + data.message;
-        
+
         // Create a local notification as a fallback
         if (target === 'web' || target === 'all') {
             statusElement.textContent += ' If FCM notifications are working, you should see a notification shortly.';
-            
+
             // Create a direct browser notification as a fallback
             setTimeout(() => {
                 const localNotification = new Notification('Local Test Notification (' + timestamp + ')', {
                     body: 'This is a local browser notification (not via FCM). Sent at ' + timestamp,
                     icon: '/static/tropical-border.png'
                 });
-                
+
                 localNotification.onclick = function() {
                     window.focus();
                     this.close();
                 };
             }, 2000);
         }
-        
+
         // Clear status after 10 seconds
         setTimeout(() => {
             if (statusElement && statusElement.textContent && statusElement.textContent.includes('Success:')) {
@@ -1350,11 +1350,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (dashboardContainer) {
       const notificationTester = document.createElement('div');
       notificationTester.className = 'notification-tester';
-      
+
       // Check if Notification API is supported
       const notificationSupported = typeof Notification !== 'undefined';
       const permissionStatus = notificationSupported ? Notification.permission : 'not-supported';
-      
+
       notificationTester.innerHTML = `
         <h3>Test Push Notifications</h3>
         <p>Send a test notification to verify your FCM setup:</p>
@@ -1441,7 +1441,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Add the notification tester to the dashboard
       dashboardContainer.appendChild(notificationTester);
-      
+
       // Add event listener for permission request button
       const permissionBtn = document.getElementById('request-permission-btn');
       if (permissionBtn) {
@@ -1467,3 +1467,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 });
+
+// Function to load subpages into the content frame
+window.loadSubpage = function(url) {
+    const contentFrame = document.getElementById('contentFrame');
+    if (contentFrame) {
+        contentFrame.src = url;
+    } else {
+        console.error('Content frame not found!');
+    }
+};
