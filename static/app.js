@@ -169,6 +169,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Test notification function (for testing purposes)
 window.sendTestNotification = function() {
+    const statusElement = document.getElementById('notification-status');
+    statusElement.textContent = 'Sending notification...';
+    
+    // Check if we have notification permission first
+    if (Notification.permission !== 'granted') {
+        statusElement.textContent = 'Error: Notification permission not granted. Please enable notifications first.';
+        return;
+    }
+    
+    const target = document.getElementById('notification-target').value;
+    
     fetch('/api/send-notification', {
         method: 'POST',
         headers: {
@@ -176,16 +187,31 @@ window.sendTestNotification = function() {
         },
         body: JSON.stringify({
             title: 'Test Notification',
-            body: 'This is a test notification',
-            target: 'all'
+            body: 'This is a test notification from your application!',
+            target: target
         }),
     })
     .then(response => response.json())
     .then(data => {
         console.log('Notification sent:', data);
+        statusElement.textContent = 'Success: ' + data.message;
+        
+        // Explain what to expect based on selected target
+        if (target === 'web' || target === 'all') {
+            statusElement.textContent += ' If web notifications are working, you should see a notification shortly.';
+            statusElement.textContent += ' If not, please check your browser settings.';
+        }
+        
+        // Clear status after 10 seconds
+        setTimeout(() => {
+            if (statusElement.textContent.includes('Success:')) {
+                statusElement.textContent = '';
+            }
+        }, 10000);
     })
     .catch(error => {
         console.error('Error sending notification:', error);
+        statusElement.textContent = 'Error: ' + error.message;
     });
 };
 
@@ -1312,12 +1338,29 @@ document.addEventListener('DOMContentLoaded', function() {
       notificationTester.innerHTML = `
         <h3>Test Push Notifications</h3>
         <p>Send a test notification to verify your FCM setup:</p>
-        <select id="notification-target">
-          <option value="all">All Devices (Web & App)</option>
-          <option value="web">Web Only</option>
-          <option value="app">App Only</option>
-        </select>
-        <button onclick="sendTestNotification()">Send Test Notification</button>
+        <div class="notification-permission-status">
+          <strong>Current Permission Status:</strong> 
+          <span id="permission-status">${Notification.permission}</span>
+          ${Notification.permission !== 'granted' ? 
+            '<button id="request-permission-btn">Request Permission</button>' : 
+            '<span class="permission-granted">✓ Notifications enabled</span>'}
+        </div>
+        <div class="notification-troubleshooting" ${Notification.permission !== 'denied' ? 'style="display:none"' : ''}>
+          <p><strong>Troubleshooting:</strong> If notifications are blocked, please:</p>
+          <ol>
+            <li>Click the lock/info icon in your browser's address bar</li>
+            <li>Find "Notifications" and change the setting to "Allow"</li>
+            <li>Reload this page</li>
+          </ol>
+        </div>
+        <div class="notification-controls" ${Notification.permission !== 'granted' ? 'style="display:none"' : ''}>
+          <select id="notification-target">
+            <option value="all">All Devices (Web & App)</option>
+            <option value="web">Web Only</option>
+            <option value="app">App Only</option>
+          </select>
+          <button onclick="sendTestNotification()">Send Test Notification</button>
+        </div>
         <p id="notification-status"></p>
       `;
 
@@ -1348,11 +1391,58 @@ document.addEventListener('DOMContentLoaded', function() {
           margin-top: 10px;
           font-weight: bold;
         }
+        .notification-permission-status {
+          margin: 10px 0;
+          padding: 8px;
+          background-color: #f8f8f8;
+          border-radius: 4px;
+        }
+        .permission-granted {
+          color: #4CAF50;
+          font-weight: bold;
+        }
+        .notification-troubleshooting {
+          margin: 10px 0;
+          padding: 10px;
+          background-color: #fff3cd;
+          border: 1px solid #ffeeba;
+          border-radius: 4px;
+        }
+        .notification-controls {
+          margin-top: 15px;
+        }
+        #request-permission-btn {
+          margin-left: 10px;
+          background-color: #007bff;
+        }
       `;
       document.head.appendChild(style);
 
       // Add the notification tester to the dashboard
       dashboardContainer.appendChild(notificationTester);
+      
+      // Add event listener for permission request button
+      const permissionBtn = document.getElementById('request-permission-btn');
+      if (permissionBtn) {
+        permissionBtn.addEventListener('click', function() {
+          Notification.requestPermission().then(function(permission) {
+            document.getElementById('permission-status').textContent = permission;
+            if (permission === 'granted') {
+              document.querySelector('.notification-controls').style.display = 'block';
+              document.querySelector('.notification-troubleshooting').style.display = 'none';
+              permissionBtn.parentElement.removeChild(permissionBtn);
+              const permissionGranted = document.createElement('span');
+              permissionGranted.className = 'permission-granted';
+              permissionGranted.textContent = '✓ Notifications enabled';
+              document.getElementById('permission-status').parentElement.appendChild(permissionGranted);
+              // Reload the page to initialize Firebase with the new permission
+              window.location.reload();
+            } else if (permission === 'denied') {
+              document.querySelector('.notification-troubleshooting').style.display = 'block';
+            }
+          });
+        });
+      }
     }
   }
 });
