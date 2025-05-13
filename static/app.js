@@ -628,8 +628,98 @@ function initializeDarkMode() {
         }
     }
 
-    darkModeToggle.addEventListener('click', (e) => {
-        e.preventDefault();
+    // Dark mode toggle with black hole animation
+    let pressTimer;
+    let isPressed = false;
+    
+    // Create black hole elements
+    const blackHole = document.createElement('div');
+    blackHole.className = 'black-hole';
+    document.body.appendChild(blackHole);
+    
+    const blackHoleRings = document.createElement('div');
+    blackHoleRings.className = 'black-hole-rings';
+    document.body.appendChild(blackHoleRings);
+    
+    const stars = document.createElement('div');
+    stars.className = 'stars';
+    document.body.appendChild(stars);
+    
+    darkModeToggle.addEventListener('mousedown', startBlackHole);
+    darkModeToggle.addEventListener('touchstart', startBlackHole);
+    
+    document.addEventListener('mouseup', cancelBlackHole);
+    document.addEventListener('touchend', cancelBlackHole);
+    
+    function startBlackHole(e) {
+        if (e.type === 'touchstart') {
+            e.preventDefault();
+        }
+        isPressed = true;
+        
+        pressTimer = setTimeout(() => {
+            if (isPressed) {
+                // Create black hole effect
+                blackHole.classList.add('active');
+                stars.classList.add('active');
+                
+                // Create falling star effect
+                for (let i = 0; i < 50; i++) {
+                    setTimeout(() => {
+                        if (blackHole.classList.contains('active')) {
+                            createStar();
+                        }
+                    }, i * 40);
+                }
+                
+                // Toggle dark mode after animation completes
+                setTimeout(() => {
+                    toggleDarkMode();
+                    blackHole.classList.remove('active');
+                    stars.classList.remove('active');
+                    // Clear all stars
+                    stars.innerHTML = '';
+                }, 2000);
+            }
+        }, 5000); // Changed to 5000ms (5 seconds)
+    }
+    
+    function cancelBlackHole() {
+        if (isPressed) {
+            clearTimeout(pressTimer);
+            isPressed = false;
+        }
+    }
+    
+    function createStar() {
+        const star = document.createElement('div');
+        star.className = 'star';
+        
+        // Random position around the edges
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 100 + Math.random() * 100;
+        const x = Math.cos(angle) * distance;
+        const y = Math.sin(angle) * distance;
+        
+        // Random size
+        const size = 1 + Math.random() * 3;
+        
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.left = `calc(50% + ${x}px)`;
+        star.style.top = `calc(50% + ${y}px)`;
+        star.style.setProperty('--tx', `${x}px`);
+        star.style.setProperty('--ty', `${y}px`);
+        
+        stars.appendChild(star);
+        
+        // Remove star after animation
+        setTimeout(() => {
+            star.remove();
+        }, 2000);
+    }
+    
+    function toggleDarkMode() {
         body.classList.toggle('dark-mode');
         const icon = darkModeToggle.querySelector('i');
         const textSpan = darkModeToggle.querySelector('span');
@@ -639,6 +729,15 @@ function initializeDarkMode() {
                              isDark ? 'fa-sun' : 'fa-moon');
         textSpan.textContent = isDark ? 'Light Mode' : 'Dark Mode';
         localStorage.setItem('darkMode', isDark);
+    }
+    
+    // Keep the regular click function for immediate toggle
+    darkModeToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Only toggle immediately if not in long-press mode
+        if (!isPressed) {
+            toggleDarkMode();
+        }
     });
 }
 
