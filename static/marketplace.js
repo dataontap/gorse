@@ -392,10 +392,10 @@ function initializeCartPreview() {
             const cartPreview = document.querySelector('.cart-preview');
             if (cartPreview.style.bottom === '0px') {
                 cartPreview.style.bottom = '-400px';
-                this.innerHTML = '<i class="fas fa-chevron-up"></i> Expand';
+                this.innerHTML = '<i class="fas fa-chevron-up"></i>';
             } else {
                 cartPreview.style.bottom = '0px';
-                this.innerHTML = '<i class="fas fa-chevron-down"></i> Minimize';
+                this.innerHTML = '<i class="fas fa-chevron-down"></i>';
             }
         });
     }
