@@ -415,12 +415,12 @@ function initializeCartPreview() {
             if (cartPreview.style.bottom === '0px') {
                 cartPreview.style.bottom = '-400px';
                 if (minimizeBtn) {
-                    minimizeBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+                    minimizeBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Expand';
                 }
             } else {
                 cartPreview.style.bottom = '0px';
                 if (minimizeBtn) {
-                    minimizeBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                    minimizeBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Minimize';
                 }
             }
         });
