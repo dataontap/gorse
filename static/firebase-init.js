@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
           
           if (permission === 'granted') {
             // Now get the token after permission is granted
-            messaging.getToken({ vapidKey: 'BL-eBEYO9fXmsdQy9xKHrq6p2a_MuKQB4-WSnFYUbh-dCuOPOFLFouTYwF9stPGAA3_N9KQcRWzQz8F4mZFE9Kw' })
+            messaging.getToken()
               .then((currentToken) => {
                 if (currentToken) {
                   console.log('FCM token:', currentToken);
@@ -44,7 +44,15 @@ document.addEventListener('DOMContentLoaded', function() {
               })
               .catch((err) => {
                 console.log('An error occurred while retrieving token. ', err);
+                console.log('Error details:', JSON.stringify(err));
                 showNotificationStatus('Error setting up notifications: ' + err.message);
+                
+                // Special handling for common errors
+                if (err.code === 'messaging/permission-blocked') {
+                  showNotificationStatus('Notification permission blocked. Please reset permissions in your browser settings.');
+                } else if (err.code === 'installations/request-failed') {
+                  showNotificationStatus('Firebase installation failed. Please check your Firebase configuration.');
+                }
               });
           } else {
             console.log('Permission denied for notifications');
