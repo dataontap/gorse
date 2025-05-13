@@ -21,11 +21,38 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
   
-  const notificationTitle = payload.notification.title;
+  const notificationTitle = payload.notification?.title || 'New Notification';
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/static/images/notification-icon.png'
+    body: payload.notification?.body || 'You have a new notification',
+    icon: '/static/tropical-border.png',  // Use an existing image
+    badge: '/static/tropical-border.png',
+    data: payload.data || {},
+    requireInteraction: true,  // Keep notification until user interacts with it
+    actions: [
+      {
+        action: 'view',
+        title: 'View'
+      }
+    ]
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// Handle notification click
+self.addEventListener('notificationclick', event => {
+  console.log('[Service Worker] Notification click received.');
+  
+  event.notification.close();
+  
+  // Open a new window/tab or focus on existing one
+  event.waitUntil(
+    clients.matchAll({type: 'window', includeUncontrolled: true})
+      .then(clientList => {
+        if (clientList.length > 0) {
+          return clientList[0].focus();
+        }
+        return clients.openWindow('/dashboard');
+      })
+  );
 });

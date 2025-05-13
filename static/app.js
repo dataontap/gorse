@@ -179,6 +179,7 @@ window.sendTestNotification = function() {
     }
     
     const target = document.getElementById('notification-target').value;
+    const timestamp = new Date().toLocaleTimeString();
     
     fetch('/api/send-notification', {
         method: 'POST',
@@ -186,8 +187,8 @@ window.sendTestNotification = function() {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            title: 'Test Notification',
-            body: 'This is a test notification from your application!',
+            title: 'Test Notification (' + timestamp + ')',
+            body: 'This is a test notification from your application! Sent at ' + timestamp,
             target: target
         }),
     })
@@ -196,22 +197,36 @@ window.sendTestNotification = function() {
         console.log('Notification sent:', data);
         statusElement.textContent = 'Success: ' + data.message;
         
-        // Explain what to expect based on selected target
+        // Create a local notification as a fallback
         if (target === 'web' || target === 'all') {
-            statusElement.textContent += ' If web notifications are working, you should see a notification shortly.';
-            statusElement.textContent += ' If not, please check your browser settings.';
+            statusElement.textContent += ' If FCM notifications are working, you should see a notification shortly.';
+            
+            // Create a direct browser notification as a fallback
+            setTimeout(() => {
+                const localNotification = new Notification('Local Test Notification (' + timestamp + ')', {
+                    body: 'This is a local browser notification (not via FCM). Sent at ' + timestamp,
+                    icon: '/static/tropical-border.png'
+                });
+                
+                localNotification.onclick = function() {
+                    window.focus();
+                    this.close();
+                };
+            }, 2000);
         }
         
         // Clear status after 10 seconds
         setTimeout(() => {
-            if (statusElement.textContent.includes('Success:')) {
+            if (statusElement && statusElement.textContent && statusElement.textContent.includes('Success:')) {
                 statusElement.textContent = '';
             }
         }, 10000);
     })
     .catch(error => {
         console.error('Error sending notification:', error);
-        statusElement.textContent = 'Error: ' + error.message;
+        if (statusElement) {
+            statusElement.textContent = 'Error: ' + error.message;
+        }
     });
 };
 

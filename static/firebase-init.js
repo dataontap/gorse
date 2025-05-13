@@ -72,11 +72,31 @@ document.addEventListener('DOMContentLoaded', function() {
       // Handle foreground messages
       messaging.onMessage((payload) => {
         console.log('Message received in foreground: ', payload);
-        // Create notification for foreground message
-        const notification = new Notification(payload.notification.title, {
-          body: payload.notification.body,
-          icon: '/static/images/notification-icon.png'
-        });
+        
+        // Create and show notification for foreground message
+        if (Notification.permission === 'granted') {
+          // Try to use the notification from the payload if available
+          const notificationTitle = payload.notification?.title || 'New Notification';
+          const notificationOptions = {
+            body: payload.notification?.body || 'You have a new notification',
+            icon: '/static/tropical-border.png', // Use an existing image
+            data: payload.data,
+            requireInteraction: true // Keep notification until user interacts with it
+          };
+          
+          // Create and show the notification
+          const notification = new Notification(notificationTitle, notificationOptions);
+          
+          // Handle notification click
+          notification.onclick = function() {
+            console.log('Notification clicked');
+            window.focus();
+            notification.close();
+          };
+          
+          // Also show an in-app notification
+          showInAppNotification(notificationTitle, notificationOptions.body);
+        }
       });
     } else {
       console.log('Firebase messaging not supported in this browser');
@@ -135,4 +155,75 @@ function showNotificationStatus(message) {
   }
   
   statusElement.textContent = message;
+}
+
+// Function to display in-app notification
+function showInAppNotification(title, message) {
+  const notificationElement = document.createElement('div');
+  notificationElement.className = 'in-app-notification';
+  notificationElement.innerHTML = `
+    <div class="notification-header">
+      <strong>${title}</strong>
+      <span class="close-notification">&times;</span>
+    </div>
+    <div class="notification-body">${message}</div>
+  `;
+  
+  // Style the notification
+  notificationElement.style.position = 'fixed';
+  notificationElement.style.top = '20px';
+  notificationElement.style.right = '20px';
+  notificationElement.style.backgroundColor = '#fff';
+  notificationElement.style.border = '1px solid #ddd';
+  notificationElement.style.borderLeft = '4px solid #4CAF50';
+  notificationElement.style.borderRadius = '4px';
+  notificationElement.style.padding = '15px';
+  notificationElement.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+  notificationElement.style.zIndex = '10000';
+  notificationElement.style.minWidth = '300px';
+  notificationElement.style.maxWidth = '400px';
+  notificationElement.style.transform = 'translateX(100%)';
+  notificationElement.style.transition = 'transform 0.3s ease-in-out';
+
+  // Style the header
+  const header = notificationElement.querySelector('.notification-header');
+  header.style.display = 'flex';
+  header.style.justifyContent = 'space-between';
+  header.style.marginBottom = '10px';
+  
+  // Style the close button
+  const closeBtn = notificationElement.querySelector('.close-notification');
+  closeBtn.style.cursor = 'pointer';
+  closeBtn.style.fontSize = '20px';
+  closeBtn.style.fontWeight = 'bold';
+  
+  // Add the notification to the page
+  document.body.appendChild(notificationElement);
+  
+  // Trigger animation
+  setTimeout(() => {
+    notificationElement.style.transform = 'translateX(0)';
+  }, 100);
+  
+  // Add click handler for close button
+  closeBtn.addEventListener('click', () => {
+    notificationElement.style.transform = 'translateX(100%)';
+    setTimeout(() => {
+      if (document.body.contains(notificationElement)) {
+        document.body.removeChild(notificationElement);
+      }
+    }, 300);
+  });
+  
+  // Auto-remove after 8 seconds
+  setTimeout(() => {
+    if (document.body.contains(notificationElement)) {
+      notificationElement.style.transform = 'translateX(100%)';
+      setTimeout(() => {
+        if (document.body.contains(notificationElement)) {
+          document.body.removeChild(notificationElement);
+        }
+      }, 300);
+    }
+  }, 8000);
 }
