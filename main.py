@@ -713,7 +713,10 @@ class RecordGlobalPurchase(Resource):
             if purchase_id:
                 print(f"Successfully recorded purchase: {purchase_id} for product: {product_id}")
                 
-                # If we have the user's ETH address, reward them with tokens (10% of purchase)
+                # Store the product ID in environment variable for token reward calculation
+                os.environ['LAST_PURCHASE_PRODUCT'] = product_id
+                
+                # If we have the user's ETH address, reward them with tokens
                 try:
                     with get_db_connection() as conn:
                         if conn:
@@ -723,7 +726,7 @@ class RecordGlobalPurchase(Resource):
                                 
                                 if user_data and user_data[0]:
                                     eth_address = user_data[0]
-                                    # Reward 10% of purchase as tokens
+                                    # Reward tokens based on purchase - special case for global data
                                     tx_hash = ethereum_helper.reward_data_purchase(eth_address, amount)
                                     print(f"Rewarded token for purchase: {tx_hash}")
                 except Exception as e:

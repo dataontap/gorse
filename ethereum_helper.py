@@ -98,8 +98,14 @@ def reward_data_purchase(user_address, purchase_amount_cents):
     web3 = get_web3_connection()
     token_contract = get_token_contract()
     
-    # Convert to token units (assuming 1 DOTM = $100)
-    token_reward = (purchase_amount_cents / 10000)  # 10% of purchase in token units
+    # Special case: if purchasing global data ($10), award exactly 1 DOTM
+    if purchase_amount_cents == 1000 and 'global_data' in os.environ.get('LAST_PURCHASE_PRODUCT', ''):
+        token_reward = 1.0  # Fixed 1 DOTM for 10GB data purchase
+    else:
+        # Otherwise, use the default 10% calculation
+        token_reward = (purchase_amount_cents / 10000)  # 10% of purchase in token units
+    
+    print(f"Rewarding {token_reward} DOTM tokens for purchase of {purchase_amount_cents} cents")
     
     # Get admin account
     admin_private_key = os.environ.get('ADMIN_PRIVATE_KEY')
