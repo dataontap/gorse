@@ -1337,7 +1337,7 @@ document.addEventListener('DOMContentLoaded', function() {
       notificationTester.className = 'notification-tester';
       
       // Check if Notification API is supported
-      const notificationSupported = 'Notification' in window;
+      const notificationSupported = typeof Notification !== 'undefined';
       const permissionStatus = notificationSupported ? Notification.permission : 'not-supported';
       
       notificationTester.innerHTML = `
@@ -1346,9 +1346,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="notification-permission-status">
           <strong>Current Permission Status:</strong> 
           <span id="permission-status">${permissionStatus}</span>
-          ${Notification.permission !== 'granted' ? 
+          ${notificationSupported && Notification.permission !== 'granted' ? 
             '<button id="request-permission-btn">Request Permission</button>' : 
-            '<span class="permission-granted">✓ Notifications enabled</span>'}
+            (notificationSupported ? '<span class="permission-granted">✓ Notifications enabled</span>' : 
+            '<span class="permission-not-supported">Notifications not supported in this browser</span>')}
         </div>
         <div class="notification-troubleshooting" ${Notification.permission !== 'denied' ? 'style="display:none"' : ''}>
           <p><strong>Troubleshooting:</strong> If notifications are blocked, please:</p>
