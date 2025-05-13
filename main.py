@@ -1020,3 +1020,32 @@ if __name__ == '__main__':
         print(f"Error starting server: {str(e)}")
         # Fallback to standard Flask run
         app.run(host='0.0.0.0', port=port, debug=True)
+@token_ns.route('/update-address')
+class UpdateEthAddress(Resource):
+    def post(self):
+        try:
+            data = request.json
+            user_id = 1  # Default for demo, should be from session
+            eth_address = data.get('address')
+            
+            if not eth_address or not web3.isAddress(eth_address):
+                return {'error': 'Invalid Ethereum address'}, 400
+                
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            UPDATE users 
+                            SET eth_address = %s 
+                            WHERE UserID = %s
+                        """, (eth_address, user_id))
+                        conn.commit()
+                        return {
+                            'status': 'success',
+                            'message': 'Ethereum address updated'
+                        }
+                        
+            return {'error': 'Database connection error'}, 500
+        except Exception as e:
+            print(f"Error updating Ethereum address: {str(e)}")
+            return {'error': str(e)}, 500

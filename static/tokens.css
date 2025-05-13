@@ -35,6 +35,18 @@
     color: #666;
 }
 
+/* Animation for balance updates */
+.highlight {
+    animation: highlight-pulse 1.5s ease-in-out;
+}
+
+@keyframes highlight-pulse {
+    0% { color: inherit; }
+    30% { color: #4CAF50; }
+    100% { color: inherit; }
+}
+
+
 .token-value {
     text-align: right;
 }

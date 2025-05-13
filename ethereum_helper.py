@@ -32,6 +32,68 @@ def get_token_balance(address):
     return balance / (10 ** 18)  # Convert from wei to DOTM
 
 # Award tokens for data purchase (10% of purchase amount)
+def award_data_purchase_tokens(user_id, purchase_amount):
+    try:
+        from main import get_db_connection
+        web3 = get_web3_connection()
+        token_contract = get_token_contract()
+        admin_key = os.environ.get('ETHEREUM_ADMIN_KEY')
+        
+        if not admin_key:
+            return False, "Admin key not configured"
+            
+        # Get user's ETH address from database
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # First check if eth_address column exists
+                    cur.execute("""
+                        SELECT column_name FROM information_schema.columns 
+                        WHERE table_name='users' AND column_name='eth_address'
+                    """)
+                    if cur.fetchone() is None:
+                        # Column doesn't exist, create it
+                        cur.execute("ALTER TABLE users ADD COLUMN eth_address VARCHAR(255)")
+                        conn.commit()
+                    
+                    # Now get the address
+                    cur.execute("SELECT eth_address FROM users WHERE UserID = %s", (user_id,))
+                    result = cur.fetchone()
+                    
+                    if not result or not result[0]:
+                        return False, "User has no ETH address"
+                    
+                    eth_address = result[0]
+                    
+        # Calculate reward (10% of purchase)
+        reward_amount = float(purchase_amount) * 0.1
+        
+        # Convert to wei (assuming 18 decimals)
+        reward_wei = int(reward_amount * (10 ** 18))
+        
+        # Send tokens
+        admin_account = web3.eth.account.from_key(admin_key)
+        nonce = web3.eth.get_transaction_count(admin_account.address)
+        
+        # Create transaction
+        tx = token_contract.functions.rewardDataPurchase(
+            eth_address,
+            reward_wei
+        ).build_transaction({
+            'chainId': 1, # Ethereum mainnet
+            'gas': 200000,
+            'gasPrice': web3.to_wei('50', 'gwei'),
+            'nonce': nonce,
+        })
+        
+        # Sign and send transaction
+        signed_tx = web3.eth.account.sign_transaction(tx, admin_key)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        
+        return True, web3.to_hex(tx_hash)
+    except Exception as e:
+        print(f"Error awarding tokens: {str(e)}")
+        return False, str(e)
 def reward_data_purchase(user_address, purchase_amount_cents):
     web3 = get_web3_connection()
     token_contract = get_token_contract()

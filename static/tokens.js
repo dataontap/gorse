@@ -12,6 +12,54 @@ document.addEventListener('DOMContentLoaded', function() {
     const valueAmount = document.querySelector('.value-amount');
     const tokenTransactionsList = document.getElementById('tokenTransactionsList');
     
+    // Add refresh button to wallet section
+    const walletSection = document.querySelector('.token-stats');
+    if (walletSection) {
+        const refreshButton = document.createElement('button');
+        refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i>';
+        refreshButton.className = 'btn btn-sm btn-outline-secondary token-refresh-btn';
+        refreshButton.title = 'Refresh balance';
+        refreshButton.onclick = function() {
+            const savedAddress = localStorage.getItem('walletAddress');
+            if (savedAddress) {
+                refreshButton.classList.add('rotating');
+                fetchBalance(savedAddress).then(() => {
+                    setTimeout(() => refreshButton.classList.remove('rotating'), 1000);
+                });
+            } else {
+                showAlert('Error', 'No wallet connected', 'danger');
+            }
+        };
+        walletSection.appendChild(refreshButton);
+        
+        // Add some CSS for the refresh button
+        const style = document.createElement('style');
+        style.textContent = `
+            .token-refresh-btn {
+                position: absolute;
+                right: 10px;
+                top: 10px;
+                border-radius: 50%;
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .rotating {
+                animation: rotate 1s linear infinite;
+            }
+            @keyframes rotate {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            .token-stats {
+                position: relative;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
     // Set contract address
     const TOKEN_CONTRACT = localStorage.getItem('tokenContract') || '0x0000000000000000000000000000000000000000';
     contractAddress.textContent = TOKEN_CONTRACT;
@@ -148,28 +196,40 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch token balance
     async function fetchBalance(address) {
         try {
+            // Show loading state
+            const originalBalance = balanceAmount.textContent;
+            const originalValue = valueAmount.textContent;
+            balanceAmount.innerHTML = '<small>Loading...</small>';
+            valueAmount.innerHTML = '<small>Loading...</small>';
+            
             // Try to get balance from our API first
-            fetch(`/api/token/balance/${address}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        console.error('API Error:', data.error);
-                        // Fallback to direct Web3 call
-                        fetchBalanceFromWeb3(address);
-                    } else {
-                        balanceAmount.textContent = data.balance.toFixed(2);
-                        valueAmount.textContent = '$' + data.value_usd.toFixed(2);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching from API:', error);
-                    // Fallback to direct Web3 call
-                    fetchBalanceFromWeb3(address);
-                });
+            const response = await fetch(`/api/token/balance/${address}`);
+            const data = await response.json();
+            
+            if (data.error) {
+                console.error('API Error:', data.error);
+                // Fallback to direct Web3 call
+                await fetchBalanceFromWeb3(address);
+            } else {
+                balanceAmount.textContent = data.balance.toFixed(2);
+                valueAmount.textContent = '$' + data.value_usd.toFixed(2);
+                
+                // Add animation to show updated values
+                balanceAmount.classList.add('highlight');
+                valueAmount.classList.add('highlight');
+                setTimeout(() => {
+                    balanceAmount.classList.remove('highlight');
+                    valueAmount.classList.remove('highlight');
+                }, 1500);
+            }
+            
+            return true;
         } catch (error) {
             console.error('Error fetching balance:', error);
             balanceAmount.textContent = '0.00';
             valueAmount.textContent = '$0.00';
+            showAlert('Error', 'Failed to fetch token balance', 'danger');
+            return false;
         }
     }
     
