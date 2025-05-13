@@ -692,9 +692,23 @@
 }
 
 .checkout-btn {
-    width: 100%;
+    width: 80%;
     padding: 12px;
-    margin: 0 0 15px;
+    margin: 0 auto 15px;
+    display: block;
+}
+
+.minimize-cart {
+    position: absolute;
+    right: 15px;
+    top: 12px;
+    cursor: pointer;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.minimize-cart:hover {
+    color: #333;
 }
 
 /* Dark Mode Styles */
