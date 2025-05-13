@@ -1305,7 +1305,7 @@ function sendTestNotification() {
 document.addEventListener('DOMContentLoaded', function() {
   // Check if we're on the dashboard page
   if (window.location.pathname === '/dashboard') {
-    const dashboardContainer = document.querySelector('.dashboard-container');
+    const dashboardContainer = document.querySelector('.container');
     if (dashboardContainer) {
       const notificationTester = document.createElement('div');
       notificationTester.className = 'notification-tester';
