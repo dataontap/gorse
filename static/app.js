@@ -1335,12 +1335,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (dashboardContainer) {
       const notificationTester = document.createElement('div');
       notificationTester.className = 'notification-tester';
+      
+      // Check if Notification API is supported
+      const notificationSupported = 'Notification' in window;
+      const permissionStatus = notificationSupported ? Notification.permission : 'not-supported';
+      
       notificationTester.innerHTML = `
         <h3>Test Push Notifications</h3>
         <p>Send a test notification to verify your FCM setup:</p>
         <div class="notification-permission-status">
           <strong>Current Permission Status:</strong> 
-          <span id="permission-status">${Notification.permission}</span>
+          <span id="permission-status">${permissionStatus}</span>
           ${Notification.permission !== 'granted' ? 
             '<button id="request-permission-btn">Request Permission</button>' : 
             '<span class="permission-granted">✓ Notifications enabled</span>'}

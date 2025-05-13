@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "212829848250",
     "project_id": "gorse-24e76",
-    "storage_bucket": "gorse-24e76.firebasestorage.app"
+    "storage_bucket": "gorse-24e76.appspot.com"
   },
   "client": [
     {
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": ""
+          "current_key": "AIzaSyAb1pMMVxPvRDIKE_kHU7vFLzW_3Iy2G0Y"
         }
       ],
       "services": {
