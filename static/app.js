@@ -1,3 +1,105 @@
+
+// Update token value pill on all pages
+document.addEventListener('DOMContentLoaded', function() {
+    const tokenValuePill = document.querySelector('.token-value-pill');
+    
+    if (tokenValuePill) {
+        // Function to create sparkle animation
+        function createSparkle(element) {
+            const rect = element.getBoundingClientRect();
+            
+            for (let i = 0; i < 5; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.classList.add('sparkle');
+                
+                // Random position around the element
+                const x = rect.left + Math.random() * rect.width;
+                const y = rect.top + Math.random() * rect.height;
+                
+                sparkle.style.left = `${x}px`;
+                sparkle.style.top = `${y}px`;
+                sparkle.style.width = `${10 + Math.random() * 10}px`;
+                sparkle.style.height = sparkle.style.width;
+                
+                document.body.appendChild(sparkle);
+                
+                // Remove the sparkle after animation completes
+                setTimeout(() => {
+                    document.body.removeChild(sparkle);
+                }, 800);
+            }
+        }
+        
+        // Add CSS for animations
+        const style = document.createElement('style');
+        style.textContent = `
+            .token-value-pill {
+                background-color: #f0f0f0;
+                border-radius: 20px;
+                padding: 4px 12px;
+                display: inline-flex;
+                align-items: center;
+                font-weight: 500;
+                transition: background-color 0.3s, transform 0.2s;
+            }
+            .token-value-pill.updating {
+                animation: pulse 1s ease-in-out;
+            }
+            @keyframes pulse {
+                0% { background-color: #f0f0f0; transform: scale(1); }
+                50% { background-color: #e0f7fa; transform: scale(1.05); }
+                100% { background-color: #f0f0f0; transform: scale(1); }
+            }
+            .sparkle {
+                position: absolute;
+                pointer-events: none;
+                background-image: radial-gradient(circle, #fff 10%, transparent 60%);
+                border-radius: 50%;
+                opacity: 0;
+                animation: sparkle 0.8s ease-in-out forwards;
+            }
+            @keyframes sparkle {
+                0% { transform: scale(0); opacity: 0; }
+                50% { opacity: 0.8; }
+                100% { transform: scale(1.5); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Function to update the token value display
+        async function updateTokenValue() {
+            try {
+                const response = await fetch('/api/token/price');
+                const data = await response.json();
+                
+                if (data.price) {
+                    // Add updating animation
+                    tokenValuePill.classList.add('updating');
+                    
+                    // Create sparkle effect
+                    createSparkle(tokenValuePill);
+                    
+                    // Update content
+                    tokenValuePill.textContent = `1 DOTM = $${data.price.toFixed(2)}`;
+                    
+                    // Remove animation class after animation completes
+                    setTimeout(() => {
+                        tokenValuePill.classList.remove('updating');
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Error fetching token price:', error);
+            }
+        }
+        
+        // Update immediately
+        updateTokenValue();
+        
+        // Then update every minute
+        setInterval(updateTokenValue, 60000);
+    }
+});
+
 // Add scroll animation for offer cards
 function checkOfferCardsInView() {
     const offerCards = document.querySelectorAll('.offer-card');

@@ -98,6 +98,90 @@ def reward_data_purchase(user_address, purchase_amount_cents):
     web3 = get_web3_connection()
     token_contract = get_token_contract()
     
+
+
+# Fetch current DOTM token price from Etherscan
+def get_token_price_from_etherscan():
+    import requests
+    import time
+    import json
+    from datetime import datetime
+    
+    start_time = time.time() * 1000  # Start time in milliseconds
+    
+    try:
+        # In a real implementation, you would use Etherscan API
+        # For demo purposes, we'll simulate the API call
+        
+        # Etherscan API endpoint for token price (simulated)
+        etherscan_api_key = os.environ.get('ETHERSCAN_API_KEY', 'YourApiKeyToken')
+        
+        # Use a real API endpoint in production
+        response = requests.get(
+            f"https://api.etherscan.io/api?module=stats&action=ethprice&apikey={etherscan_api_key}",
+            timeout=5
+        )
+        
+        request_time = time.time() * 1000 - start_time
+        
+        # Simulate token price calculation
+        # In production, you'd parse the actual token price from the response
+        eth_price = float(response.json().get('result', {}).get('ethusd', 2500))
+        
+        # Simulated DOTM price calculation (100 USD per token for demo)
+        # In reality, you would use the token contract address to get the actual price
+        token_price = 100.0
+        
+        # Simulate some variation in price
+        import random
+        variation = random.uniform(-5, 5)
+        token_price = token_price + variation
+        
+        response_time = time.time() * 1000 - start_time
+        
+        # Store ping data in database
+        from main import get_db_connection
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "INSERT INTO token_price_pings (token_price, request_time_ms, response_time_ms, source, additional_data) "
+                        "VALUES (%s, %s, %s, %s, %s) RETURNING id",
+                        (
+                            token_price,
+                            int(request_time),
+                            int(response_time),
+                            'etherscan',
+                            json.dumps({
+                                'eth_price': eth_price,
+                                'timestamp': datetime.now().isoformat(),
+                                'variation': variation
+                            })
+                        )
+                    )
+                    ping_id = cur.fetchone()[0]
+                    conn.commit()
+                    print(f"Stored token price ping: {ping_id}")
+
+        return {
+            'price': token_price,
+            'timestamp': datetime.now().isoformat(),
+            'request_time_ms': int(request_time),
+            'response_time_ms': int(response_time)
+        }
+    
+    except Exception as e:
+        print(f"Error fetching token price: {str(e)}")
+        # Return default value on error
+        return {
+            'price': 100.0,
+            'timestamp': datetime.now().isoformat(),
+            'request_time_ms': 0,
+            'response_time_ms': 0,
+            'error': str(e)
+        }
+
     # Special case: if purchasing global data ($10), award exactly 1 DOTM
     if purchase_amount_cents == 1000 and 'global_data' in os.environ.get('LAST_PURCHASE_PRODUCT', ''):
         token_reward = 1.0  # Fixed 1 DOTM for 10GB data purchase

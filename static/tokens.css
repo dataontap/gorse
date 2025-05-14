@@ -1,4 +1,49 @@
 
+/* Token Value Pill Styles */
+.token-value-pill {
+    background-color: #f0f0f0;
+    border-radius: 20px;
+    padding: 4px 12px;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.token-value-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Animation for price updates */
+@keyframes pulse {
+    0% { background-color: #f0f0f0; transform: scale(1); }
+    50% { background-color: #e0f7fa; transform: scale(1.05); }
+    100% { background-color: #f0f0f0; transform: scale(1); }
+}
+
+.token-value-pill.updating {
+    animation: pulse 1s ease-in-out;
+}
+
+/* Sparkle animations */
+.sparkle {
+    position: absolute;
+    pointer-events: none;
+    background-image: radial-gradient(circle, #fff 10%, transparent 60%);
+    border-radius: 50%;
+    opacity: 0;
+    animation: sparkle 0.8s ease-in-out forwards;
+}
+
+@keyframes sparkle {
+    0% { transform: scale(0); opacity: 0; }
+    50% { opacity: 0.8; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+
 .token-dashboard {
     padding: 20px 0;
 }

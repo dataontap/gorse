@@ -10,6 +10,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const balanceAmount = document.querySelector('.balance-amount');
     const valueAmount = document.querySelector('.value-amount');
     const tokenTransactionsList = document.getElementById('tokenTransactionsList');
+    
+    // Get the token value pill in the header if it exists
+    const tokenValuePill = document.querySelector('.token-value-pill');
+    
+    // Initialize price update timer
+    let priceUpdateTimer = null;
+    let currentTokenPrice = 100.0; // Default price
 
     // Add refresh button to wallet section
     const walletSection = document.querySelector('.token-stats');
@@ -31,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         walletSection.appendChild(refreshButton);
 
-        // Add some CSS for the refresh button
+        // Add some CSS for the refresh button and animations
         const style = document.createElement('style');
         style.textContent = `
             .token-refresh-btn {
@@ -54,6 +61,36 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             .token-stats {
                 position: relative;
+            }
+            .token-value-pill {
+                background-color: #f0f0f0;
+                border-radius: 20px;
+                padding: 4px 12px;
+                display: inline-flex;
+                align-items: center;
+                font-weight: 500;
+                transition: background-color 0.3s, transform 0.2s;
+            }
+            .token-value-pill.updating {
+                animation: pulse 1s ease-in-out;
+            }
+            @keyframes pulse {
+                0% { background-color: #f0f0f0; transform: scale(1); }
+                50% { background-color: #e0f7fa; transform: scale(1.05); }
+                100% { background-color: #f0f0f0; transform: scale(1); }
+            }
+            .sparkle {
+                position: absolute;
+                pointer-events: none;
+                background-image: radial-gradient(circle, #fff 10%, transparent 60%);
+                border-radius: 50%;
+                opacity: 0;
+                animation: sparkle 0.8s ease-in-out forwards;
+            }
+            @keyframes sparkle {
+                0% { transform: scale(0); opacity: 0; }
+                50% { opacity: 0.8; }
+                100% { transform: scale(1.5); opacity: 0; }
             }
         `;
         document.head.appendChild(style);
@@ -211,6 +248,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 await fetchBalanceFromWeb3(address);
             } else {
                 balanceAmount.textContent = data.balance.toFixed(2);
+                
+                // Update current token price if available
+                if (data.token_price) {
+                    currentTokenPrice = data.token_price;
+                }
+                
                 valueAmount.textContent = '$' + data.value_usd.toFixed(2);
 
                 // Add animation to show updated values
@@ -220,6 +263,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     balanceAmount.classList.remove('highlight');
                     valueAmount.classList.remove('highlight');
                 }, 1500);
+                
+                // Create sparkle effect for dramatic flair
+                createSparkle(valueAmount);
             }
 
             return true;
@@ -261,6 +307,129 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fetchTransactionHistory(address) {
         // In a real implementation, you'd fetch transaction history from your API
         // or use an Ethereum explorer API like Etherscan
+
+
+    // Function to fetch the current token price
+    async function fetchTokenPrice() {
+        try {
+            const start = performance.now();
+            const response = await fetch('/api/token/price');
+            const data = await response.json();
+            const end = performance.now();
+            
+            console.log(`Token price fetched in ${end - start}ms:`, data);
+            
+            if (data.price) {
+                // Update the current price
+                const previousPrice = currentTokenPrice;
+                currentTokenPrice = data.price;
+                
+                // Update UI with new price
+                updatePriceDisplay(previousPrice, currentTokenPrice);
+                
+                // Update the token value in the header if it exists
+                updateTokenValuePill(currentTokenPrice);
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('Error fetching token price:', error);
+            return { price: currentTokenPrice };
+        }
+    }
+    
+    // Function to create sparkle animation
+    function createSparkle(element) {
+        const rect = element.getBoundingClientRect();
+        
+        for (let i = 0; i < 5; i++) {
+            const sparkle = document.createElement('div');
+            sparkle.classList.add('sparkle');
+            
+            // Random position around the element
+            const x = rect.left + Math.random() * rect.width;
+            const y = rect.top + Math.random() * rect.height;
+            
+            sparkle.style.left = `${x}px`;
+            sparkle.style.top = `${y}px`;
+            sparkle.style.width = `${10 + Math.random() * 10}px`;
+            sparkle.style.height = sparkle.style.width;
+            
+            document.body.appendChild(sparkle);
+            
+            // Remove the sparkle after animation completes
+            setTimeout(() => {
+                document.body.removeChild(sparkle);
+            }, 800);
+        }
+    }
+    
+    // Function to update price display with animation
+    function updatePriceDisplay(oldPrice, newPrice) {
+        if (!balanceAmount || !valueAmount) return;
+        
+        const balance = parseFloat(balanceAmount.textContent) || 0;
+        const newValue = balance * newPrice;
+        
+        // Update value display with animation
+        valueAmount.classList.add('highlight');
+        valueAmount.textContent = `$${newValue.toFixed(2)}`;
+        
+        setTimeout(() => {
+            valueAmount.classList.remove('highlight');
+        }, 1500);
+    }
+    
+    // Function to update the token value pill in the header
+    function updateTokenValuePill(price) {
+        if (!tokenValuePill) return;
+        
+        // Add updating animation
+        tokenValuePill.classList.add('updating');
+        
+        // Create sparkle effect
+        createSparkle(tokenValuePill);
+        
+        // Update content
+        tokenValuePill.textContent = `1 DOTM = $${price.toFixed(2)}`;
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            tokenValuePill.classList.remove('updating');
+        }, 1000);
+    }
+    
+    // Start price updates when page loads
+    function startPriceUpdates() {
+        // Fetch immediately
+        fetchTokenPrice();
+        
+        // Then update every minute
+        priceUpdateTimer = setInterval(fetchTokenPrice, 60000);
+    }
+    
+    // Stop price updates
+    function stopPriceUpdates() {
+        if (priceUpdateTimer) {
+            clearInterval(priceUpdateTimer);
+            priceUpdateTimer = null;
+        }
+    }
+    
+    // Start price updates when page loads
+    startPriceUpdates();
+    
+    // Add event listener to pause updates when tab is not visible
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            if (!priceUpdateTimer) {
+                startPriceUpdates();
+            }
+        } else {
+            stopPriceUpdates();
+        }
+    });
+
 
         // For now, just show a placeholder
         tokenTransactionsList.innerHTML = `

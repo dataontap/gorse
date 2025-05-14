@@ -831,15 +831,33 @@ class CheckMemberships(Resource):
 # Token related endpoints
 token_ns = api.namespace('token', description='DOTM Token operations')
 
+@token_ns.route('/price')
+class TokenPrice(Resource):
+    def get(self):
+        try:
+            price_data = ethereum_helper.get_token_price_from_etherscan()
+            return price_data
+        except Exception as e:
+            print(f"Error getting token price: {str(e)}")
+            return {'error': str(e), 'price': 100.0}, 500
+
 @token_ns.route('/balance/<string:address>')
 class TokenBalance(Resource):
     def get(self, address):
         try:
             balance = ethereum_helper.get_token_balance(address)
+            # Get the latest token price
+            try:
+                price_data = ethereum_helper.get_token_price_from_etherscan()
+                token_price = price_data.get('price', 100.0)
+            except Exception:
+                token_price = 100.0  # Default fallback
+                
             return {
                 'address': address,
                 'balance': balance,
-                'value_usd': balance * 100  # $100 per token
+                'token_price': token_price,
+                'value_usd': balance * token_price
             }
         except Exception as e:
             print(f"Error getting token balance: {str(e)}")
