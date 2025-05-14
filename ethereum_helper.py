@@ -11,8 +11,10 @@ with open('contracts/DOTMToken.json', 'r') as f:
 def get_web3_connection():
     ethereum_url = os.environ.get('ETHEREUM_URL')
     if not ethereum_url:
-        raise ValueError("ETHEREUM_URL environment variable not set")
-
+        print("Warning: ETHEREUM_URL not set, using development fallback")
+        # Use a public Ethereum testnet provider as fallback
+        ethereum_url = "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+        
     return Web3(Web3.HTTPProvider(ethereum_url))
 
 # Get contract instance

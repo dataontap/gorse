@@ -299,6 +299,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error fetching balance from Web3:', error);
                 balanceAmount.textContent = '0.00';
                 valueAmount.textContent = '$0.00';
+                // Display a more user-friendly error message
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'alert alert-warning mt-2';
+                errorMessage.innerHTML = 'Could not connect to Ethereum network. Please check your connection.';
+                balanceAmount.parentNode.appendChild(errorMessage);
             }
         }
     }
