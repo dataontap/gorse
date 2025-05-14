@@ -70,20 +70,20 @@
         <div class="dashboard-content">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-credit-card"></i> Payment Methods</h2>
-                <a href="#" class="btn-close" onclick="parent.history.back(); return false;" aria-label="Close"></a>
+                <a href="/dashboard" class="btn-close" aria-label="Close"></a>
             </div>
 
             <!-- Wallet Section -->
             <div class="address-section mb-4">
                 <h3 class="mb-3"><i class="fab fa-bitcoin"></i> My Wallet</h3>
-                <div class="wallet-card token-stats">
+                <div class="wallet-card token-stats position-relative">
+                    <button class="btn btn-sm btn-outline-secondary token-refresh-btn" title="Refresh balance" onclick="refreshBalance()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                     <div class="wallet-content">
                         <div class="wallet-balance" style="display: flex; align-items: center; width: 100%;">
                             <span class="balance-amount">1</span>
                             <span class="wallet-symbol">DOTM</span>
-                            <button class="btn btn-sm btn-outline-secondary token-refresh-btn" style="position: static; margin: 0 10px;" title="Refresh balance" onclick="refreshBalance()">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
                             <span class="wallet-value">$100.00 USD</span>
                         </div>
                     </div>
@@ -148,13 +148,15 @@
     </div>
     <style>
         .token-refresh-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0;
         }
         .rotating {
             animation: rotate 1s linear infinite;
