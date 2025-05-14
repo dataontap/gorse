@@ -382,6 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to update the token value pill in the header
     function updateTokenValuePill(price) {
+        const tokenValuePill = document.querySelector('.token-value-pill');
         if (!tokenValuePill) return;
         
         // Add updating animation

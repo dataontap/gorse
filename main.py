@@ -971,6 +971,70 @@ class RecordGlobalPurchase(Resource):
             return {'status': 'success', 'purchaseId': simulated_purchase_id, 'simulated': True}
 
 
+@app.route('/update-token-price', methods=['GET'])
+def update_token_price():
+    """Endpoint to manually update token price"""
+    try:
+        price_data = ethereum_helper.get_token_price_from_etherscan()
+        return jsonify({
+            'status': 'success',
+            'message': 'Token price updated',
+            'data': price_data
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/token-price-pings', methods=['GET'])
+def token_price_pings():
+    """Endpoint to view token price ping history"""
+    pings = []
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check if table exists
+                    cur.execute(
+                        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'token_price_pings')"
+                    )
+                    table_exists = cur.fetchone()[0]
+                    
+                    if not table_exists:
+                        return jsonify({
+                            'status': 'error', 
+                            'message': 'token_price_pings table does not exist'
+                        }), 404
+                        
+                    # Get recent pings
+                    cur.execute(
+                        "SELECT id, token_price, request_time_ms, response_time_ms, source, additional_data, created_at "
+                        "FROM token_price_pings ORDER BY created_at DESC LIMIT 50"
+                    )
+                    rows = cur.fetchall()
+                    
+                    for row in rows:
+                        pings.append({
+                            'id': row[0],
+                            'token_price': float(row[1]),
+                            'request_time_ms': row[2],
+                            'response_time_ms': row[3],
+                            'source': row[4],
+                            'additional_data': row[5],
+                            'created_at': row[6].isoformat() if row[6] else None
+                        })
+                    
+        return jsonify({
+            'status': 'success',
+            'pings': pings
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 @app.route('/db-test', methods=['GET'])
 def db_test():
     """Endpoint to test database connectivity"""
