@@ -430,6 +430,73 @@ document.addEventListener('DOMContentLoaded', function() {
             stopPriceUpdates();
         }
     });
+    
+    // Token Price Ping Monitoring
+    const triggerPriceUpdateBtn = document.getElementById('triggerPriceUpdate');
+    const pingStatus = document.getElementById('pingStatus');
+    const pingDataTable = document.getElementById('pingDataTable');
+    
+    if (triggerPriceUpdateBtn) {
+        // Initial load of ping data
+        fetchPingData();
+        
+        // Add event listener to trigger price update
+        triggerPriceUpdateBtn.addEventListener('click', async function() {
+            pingStatus.innerHTML = '<div class="alert alert-info">Triggering token price update...</div>';
+            
+            try {
+                const response = await fetch('/populate-token-pings');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    pingStatus.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                    // Fetch updated ping data
+                    fetchPingData();
+                } else {
+                    pingStatus.innerHTML = `<div class="alert alert-danger">Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                pingStatus.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        });
+    }
+    
+    // Function to fetch ping data
+    async function fetchPingData() {
+        try {
+            const response = await fetch('/token-price-pings');
+            const data = await response.json();
+            
+            if (data.status === 'success' && data.pings && data.pings.length > 0) {
+                // Clear table
+                pingDataTable.innerHTML = '';
+                
+                // Add ping data rows
+                data.pings.forEach(ping => {
+                    const row = document.createElement('tr');
+                    
+                    // Format timestamp
+                    const timestamp = ping.timestamp ? new Date(ping.timestamp).toLocaleString() : 
+                                       (ping.created_at ? new Date(ping.created_at).toLocaleString() : 'N/A');
+                    
+                    row.innerHTML = `
+                        <td>${timestamp}</td>
+                        <td>$${parseFloat(ping.token_price).toFixed(2)}</td>
+                        <td>${ping.ping_destination || 'N/A'}</td>
+                        <td>${ping.roundtrip_ms || ping.response_time_ms || 0} ms</td>
+                        <td>${ping.source || 'N/A'}</td>
+                    `;
+                    
+                    pingDataTable.appendChild(row);
+                });
+            } else {
+                pingDataTable.innerHTML = '<tr><td colspan="5" class="text-center">No ping data available</td></tr>';
+            }
+        } catch (error) {
+            console.error('Error fetching ping data:', error);
+            pingDataTable.innerHTML = `<tr><td colspan="5" class="text-center">Error loading ping data: ${error.message}</td></tr>`;
+        }
+    }
 
 
         // For now, just show a placeholder

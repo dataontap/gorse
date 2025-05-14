@@ -158,6 +158,35 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Token Price Ping Monitoring -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5>Token Price Ping Monitoring</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="triggerPriceUpdate" class="btn btn-primary mb-3">Trigger Price Update</button>
+                        <div id="pingStatus" class="mb-3"></div>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Price</th>
+                                        <th>Destination</th>
+                                        <th>Roundtrip (ms)</th>
+                                        <th>Source</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pingDataTable">
+                                    <tr>
+                                        <td colspan="5" class="text-center">No ping data yet</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

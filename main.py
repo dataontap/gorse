@@ -987,6 +987,29 @@ def update_token_price():
             'message': str(e)
         }), 500
 
+@app.route('/populate-token-pings', methods=['GET'])
+def populate_token_pings():
+    """Endpoint to generate sample token price pings for testing"""
+    try:
+        # Generate 10 sample pings
+        results = []
+        for i in range(10):
+            price_data = ethereum_helper.get_token_price_from_etherscan()
+            results.append(price_data)
+            # Short delay between pings
+            time.sleep(0.5)
+            
+        return jsonify({
+            'status': 'success',
+            'message': 'Generated 10 token price pings',
+            'data': results
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 @app.route('/token-price-pings', methods=['GET'])
 def token_price_pings():
     """Endpoint to view token price ping history"""

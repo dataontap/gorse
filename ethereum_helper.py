@@ -1,4 +1,3 @@
-
 import os
 from web3 import Web3
 import json
@@ -13,7 +12,7 @@ def get_web3_connection():
     ethereum_url = os.environ.get('ETHEREUM_URL')
     if not ethereum_url:
         raise ValueError("ETHEREUM_URL environment variable not set")
-    
+
     return Web3(Web3.HTTPProvider(ethereum_url))
 
 # Get contract instance
@@ -22,7 +21,7 @@ def get_token_contract():
     token_address = os.environ.get('TOKEN_ADDRESS')
     if not token_address:
         raise ValueError("TOKEN_ADDRESS environment variable not set")
-    
+
     return web3.eth.contract(address=token_address, abi=contract_abi)
 
 # Get token balance for a user
@@ -38,10 +37,10 @@ def award_data_purchase_tokens(user_id, purchase_amount):
         web3 = get_web3_connection()
         token_contract = get_token_contract()
         admin_key = os.environ.get('ETHEREUM_ADMIN_KEY')
-        
+
         if not admin_key:
             return False, "Admin key not configured"
-            
+
         # Get user's ETH address from database
         with get_db_connection() as conn:
             if conn:
@@ -55,26 +54,26 @@ def award_data_purchase_tokens(user_id, purchase_amount):
                         # Column doesn't exist, create it
                         cur.execute("ALTER TABLE users ADD COLUMN eth_address VARCHAR(255)")
                         conn.commit()
-                    
+
                     # Now get the address
                     cur.execute("SELECT eth_address FROM users WHERE UserID = %s", (user_id,))
                     result = cur.fetchone()
-                    
+
                     if not result or not result[0]:
                         return False, "User has no ETH address"
-                    
+
                     eth_address = result[0]
-                    
+
         # Calculate reward (10% of purchase)
         reward_amount = float(purchase_amount) * 0.1
-        
+
         # Convert to wei (assuming 18 decimals)
         reward_wei = int(reward_amount * (10 ** 18))
-        
+
         # Send tokens
         admin_account = web3.eth.account.from_key(admin_key)
         nonce = web3.eth.get_transaction_count(admin_account.address)
-        
+
         # Create transaction
         tx = token_contract.functions.rewardDataPurchase(
             eth_address,
@@ -85,11 +84,11 @@ def award_data_purchase_tokens(user_id, purchase_amount):
             'gasPrice': web3.to_wei('50', 'gwei'),
             'nonce': nonce,
         })
-        
+
         # Sign and send transaction
         signed_tx = web3.eth.account.sign_transaction(tx, admin_key)
         tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        
+
         return True, web3.to_hex(tx_hash)
     except Exception as e:
         print(f"Error awarding tokens: {str(e)}")
@@ -97,7 +96,7 @@ def award_data_purchase_tokens(user_id, purchase_amount):
 def reward_data_purchase(user_address, purchase_amount_cents):
     web3 = get_web3_connection()
     token_contract = get_token_contract()
-    
+
 
 
 # Fetch current DOTM token price from Etherscan
@@ -107,7 +106,7 @@ def get_token_price_from_etherscan():
     import json
     import random
     from datetime import datetime
-    
+
     start_time = time.time() * 1000  # Start time in milliseconds
     eth_price = 2500  # Default value
     token_price = 1.0  # 1 DOTM = $1 USD
@@ -115,7 +114,7 @@ def get_token_price_from_etherscan():
     response_time = 0
     source = 'development'
     error_msg = None
-    
+
     # Create token_price_pings table if it doesn't exist
     try:
         from main import get_db_connection
@@ -127,7 +126,7 @@ def get_token_price_from_etherscan():
                         "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'token_price_pings')"
                     )
                     table_exists = cur.fetchone()[0]
-                    
+
                     if not table_exists:
                         print("Creating token_price_pings table...")
                         cur.execute("""
@@ -136,8 +135,11 @@ def get_token_price_from_etherscan():
                                 token_price NUMERIC(10, 4) NOT NULL,
                                 request_time_ms INTEGER,
                                 response_time_ms INTEGER,
+                                ping_destination VARCHAR(100),
+                                roundtrip_ms INTEGER,
                                 source VARCHAR(50),
                                 additional_data JSONB,
+                                timestamp TIMESTAMP,
                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                             )
                         """)
@@ -145,55 +147,65 @@ def get_token_price_from_etherscan():
                         print("token_price_pings table created successfully")
     except Exception as create_err:
         print(f"Error checking/creating token_price_pings table: {str(create_err)}")
-    
+
     try:
         # Try to use Etherscan API if configured
         if os.environ.get('ETHERSCAN_API_KEY'):
             source = 'etherscan'
             etherscan_api_key = os.environ.get('ETHERSCAN_API_KEY')
-            
+
             # Use a real API endpoint in production
-            response = requests.get(
-                f"https://api.etherscan.io/api?module=stats&action=ethprice&apikey={etherscan_api_key}",
-                timeout=5
-            )
-            
-            request_time = time.time() * 1000 - start_time
-            
-            # Parse the actual token price from the response
-            eth_price = float(response.json().get('result', {}).get('ethusd', 2500))
+            etherscan_url = f"https://api.etherscan.io/api?module=stats&action=ethprice&apikey={etherscan_api_key}"
         else:
             # Development mode - simulate API call
             source = 'development'
-            time.sleep(0.1)  # Simulate network delay
-            request_time = time.time() * 1000 - start_time
-        
+            etherscan_url = "http://localhost:5000/mock_etherscan_api"  # Example mock API
+
+        start_ping = time.time() * 1000
+        response = requests.get(
+            etherscan_url,
+            timeout=5
+        )
+        end_ping = time.time() * 1000
+
+        request_time = time.time() * 1000 - start_time
+        roundtrip_ms = end_ping - start_ping
+
+        # Parse the actual token price from the response
+        if source == 'etherscan':
+            eth_price = float(response.json().get('result', {}).get('ethusd', 2500))
+        else:
+            eth_price = 2500 # Default Eth price
+
         # Simulate some variation in price
         variation = random.uniform(-0.05, 0.05)
         token_price = token_price + variation
-        
+
         response_time = time.time() * 1000 - start_time
-        
+        current_timestamp = datetime.now()
+
         # Store ping data in database
         from main import get_db_connection
-        
+
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "INSERT INTO token_price_pings (token_price, request_time_ms, response_time_ms, source, additional_data) "
-                        "VALUES (%s, %s, %s, %s, %s) RETURNING id",
+                        "INSERT INTO token_price_pings (token_price, request_time_ms, response_time_ms, ping_destination, roundtrip_ms, source, additional_data, timestamp) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                         (
                             token_price,
                             int(request_time),
                             int(response_time),
+                            etherscan_url,
+                            int(roundtrip_ms),
                             source,
                             json.dumps({
                                 'eth_price': eth_price,
-                                'timestamp': datetime.now().isoformat(),
                                 'variation': variation,
                                 'environment': 'development' if not os.environ.get('ETHEREUM_URL') else 'production'
-                            })
+                            }),
+                            current_timestamp
                         )
                     )
                     ping_id = cur.fetchone()[0]
@@ -202,16 +214,19 @@ def get_token_price_from_etherscan():
 
         return {
             'price': token_price,
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': current_timestamp.isoformat(),
             'request_time_ms': int(request_time),
             'response_time_ms': int(response_time),
+            'ping_destination': etherscan_url,
+            'roundtrip_ms': int(roundtrip_ms),
             'source': source
         }
-    
+
     except Exception as e:
         print(f"Error fetching token price: {str(e)}")
         error_msg = str(e)
-        
+        current_timestamp = datetime.now()
+
         # Even on error, try to log the attempt
         try:
             from main import get_db_connection
@@ -219,17 +234,19 @@ def get_token_price_from_etherscan():
                 if conn:
                     with conn.cursor() as cur:
                         cur.execute(
-                            "INSERT INTO token_price_pings (token_price, request_time_ms, response_time_ms, source, additional_data) "
-                            "VALUES (%s, %s, %s, %s, %s) RETURNING id",
+                            "INSERT INTO token_price_pings (token_price, request_time_ms, response_time_ms, ping_destination, roundtrip_ms, source, additional_data, timestamp) "
+                            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                             (
                                 1.0,  # Default $1 value
                                 0,
                                 0,
+                                etherscan_url,
+                                0,
                                 'error',
                                 json.dumps({
                                     'error': error_msg,
-                                    'timestamp': datetime.now().isoformat()
-                                })
+                                }),
+                                current_timestamp
                             )
                         )
                         ping_id = cur.fetchone()[0]
@@ -237,13 +254,15 @@ def get_token_price_from_etherscan():
                         print(f"Stored error token price ping: {ping_id}")
         except Exception as log_err:
             print(f"Error logging token price error: {str(log_err)}")
-            
+
         # Return default value on error
         return {
             'price': 1.0,  # Default $1 value without variation
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': current_timestamp.isoformat(),
             'request_time_ms': 0,
             'response_time_ms': 0,
+            'ping_destination': etherscan_url,
+            'roundtrip_ms': 0,
             'error': error_msg,
             'source': 'error'
         }
@@ -254,13 +273,13 @@ def get_token_price_from_etherscan():
     else:
         # Otherwise, use the default 10% calculation
         token_reward = (purchase_amount_cents / 10000)  # 10% of purchase in token units
-    
+
     print(f"Rewarding {token_reward} DOTM tokens for purchase of {purchase_amount_cents} cents")
-    
+
     # Get admin account
     admin_private_key = os.environ.get('ADMIN_PRIVATE_KEY')
     admin_account = web3.eth.account.from_key(admin_private_key)
-    
+
     # Build transaction
     tx = token_contract.functions.rewardDataPurchase(
         user_address,
@@ -271,22 +290,22 @@ def get_token_price_from_etherscan():
         'gas': 200000,
         'gasPrice': web3.eth.gas_price
     })
-    
+
     # Sign and send transaction
     signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
     tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-    
+
     return web3.to_hex(tx_hash)
 
 # Assign one token to a founding member
 def assign_founding_token(member_address):
     web3 = get_web3_connection()
     token_contract = get_token_contract()
-    
+
     # Get admin account
     admin_private_key = os.environ.get('ADMIN_PRIVATE_KEY')
     admin_account = web3.eth.account.from_key(admin_private_key)
-    
+
     # Build transaction
     tx = token_contract.functions.mint(
         member_address,
@@ -297,9 +316,9 @@ def assign_founding_token(member_address):
         'gas': 200000,
         'gasPrice': web3.eth.gas_price
     })
-    
+
     # Sign and send transaction
     signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
     tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-    
+
     return web3.to_hex(tx_hash)
