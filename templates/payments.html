@@ -76,14 +76,14 @@
             <!-- Wallet Section -->
             <div class="address-section mb-4">
                 <h3 class="mb-3"><i class="fab fa-bitcoin"></i> My Wallet</h3>
-                <div class="wallet-card token-stats position-relative">
-                    <button class="btn btn-sm btn-outline-secondary token-refresh-btn" title="Refresh balance" onclick="refreshBalance()">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
+                <div class="wallet-card token-stats">
                     <div class="wallet-content">
                         <div class="wallet-balance" style="display: flex; align-items: center; width: 100%;">
                             <span class="balance-amount">1</span>
                             <span class="wallet-symbol">DOTM</span>
+                            <button class="btn btn-sm btn-outline-secondary token-refresh-btn" style="margin: 0 10px;" title="Refresh balance" onclick="refreshBalance()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
                             <span class="wallet-value">$100.00 USD</span>
                         </div>
                     </div>
@@ -148,15 +148,13 @@
     </div>
     <style>
         .token-refresh-btn {
-            position: absolute;
-            right: 10px;
-            top: 10px;
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
+            width: 30px;
+            height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 0;
         }
         .rotating {
             animation: rotate 1s linear infinite;
