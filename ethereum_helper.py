@@ -140,7 +140,7 @@ def assign_founding_token(member_address):
     # Build transaction
     tx = token_contract.functions.mint(
         member_address,
-        1 * (10 ** 18)  # 1 token in wei
+        100 * (10 ** 18)  # 100 tokens in wei
     ).build_transaction({
         'from': admin_account.address,
         'nonce': web3.eth.get_transaction_count(admin_account.address),

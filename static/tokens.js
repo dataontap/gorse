@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', function() {
     const connectMetamaskBtn = document.getElementById('connectMetamask');
     const connectWalletConnectBtn = document.getElementById('connectWalletConnect');
@@ -11,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const balanceAmount = document.querySelector('.balance-amount');
     const valueAmount = document.querySelector('.value-amount');
     const tokenTransactionsList = document.getElementById('tokenTransactionsList');
-    
+
     // Add refresh button to wallet section
     const walletSection = document.querySelector('.token-stats');
     if (walletSection) {
@@ -31,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
         walletSection.appendChild(refreshButton);
-        
+
         // Add some CSS for the refresh button
         const style = document.createElement('style');
         style.textContent = `
@@ -59,11 +58,11 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         document.head.appendChild(style);
     }
-    
+
     // Set contract address
     const TOKEN_CONTRACT = localStorage.getItem('tokenContract') || '0x0000000000000000000000000000000000000000';
     contractAddress.textContent = TOKEN_CONTRACT;
-    
+
     // Token ABI - simplified for common functions
     const TOKEN_ABI = [
         {
@@ -95,32 +94,32 @@ document.addEventListener('DOMContentLoaded', function() {
             "type": "function"
         }
     ];
-    
+
     // Check for existing connection
     checkConnection();
-    
+
     // Connect MetaMask
     connectMetamaskBtn.addEventListener('click', connectMetaMask);
-    
+
     // WalletConnect functionality would be added here
     connectWalletConnectBtn.addEventListener('click', function() {
         alert('WalletConnect integration coming soon!');
     });
-    
+
     // Disconnect Wallet
     disconnectWalletBtn.addEventListener('click', disconnectWallet);
-    
+
     // Claim founding token
     claimFoundingToken.addEventListener('click', claimFoundingTokenFunc);
-    
+
     // Check connection status
     function checkConnection() {
         const savedAddress = localStorage.getItem('walletAddress');
-        
+
         if (savedAddress) {
             connectedAddress.textContent = formatAddress(savedAddress);
             walletStatus.style.display = 'block';
-            
+
             // If MetaMask is available, verify connection is still valid
             if (typeof window.ethereum !== 'undefined') {
                 window.ethereum.request({ method: 'eth_accounts' })
@@ -141,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
+
     // Connect to MetaMask
     async function connectMetaMask() {
         if (typeof window.ethereum !== 'undefined') {
@@ -149,17 +148,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Request account access
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
                 const account = accounts[0];
-                
+
                 localStorage.setItem('walletAddress', account);
                 connectedAddress.textContent = formatAddress(account);
                 walletStatus.style.display = 'block';
-                
+
                 // Fetch token balance
                 fetchBalance(account);
-                
+
                 // Fetch transaction history
                 fetchTransactionHistory(account);
-                
+
                 // Add event listener for account changes
                 window.ethereum.on('accountsChanged', function (accounts) {
                     if (accounts.length === 0) {
@@ -180,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('MetaMask is not installed! Please install it from metamask.io');
         }
     }
-    
+
     // Disconnect wallet
     function disconnectWallet() {
         localStorage.removeItem('walletAddress');
@@ -188,11 +187,11 @@ document.addEventListener('DOMContentLoaded', function() {
         connectedAddress.textContent = '0x0000...0000';
         balanceAmount.textContent = '0.00';
         valueAmount.textContent = '$0.00';
-        
+
         // Reset transaction history
         tokenTransactionsList.innerHTML = '<tr><td colspan="4" class="text-center">No transactions yet</td></tr>';
     }
-    
+
     // Fetch token balance
     async function fetchBalance(address) {
         try {
@@ -201,11 +200,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalValue = valueAmount.textContent;
             balanceAmount.innerHTML = '<small>Loading...</small>';
             valueAmount.innerHTML = '<small>Loading...</small>';
-            
+
             // Try to get balance from our API first
             const response = await fetch(`/api/token/balance/${address}`);
             const data = await response.json();
-            
+
             if (data.error) {
                 console.error('API Error:', data.error);
                 // Fallback to direct Web3 call
@@ -213,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 balanceAmount.textContent = data.balance.toFixed(2);
                 valueAmount.textContent = '$' + data.value_usd.toFixed(2);
-                
+
                 // Add animation to show updated values
                 balanceAmount.classList.add('highlight');
                 valueAmount.classList.add('highlight');
@@ -222,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     valueAmount.classList.remove('highlight');
                 }, 1500);
             }
-            
+
             return true;
         } catch (error) {
             console.error('Error fetching balance:', error);
@@ -232,21 +231,21 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
     }
-    
+
     // Fetch balance using Web3 directly
     async function fetchBalanceFromWeb3(address) {
         if (typeof window.ethereum !== 'undefined' && TOKEN_CONTRACT !== '0x0000000000000000000000000000000000000000') {
             try {
                 const web3 = new Web3(window.ethereum);
                 const tokenContract = new web3.eth.Contract(TOKEN_ABI, TOKEN_CONTRACT);
-                
+
                 const balance = await tokenContract.methods.balanceOf(address).call();
                 const decimals = await tokenContract.methods.decimals().call();
-                
+
                 // Convert balance to DOTM
                 const formattedBalance = balance / (10 ** decimals);
                 balanceAmount.textContent = formattedBalance.toFixed(2);
-                
+
                 // Calculate USD value ($100 per token)
                 const usdValue = formattedBalance * 100;
                 valueAmount.textContent = '$' + usdValue.toFixed(2);
@@ -257,12 +256,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
+
     // Fetch transaction history
     async function fetchTransactionHistory(address) {
         // In a real implementation, you'd fetch transaction history from your API
         // or use an Ethereum explorer API like Etherscan
-        
+
         // For now, just show a placeholder
         tokenTransactionsList.innerHTML = `
             <tr>
@@ -276,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </td>
             </tr>
         `;
-        
+
         // Simulate a delay for demonstration
         setTimeout(() => {
             // Sample transaction data
@@ -296,20 +295,20 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }, 1500);
     }
-    
+
     // Claim founding token
     async function claimFoundingTokenFunc() {
         const address = localStorage.getItem('walletAddress');
-        
+
         if (!address) {
             showAlert('Error', 'Please connect your wallet first', 'danger');
             return;
         }
-        
+
         // Disable the button
         claimFoundingToken.disabled = true;
         claimFoundingToken.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-        
+
         try {
             // Call our API to assign the founding token
             const response = await fetch('/api/token/founding-token', {
@@ -319,14 +318,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({ address: address })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.error) {
                 showAlert('Error', data.error, 'danger');
             } else {
                 showAlert('Success', 'Founding token claimed! Transaction: ' + data.tx_hash.substring(0, 10) + '...', 'success');
-                
+
                 // Update balance after a short delay
                 setTimeout(() => {
                     fetchBalance(address);
@@ -342,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
             claimFoundingToken.innerHTML = 'Claim Founding Token';
         }
     }
-    
+
     // Show alert in founding claim status
     function showAlert(title, message, type) {
         foundingClaimStatus.innerHTML = `
@@ -352,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         foundingClaimStatus.style.display = 'block';
-        
+
         // Auto hide after 5 seconds
         setTimeout(() => {
             const alert = foundingClaimStatus.querySelector('.alert');
@@ -362,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 5000);
     }
-    
+
     // Format address for display (0x1234...5678)
     function formatAddress(address) {
         return address.substring(0, 6) + '...' + address.substring(address.length - 4);
