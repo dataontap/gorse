@@ -993,11 +993,42 @@ def populate_token_pings():
     try:
         # Generate 10 sample pings
         results = []
+        
+        # Create the token_price_pings table if it doesn't exist yet
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check if table exists
+                    cur.execute(
+                        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'token_price_pings')"
+                    )
+                    table_exists = cur.fetchone()[0]
+                    
+                    if not table_exists:
+                        print("Creating token_price_pings table...")
+                        create_table_sql = """
+                        CREATE TABLE token_price_pings (
+                            id SERIAL PRIMARY KEY,
+                            token_price DECIMAL(18,9) NOT NULL,
+                            request_time_ms INTEGER,
+                            response_time_ms INTEGER,
+                            roundtrip_ms INTEGER,
+                            ping_destination VARCHAR(255),
+                            source VARCHAR(100),
+                            additional_data TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        """
+                        cur.execute(create_table_sql)
+                        conn.commit()
+                        print("token_price_pings table created successfully")
+        
+        # Generate pings
         for i in range(10):
             price_data = ethereum_helper.get_token_price_from_etherscan()
             results.append(price_data)
             # Short delay between pings
-            time.sleep(0.5)
+            time.sleep(0.2)
             
         return jsonify({
             'status': 'success',
@@ -1025,27 +1056,51 @@ def token_price_pings():
                     table_exists = cur.fetchone()[0]
                     
                     if not table_exists:
+                        # Create the table if it doesn't exist
+                        print("Creating token_price_pings table...")
+                        create_table_sql = """
+                        CREATE TABLE token_price_pings (
+                            id SERIAL PRIMARY KEY,
+                            token_price DECIMAL(18,9) NOT NULL,
+                            request_time_ms INTEGER,
+                            response_time_ms INTEGER,
+                            roundtrip_ms INTEGER,
+                            ping_destination VARCHAR(255),
+                            source VARCHAR(100),
+                            additional_data TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        """
+                        cur.execute(create_table_sql)
+                        conn.commit()
+                        print("token_price_pings table created successfully")
                         return jsonify({
-                            'status': 'error', 
-                            'message': 'token_price_pings table does not exist'
-                        }), 404
+                            'status': 'success', 
+                            'message': 'Token price pings table created',
+                            'pings': []
+                        })
                         
-                    # Get recent pings
-                    cur.execute(
-                        "SELECT id, token_price, request_time_ms, response_time_ms, source, additional_data, created_at "
-                        "FROM token_price_pings ORDER BY created_at DESC LIMIT 50"
-                    )
+                    # Get recent pings with all fields
+                    cur.execute("""
+                        SELECT id, token_price, request_time_ms, response_time_ms, 
+                               roundtrip_ms, ping_destination, source, additional_data, created_at 
+                        FROM token_price_pings 
+                        ORDER BY created_at DESC 
+                        LIMIT 50
+                    """)
                     rows = cur.fetchall()
                     
                     for row in rows:
                         pings.append({
                             'id': row[0],
-                            'token_price': float(row[1]),
+                            'token_price': float(row[1]) if row[1] else 1.0,
                             'request_time_ms': row[2],
                             'response_time_ms': row[3],
-                            'source': row[4],
-                            'additional_data': row[5],
-                            'created_at': row[6].isoformat() if row[6] else None
+                            'roundtrip_ms': row[4],
+                            'ping_destination': row[5],
+                            'source': row[6],
+                            'additional_data': row[7],
+                            'created_at': row[8].isoformat() if row[8] else None
                         })
                     
         return jsonify({
@@ -1053,6 +1108,7 @@ def token_price_pings():
             'pings': pings
         })
     except Exception as e:
+        print(f"Error in token-price-pings endpoint: {str(e)}")
         return jsonify({
             'status': 'error',
             'message': str(e)

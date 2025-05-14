@@ -469,10 +469,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to fetch ping data
     async function fetchPingData() {
         try {
+            // Show loading indicator
+            if (pingDataTable) {
+                pingDataTable.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Fetching ping data...</p>
+                        </td>
+                    </tr>
+                `;
+            }
+            
             const response = await fetch('/token-price-pings');
             const data = await response.json();
             
-            if (data.status === 'success' && data.pings && data.pings.length > 0) {
+            if (pingDataTable && data.status === 'success' && data.pings && data.pings.length > 0) {
                 // Clear table
                 pingDataTable.innerHTML = '';
                 
@@ -494,12 +508,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     pingDataTable.appendChild(row);
                 });
-            } else {
+                
+                // Add animation to show updated table
+                pingDataTable.classList.add('highlight');
+                setTimeout(() => {
+                    pingDataTable.classList.remove('highlight');
+                }, 1500);
+            } else if (pingDataTable) {
                 pingDataTable.innerHTML = '<tr><td colspan="5" class="text-center">No ping data available</td></tr>';
             }
         } catch (error) {
             console.error('Error fetching ping data:', error);
-            pingDataTable.innerHTML = `<tr><td colspan="5" class="text-center">Error loading ping data: ${error.message}</td></tr>`;
+            if (pingDataTable) {
+                pingDataTable.innerHTML = `<tr><td colspan="5" class="text-center">Error loading ping data: ${error.message}</td></tr>`;
+            }
         }
     }
 

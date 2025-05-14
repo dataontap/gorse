@@ -108,6 +108,7 @@ def get_token_price_from_etherscan():
     import json
     import random
     from datetime import datetime
+    import socket
 
     start_time = time.time() * 1000  # Start time in milliseconds
     eth_price = 2500  # Default value
@@ -116,6 +117,8 @@ def get_token_price_from_etherscan():
     response_time = 0
     source = 'development'
     error_msg = None
+    ping_destination = 'local'
+    roundtrip_ms = random.randint(50, 200)  # Simulate network latency
 
     # Create token_price_pings table if it doesn't exist
     try:
@@ -128,6 +131,56 @@ def get_token_price_from_etherscan():
                         "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'token_price_pings')"
                     )
                     table_exists = cur.fetchone()[0]
+                    
+                    # Create table if it doesn't exist
+                    if not table_exists:
+                        print("Creating token_price_pings table...")
+                        create_table_sql = """
+                        CREATE TABLE token_price_pings (
+                            id SERIAL PRIMARY KEY,
+                            token_price DECIMAL(18,9) NOT NULL,
+                            request_time_ms INTEGER,
+                            response_time_ms INTEGER,
+                            roundtrip_ms INTEGER,
+                            ping_destination VARCHAR(255),
+                            source VARCHAR(100),
+                            additional_data TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        """
+                        cur.execute(create_table_sql)
+                        conn.commit()
+                        print("token_price_pings table created successfully")
+                    
+                    # Generate some simulated price data
+                    # In a real app, you'd fetch this from an API
+                    end_time = time.time() * 1000
+                    request_time = int(end_time - start_time)
+                    
+                    # Small random variation in token price for demonstration
+                    token_price = 1.0 + (random.random() * 0.1 - 0.05)
+                    
+                    # Record the ping in database
+                    try:
+                        hostname = socket.gethostname()
+                        additional_data = json.dumps({
+                            'timestamp': datetime.now().isoformat(),
+                            'hostname': hostname
+                        })
+                        
+                        cur.execute(
+                            """INSERT INTO token_price_pings 
+                               (token_price, request_time_ms, response_time_ms, roundtrip_ms, 
+                                ping_destination, source, additional_data)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                            (token_price, request_time, response_time, roundtrip_ms, 
+                             ping_destination, source, additional_data)
+                        )
+                        conn.commit()
+                        print(f"Recorded token price ping: {token_price} (took {request_time}ms)")
+                    except Exception as e:
+                        print(f"Error recording token price ping: {str(e)}")
+                        conn.rollback()
 
                     if not table_exists:
                         print("Creating token_price_pings table...")
