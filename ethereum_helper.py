@@ -128,13 +128,13 @@ def get_token_price_from_etherscan():
         # In production, you'd parse the actual token price from the response
         eth_price = float(response.json().get('result', {}).get('ethusd', 2500))
         
-        # Simulated DOTM price calculation (100 USD per token for demo)
+        # Simulated DOTM price calculation (1 USD per token for demo)
         # In reality, you would use the token contract address to get the actual price
-        token_price = 100.0
+        token_price = 1.0
         
         # Simulate some variation in price
         import random
-        variation = random.uniform(-5, 5)
+        variation = random.uniform(-0.05, 0.05)
         token_price = token_price + variation
         
         response_time = time.time() * 1000 - start_time

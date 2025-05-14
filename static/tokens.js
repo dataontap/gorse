@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize price update timer
     let priceUpdateTimer = null;
-    let currentTokenPrice = 100.0; // Default price
+    let currentTokenPrice = 1.0; // Default price
 
     // Add refresh button to wallet section
     const walletSection = document.querySelector('.token-stats');
@@ -292,8 +292,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const formattedBalance = balance / (10 ** decimals);
                 balanceAmount.textContent = formattedBalance.toFixed(2);
 
-                // Calculate USD value ($100 per token)
-                const usdValue = formattedBalance * 100;
+                // Calculate USD value ($1 per token)
+                const usdValue = formattedBalance * 1;
                 valueAmount.textContent = '$' + usdValue.toFixed(2);
             } catch (error) {
                 console.error('Error fetching balance from Web3:', error);
