@@ -275,7 +275,7 @@ def get_token_price_from_etherscan():
                             json.dumps({
                                 'eth_price': eth_price,
                                 'variation': variation,
-                                'user_id': 1,  # Hardcoded user ID for testing
+                                'user_id': 1,  # Using fixed UserID for demo mode matching database ID
                                 'environment': 'development' if not os.environ.get('ETHEREUM_URL') else 'production'
                             }),
                             current_timestamp

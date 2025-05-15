@@ -1101,7 +1101,8 @@ def populate_token_pings():
                             'timestamp': timestamp.isoformat(),
                             'sample_data': True,
                             'network': random.choice(['mainnet', 'testnet']),
-                            'status': 'success'
+                            'status': 'success',
+                            'user_id': 1  # Using fixed UserID 1 from database
                         })
                         
                         # Insert the record
@@ -1190,6 +1191,9 @@ def token_price_pings():
     try:
         # Ensure table exists
         create_token_pings_table()
+        
+        # Use fixed UserID 1 for demo mode
+        user_id = 1
         
         with get_db_connection() as conn:
             if conn:
