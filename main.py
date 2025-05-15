@@ -987,10 +987,60 @@ def update_token_price():
             'message': str(e)
         }), 500
 
+@app.route('/test-ping-creation', methods=['GET'])
+def test_ping_creation():
+    """Test endpoint to create a single ping record"""
+    try:
+        # Ensure table exists
+        create_token_pings_table()
+        
+        # Create a test ping directly
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Insert test ping
+                    token_price = 1.0
+                    request_time = 50
+                    response_time = 100
+                    roundtrip = 150
+                    
+                    cur.execute(
+                        """INSERT INTO token_price_pings 
+                          (token_price, request_time_ms, response_time_ms, roundtrip_ms, 
+                           ping_destination, source, additional_data)
+                          VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                        (
+                            token_price,
+                            request_time,
+                            response_time,
+                            roundtrip,
+                            'test endpoint',
+                            'test',
+                            json.dumps({'test': True, 'user_id': 1})
+                        )
+                    )
+                    ping_id = cur.fetchone()[0]
+                    conn.commit()
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'message': f'Test ping created with ID: {ping_id}',
+                        'ping_id': ping_id
+                    })
+    except Exception as e:
+        print(f"Error creating test ping: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 @app.route('/populate-token-pings', methods=['GET'])
 def populate_token_pings():
     """Endpoint to generate sample token price pings for testing"""
     try:
+        # Ensure table exists first
+        create_token_pings_table()
+        
         # Generate 10 sample pings
         results = []
         
@@ -1093,10 +1143,8 @@ def populate_token_pings():
             'message': str(e)
         }), 500
 
-@app.route('/token-price-pings', methods=['GET'])
-def token_price_pings():
-    """Endpoint to view token price ping history"""
-    pings = []
+def create_token_pings_table():
+    """Create token_price_pings table if it doesn't exist"""
     try:
         with get_db_connection() as conn:
             if conn:
@@ -1126,11 +1174,26 @@ def token_price_pings():
                         cur.execute(create_table_sql)
                         conn.commit()
                         print("token_price_pings table created successfully")
-                        return jsonify({
-                            'status': 'success', 
-                            'message': 'Token price pings table created',
-                            'pings': []
-                        })
+                        return True
+                    return True
+    except Exception as e:
+        print(f"Error creating token_price_pings table: {str(e)}")
+        return False
+
+# Call the function on startup
+create_token_pings_table()
+
+@app.route('/token-price-pings', methods=['GET'])
+def token_price_pings():
+    """Endpoint to view token price ping history"""
+    pings = []
+    try:
+        # Ensure table exists
+        create_token_pings_table()
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
                         
                     # Get recent pings with all fields
                     cur.execute("""

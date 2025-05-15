@@ -10,10 +10,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const balanceAmount = document.querySelector('.balance-amount');
     const valueAmount = document.querySelector('.value-amount');
     const tokenTransactionsList = document.getElementById('tokenTransactionsList');
-    
+
     // Get the token value pill in the header if it exists
     const tokenValuePill = document.querySelector('.token-value-pill');
-    
+
     // Initialize price update timer
     let priceUpdateTimer = null;
     let currentTokenPrice = 1.0; // Default price
@@ -248,12 +248,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 await fetchBalanceFromWeb3(address);
             } else {
                 balanceAmount.textContent = data.balance.toFixed(2);
-                
+
                 // Update current token price if available
                 if (data.token_price) {
                     currentTokenPrice = data.token_price;
                 }
-                
+
                 valueAmount.textContent = '$' + data.value_usd.toFixed(2);
 
                 // Add animation to show updated values
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     balanceAmount.classList.remove('highlight');
                     valueAmount.classList.remove('highlight');
                 }, 1500);
-                
+
                 // Create sparkle effect for dramatic flair
                 createSparkle(valueAmount);
             }
@@ -321,99 +321,99 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/token/price');
             const data = await response.json();
             const end = performance.now();
-            
+
             console.log(`Token price fetched in ${end - start}ms:`, data);
-            
+
             if (data.price) {
                 // Update the current price
                 const previousPrice = currentTokenPrice;
                 currentTokenPrice = data.price;
-                
+
                 // Update UI with new price
                 updatePriceDisplay(previousPrice, currentTokenPrice);
-                
+
                 // Update the token value in the header if it exists
                 updateTokenValuePill(currentTokenPrice);
             }
-            
+
             return data;
         } catch (error) {
             console.error('Error fetching token price:', error);
             return { price: currentTokenPrice };
         }
     }
-    
+
     // Function to create sparkle animation
     function createSparkle(element) {
         const rect = element.getBoundingClientRect();
-        
+
         for (let i = 0; i < 5; i++) {
             const sparkle = document.createElement('div');
             sparkle.classList.add('sparkle');
-            
+
             // Random position around the element
             const x = rect.left + Math.random() * rect.width;
             const y = rect.top + Math.random() * rect.height;
-            
+
             sparkle.style.left = `${x}px`;
             sparkle.style.top = `${y}px`;
             sparkle.style.width = `${10 + Math.random() * 10}px`;
             sparkle.style.height = sparkle.style.width;
-            
+
             document.body.appendChild(sparkle);
-            
+
             // Remove the sparkle after animation completes
             setTimeout(() => {
                 document.body.removeChild(sparkle);
             }, 800);
         }
     }
-    
+
     // Function to update price display with animation
     function updatePriceDisplay(oldPrice, newPrice) {
         if (!balanceAmount || !valueAmount) return;
-        
+
         const balance = parseFloat(balanceAmount.textContent) || 0;
         const newValue = balance * newPrice;
-        
+
         // Update value display with animation
         valueAmount.classList.add('highlight');
         valueAmount.textContent = `$${newValue.toFixed(2)}`;
-        
+
         setTimeout(() => {
             valueAmount.classList.remove('highlight');
         }, 1500);
     }
-    
+
     // Function to update the token value pill in the header
     function updateTokenValuePill(price) {
         const tokenValuePill = document.querySelector('.token-value-pill');
         if (!tokenValuePill) return;
-        
+
         // Add updating animation
         tokenValuePill.classList.add('updating');
-        
+
         // Create sparkle effect
         createSparkle(tokenValuePill);
-        
+
         // Update content
         tokenValuePill.textContent = `1 DOTM = $${price.toFixed(2)}`;
-        
+
         // Remove animation class after animation completes
         setTimeout(() => {
             tokenValuePill.classList.remove('updating');
         }, 1000);
     }
-    
+
     // Start price updates when page loads
     function startPriceUpdates() {
         // Fetch immediately
         fetchTokenPrice();
-        
+
         // Then update every minute
         priceUpdateTimer = setInterval(fetchTokenPrice, 60000);
     }
-    
+
     // Stop price updates
     function stopPriceUpdates() {
         if (priceUpdateTimer) {
@@ -421,10 +421,10 @@ document.addEventListener('DOMContentLoaded', function() {
             priceUpdateTimer = null;
         }
     }
-    
+
     // Start price updates when page loads
     startPriceUpdates();
-    
+
     // Add event listener to pause updates when tab is not visible
     document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'visible') {
@@ -435,24 +435,24 @@ document.addEventListener('DOMContentLoaded', function() {
             stopPriceUpdates();
         }
     });
-    
+
     // Token Price Ping Monitoring
     const triggerPriceUpdateBtn = document.getElementById('triggerPriceUpdate');
     const pingStatus = document.getElementById('pingStatus');
     const pingDataTable = document.getElementById('pingDataTable');
-    
+
     if (triggerPriceUpdateBtn) {
         // Initial load of ping data
         fetchPingData();
-        
+
         // Add event listener to trigger price update
         triggerPriceUpdateBtn.addEventListener('click', async function() {
             pingStatus.innerHTML = '<div class="alert alert-info">Triggering token price update...</div>';
-            
+
             try {
                 const response = await fetch('/populate-token-pings');
                 const data = await response.json();
-                
+
                 if (data.status === 'success') {
                     pingStatus.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
                     // Fetch updated ping data
@@ -465,7 +465,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     // Function to fetch ping data
     async function fetchPingData() {
         try {
@@ -482,26 +482,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     </tr>
                 `;
             }
-            
+
             const response = await fetch('/token-price-pings');
             const data = await response.json();
-            
+
             if (pingDataTable && data.status === 'success' && data.pings && data.pings.length > 0) {
                 // Clear table
                 pingDataTable.innerHTML = '';
-                
+
                 // Add ping data rows
                 data.pings.forEach(ping => {
                     const row = document.createElement('tr');
-                    
+
                     // Format timestamp
                     const timestamp = ping.timestamp ? new Date(ping.timestamp).toLocaleString() : 
                                      (ping.created_at ? new Date(ping.created_at).toLocaleString() : 'N/A');
-                    
+
                     // Format price with color based on value
                     const price = parseFloat(ping.token_price);
                     const priceColor = price > 1.0 ? 'text-success' : (price < 1.0 ? 'text-danger' : '');
-                    
+
                     row.innerHTML = `
                         <td>${timestamp}</td>
                         <td class="${priceColor}">$${price.toFixed(2)}</td>
@@ -509,10 +509,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td>${ping.roundtrip_ms || ping.response_time_ms || 0} ms</td>
                         <td><span class="badge bg-${ping.source === 'etherscan' ? 'primary' : 'secondary'}">${ping.source || 'N/A'}</span></td>
                     `;
-                    
+
                     pingDataTable.appendChild(row);
                 });
-                
+
                 // Add animation to show updated table
                 pingDataTable.classList.add('highlight');
                 setTimeout(() => {
@@ -528,20 +528,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
+
     // If on tokens page, fetch ping data when page loads
     if (document.getElementById('pingDataTable')) {
         fetchPingData();
-        
+
         // Add event listener for the "Populate Sample Data" button
         document.querySelector('a[href="/populate-token-pings"]').addEventListener('click', async function(e) {
             e.preventDefault();
             pingStatus.innerHTML = '<div class="alert alert-info">Populating token price pings...</div>';
-            
+
             try {
                 const response = await fetch('/populate-token-pings');
                 const data = await response.json();
-                
+
                 if (data.status === 'success') {
                     pingStatus.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
                     // Fetch updated ping data
