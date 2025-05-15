@@ -14,7 +14,7 @@ def get_web3_connection():
         print("Warning: ETHEREUM_URL not set, using development fallback")
         # Use a public Ethereum testnet provider as fallback
         ethereum_url = "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
-        
+
     return Web3(Web3.HTTPProvider(ethereum_url))
 
 # Get contract instance
@@ -58,13 +58,30 @@ def award_data_purchase_tokens(user_id, purchase_amount):
                         conn.commit()
 
                     # Now get the address
-                    cur.execute("SELECT eth_address FROM users WHERE UserID = %s", (user_id,))
-                    result = cur.fetchone()
+                    with get_db_connection() as conn:
+                        if conn:
+                            with conn.cursor() as cur:
+                                # Check if the column name uses uppercase or lowercase
+                                cur.execute("""
+                                    SELECT column_name FROM information_schema.columns 
+                                    WHERE table_name='users' AND lower(column_name)='userid'
+                                """)
+                                column_info = cur.fetchone()
 
-                    if not result or not result[0]:
-                        return False, "User has no ETH address"
+                                if column_info:
+                                    # Use the exact column name case we found
+                                    user_id_column = column_info[0]
+                                    cur.execute(f"SELECT eth_address FROM users WHERE {user_id_column} = %s", (user_id,))
+                                else:
+                                    # Try with lowercase as fallback
+                                    cur.execute("SELECT eth_address FROM users WHERE userid = %s", (user_id,))
 
-                    eth_address = result[0]
+                                result = cur.fetchone()
+
+                                if not result or not result[0]:
+                                    return False, "User has no ETH address"
+
+                                eth_address = result[0]
 
         # Calculate reward (10% of purchase)
         reward_amount = float(purchase_amount) * 0.1
@@ -131,7 +148,7 @@ def get_token_price_from_etherscan():
                         "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'token_price_pings')"
                     )
                     table_exists = cur.fetchone()[0]
-                    
+
                     # Create table if it doesn't exist
                     if not table_exists:
                         print("Creating token_price_pings table...")
@@ -151,15 +168,15 @@ def get_token_price_from_etherscan():
                         cur.execute(create_table_sql)
                         conn.commit()
                         print("token_price_pings table created successfully")
-                    
+
                     # Generate some simulated price data
                     # In a real app, you'd fetch this from an API
                     end_time = time.time() * 1000
                     request_time = int(end_time - start_time)
-                    
+
                     # Small random variation in token price for demonstration
                     token_price = 1.0 + (random.random() * 0.1 - 0.05)
-                    
+
                     # Record the ping in database
                     try:
                         hostname = socket.gethostname()
@@ -167,7 +184,7 @@ def get_token_price_from_etherscan():
                             'timestamp': datetime.now().isoformat(),
                             'hostname': hostname
                         })
-                        
+
                         cur.execute(
                             """INSERT INTO token_price_pings 
                                (token_price, request_time_ms, response_time_ms, roundtrip_ms, 

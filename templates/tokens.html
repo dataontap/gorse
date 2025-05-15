@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -67,7 +66,7 @@
         <div class="container mt-4">
             <div class="token-dashboard">
                 <h1>DOTM Tokens</h1>
-                
+
                 <div class="row">
                     <div class="col-md-8">
                         <div class="token-overview card">
@@ -83,7 +82,7 @@
                                         <span class="value-amount">$0.00</span>
                                     </div>
                                 </div>
-                                
+
                                 <div class="wallet-section">
                                     <h4>Connect Wallet</h4>
                                     <p>Link your Ethereum wallet to manage your DOTM tokens:</p>
@@ -105,7 +104,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="token-history card mt-4">
                             <div class="card-body">
                                 <h3>Token History</h3>
@@ -129,7 +128,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-md-4">
                         <div class="founding-member card">
                             <div class="card-body">
@@ -141,7 +140,7 @@
                                 <div id="foundingClaimStatus" class="mt-2" style="display: none;"></div>
                             </div>
                         </div>
-                        
+
                         <div class="token-info card mt-4">
                             <div class="card-body">
                                 <h3>About DOTM Tokens</h3>
@@ -158,14 +157,17 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Token Price Ping Monitoring -->
                 <div class="card mt-4">
                     <div class="card-header">
                         <h5>Token Price Ping Monitoring</h5>
                     </div>
                     <div class="card-body">
-                        <button id="triggerPriceUpdate" class="btn btn-primary mb-3">Trigger Price Update</button>
+                        <div class="mb-3">
+                            <button id="triggerPriceUpdate" class="btn btn-primary me-2">Trigger Price Update</button>
+                            <a href="/populate-token-pings" class="btn btn-success">Populate Sample Data</a>
+                        </div>
                         <div id="pingStatus" class="mb-3"></div>
                         <div class="table-responsive">
                             <table class="table table-striped">

@@ -496,14 +496,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Format timestamp
                     const timestamp = ping.timestamp ? new Date(ping.timestamp).toLocaleString() : 
-                                       (ping.created_at ? new Date(ping.created_at).toLocaleString() : 'N/A');
+                                     (ping.created_at ? new Date(ping.created_at).toLocaleString() : 'N/A');
+                    
+                    // Format price with color based on value
+                    const price = parseFloat(ping.token_price);
+                    const priceColor = price > 1.0 ? 'text-success' : (price < 1.0 ? 'text-danger' : '');
                     
                     row.innerHTML = `
                         <td>${timestamp}</td>
-                        <td>$${parseFloat(ping.token_price).toFixed(2)}</td>
+                        <td class="${priceColor}">$${price.toFixed(2)}</td>
                         <td>${ping.ping_destination || 'N/A'}</td>
                         <td>${ping.roundtrip_ms || ping.response_time_ms || 0} ms</td>
-                        <td>${ping.source || 'N/A'}</td>
+                        <td><span class="badge bg-${ping.source === 'etherscan' ? 'primary' : 'secondary'}">${ping.source || 'N/A'}</span></td>
                     `;
                     
                     pingDataTable.appendChild(row);
@@ -515,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     pingDataTable.classList.remove('highlight');
                 }, 1500);
             } else if (pingDataTable) {
-                pingDataTable.innerHTML = '<tr><td colspan="5" class="text-center">No ping data available</td></tr>';
+                pingDataTable.innerHTML = '<tr><td colspan="5" class="text-center">No ping data available - Click "Populate Sample Data" to generate test data</td></tr>';
             }
         } catch (error) {
             console.error('Error fetching ping data:', error);
@@ -523,6 +527,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 pingDataTable.innerHTML = `<tr><td colspan="5" class="text-center">Error loading ping data: ${error.message}</td></tr>`;
             }
         }
+    }
+    
+    // If on tokens page, fetch ping data when page loads
+    if (document.getElementById('pingDataTable')) {
+        fetchPingData();
+        
+        // Add event listener for the "Populate Sample Data" button
+        document.querySelector('a[href="/populate-token-pings"]').addEventListener('click', async function(e) {
+            e.preventDefault();
+            pingStatus.innerHTML = '<div class="alert alert-info">Populating token price pings...</div>';
+            
+            try {
+                const response = await fetch('/populate-token-pings');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    pingStatus.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                    // Fetch updated ping data
+                    fetchPingData();
+                } else {
+                    pingStatus.innerHTML = `<div class="alert alert-danger">Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                pingStatus.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        });
     }
 
 

@@ -1022,9 +1022,60 @@ def populate_token_pings():
                         cur.execute(create_table_sql)
                         conn.commit()
                         print("token_price_pings table created successfully")
+                    
+                    # Generate sample ping data directly
+                    import json
+                    import random
+                    import time
+                    from datetime import datetime, timedelta
+                    
+                    print("Inserting sample ping data...")
+                    
+                    # Insert 20 sample records spanning the last 24 hours
+                    for i in range(20):
+                        # Create varying timestamps over the last 24 hours
+                        hours_ago = random.uniform(0, 24)
+                        timestamp = datetime.now() - timedelta(hours=hours_ago)
+                        
+                        # Create realistic test data
+                        token_price = 1.0 + (random.random() * 0.2 - 0.1)  # $0.90 to $1.10
+                        request_time = random.randint(20, 200)
+                        response_time = request_time + random.randint(5, 50)
+                        roundtrip = random.randint(40, 300)
+                        source = random.choice(['etherscan', 'development', 'coinmarketcap', 'local'])
+                        destination = 'https://api.etherscan.io/api' if source == 'etherscan' else 'local'
+                        
+                        # Additional data as JSON
+                        additional_data = json.dumps({
+                            'eth_price': 2500 + (random.random() * 100 - 50),
+                            'timestamp': timestamp.isoformat(),
+                            'sample_data': True,
+                            'network': random.choice(['mainnet', 'testnet']),
+                            'status': 'success'
+                        })
+                        
+                        # Insert the record
+                        cur.execute(
+                            """INSERT INTO token_price_pings 
+                              (token_price, request_time_ms, response_time_ms, roundtrip_ms, 
+                               ping_destination, source, additional_data, created_at)
+                              VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                            (token_price, request_time, response_time, roundtrip, 
+                             destination, source, additional_data, timestamp)
+                        )
+                        
+                        ping_id = cur.fetchone()[0]
+                        results.append({
+                            'id': ping_id,
+                            'price': token_price,
+                            'timestamp': timestamp.isoformat()
+                        })
+                    
+                    conn.commit()
+                    print(f"Successfully inserted {len(results)} sample pings")
         
-        # Generate pings
-        for i in range(10):
+        # Also generate a few real-time pings
+        for i in range(3):
             price_data = ethereum_helper.get_token_price_from_etherscan()
             results.append(price_data)
             # Short delay between pings
@@ -1032,10 +1083,11 @@ def populate_token_pings():
             
         return jsonify({
             'status': 'success',
-            'message': 'Generated 10 token price pings',
+            'message': f'Generated {len(results)} token price pings',
             'data': results
         })
     except Exception as e:
+        print(f"Error populating token pings: {str(e)}")
         return jsonify({
             'status': 'error',
             'message': str(e)
