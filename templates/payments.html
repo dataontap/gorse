@@ -172,13 +172,19 @@
         function refreshBalance() {
             const refreshButton = document.querySelector('.token-refresh-btn');
             refreshButton.classList.add('rotating');
-
-            // Simulate refreshing data after a delay
-            setTimeout(() => {
-                // Here we would normally fetch the updated balance from the server
-                // For demo purposes, we'll just animate the button
-                refreshButton.classList.remove('rotating');
-            }, 1500);
+            
+            // Create status indicator if it doesn't exist
+            let statusIndicator = document.querySelector('.sepolia-status');
+            if (!statusIndicator) {
+                statusIndicator = document.createElement('div');
+                statusIndicator.className = 'sepolia-status';
+                statusIndicator.style.fontSize = '0.7rem';
+                statusIndicator.style.marginTop = '5px';
+                statusIndicator.style.textAlign = 'center';
+                document.querySelector('.token-stats').appendChild(statusIndicator);
+            }
+            
+            statusIndicator.innerHTML = '<span style="color:#6b21a8">Connecting to Sepolia...</span>';
 
             // In a real implementation, you would call your API endpoint
             fetch('/api/token/balance/current_user')
@@ -187,11 +193,45 @@
                     if (!data.error) {
                         document.querySelector('.balance-amount').textContent = data.balance.toFixed(2);
                         document.querySelector('.wallet-value').textContent = '$' + data.value_usd.toFixed(2) + ' USD';
+                        statusIndicator.innerHTML = '<span style="color:green">✓ Updated from Sepolia</span>';
+                        
+                        // Create a ping effect
+                        const pingEffect = document.createElement('div');
+                        pingEffect.style.position = 'absolute';
+                        pingEffect.style.right = '10px';
+                        pingEffect.style.top = '10px';
+                        pingEffect.style.width = '36px';
+                        pingEffect.style.height = '36px';
+                        pingEffect.style.border = '2px solid #6b21a8';
+                        pingEffect.style.borderRadius = '50%';
+                        pingEffect.style.animation = 'ping 1s ease-out';
+                        document.querySelector('.token-stats').appendChild(pingEffect);
+                        
+                        // Remove ping effect after animation
+                        setTimeout(() => {
+                            document.querySelector('.token-stats').removeChild(pingEffect);
+                        }, 1000);
+                        
+                        // Add ping animation style if not present
+                        if (!document.querySelector('style#ping-animation')) {
+                            const style = document.createElement('style');
+                            style.id = 'ping-animation';
+                            style.textContent = `
+                                @keyframes ping {
+                                    0% { transform: scale(0.5); opacity: 1; }
+                                    100% { transform: scale(1.5); opacity: 0; }
+                                }
+                            `;
+                            document.head.appendChild(style);
+                        }
+                    } else {
+                        statusIndicator.innerHTML = '<span style="color:red">Error updating from Sepolia</span>';
                     }
                     refreshButton.classList.remove('rotating');
                 })
                 .catch(error => {
                     console.error('Error fetching balance:', error);
+                    statusIndicator.innerHTML = '<span style="color:red">Failed to connect to Sepolia</span>';
                     refreshButton.classList.remove('rotating');
                 });
         }

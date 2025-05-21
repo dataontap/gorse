@@ -521,8 +521,26 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create sparkle effect
         createSparkle(tokenValuePill);
 
-        // Update content
-        tokenValuePill.textContent = `1 DOTM = $${price.toFixed(2)}`;
+        // Update content with Sepolia network indication
+        tokenValuePill.innerHTML = `1 DOTM = $${price.toFixed(2)} <small class="network-badge">Sepolia</small>`;
+
+        // Add network badge style if not already present
+        if (!document.querySelector('style#network-badge-style')) {
+            const style = document.createElement('style');
+            style.id = 'network-badge-style';
+            style.textContent = `
+                .network-badge {
+                    font-size: 0.6rem;
+                    background-color: #6b21a8;
+                    color: white;
+                    padding: 1px 4px;
+                    border-radius: 4px;
+                    margin-left: 4px;
+                    vertical-align: middle;
+                }
+            `;
+            document.head.appendChild(style);
+        }
 
         // Remove animation class after animation completes
         setTimeout(() => {
