@@ -164,6 +164,11 @@
         .token-stats {
             position: relative;
         }
+        .update-time {
+            font-size: 0.8em;
+            opacity: 0.8;
+            margin-left: 4px;
+        }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -193,7 +198,29 @@
                     if (!data.error) {
                         document.querySelector('.balance-amount').textContent = data.balance.toFixed(2);
                         document.querySelector('.wallet-value').textContent = '$' + data.value_usd.toFixed(2) + ' USD';
-                        statusIndicator.innerHTML = '<span style="color:green">✓ Updated from Sepolia</span>';
+                        statusIndicator.innerHTML = '<span style="color:green">✓ Updated from Sepolia <span class="update-time">just now</span></span>';
+
+// Start a timer to update the timestamp
+const updateTimeEl = statusIndicator.querySelector('.update-time');
+if (updateTimeEl) {
+    let seconds = 0;
+    const updateTimer = setInterval(() => {
+        seconds++;
+        if (seconds < 60) {
+            updateTimeEl.textContent = seconds < 10 ? 'just now' : `${seconds} sec ago`;
+        } else if (seconds < 3600) {
+            const minutes = Math.floor(seconds / 60);
+            updateTimeEl.textContent = `${minutes} min ago`;
+        } else {
+            const hours = Math.floor(seconds / 3600);
+            updateTimeEl.textContent = `${hours} hr ago`;
+            // Stop updating after a day
+            if (hours >= 24) {
+                clearInterval(updateTimer);
+            }
+        }
+    }, 1000);
+}
                         
                         // Create a ping effect
                         const pingEffect = document.createElement('div');
