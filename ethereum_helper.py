@@ -14,6 +14,16 @@ def get_web3_connection():
         print("Warning: ETHEREUM_URL not set, using development fallback")
         # Use a public Ethereum testnet provider as fallback
         ethereum_url = "https://ethereum-goerli-rpc.publicnode.com"
+        # Attempt to use backup providers if needed
+        try:
+            web3 = Web3(Web3.HTTPProvider(ethereum_url))
+            # Test connection
+            if not web3.is_connected():
+                print("Primary endpoint failed, trying backup...")
+                ethereum_url = "https://rpc.ankr.com/eth_goerli"
+        except Exception as e:
+            print(f"Connection error: {str(e)}, trying backup provider")
+            ethereum_url = "https://rpc.ankr.com/eth_goerli"
 
     return Web3(Web3.HTTPProvider(ethereum_url))
 
