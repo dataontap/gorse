@@ -3,7 +3,8 @@ require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "0x0000000000000000000000000000000000000000000000000000000000000000";
-const GOERLI_URL = process.env.GOERLI_URL || "";
+// Using a public RPC endpoint as fallback if environment variable is not set
+const GOERLI_URL = process.env.GOERLI_URL || "https://ethereum-goerli-rpc.publicnode.com";
 const ETHEREUM_API_KEY = process.env.ETHEREUM_API_KEY || "";
 
 module.exports = {
