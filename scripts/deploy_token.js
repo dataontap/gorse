@@ -7,9 +7,14 @@ async function main() {
 
   const DOTMToken = await ethers.getContractFactory("DOTMToken");
   const token = await DOTMToken.deploy();
-  await token.deployed();
+  
+  // Wait for deployment to complete
+  await token.waitForDeployment();
+  
+  // Get the contract address
+  const tokenAddress = await token.getAddress();
 
-  console.log("DOTM Token deployed to:", token.address);
+  console.log("DOTM Token deployed to:", tokenAddress);
   console.log("Total supply:", await token.totalSupply());
 }
 
