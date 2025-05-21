@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const connectMetamaskBtn = document.getElementById('connectMetamask');
     const connectWalletConnectBtn = document.getElementById('connectWalletConnect');
+    const createTestWalletBtn = document.getElementById('createTestWallet');
     const disconnectWalletBtn = document.getElementById('disconnectWallet');
     const walletStatus = document.getElementById('walletStatus');
     const connectedAddress = document.getElementById('connectedAddress');
@@ -142,9 +143,133 @@ document.addEventListener('DOMContentLoaded', function() {
     connectWalletConnectBtn.addEventListener('click', function() {
         alert('WalletConnect integration coming soon!');
     });
+    
+    // Create Test Wallet Button
+    if (createTestWalletBtn) {
+        createTestWalletBtn.addEventListener('click', createTestWallet);
+    }
 
     // Disconnect Wallet
     disconnectWalletBtn.addEventListener('click', disconnectWallet);
+    
+    // Create Test Wallet function
+    async function createTestWallet() {
+        try {
+            createTestWalletBtn.disabled = true;
+            createTestWalletBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating wallet...';
+            
+            const response = await fetch('/api/token/create-test-wallet', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: 'test@example.com' })
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success' || data.status === 'partial_success') {
+                // Save the wallet address to localStorage
+                localStorage.setItem('walletAddress', data.wallet.address);
+                
+                // Store the private key temporarily (in a real app, you would handle this differently)
+                localStorage.setItem('tempPrivateKey', data.wallet.private_key);
+                
+                // Update UI
+                connectedAddress.textContent = formatAddress(data.wallet.address);
+                walletStatus.style.display = 'block';
+                
+                // Show wallet details in a modal
+                showWalletInfoModal(data.wallet, data.tokens);
+                
+                // Fetch token balance after a short delay to allow transaction to process
+                setTimeout(() => {
+                    fetchBalance(data.wallet.address);
+                    fetchTransactionHistory(data.wallet.address);
+                }, 2000);
+            } else {
+                showAlert('Error', data.error || 'Failed to create test wallet', 'danger');
+            }
+        } catch (error) {
+            console.error('Error creating test wallet:', error);
+            showAlert('Error', 'Failed to create test wallet: ' + error.message, 'danger');
+        } finally {
+            createTestWalletBtn.disabled = false;
+            createTestWalletBtn.innerHTML = 'Create Test Wallet';
+        }
+    }
+    
+    // Function to show wallet info modal
+    function showWalletInfoModal(wallet, tokens) {
+        // Create modal element
+        const modalId = 'walletInfoModal';
+        let modal = document.getElementById(modalId);
+        
+        if (modal) {
+            document.body.removeChild(modal);
+        }
+        
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'modal fade';
+        modal.tabIndex = '-1';
+        modal.role = 'dialog';
+        modal.setAttribute('aria-labelledby', 'walletInfoModalLabel');
+        modal.setAttribute('aria-hidden', 'true');
+        
+        modal.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="walletInfoModalLabel">Test Wallet Created</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <strong>Important:</strong> This is a test wallet. Save these details securely. 
+                            The private key will only be shown once!
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Address:</strong></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="${wallet.address}" readonly />
+                                <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText('${wallet.address}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Private Key:</strong></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="${wallet.private_key}" readonly />
+                                <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText('${wallet.private_key}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <small class="text-danger">Never share your private key with anyone!</small>
+                        </div>
+                        ${tokens ? `
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Tokens:</strong></label>
+                            <p class="mb-1">${tokens.amount} transferred</p>
+                            <p class="mb-0"><small>Transaction: ${tokens.tx_hash?.substring(0, 10)}...</small></p>
+                        </div>` : ''}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                            I've Saved These Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Show the modal
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    }
 
     // Claim founding token
     claimFoundingToken.addEventListener('click', claimFoundingTokenFunc);

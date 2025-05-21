@@ -873,15 +873,107 @@ class FoundingToken(Resource):
             return {'error': 'Ethereum address is required'}, 400
             
         try:
-            tx_hash = ethereum_helper.assign_founding_token(address)
-            return {
-                'status': 'success',
-                'message': 'Founding member token assigned',
-                'tx_hash': tx_hash,
-                'address': address
-            }
+            success, result = ethereum_helper.assign_founding_token(address)
+            
+            if success:
+                return {
+                    'status': 'success',
+                    'message': 'Founding member token assigned',
+                    'tx_hash': result,
+                    'address': address,
+                    'amount': '100 DOTM'
+                }
+            else:
+                return {'status': 'error', 'message': result}, 400
         except Exception as e:
             print(f"Error assigning founding token: {str(e)}")
+            return {'error': str(e)}, 500
+
+@token_ns.route('/create-test-wallet')
+class CreateTestWallet(Resource):
+    def post(self):
+        """Creates a test wallet and assigns initial tokens"""
+        try:
+            # Create a random wallet
+            from web3 import Web3
+            web3 = Web3()
+            account = web3.eth.account.create()
+            
+            # Get user details for tracking
+            user_id = 1  # For demo purposes
+            data = request.get_json() or {}
+            email = data.get('email', 'test@example.com')
+            
+            # Store wallet in database
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Check if users table exists
+                        cur.execute(
+                            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')"
+                        )
+                        table_exists = cur.fetchone()[0]
+                        
+                        if not table_exists:
+                            # Create users table
+                            cur.execute("""
+                                CREATE TABLE users (
+                                    UserID SERIAL PRIMARY KEY,
+                                    email VARCHAR(255),
+                                    stripe_customer_id VARCHAR(100),
+                                    eth_address VARCHAR(42),
+                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                )
+                            """)
+                            
+                        # Check if user exists
+                        cur.execute("SELECT UserID FROM users WHERE email = %s", (email,))
+                        user = cur.fetchone()
+                        
+                        if user:
+                            # Update existing user
+                            cur.execute(
+                                "UPDATE users SET eth_address = %s WHERE UserID = %s",
+                                (account.address, user[0])
+                            )
+                            user_id = user[0]
+                        else:
+                            # Create new user
+                            cur.execute(
+                                "INSERT INTO users (email, eth_address) VALUES (%s, %s) RETURNING UserID",
+                                (email, account.address)
+                            )
+                            user_id = cur.fetchone()[0]
+                            
+                        conn.commit()
+                        
+            # Assign tokens to the new wallet
+            success, result = ethereum_helper.assign_founding_token(account.address)
+            if not success:
+                return {
+                    'status': 'partial_success',
+                    'wallet': {
+                        'address': account.address,
+                        'private_key': account.key.hex()  # NEVER do this in production
+                    },
+                    'token_error': result
+                }
+                
+            return {
+                'status': 'success',
+                'wallet': {
+                    'address': account.address,
+                    'private_key': account.key.hex()  # NEVER do this in production
+                },
+                'tokens': {
+                    'amount': '100 DOTM',
+                    'tx_hash': result
+                },
+                'note': 'IMPORTANT: Save the private key securely. It will not be shown again.'
+            }
+            
+        except Exception as e:
+            print(f"Error creating test wallet: {str(e)}")
             return {'error': str(e)}, 500
 
 @api.route('/record-global-purchase')

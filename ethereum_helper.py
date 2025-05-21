@@ -130,6 +130,9 @@ def get_token_price_from_etherscan():
     from datetime import datetime
     import socket
 
+    # Get contract address from environment or use the deployed address on Sepolia
+    TOKEN_CONTRACT_ADDRESS = os.environ.get('TOKEN_ADDRESS', '0x8250951Ff1AE04adB9dCa9233274710dDCb1850a')
+    
     start_time = time.time() * 1000  # Start time in milliseconds
     eth_price = 2500  # Default value
     token_price = 1.0  # 1 DOTM = $1 USD
@@ -137,7 +140,7 @@ def get_token_price_from_etherscan():
     response_time = 0
     source = 'development'
     error_msg = None
-    ping_destination = 'local'
+    ping_destination = f'sepolia.etherscan.io/address/{TOKEN_CONTRACT_ADDRESS}'
     roundtrip_ms = random.randint(50, 200)  # Simulate network latency
 
     # Create token_price_pings table if it doesn't exist
@@ -375,26 +378,90 @@ def get_token_price_from_etherscan():
 
 # Assign one token to a founding member
 def assign_founding_token(member_address):
+    """Assigns 100 DOTM tokens to a founding member's wallet"""
     web3 = get_web3_connection()
     token_contract = get_token_contract()
 
     # Get admin account
     admin_private_key = os.environ.get('ADMIN_PRIVATE_KEY')
+    if not admin_private_key:
+        return False, "Admin key not configured"
+        
     admin_account = web3.eth.account.from_key(admin_private_key)
+    
+    try:
+        # Record this token assignment for tracking
+        from main import get_db_connection
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check if we've already assigned tokens to this address
+                    cur.execute(
+                        "SELECT EXISTS (SELECT 1 FROM token_assignments WHERE wallet_address = %s)",
+                        (member_address,)
+                    )
+                    already_assigned = cur.fetchone()[0]
+                    
+                    if already_assigned:
+                        return False, "This address has already received founding tokens"
+    
+                    # Check if the token_assignments table exists
+                    cur.execute(
+                        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'token_assignments')"
+                    )
+                    table_exists = cur.fetchone()[0]
+                    
+                    if not table_exists:
+                        # Create the table if it doesn't exist
+                        cur.execute("""
+                            CREATE TABLE token_assignments (
+                                id SERIAL PRIMARY KEY,
+                                wallet_address VARCHAR(42) NOT NULL UNIQUE,
+                                token_amount NUMERIC(20, 0) NOT NULL,
+                                reason VARCHAR(100) NOT NULL,
+                                tx_hash VARCHAR(66),
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                            )
+                        """)
+                        conn.commit()
+    except Exception as e:
+        print(f"Database error in assign_founding_token: {str(e)}")
+        # Continue with the token minting even if DB operations fail
+    
+    try:
+        # Build transaction - mint 100 tokens
+        token_amount = 100 * (10 ** 18)  # 100 tokens in wei
+        
+        tx = token_contract.functions.mint(
+            member_address,
+            token_amount
+        ).build_transaction({
+            'from': admin_account.address,
+            'nonce': web3.eth.get_transaction_count(admin_account.address),
+            'gas': 200000,
+            'gasPrice': web3.eth.gas_price
+        })
 
-    # Build transaction
-    tx = token_contract.functions.mint(
-        member_address,
-        100 * (10 ** 18)  # 100 tokens in wei
-    ).build_transaction({
-        'from': admin_account.address,
-        'nonce': web3.eth.get_transaction_count(admin_account.address),
-        'gas': 200000,
-        'gasPrice': web3.eth.gas_price
-    })
-
-    # Sign and send transaction
-    signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
-    tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-
-    return web3.to_hex(tx_hash)
+        # Sign and send transaction
+        signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        
+        # Record the transaction in database
+        try:
+            from main import get_db_connection
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "INSERT INTO token_assignments (wallet_address, token_amount, reason, tx_hash) VALUES (%s, %s, %s, %s)",
+                            (member_address, token_amount, 'founding_member', web3.to_hex(tx_hash))
+                        )
+                        conn.commit()
+        except Exception as db_err:
+            print(f"Database error recording token assignment: {str(db_err)}")
+        
+        return True, web3.to_hex(tx_hash)
+    
+    except Exception as e:
+        print(f"Error in assign_founding_token: {str(e)}")
+        return False, str(e)
