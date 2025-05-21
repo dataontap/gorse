@@ -12,8 +12,8 @@ def get_web3_connection():
     ethereum_url = os.environ.get('ETHEREUM_URL')
     if not ethereum_url:
         print("Warning: ETHEREUM_URL not set, using development fallback")
-        # Use a public Ethereum testnet provider as fallback
-        ethereum_url = "https://ethereum-goerli-rpc.publicnode.com"
+        # Use Sepolia testnet as fallback
+        ethereum_url = "https://ethereum-sepolia-rpc.publicnode.com"
 
     return Web3(Web3.HTTPProvider(ethereum_url))
 
