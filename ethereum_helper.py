@@ -98,7 +98,7 @@ def award_data_purchase_tokens(user_id, purchase_amount):
             eth_address,
             reward_wei
         ).build_transaction({
-            'chainId': 1, # Ethereum mainnet
+            'chainId': 11155111, # Sepolia testnet
             'gas': 200000,
             'gasPrice': web3.to_wei('50', 'gwei'),
             'nonce': nonce,
