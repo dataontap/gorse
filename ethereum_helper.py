@@ -116,8 +116,8 @@ def reward_data_purchase(user_address, purchase_amount_cents):
     web3 = get_web3_connection()
     token_contract = get_token_contract()
     
-    # DOTM Token contract address on Sepolia testnet
-    TOKEN_CONTRACT_ADDRESS = "0x8250951Ff1AE04adB9dCa9233274710dDCb1850a"
+    # Get DOTM Token contract address from environment variables
+    TOKEN_CONTRACT_ADDRESS = os.environ.get('TOKEN_ADDRESS', '0x8250951Ff1AE04adB9dCa9233274710dDCb1850a')
 
 
 
