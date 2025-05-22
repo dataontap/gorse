@@ -95,7 +95,7 @@
                     </div>
                     <div class="metal-card-section">
                         <button class="btn btn-dark btn-sm metal-card-btn" onclick="preorderMetalCard()">
-                            <i class="fas fa-credit-card"></i> Pre-order metal card
+                            <i class="fas fa-credit-card"></i> PRE-ORDER METAL CARD
                         </button>
                         <div class="metamask-powered">Powered by MetaMask</div>
                     </div>
@@ -182,8 +182,8 @@
             margin-left: 4px;
         }
         .metamask-card {
-            background-color: #F7BFAD; /* Gorse color without transparency */
-            border: 1px solid #E5AD9C;
+            background-color: #FBE591; /* Gorse yellow color */
+            border: 1px solid #E9D27E;
             transition: all 0.3s ease;
         }
         .metal-card-section {
@@ -216,7 +216,7 @@
                 rgba(255,255,255,0.2) 50%, 
                 transparent 100%);
             transform: skewX(-20deg);
-            animation: shimmer 3s infinite;
+            animation: shimmer 6s infinite; /* Doubled animation duration from 3s to 6s */
         }
         @keyframes shimmer {
             0% { transform: translateX(-100%) skewX(-20deg); }
@@ -292,25 +292,32 @@
                             }, 1000);
                         }
                         
-                        // Create a ping effect aligned with the refresh button
+                        // Create a ping effect perfectly aligned with the refresh button
                         const refreshBtnRect = refreshButton.getBoundingClientRect();
                         const tokenStatsRect = document.querySelector('.token-stats').getBoundingClientRect();
                         
-                        const pingEffect = document.createElement('div');
-                        const buttonRect = refreshButton.getBoundingClientRect();
-                        const parentRect = document.querySelector('.token-stats').getBoundingClientRect();
+                        // Create a container for the ping effect that's positioned relative to the button
+                        const pingContainer = document.createElement('div');
+                        pingContainer.style.position = 'absolute';
+                        pingContainer.style.left = '0';
+                        pingContainer.style.top = '0';
+                        pingContainer.style.width = '100%';
+                        pingContainer.style.height = '100%';
+                        pingContainer.style.pointerEvents = 'none';
+                        refreshButton.style.position = 'relative'; // Ensure button has position relative
+                        refreshButton.appendChild(pingContainer);
                         
+                        const pingEffect = document.createElement('div');
                         pingEffect.style.position = 'absolute';
-                        pingEffect.style.left = (refreshButton.offsetLeft) + 'px';
-                        pingEffect.style.top = (refreshButton.offsetTop) + 'px';
-                        pingEffect.style.width = '30px';
-                        pingEffect.style.height = '30px';
+                        pingEffect.style.left = '0';
+                        pingEffect.style.top = '0';
+                        pingEffect.style.width = '100%';
+                        pingEffect.style.height = '100%';
                         pingEffect.style.border = '2px solid #6b21a8';
                         pingEffect.style.borderRadius = '50%';
                         pingEffect.style.animation = 'ping 1s ease-out';
                         pingEffect.style.pointerEvents = 'none';
-                        pingEffect.style.zIndex = '100';
-                        document.querySelector('.token-stats').appendChild(pingEffect);
+                        pingContainer.appendChild(pingEffect);
                         
                         // Remove ping effect after animation
                         setTimeout(() => {
