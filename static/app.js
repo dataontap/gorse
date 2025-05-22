@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!localStorage.getItem('walletBalance')) {
         localStorage.setItem('walletBalance', '0.0');
     }
-    
+
     const tokenValuePill = document.querySelector('.token-value-pill');
 
     if (tokenValuePill) {
@@ -113,10 +113,10 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeDotRefresh() {
     const dotIndicator = document.querySelector('.dot-indicator');
     if (!dotIndicator) return;
-    
+
     let pressTimer;
     let isLongPress = false;
-    
+
     // Long press detection
     dotIndicator.addEventListener('mousedown', (e) => {
         pressTimer = setTimeout(() => {
@@ -124,25 +124,25 @@ function initializeDotRefresh() {
             refreshDataAmount();
         }, 1000); // 1 second long press
     });
-    
+
     dotIndicator.addEventListener('touchstart', (e) => {
         pressTimer = setTimeout(() => {
             isLongPress = true;
             refreshDataAmount();
         }, 1000); // 1 second long press
     });
-    
+
     // Clear timer if press is canceled
     dotIndicator.addEventListener('mouseup', () => {
         clearTimeout(pressTimer);
         isLongPress = false;
     });
-    
+
     dotIndicator.addEventListener('touchend', () => {
         clearTimeout(pressTimer);
         isLongPress = false;
     });
-    
+
     dotIndicator.addEventListener('mouseleave', () => {
         clearTimeout(pressTimer);
         isLongPress = false;
@@ -152,24 +152,24 @@ function initializeDotRefresh() {
 function refreshDataAmount() {
     const dataDisplay = document.getElementById('dataDisplay');
     const dotIndicator = document.querySelector('.dot-indicator');
-    
+
     if (!dataDisplay || !dotIndicator) return;
-    
+
     // Add pulse animation
     dotIndicator.classList.add('pulse');
-    
+
     // Simulate loading
     setTimeout(() => {
         // Get current amount from localStorage or API
         let currentAmount = parseFloat(localStorage.getItem('walletBalance') || '0.0');
-        
+
         // Update the display
         dataDisplay.innerHTML = `${currentAmount.toFixed(1)}<span>GB</span>`;
         dataDisplay.style.display = 'block';
-        
+
         // Create sparkle effect
         createSparkle(dotIndicator);
-        
+
         // Remove pulse after animation completes
         setTimeout(() => {
             dotIndicator.classList.remove('pulse');
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadDataFromSession() {
     const dataDisplay = document.getElementById('dataDisplay');
     const globalStatus = document.getElementById('globalStatus');
-    
+
     if (dataDisplay) {
         // First show cached data immediately for better UX
         const walletBalance = localStorage.getItem('walletBalance');
@@ -234,12 +234,12 @@ function loadDataFromSession() {
             const amount = parseFloat(walletBalance);
             dataDisplay.innerHTML = `${amount.toFixed(1)}<span>GB</span>`;
             dataDisplay.style.display = 'block';
-            
+
             if (globalStatus) {
                 globalStatus.style.display = 'block';
             }
         }
-        
+
         // Then fetch fresh data from API
         fetchUserDataBalance();
     }
@@ -248,26 +248,34 @@ function loadDataFromSession() {
 // Fetch current user data balance from API
 function fetchUserDataBalance() {
     const userId = localStorage.getItem('userId') || '1';
-    
+
     fetch(`/api/user/data-balance?userId=${userId}`)
         .then(response => response.json())
         .then(data => {
-            if (data && data.dataBalance !== undefined) {
-                // Update localStorage
-                localStorage.setItem('walletBalance', data.dataBalance.toString());
-                
-                // Update display if on dashboard
-                const dataDisplay = document.getElementById('dataDisplay');
-                if (dataDisplay) {
-                    dataDisplay.innerHTML = `${data.dataBalance.toFixed(1)}<span>GB</span>`;
-                    dataDisplay.style.display = 'block';
-                    
-                    const globalStatus = document.getElementById('globalStatus');
-                    if (globalStatus) {
-                        globalStatus.style.display = 'block';
+            if (data) {
+                    // Update localStorage
+                    if (data.dataBalance !== null && data.dataBalance !== undefined) {
+                        localStorage.setItem('walletBalance', data.dataBalance.toString());
+                    } else {
+                        localStorage.removeItem('walletBalance');
+                    }
+
+                    // Update display if on dashboard
+                    const dataDisplay = document.getElementById('dataDisplay');
+                    if (dataDisplay) {
+                        if (data.dataBalance === null || data.dataBalance === undefined) {
+                            dataDisplay.innerHTML = `--<span>GB</span>`;
+                        } else {
+                            dataDisplay.innerHTML = `${data.dataBalance.toFixed(1)}<span>GB</span>`;
+                        }
+                        dataDisplay.style.display = 'block';
+
+                        const globalStatus = document.getElementById('globalStatus');
+                        if (globalStatus) {
+                            globalStatus.style.display = 'block';
+                        }
                     }
                 }
-            }
         })
         .catch(error => {
             console.error('Error fetching data balance:', error);
@@ -1349,7 +1357,7 @@ function showDataAdded(productId) {
 
         // Calculate new total and update display
         const newTotal = currentAmount + addedAmount;
-        
+
         // Save to localStorage
         localStorage.setItem('walletBalance', newTotal.toString());
 
@@ -1363,10 +1371,10 @@ function showDataAdded(productId) {
         if (dotIndicator) {
             dotIndicator.classList.add('pulse');
         }
-        
+
         // Create sparkle effect
         createSparkle(dataDisplay);
-        
+
         setTimeout(() => {
             dataDisplay.classList.remove('pulse');
             if (dotIndicator) {

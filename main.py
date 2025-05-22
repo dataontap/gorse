@@ -663,10 +663,10 @@ def get_user_data_balance():
                     })
     except Exception as e:
         print(f"Error getting user data balance: {str(e)}")
-        # Return a default value if database fails
+        # Return a placeholder value if database fails
         return jsonify({
             'userId': user_id,
-            'dataBalance': 1.0,
+            'dataBalance': None,  # Using None to indicate no valid value
             'unit': 'GB',
             'note': 'Default value due to error'
         })
