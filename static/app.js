@@ -1,5 +1,15 @@
 // Update token value pill on all pages
+// Initialize session user (always user #1)
+if (!localStorage.getItem('userId')) {
+    localStorage.setItem('userId', '1');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize wallet data if not present
+    if (!localStorage.getItem('walletBalance')) {
+        localStorage.setItem('walletBalance', '0.0');
+    }
+    
     const tokenValuePill = document.querySelector('.token-value-pill');
 
     if (tokenValuePill) {
@@ -99,6 +109,74 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Add refresh functionality to dot indicator
+function initializeDotRefresh() {
+    const dotIndicator = document.querySelector('.dot-indicator');
+    if (!dotIndicator) return;
+    
+    let pressTimer;
+    let isLongPress = false;
+    
+    // Long press detection
+    dotIndicator.addEventListener('mousedown', (e) => {
+        pressTimer = setTimeout(() => {
+            isLongPress = true;
+            refreshDataAmount();
+        }, 1000); // 1 second long press
+    });
+    
+    dotIndicator.addEventListener('touchstart', (e) => {
+        pressTimer = setTimeout(() => {
+            isLongPress = true;
+            refreshDataAmount();
+        }, 1000); // 1 second long press
+    });
+    
+    // Clear timer if press is canceled
+    dotIndicator.addEventListener('mouseup', () => {
+        clearTimeout(pressTimer);
+        isLongPress = false;
+    });
+    
+    dotIndicator.addEventListener('touchend', () => {
+        clearTimeout(pressTimer);
+        isLongPress = false;
+    });
+    
+    dotIndicator.addEventListener('mouseleave', () => {
+        clearTimeout(pressTimer);
+        isLongPress = false;
+    });
+}
+
+function refreshDataAmount() {
+    const dataDisplay = document.getElementById('dataDisplay');
+    const dotIndicator = document.querySelector('.dot-indicator');
+    
+    if (!dataDisplay || !dotIndicator) return;
+    
+    // Add pulse animation
+    dotIndicator.classList.add('pulse');
+    
+    // Simulate loading
+    setTimeout(() => {
+        // Get current amount from localStorage or API
+        let currentAmount = parseFloat(localStorage.getItem('walletBalance') || '0.0');
+        
+        // Update the display
+        dataDisplay.innerHTML = `${currentAmount.toFixed(1)}<span>GB</span>`;
+        dataDisplay.style.display = 'block';
+        
+        // Create sparkle effect
+        createSparkle(dotIndicator);
+        
+        // Remove pulse after animation completes
+        setTimeout(() => {
+            dotIndicator.classList.remove('pulse');
+        }, 1000);
+    }, 500);
+}
+
 // Add scroll animation for offer cards
 function checkOfferCardsInView() {
     const offerCards = document.querySelectorAll('.offer-card');
@@ -140,7 +218,62 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeCarousel();
     checkPurchasedMemberships();
     updateCarouselControlsVisibility();
+    initializeDotRefresh();
+    loadDataFromSession();
 });
+
+// Load data from session storage
+function loadDataFromSession() {
+    const dataDisplay = document.getElementById('dataDisplay');
+    const globalStatus = document.getElementById('globalStatus');
+    
+    if (dataDisplay) {
+        // First show cached data immediately for better UX
+        const walletBalance = localStorage.getItem('walletBalance');
+        if (walletBalance) {
+            const amount = parseFloat(walletBalance);
+            dataDisplay.innerHTML = `${amount.toFixed(1)}<span>GB</span>`;
+            dataDisplay.style.display = 'block';
+            
+            if (globalStatus) {
+                globalStatus.style.display = 'block';
+            }
+        }
+        
+        // Then fetch fresh data from API
+        fetchUserDataBalance();
+    }
+}
+
+// Fetch current user data balance from API
+function fetchUserDataBalance() {
+    const userId = localStorage.getItem('userId') || '1';
+    
+    fetch(`/api/user/data-balance?userId=${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.dataBalance !== undefined) {
+                // Update localStorage
+                localStorage.setItem('walletBalance', data.dataBalance.toString());
+                
+                // Update display if on dashboard
+                const dataDisplay = document.getElementById('dataDisplay');
+                if (dataDisplay) {
+                    dataDisplay.innerHTML = `${data.dataBalance.toFixed(1)}<span>GB</span>`;
+                    dataDisplay.style.display = 'block';
+                    
+                    const globalStatus = document.getElementById('globalStatus');
+                    if (globalStatus) {
+                        globalStatus.style.display = 'block';
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching data balance:', error);
+            // No need to show error to user, just use cached data
+        });
+}
 
 function initializeCarousel() {
     const carousel = document.getElementById('promotionsCarousel');
@@ -1200,14 +1333,11 @@ function showDataAdded(productId) {
     // Show data has been added to the account
     const dataDisplay = document.getElementById('dataDisplay');
     const globalStatus = document.getElementById('globalStatus');
+    const dotIndicator = document.querySelector('.dot-indicator');
 
     if (dataDisplay && globalStatus) {
-        // Get current data amount if displayed
-        let currentAmount = 0;
-        if (dataDisplay.style.display === 'block') {
-            const currentText = dataDisplay.textContent.replace('GB', '').trim();
-            currentAmount = parseFloat(currentText) || 0;
-        }
+        // Get current data amount from localStorage
+        let currentAmount = parseFloat(localStorage.getItem('walletBalance') || '0.0');
 
         // Add new data to current amount
         let addedAmount = 0;
@@ -1219,15 +1349,29 @@ function showDataAdded(productId) {
 
         // Calculate new total and update display
         const newTotal = currentAmount + addedAmount;
+        
+        // Save to localStorage
+        localStorage.setItem('walletBalance', newTotal.toString());
 
+        // Update the display
         dataDisplay.innerHTML = `${newTotal.toFixed(1)}<span>GB</span>`;
         dataDisplay.style.display = 'block';
         globalStatus.style.display = 'block';
 
-        // Add animation
+        // Add animation to both data display and dot
         dataDisplay.classList.add('pulse');
+        if (dotIndicator) {
+            dotIndicator.classList.add('pulse');
+        }
+        
+        // Create sparkle effect
+        createSparkle(dataDisplay);
+        
         setTimeout(() => {
             dataDisplay.classList.remove('pulse');
+            if (dotIndicator) {
+                dotIndicator.classList.remove('pulse');
+            }
         }, 1000);
     }
 }

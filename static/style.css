@@ -1210,7 +1210,26 @@ body {
 }
 
 .dot-indicator.pulse {
-    transform: scale(1.1);
+    animation: dotPulse 1s ease-in-out;
+}
+
+@keyframes dotPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.dot-indicator {
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.dot-indicator:hover {
+    transform: scale(1.05);
+}
+
+.dot-indicator:active {
+    transform: scale(0.95);
 }
 
 .dot-content {
