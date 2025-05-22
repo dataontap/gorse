@@ -125,6 +125,41 @@ def create_stripe_products():
         except Exception as e:
             print(f"Error creating Full Membership price: {str(e)}")
             
+        # 4. Metal DOTM Card - One-time purchase
+        try:
+            metal_card_product = stripe.Product.retrieve('metal_card')
+            print(f"Metal Card product already exists: {metal_card_product.id}")
+        except stripe.error.InvalidRequestError:
+            metal_card_product = stripe.Product.create(
+                id='metal_card',
+                name='DOTM Metal Card',
+                description='Premium metal cryptocurrency card powered by MetaMask',
+                metadata={
+                    'type': 'physical',
+                    'product_catalog': 'cards',
+                    'material': 'metal'
+                }
+            )
+            print(f"Created Metal Card product: {metal_card_product.id}")
+        
+        # Create price for Metal Card
+        try:
+            prices = stripe.Price.list(product=metal_card_product.id, active=True)
+            if len(prices.data) == 0:
+                metal_card_price = stripe.Price.create(
+                    product=metal_card_product.id,
+                    unit_amount=9999,  # $99.99
+                    currency='usd',
+                    metadata={
+                        'card_type': 'metal'
+                    }
+                )
+                print(f"Created Metal Card price: {metal_card_price.id}")
+            else:
+                print(f"Metal Card price already exists: {prices.data[0].id}")
+        except Exception as e:
+            print(f"Error creating Metal Card price: {str(e)}")
+        
         print("Stripe products setup completed successfully!")
         return True
         

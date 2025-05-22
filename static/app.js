@@ -1,35 +1,34 @@
-
 // Update token value pill on all pages
 document.addEventListener('DOMContentLoaded', function() {
     const tokenValuePill = document.querySelector('.token-value-pill');
-    
+
     if (tokenValuePill) {
         // Function to create sparkle animation
         function createSparkle(element) {
             const rect = element.getBoundingClientRect();
-            
+
             for (let i = 0; i < 5; i++) {
                 const sparkle = document.createElement('div');
                 sparkle.classList.add('sparkle');
-                
+
                 // Random position around the element
                 const x = rect.left + Math.random() * rect.width;
                 const y = rect.top + Math.random() * rect.height;
-                
+
                 sparkle.style.left = `${x}px`;
                 sparkle.style.top = `${y}px`;
                 sparkle.style.width = `${10 + Math.random() * 10}px`;
                 sparkle.style.height = sparkle.style.width;
-                
+
                 document.body.appendChild(sparkle);
-                
+
                 // Remove the sparkle after animation completes
                 setTimeout(() => {
                     document.body.removeChild(sparkle);
                 }, 800);
             }
         }
-        
+
         // Add CSS for animations
         const style = document.createElement('style');
         style.textContent = `
@@ -65,23 +64,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         `;
         document.head.appendChild(style);
-        
+
         // Function to update the token value display
         async function updateTokenValue() {
             try {
                 const response = await fetch('/api/token/price');
                 const data = await response.json();
-                
+
                 if (data.price) {
                     // Add updating animation
                     tokenValuePill.classList.add('updating');
-                    
+
                     // Create sparkle effect
                     createSparkle(tokenValuePill);
-                    
+
                     // Update content
                     tokenValuePill.textContent = `1 DOTM = $${data.price.toFixed(2)}`;
-                    
+
                     // Remove animation class after animation completes
                     setTimeout(() => {
                         tokenValuePill.classList.remove('updating');
@@ -91,10 +90,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error fetching token price:', error);
             }
         }
-        
+
         // Update immediately
         updateTokenValue();
-        
+
         // Then update every minute
         setInterval(updateTokenValue, 60000);
     }
@@ -273,16 +272,16 @@ document.addEventListener('DOMContentLoaded', function() {
 window.sendTestNotification = function() {
     const statusElement = document.getElementById('notification-status');
     statusElement.textContent = 'Sending notification...';
-    
+
     // Check if we have notification permission first
     if (Notification.permission !== 'granted') {
         statusElement.textContent = 'Error: Notification permission not granted. Please enable notifications first.';
         return;
     }
-    
+
     const target = document.getElementById('notification-target').value;
     const timestamp = new Date().toLocaleTimeString();
-    
+
     fetch('/api/send-notification', {
         method: 'POST',
         headers: {
@@ -298,25 +297,25 @@ window.sendTestNotification = function() {
     .then(data => {
         console.log('Notification sent:', data);
         statusElement.textContent = 'Success: ' + data.message;
-        
+
         // Create a local notification as a fallback
         if (target === 'web' || target === 'all') {
             statusElement.textContent += ' If FCM notifications are working, you should see a notification shortly.';
-            
+
             // Create a direct browser notification as a fallback
             setTimeout(() => {
                 const localNotification = new Notification('Local Test Notification (' + timestamp + ')', {
                     body: 'This is a local browser notification (not via FCM). Sent at ' + timestamp,
                     icon: '/static/tropical-border.png'
                 });
-                
+
                 localNotification.onclick = function() {
                     window.focus();
                     this.close();
                 };
             }, 2000);
         }
-        
+
         // Clear status after 10 seconds
         setTimeout(() => {
             if (statusElement && statusElement.textContent && statusElement.textContent.includes('Success:')) {
@@ -1452,11 +1451,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (dashboardContainer) {
       const notificationTester = document.createElement('div');
       notificationTester.className = 'notification-tester';
-      
+
       // Check if Notification API is supported
       const notificationSupported = typeof Notification !== 'undefined';
       const permissionStatus = notificationSupported ? Notification.permission : 'not-supported';
-      
+
       notificationTester.innerHTML = `
         <h3>Test Push Notifications</h3>
         <p>Send a test notification to verify your FCM setup:</p>
@@ -1543,7 +1542,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Add the notification tester to the dashboard
       dashboardContainer.appendChild(notificationTester);
-      
+
       // Add event listener for permission request button
       const permissionBtn = document.getElementById('request-permission-btn');
       if (permissionBtn) {
