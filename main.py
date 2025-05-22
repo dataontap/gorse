@@ -635,8 +635,8 @@ purchase_model = api.model('Purchase', {
 
 @app.route('/api/user/data-balance', methods=['GET'])
 def get_user_data_balance():
-    """Get the current data balance for a user"""
-    user_id = request.args.get('userId', '1')  # Default to user #1
+    """Get the current data balance for a member"""
+    user_id = request.args.get('userId', '1')  # Default to member #1
 
     try:
         # For demo purposes, we'll calculate based on purchases
@@ -701,8 +701,8 @@ def record_global_purchase():
         'full_membership': 'price_full_membership',
     }
 
-    # In a real application, fetch the user ID from a secure session or authentication system.
-    user_id = 1  # Placeholder user ID
+    # In a real application, fetch the member ID from a secure session or authentication system.
+    user_id = 1  # Placeholder member ID
 
     # Try to get price from Stripe if available
     price_id = None
