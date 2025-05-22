@@ -672,7 +672,7 @@ def get_user_data_balance():
         })
 
 @app.route('/api/record-global-purchase', methods=['POST'])
-def create_checkout_session():
+def record_global_purchase():
     data = request.get_json()
     product_id = data.get('productId')
     print(f"===== RECORDING PURCHASE FOR PRODUCT: {product_id} =====")
