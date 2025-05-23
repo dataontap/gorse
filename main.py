@@ -165,7 +165,7 @@ def register_firebase_user():
 
     if not firebase_uid or not email:
         return jsonify({'error': 'Firebase UID and email are required'}), 400
-    
+
     try:
         with get_db_connection() as conn:
             if conn:
@@ -201,7 +201,7 @@ def register_firebase_user():
                         # User exists, return the user ID
                         user_id = existing_user[0]
                         print(f"Existing Firebase user found: {user_id}")
-                        
+
                         # Update user information if needed
                         cur.execute(
                             """UPDATE users SET 
@@ -242,7 +242,7 @@ def register_firebase_user():
                                     metadata={'firebase_uid': firebase_uid, 'user_id': user_id}
                                 )
                                 stripe_customer_id = customer.id
-                                
+
                                 # Update user with Stripe ID
                                 cur.execute(
                                     "UPDATE users SET stripe_customer_id = %s WHERE UserID = %s",
@@ -262,7 +262,7 @@ def update_user_imei():
 
     if not firebase_uid or not imei:
         return jsonify({'error': 'Firebase UID and IMEI are required'}), 400
-    
+
     try:
         with get_db_connection() as conn:
             if conn:
@@ -273,7 +273,7 @@ def update_user_imei():
                     )
                     result = cur.fetchone()
                     conn.commit()
-                    
+
                     if result:
                         return jsonify({
                             'status': 'success',
@@ -282,7 +282,7 @@ def update_user_imei():
                         })
                     else:
                         return jsonify({'error': 'User not found'}), 404
-        
+
         return jsonify({'error': 'Database connection error'}), 500
     except Exception as e:
         print(f"Error updating IMEI: {str(e)}")
@@ -302,7 +302,7 @@ def register_firebase_user():
 
     if not firebase_uid or not email:
         return jsonify({'error': 'Firebase UID and email are required'}), 400
-    
+
     try:
         with get_db_connection() as conn:
             if conn:
@@ -338,7 +338,7 @@ def register_firebase_user():
                         # User exists, return the user ID
                         user_id = existing_user[0]
                         print(f"Existing Firebase user found: {user_id}")
-                        
+
                         # Update user information if needed
                         cur.execute(
                             """UPDATE users SET 
@@ -379,7 +379,7 @@ def register_firebase_user():
                                     metadata={'firebase_uid': firebase_uid, 'user_id': user_id}
                                 )
                                 stripe_customer_id = customer.id
-                                
+
                                 # Update user with Stripe ID
                                 cur.execute(
                                     "UPDATE users SET stripe_customer_id = %s WHERE UserID = %s",
@@ -394,7 +394,7 @@ def register_firebase_user():
                         'userId': user_id,
                         'stripeCustomerId': stripe_customer_id
                     })
-                
+
         return jsonify({'error': 'Database connection error'}), 500
     except Exception as e:
         print(f"Error registering Firebase user: {str(e)}")
@@ -406,7 +406,7 @@ def get_current_user():
     firebase_uid = request.args.get('firebaseUid')
     if not firebase_uid:
         return jsonify({'error': 'Firebase UID is required'}), 400
-    
+
     try:
         with get_db_connection() as conn:
             if conn:
@@ -417,7 +417,7 @@ def get_current_user():
                         (firebase_uid,)
                     )
                     user = cur.fetchone()
-                    
+
                     if user:
                         return jsonify({
                             'status': 'success',
@@ -427,9 +427,9 @@ def get_current_user():
                             'photoURL': user[3],
                             'imei': user[4]
                         })
-                    
+
                     return jsonify({'error': 'User not found'}), 404
-        
+
         return jsonify({'error': 'Database connection error'}), 500
     except Exception as e:
         print(f"Error getting current user: {str(e)}")
@@ -451,20 +451,20 @@ def get_member_count():
                         )
                     """)
                     table_exists = cur.fetchone()[0]
-                    
+
                     if not table_exists:
                         return jsonify({'count': 1, 'error': 'Users table does not exist'})
-                    
+
                     # Count total number of users
                     cur.execute("SELECT COUNT(*) FROM users")
                     count = cur.fetchone()[0]
-                    
+
                     # If count is 0, return at least 1 for the current user
                     if count == 0:
                         count = 1
-                        
+
                     return jsonify({'count': count})
-            
+
             # If no database connection, return default count of 1
             return jsonify({'count': 1, 'error': 'No database connection'})
     except Exception as e:
@@ -1705,20 +1705,20 @@ def get_member_count():
                         )
                     """)
                     table_exists = cur.fetchone()[0]
-                    
+
                     if not table_exists:
                         return jsonify({'count': 1, 'error': 'Users table does not exist'})
-                    
+
                     # Count total number of users
                     cur.execute("SELECT COUNT(*) FROM users")
                     count = cur.fetchone()[0]
-                    
+
                     # If count is 0, return at least 1 for the current user
                     if count == 0:
                         count = 1
-                        
+
                     return jsonify({'count': count})
-            
+
             # If no database connection, return default count of 1
             return jsonify({'count': 1, 'error': 'No database connection'})
     except Exception as e:
