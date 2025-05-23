@@ -1284,13 +1284,41 @@ window.confirmPurchase = function(productId) {
         }
     });
 
+    // Use a transaction ID to prevent duplicate UI updates
+    const transactionId = 'tx_' + Date.now();
+    
+    // Store the last transaction to prevent duplicates
+    if (!window.lastTransactionTime) {
+        window.lastTransactionTime = 0;
+    }
+    
+    // Prevent duplicate transactions within 2 seconds
+    const now = Date.now();
+    if (now - window.lastTransactionTime < 2000) {
+        console.log('Duplicate transaction prevented');
+        
+        // Reset button state
+        setTimeout(() => {
+            buyButtons.forEach(btn => {
+                if (btn.textContent.trim() === 'Processing...') {
+                    btn.disabled = false;
+                    btn.textContent = 'Buy';
+                }
+            });
+        }, 500);
+        
+        return;
+    }
+    
+    window.lastTransactionTime = now;
+
     // Send API request to record purchase
     fetch('/api/record-global-purchase', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ productId: productId || 'global_data_10gb' })
+        body: JSON.stringify({ productId: productId || 'global_data_10gb', transactionId: transactionId })
     })
     .then(response => {
         if (!response.ok && response.status >= 500) {
@@ -1306,8 +1334,9 @@ window.confirmPurchase = function(productId) {
     })
     .then(data => {
         if (data.status === 'success') {
-            // Show purchase in history
+            // Show purchase in history (only once)
             addPurchaseToHistory(productId, data.purchaseId);
+            
             // Show data added
             showDataAdded(productId);
 
@@ -1319,10 +1348,28 @@ window.confirmPurchase = function(productId) {
             if (productId === 'basic_membership' || productId === 'full_membership') {
                 updateOffersCarousel(productId);
             }
+            
+            // Reset button state after animation completes (1 second)
+            setTimeout(() => {
+                buyButtons.forEach(btn => {
+                    if (btn.textContent.trim() === 'Processing...') {
+                        btn.disabled = false;
+                        btn.textContent = 'Buy';
+                    }
+                });
+            }, 1000);
         } else {
             console.error('Purchase failed:', data.message);
             // Show a user-friendly error message
             alert('Purchase could not be completed. Please try again later.');
+            
+            // Reset button state
+            buyButtons.forEach(btn => {
+                if (btn.textContent.trim() === 'Processing...') {
+                    btn.disabled = false;
+                    btn.textContent = 'Buy';
+                }
+            });
         }
     })
     .catch(error => {
@@ -1330,12 +1377,35 @@ window.confirmPurchase = function(productId) {
         // Still show the purchase in the UI to improve user experience
         addPurchaseToHistory(productId, 'local_' + Date.now());
         showDataAdded(productId);
+        
+        // Reset button state
+        buyButtons.forEach(btn => {
+            if (btn.textContent.trim() === 'Processing...') {
+                btn.disabled = false;
+                btn.textContent = 'Buy';
+            }
+        });
     });
 };
 
 function addPurchaseToHistory(productId, purchaseId) {
     const purchaseList = document.getElementById('purchaseList');
     if (!purchaseList) return;
+
+    // Check for duplicate transactions (same product within last 2 seconds)
+    const existingItems = purchaseList.querySelectorAll('.purchase-item');
+    if (existingItems.length > 0) {
+        const firstItem = existingItems[0];
+        const firstItemProduct = firstItem.querySelector('div > div').textContent;
+        const firstItemTime = firstItem.getAttribute('data-timestamp');
+        
+        // If we found a recent identical transaction, don't add another one
+        if (firstItemProduct === getProductName(productId) && 
+            firstItemTime && Date.now() - parseInt(firstItemTime) < 2000) {
+            console.log('Prevented duplicate purchase history entry');
+            return;
+        }
+    }
 
     // Remove empty state if present
     const emptyState = purchaseList.querySelector('.purchase-empty-state');
@@ -1350,6 +1420,9 @@ function addPurchaseToHistory(productId, purchaseId) {
 
     const purchaseItem = document.createElement('div');
     purchaseItem.className = 'purchase-item';
+    purchaseItem.setAttribute('data-timestamp', Date.now().toString());
+    purchaseItem.setAttribute('data-product-id', productId);
+    purchaseItem.setAttribute('data-purchase-id', purchaseId);
     purchaseItem.innerHTML = `
         <div>
             <div>${productName}</div>
@@ -1414,8 +1487,21 @@ function showDataAdded(productId) {
             dotIndicator.classList.add('pulse');
         }
 
-        // Create sparkle effect
-        createSparkle(dataDisplay);
+        // Create sparkle effect if the function exists
+        if (typeof createSparkle === 'function') {
+            createSparkle(dataDisplay);
+        } else {
+            // Fallback animation if createSparkle isn't defined
+            const animateElement = (element) => {
+                element.style.transition = 'transform 0.3s ease-in-out';
+                element.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    element.style.transform = 'scale(1)';
+                }, 300);
+            };
+            
+            animateElement(dataDisplay);
+        }
 
         setTimeout(() => {
             dataDisplay.classList.remove('pulse');
