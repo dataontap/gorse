@@ -287,9 +287,6 @@ def update_user_imei():
     except Exception as e:
         print(f"Error updating IMEI: {str(e)}")
         return jsonify({'error': str(e)}), 500
-    except Exception as e:
-        print(f"Error updating IMEI: {str(e)}")
-        return jsonify({'error': str(e)}), 500
 
                         except Exception as stripe_err:
                             print(f"Error creating Stripe customer: {str(stripe_err)}")
