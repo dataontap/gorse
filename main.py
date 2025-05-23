@@ -283,7 +283,7 @@ def update_user_imei():
                     else:
                         return jsonify({'error': 'User not found'}), 404
 
-        return jsonify({'error': 'Database connection error'}), 500
+            return jsonify({'error': 'Database connection error'}), 500
     except Exception as e:
         print(f"Error updating IMEI: {str(e)}")
         return jsonify({'error': str(e)}), 500
