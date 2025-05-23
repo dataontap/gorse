@@ -150,6 +150,231 @@ def send_to_web(title, body):
 delivery_ns = api.namespace('delivery', description='eSIM delivery operations')
 customer_ns = api.namespace('customer', description='Customer operations')
 
+# Firebase Authentication endpoints
+@app.route('/api/auth/register', methods=['POST'])
+def register_firebase_user():
+    """Register a Firebase user in our database"""
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    firebase_uid = data.get('firebaseUid')
+    email = data.get('email')
+    display_name = data.get('displayName')
+    photo_url = data.get('photoURL')
+
+    if not firebase_uid or not email:
+        return jsonify({'error': 'Firebase UID and email are required'}), 400
+    
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check if users table exists
+                    cur.execute(
+                        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')"
+                    )
+                    table_exists = cur.fetchone()[0]
+
+                    if not table_exists:
+                        # Create users table with Firebase fields
+                        cur.execute("""
+                            CREATE TABLE users (
+                                UserID SERIAL PRIMARY KEY,
+                                email VARCHAR(255) NOT NULL,
+                                firebase_uid VARCHAR(128) UNIQUE NOT NULL,
+                                stripe_customer_id VARCHAR(100),
+                                display_name VARCHAR(255),
+                                photo_url TEXT,
+                                imei VARCHAR(100),
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                            )
+                        """)
+                        conn.commit()
+                        print("Users table created with Firebase fields")
+
+                    # Check if user already exists
+                    cur.execute("SELECT UserID FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    existing_user = cur.fetchone()
+
+                    if existing_user:
+                        # User exists, return the user ID
+                        user_id = existing_user[0]
+                        print(f"Existing Firebase user found: {user_id}")
+                        
+                        # Update user information if needed
+                        cur.execute(
+                            """UPDATE users SET 
+                                email = %s, 
+                                display_name = %s, 
+                                photo_url = %s 
+                            WHERE UserID = %s""",
+                            (email, display_name, photo_url, user_id)
+                        )
+                        conn.commit()
+                    else:
+                        # Create new user
+                        cur.execute(
+                            """INSERT INTO users 
+                                (email, firebase_uid, display_name, photo_url) 
+                            VALUES (%s, %s, %s, %s) 
+                            RETURNING UserID""",
+                            (email, firebase_uid, display_name, photo_url)
+                        )
+                        user_id = cur.fetchone()[0]
+                        conn.commit()
+                        print(f"New Firebase user created: {user_id}")
+
+                    # Get or create Stripe customer for this user
+                    stripe_customer_id = None
+                    if stripe.api_key:
+                        try:
+                            # Check if user already has a Stripe customer ID
+                            cur.execute("SELECT stripe_customer_id FROM users WHERE UserID = %s", (user_id,))
+                            result = cur.fetchone()
+                            if result and result[0]:
+                                stripe_customer_id = result[0]
+                            else:
+                                # Create new Stripe customer
+                                customer = stripe.Customer.create(
+                                    email=email,
+                                    name=display_name,
+                                    metadata={'firebase_uid': firebase_uid, 'user_id': user_id}
+                                )
+                                stripe_customer_id = customer.id
+                                
+                                # Update user with Stripe ID
+                                cur.execute(
+                                    "UPDATE users SET stripe_customer_id = %s WHERE UserID = %s",
+                                    (stripe_customer_id, user_id)
+                                )
+                                conn.commit()
+
+@app.route('/api/auth/update-imei', methods=['POST'])
+def update_user_imei():
+    """Update a user's IMEI number"""
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    firebase_uid = data.get('firebaseUid')
+    imei = data.get('imei')
+
+    if not firebase_uid or not imei:
+        return jsonify({'error': 'Firebase UID and IMEI are required'}), 400
+    
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "UPDATE users SET imei = %s WHERE firebase_uid = %s RETURNING UserID",
+                        (imei, firebase_uid)
+                    )
+                    result = cur.fetchone()
+                    conn.commit()
+                    
+                    if result:
+                        return jsonify({
+                            'status': 'success',
+                            'userId': result[0],
+                            'message': 'IMEI updated successfully'
+                        })
+                    else:
+                        return jsonify({'error': 'User not found'}), 404
+        
+        return jsonify({'error': 'Database connection error'}), 500
+    except Exception as e:
+        print(f"Error updating IMEI: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+                        except Exception as stripe_err:
+                            print(f"Error creating Stripe customer: {str(stripe_err)}")
+
+                    return jsonify({
+                        'status': 'success',
+                        'userId': user_id,
+                        'stripeCustomerId': stripe_customer_id
+                    })
+                
+        return jsonify({'error': 'Database connection error'}), 500
+    except Exception as e:
+        print(f"Error registering Firebase user: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/current-user', methods=['GET'])
+def get_current_user():
+    """Get current user data from database using Firebase UID"""
+    firebase_uid = request.args.get('firebaseUid')
+    if not firebase_uid:
+        return jsonify({'error': 'Firebase UID is required'}), 400
+    
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """SELECT UserID, email, display_name, photo_url, imei 
+                        FROM users WHERE firebase_uid = %s""",
+                        (firebase_uid,)
+                    )
+                    user = cur.fetchone()
+                    
+                    if user:
+                        return jsonify({
+                            'status': 'success',
+                            'userId': user[0],
+                            'email': user[1],
+                            'displayName': user[2],
+                            'photoURL': user[3],
+                            'imei': user[4]
+                        })
+                    
+                    return jsonify({'error': 'User not found'}), 404
+        
+        return jsonify({'error': 'Database connection error'}), 500
+    except Exception as e:
+        print(f"Error getting current user: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Update member count endpoint
+@app.route('/api/member-count', methods=['GET'])
+def get_member_count():
+    """Get the total number of members from the users table"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check if users table exists
+                    cur.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables 
+                            WHERE table_name = 'users'
+                        )
+                    """)
+                    table_exists = cur.fetchone()[0]
+                    
+                    if not table_exists:
+                        return jsonify({'count': 1, 'error': 'Users table does not exist'})
+                    
+                    # Count total number of users
+                    cur.execute("SELECT COUNT(*) FROM users")
+                    count = cur.fetchone()[0]
+                    
+                    # If count is 0, return at least 1 for the current user
+                    if count == 0:
+                        count = 1
+                        
+                    return jsonify({'count': count})
+            
+            # If no database connection, return default count of 1
+            return jsonify({'count': 1, 'error': 'No database connection'})
+    except Exception as e:
+        print(f"Error getting member count: {str(e)}")
+        # Return default count if there's an error
+        return jsonify({'count': 1, 'error': str(e)})
+
+
 customer_model = api.model('Customer', {
     'email': fields.String(required=True, description='Customer email address')
 })

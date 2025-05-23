@@ -5,7 +5,64 @@
     <title>Sign Up - dot eSIM</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    <script src="/static/firebase-init.js"></script>
+    <script src="/static/firebase-auth.js"></script>
+    
+    <style>
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            color: #666;
+        }
+        
+        .auth-divider::before,
+        .auth-divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .auth-divider span {
+            padding: 0 10px;
+        }
+        
+        .google-signin-btn {
+            background-color: #fff;
+            color: #444;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .google-signin-btn:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .google-icon {
+            margin-right: 10px;
+        }
+        
+        .auth-error {
+            color: #dc3545;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
 </head>
 <body class="landing-page">
     <div class="hero-container">
@@ -13,19 +70,168 @@
         <div class="content-overlay">
             <h1 style="position: absolute; top: 0; left: 0; padding: 0px 40px 40px 40px; font-size: 5rem; color: #FFF371; text-align: left; line-height: 0.96; font-weight: bold;">Connect your phone in &lt;1 min.</h1>
             <div class="onboarding-content" style="background: transparent; position: absolute; bottom: 0; margin-bottom: 0;">
-                <form action="/submit-signup" method="POST">
+                <div id="auth-error" class="auth-error"></div>
+                
+                <button id="google-signin" class="google-signin-btn">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" class="google-icon">
+                    Continue with Google
+                </button>
+                
+                <div class="auth-divider">
+                    <span>or sign up with email</span>
+                </div>
+                
+                <form id="signup-form">
                     <div class="form-group">
-                        <label class="form-label">Where should we send eSIM activation email?</label>
-                        <input type="email" class="form-control" name="email" placeholder="Provide valid email" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" title="Please enter a valid email address" required>
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Provide valid email" required>
                     </div>
                     <div class="form-group mt-3">
-                        <label class="form-label">What device do you want to connect today?</label>
-                        <input type="text" class="form-control" name="imei" placeholder="Provide 15-digit IMEI (dial *#06#)" pattern="\d{15,}" title="Please enter at least 15 digits" required>
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required>
                     </div>
-                    <button type="submit" class="btn btn-primary mt-4">Continue</button>
+                    <div class="form-group mt-3">
+                        <label class="form-label">IMEI Number (optional)</label>
+                        <input type="text" class="form-control" id="imei" name="imei" placeholder="Provide 15-digit IMEI (dial *#06#)" pattern="\d{15,}">
+                        <small class="form-text text-muted">You can add this later in your profile</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-4">Sign Up</button>
+                </form>
+                
+                <p class="mt-3 text-center">
+                    Already have an account? <a href="#" id="show-login">Sign in</a>
+                </p>
+                
+                <!-- Login form (initially hidden) -->
+                <form id="login-form" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="login-email" name="email" placeholder="Your email" required>
+                    </div>
+                    <div class="form-group mt-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="login-password" name="password" placeholder="Your password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-4">Sign In</button>
+                    
+                    <p class="mt-3 text-center">
+                        Need an account? <a href="#" id="show-signup">Sign up</a>
+                    </p>
                 </form>
             </div>
         </div>
     </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const signupForm = document.getElementById('signup-form');
+            const loginForm = document.getElementById('login-form');
+            const showLoginLink = document.getElementById('show-login');
+            const showSignupLink = document.getElementById('show-signup');
+            const googleSigninBtn = document.getElementById('google-signin');
+            const authError = document.getElementById('auth-error');
+            
+            // Toggle between signup and login forms
+            showLoginLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                signupForm.style.display = 'none';
+                loginForm.style.display = 'block';
+                authError.style.display = 'none';
+            });
+            
+            showSignupLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+                authError.style.display = 'none';
+            });
+            
+            // Handle signup form submission
+            signupForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const imei = document.getElementById('imei').value;
+                
+                // Store IMEI for later use after successful signup
+                if (imei) {
+                    localStorage.setItem('pendingImei', imei);
+                }
+                
+                window.firebaseAuth.createUserWithEmailPassword(email, password)
+                    .then((userCredential) => {
+                        // Handle successful signup
+                        console.log('User created:', userCredential.user);
+                    })
+                    .catch((error) => {
+                        // Handle signup errors
+                        console.error('Error signing up:', error);
+                        authError.textContent = error.message;
+                        authError.style.display = 'block';
+                    });
+            });
+            
+            // Handle login form submission
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                window.firebaseAuth.signInWithEmailPassword(email, password)
+                    .then((userCredential) => {
+                        // Handle successful login
+                        console.log('User signed in:', userCredential.user);
+                    })
+                    .catch((error) => {
+                        // Handle login errors
+                        console.error('Error signing in:', error);
+                        authError.textContent = error.message;
+                        authError.style.display = 'block';
+                    });
+            });
+            
+            // Handle Google sign-in
+            googleSigninBtn.addEventListener('click', function() {
+                window.firebaseAuth.signInWithGoogle()
+                    .then((result) => {
+                        // Handle successful Google sign-in
+                        console.log('Google sign-in successful:', result.user);
+                    })
+                    .catch((error) => {
+                        // Handle Google sign-in errors
+                        console.error('Error with Google sign-in:', error);
+                        authError.textContent = error.message;
+                        authError.style.display = 'block';
+                    });
+            });
+            
+            // Save IMEI if user is already signed in and has a pending IMEI
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user && localStorage.getItem('pendingImei')) {
+                    const imei = localStorage.getItem('pendingImei');
+                    
+                    // Update user profile with IMEI
+                    fetch('/api/auth/update-imei', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            firebaseUid: user.uid,
+                            imei: imei
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('IMEI updated:', data);
+                        localStorage.removeItem('pendingImei');
+                    })
+                    .catch(error => {
+                        console.error('Error updating IMEI:', error);
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -1887,3 +1887,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 });
+
+// Firebase logout function
+window.logoutUser = function() {
+  if (window.firebaseAuth) {
+    window.firebaseAuth.signOut()
+      .then(() => {
+        console.log('User signed out successfully');
+        // Clear localStorage and redirect to home
+        localStorage.clear();
+        window.location.href = '/';
+      })
+      .catch((error) => {
+        console.error('Error signing out:', error);
+      });
+  } else {
+    console.error('Firebase Auth not initialized');
+    // Fallback to simple redirect
+    window.location.href = '/';
+  }
+};
+
+// Update profile dropdown to use Firebase logout
+document.addEventListener('DOMContentLoaded', function() {
+  // Connect logout button to Firebase logout
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      logoutUser();
+    });
+  }
+});
