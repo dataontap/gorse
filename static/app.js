@@ -220,7 +220,40 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCarouselControlsVisibility();
     initializeDotRefresh();
     loadDataFromSession();
+    updateMembershipCount();
 });
+
+// Function to update membership count
+function updateMembershipCount() {
+    // Get current member ID from localStorage
+    const currentMemberId = localStorage.getItem('userId') || '1';
+    const currentMemberIdElement = document.getElementById('currentMemberId');
+    if (currentMemberIdElement) {
+        currentMemberIdElement.textContent = currentMemberId;
+    }
+
+    // Count total members from cards or fetch from API
+    const totalMembersElement = document.getElementById('totalMembers');
+    if (totalMembersElement) {
+        // Option 1: Count from user cards if available
+        const userCards = document.querySelectorAll('.user-card');
+        const totalCount = userCards.length || 1; // At least 1 (current user)
+        
+        // Option 2: Use user count from counter if available
+        const userCountElement = document.querySelector('.user-count');
+        let displayCount = totalCount;
+        
+        if (userCountElement && userCountElement.textContent) {
+            const countFromElement = parseInt(userCountElement.textContent, 10);
+            if (!isNaN(countFromElement) && countFromElement > 0) {
+                displayCount = countFromElement;
+            }
+        }
+        
+        // Update the total count (add 1 for current user if not included)
+        totalMembersElement.textContent = displayCount.toString();
+    }
+}
 
 // Load data from session storage
 function loadDataFromSession() {
