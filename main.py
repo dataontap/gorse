@@ -287,6 +287,9 @@ def update_user_imei():
     except Exception as e:
         print(f"Error updating IMEI: {str(e)}")
         return jsonify({'error': str(e)}), 500
+    except Exception as e:
+        print(f"Error updating IMEI: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/auth/register', methods=['POST'])
 def register_firebase_user():
