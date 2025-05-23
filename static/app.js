@@ -304,16 +304,21 @@ function loadDataFromSession() {
     const globalStatus = document.getElementById('globalStatus');
 
     if (dataDisplay) {
-        // First show cached data immediately for better UX
+        // Always show the icon immediately for better UX
+        dataDisplay.innerHTML = `<i class="fas fa-sync-alt refresh-icon" title="Loading data..."></i><span>GB</span>`;
+        dataDisplay.style.display = 'block';
+        
+        if (globalStatus) {
+            globalStatus.style.display = 'block';
+        }
+        
+        // First show cached data immediately 
         const walletBalance = localStorage.getItem('walletBalance');
         if (walletBalance) {
             const amount = parseFloat(walletBalance);
-            dataDisplay.innerHTML = `${amount.toFixed(1)}<span>GB</span>`;
-            dataDisplay.style.display = 'block';
-
-            if (globalStatus) {
-                globalStatus.style.display = 'block';
-            }
+            setTimeout(() => {
+                dataDisplay.innerHTML = `${amount.toFixed(1)}<span>GB</span>`;
+            }, 500);
         }
 
         // Then fetch fresh data from API
@@ -329,33 +334,38 @@ function fetchUserDataBalance() {
         .then(response => response.json())
         .then(data => {
             if (data) {
-                    // Update localStorage
-                    if (data.dataBalance !== null && data.dataBalance !== undefined) {
-                        localStorage.setItem('walletBalance', data.dataBalance.toString());
+                // Update localStorage
+                if (data.dataBalance !== null && data.dataBalance !== undefined) {
+                    localStorage.setItem('walletBalance', data.dataBalance.toString());
+                } else {
+                    localStorage.removeItem('walletBalance');
+                }
+
+                // Update display if on dashboard
+                const dataDisplay = document.getElementById('dataDisplay');
+                if (dataDisplay) {
+                    if (data.dataBalance === null || data.dataBalance === undefined) {
+                        // Use refresh icon that allows user to retry
+                        dataDisplay.innerHTML = `<i class="fas fa-sync-alt refresh-icon" onclick="fetchUserDataBalance()" title="Refresh data"></i><span>GB</span>`;
                     } else {
-                        localStorage.removeItem('walletBalance');
+                        dataDisplay.innerHTML = `${data.dataBalance.toFixed(1)}<span>GB</span>`;
                     }
+                    dataDisplay.style.display = 'block';
 
-                    // Update display if on dashboard
-                    const dataDisplay = document.getElementById('dataDisplay');
-                    if (dataDisplay) {
-                        if (data.dataBalance === null || data.dataBalance === undefined) {
-                            dataDisplay.innerHTML = `--<span>GB</span>`;
-                        } else {
-                            dataDisplay.innerHTML = `${data.dataBalance.toFixed(1)}<span>GB</span>`;
-                        }
-                        dataDisplay.style.display = 'block';
-
-                        const globalStatus = document.getElementById('globalStatus');
-                        if (globalStatus) {
-                            globalStatus.style.display = 'block';
-                        }
+                    const globalStatus = document.getElementById('globalStatus');
+                    if (globalStatus) {
+                        globalStatus.style.display = 'block';
                     }
                 }
+            }
         })
         .catch(error => {
             console.error('Error fetching data balance:', error);
-            // No need to show error to user, just use cached data
+            // Show refresh icon on error to allow retry
+            const dataDisplay = document.getElementById('dataDisplay');
+            if (dataDisplay) {
+                dataDisplay.innerHTML = `<i class="fas fa-sync-alt refresh-icon" onclick="fetchUserDataBalance()" title="Refresh data"></i><span>GB</span>`;
+            }
         });
 }
 
