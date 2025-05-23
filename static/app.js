@@ -1241,6 +1241,15 @@ window.confirmPurchase = function(productId) {
             hideConfirmationDrawer();
         }
     }
+    
+    // Prevent double submissions by disabling all Buy buttons
+    const buyButtons = document.querySelectorAll('.btn-primary');
+    buyButtons.forEach(btn => {
+        if (btn.textContent.trim() === 'Buy') {
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+        }
+    });
 
     // Send API request to record purchase
     fetch('/api/record-global-purchase', {
