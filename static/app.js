@@ -177,6 +177,36 @@ function refreshDataAmount() {
     }, 500);
 }
 
+// Function to create sparkle animation
+function createSparkle(element) {
+    if (!element) return;
+    
+    const rect = element.getBoundingClientRect();
+
+    for (let i = 0; i < 5; i++) {
+        const sparkle = document.createElement('div');
+        sparkle.classList.add('sparkle');
+
+        // Random position around the element
+        const x = rect.left + Math.random() * rect.width;
+        const y = rect.top + Math.random() * rect.height;
+
+        sparkle.style.left = `${x}px`;
+        sparkle.style.top = `${y}px`;
+        sparkle.style.width = `${10 + Math.random() * 10}px`;
+        sparkle.style.height = sparkle.style.width;
+
+        document.body.appendChild(sparkle);
+
+        // Remove the sparkle after animation completes
+        setTimeout(() => {
+            if (document.body.contains(sparkle)) {
+                document.body.removeChild(sparkle);
+            }
+        }, 800);
+    }
+}
+
 // Add scroll animation for offer cards
 function checkOfferCardsInView() {
     const offerCards = document.querySelectorAll('.offer-card');
@@ -1288,6 +1318,18 @@ window.confirmPurchase = function(productId) {
         }
     }
     
+    // Track if purchase already processed to prevent duplicates
+    if (window.processingPurchase) {
+        return;
+    }
+    window.processingPurchase = true;
+    
+    // Show processing UI
+    const processingElement = document.querySelector('.processing-text');
+    if (processingElement) {
+        processingElement.style.display = 'block';
+    }
+    
     // Prevent double submissions by disabling all Buy buttons
     const buyButtons = document.querySelectorAll('.btn-primary');
     buyButtons.forEach(btn => {
@@ -1296,6 +1338,10 @@ window.confirmPurchase = function(productId) {
             btn.textContent = 'Processing...';
         }
     });
+
+    // Calculate the animation duration (should be about 1000ms)
+    const animationDuration = 1000;
+    const startTime = Date.now();
 
     // Send API request to record purchase
     fetch('/api/record-global-purchase', {
@@ -1318,31 +1364,87 @@ window.confirmPurchase = function(productId) {
         return response.json();
     })
     .then(data => {
-        if (data.status === 'success') {
-            // Show purchase in history
-            addPurchaseToHistory(productId, data.purchaseId);
-            // Show data added
-            showDataAdded(productId);
-
-            if (data.simulated) {
-                console.info('Note: Using simulated purchase ID due to database issue');
+        // Calculate how much time has elapsed
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, animationDuration - elapsedTime);
+        
+        // Wait for the animation to complete before updating UI
+        setTimeout(() => {
+            // Hide processing UI
+            if (processingElement) {
+                processingElement.style.display = 'none';
             }
-
-            // Check if this was a membership purchase and update offers
-            if (productId === 'basic_membership' || productId === 'full_membership') {
-                updateOffersCarousel(productId);
+            
+            // Re-enable buttons
+            buyButtons.forEach(btn => {
+                if (btn.textContent.trim() === 'Processing...') {
+                    btn.disabled = false;
+                    btn.textContent = 'Buy';
+                }
+            });
+            
+            if (data.status === 'success') {
+                // Clear any existing purchase items first to prevent duplicates
+                const purchaseList = document.getElementById('purchaseList');
+                if (purchaseList) {
+                    // Only clear purchases from this session, not all
+                    const tempId = 'temp_' + Date.now();
+                    window.lastPurchaseId = tempId;
+                }
+                
+                // Show purchase in history
+                addPurchaseToHistory(productId, data.purchaseId);
+                
+                // Show data added
+                showDataAdded(productId);
+    
+                if (data.simulated) {
+                    console.info('Note: Using simulated purchase ID due to database issue');
+                }
+    
+                // Check if this was a membership purchase and update offers
+                if (productId === 'basic_membership' || productId === 'full_membership') {
+                    updateOffersCarousel(productId);
+                }
+            } else {
+                console.error('Purchase failed:', data.message);
+                // Show a user-friendly error message
+                alert('Purchase could not be completed. Please try again later.');
             }
-        } else {
-            console.error('Purchase failed:', data.message);
-            // Show a user-friendly error message
-            alert('Purchase could not be completed. Please try again later.');
-        }
+            
+            // Reset processing flag after everything is done
+            window.processingPurchase = false;
+        }, remainingTime);
     })
     .catch(error => {
         console.error('Error recording purchase:', error);
-        // Still show the purchase in the UI to improve user experience
-        addPurchaseToHistory(productId, 'local_' + Date.now());
-        showDataAdded(productId);
+        
+        // Calculate remaining animation time
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, animationDuration - elapsedTime);
+        
+        // Wait for animation to complete before updating UI
+        setTimeout(() => {
+            // Hide processing UI
+            if (processingElement) {
+                processingElement.style.display = 'none';
+            }
+            
+            // Re-enable buttons
+            buyButtons.forEach(btn => {
+                if (btn.textContent.trim() === 'Processing...') {
+                    btn.disabled = false;
+                    btn.textContent = 'Buy';
+                }
+            });
+            
+            // Still show the purchase in the UI to improve user experience
+            addPurchaseToHistory(productId, 'local_' + Date.now());
+            showDataAdded(productId);
+            
+            // Reset processing flag after everything is done
+            window.processingPurchase = false;
+        }, remainingTime);
     });
 };
 
