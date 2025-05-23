@@ -180,7 +180,7 @@ function refreshDataAmount() {
 // Function to create sparkle animation
 function createSparkle(element) {
     if (!element) return;
-    
+
     const rect = element.getBoundingClientRect();
 
     for (let i = 0; i < 5; i++) {
@@ -267,7 +267,7 @@ function updateMembershipCount() {
     if (totalMembersElement) {
         // First show a default value
         totalMembersElement.textContent = 'X';
-        
+
         // Then fetch from API
         fetch('/api/member-count')
             .then(response => response.json())
@@ -279,14 +279,14 @@ function updateMembershipCount() {
                     const userCards = document.querySelectorAll('.user-card');
                     const userCountElement = document.querySelector('.user-count');
                     let totalCount = userCards.length || 1;
-                    
+
                     if (userCountElement && userCountElement.textContent) {
                         const countFromElement = parseInt(userCountElement.textContent, 10);
                         if (!isNaN(countFromElement) && countFromElement > 0) {
                             totalCount = countFromElement;
                         }
                     }
-                    
+
                     totalMembersElement.textContent = totalCount.toString();
                 }
             })
@@ -950,7 +950,8 @@ function createNewUserCard(firstName, lastName, usage, screentime, dollars, time
                         <div class="usage-label">Time</div>
                         <div class="usage-amount">${screentime}h</div>
                     </div>
-                    <div class="metric dollars">
+                    <div class```text
+"metric dollars">
                         <div class="usage-label">Cost</div>
                         <div class="usage-amount">$${dollars}</div>
                     </div>
@@ -1317,19 +1318,19 @@ window.confirmPurchase = function(productId) {
             hideConfirmationDrawer();
         }
     }
-    
+
     // Track if purchase already processed to prevent duplicates
     if (window.processingPurchase) {
         return;
     }
     window.processingPurchase = true;
-    
+
     // Show processing UI
     const processingElement = document.querySelector('.processing-text');
     if (processingElement) {
         processingElement.style.display = 'block';
     }
-    
+
     // Prevent double submissions by disabling all Buy buttons
     const buyButtons = document.querySelectorAll('.btn-primary');
     buyButtons.forEach(btn => {
@@ -1367,14 +1368,14 @@ window.confirmPurchase = function(productId) {
         // Calculate how much time has elapsed
         const elapsedTime = Date.now() - startTime;
         const remainingTime = Math.max(0, animationDuration - elapsedTime);
-        
+
         // Wait for the animation to complete before updating UI
         setTimeout(() => {
             // Hide processing UI
             if (processingElement) {
                 processingElement.style.display = 'none';
             }
-            
+
             // Re-enable buttons
             buyButtons.forEach(btn => {
                 if (btn.textContent.trim() === 'Processing...') {
@@ -1382,7 +1383,7 @@ window.confirmPurchase = function(productId) {
                     btn.textContent = 'Buy';
                 }
             });
-            
+
             if (data.status === 'success') {
                 // Clear any existing purchase items first to prevent duplicates
                 const purchaseList = document.getElementById('purchaseList');
@@ -1391,17 +1392,17 @@ window.confirmPurchase = function(productId) {
                     const tempId = 'temp_' + Date.now();
                     window.lastPurchaseId = tempId;
                 }
-                
+
                 // Show purchase in history
                 addPurchaseToHistory(productId, data.purchaseId);
-                
+
                 // Show data added
                 showDataAdded(productId);
-    
+
                 if (data.simulated) {
                     console.info('Note: Using simulated purchase ID due to database issue');
                 }
-    
+
                 // Check if this was a membership purchase and update offers
                 if (productId === 'basic_membership' || productId === 'full_membership') {
                     updateOffersCarousel(productId);
@@ -1411,25 +1412,25 @@ window.confirmPurchase = function(productId) {
                 // Show a user-friendly error message
                 alert('Purchase could not be completed. Please try again later.');
             }
-            
+
             // Reset processing flag after everything is done
             window.processingPurchase = false;
         }, remainingTime);
     })
     .catch(error => {
         console.error('Error recording purchase:', error);
-        
+
         // Calculate remaining animation time
         const elapsedTime = Date.now() - startTime;
         const remainingTime = Math.max(0, animationDuration - elapsedTime);
-        
+
         // Wait for animation to complete before updating UI
         setTimeout(() => {
             // Hide processing UI
             if (processingElement) {
                 processingElement.style.display = 'none';
             }
-            
+
             // Re-enable buttons
             buyButtons.forEach(btn => {
                 if (btn.textContent.trim() === 'Processing...') {
@@ -1437,11 +1438,11 @@ window.confirmPurchase = function(productId) {
                     btn.textContent = 'Buy';
                 }
             });
-            
+
             // Still show the purchase in the UI to improve user experience
             addPurchaseToHistory(productId, 'local_' + Date.now());
             showDataAdded(productId);
-            
+
             // Reset processing flag after everything is done
             window.processingPurchase = false;
         }, remainingTime);
@@ -1877,3 +1878,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 });
+
+function updateDataBalance(dataBalance) {
+    const dataAmountEl = document.querySelector('.dataDisplay');
+    if (dataAmountEl) {
+        if (dataBalance > 0) {
+            dataAmountEl.innerHTML = `${dataBalance.toFixed(1)}<span>GB</span>`;
+            dataAmountEl.setAttribute('data-empty', 'false');
+            dataAmountEl.classList.add('pulse');
+            setTimeout(() => {
+                dataAmountEl.classList.remove('pulse');            }, 1000);
+        } else {
+            dataAmountEl.innerHTML = `--<span>GB</span>`;
+            dataAmountEl.setAttribute('data-empty', 'true');
+        }
+    }
+}

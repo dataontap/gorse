@@ -1252,6 +1252,15 @@ body {
     gap: 8px;
 }
 
+/* Style specifically for the "--GB" text */
+.data-amount[data-empty="true"] {
+    color: rgba(102, 102, 102, 0.7); /* Light gray for light mode */
+}
+
+.dark-mode .data-amount[data-empty="true"] {
+    color: rgba(51, 51, 51, 0.8); /* Darker color for dark mode */
+}
+
 .data-amount span {
     font-size: 42px;
 }
