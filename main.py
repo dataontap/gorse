@@ -249,6 +249,19 @@ def register_firebase_user():
                                     (stripe_customer_id, user_id)
                                 )
                                 conn.commit()
+                        except Exception as stripe_err:
+                            print(f"Error creating Stripe customer: {str(stripe_err)}")
+
+                    return jsonify({
+                        'status': 'success',
+                        'userId': user_id,
+                        'stripeCustomerId': stripe_customer_id
+                    })
+
+        return jsonify({'error': 'Database connection error'}), 500
+    except Exception as e:
+        print(f"Error registering Firebase user: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/auth/update-imei', methods=['POST'])
 def update_user_imei():
