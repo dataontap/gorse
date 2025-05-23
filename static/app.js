@@ -297,7 +297,7 @@ function fetchUserDataBalance() {
                     const dataDisplay = document.getElementById('dataDisplay');
                     if (dataDisplay) {
                         if (data.dataBalance === null || data.dataBalance === undefined) {
-                            dataDisplay.innerHTML = `--<span>GB</span>`;
+                            dataDisplay.innerHTML = `0.0<span>GB</span>`;
                         } else {
                             dataDisplay.innerHTML = `${data.dataBalance.toFixed(1)}<span>GB</span>`;
                         }
