@@ -1,193 +1,119 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Sign Up - dot eSIM</title>
+    <title>Sign Up | dot eSIM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
 
-    <!-- Firebase App (the core Firebase SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <!-- Add Firebase Auth -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <!-- Add Firebase Messaging (optional) -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js"></script>
+    <!-- Firebase SDK - using consistent versions -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+
     <!-- Initialize Firebase -->
     <script src="/static/firebase-init.js"></script>
-    <!-- Firebase Auth UI -->
     <script src="/static/firebase-auth.js"></script>
-
-    <style>
-        .auth-divider {
-            display: flex;
-            align-items: center;
-            margin: 20px 0;
-            color: #666;
-        }
-
-        .auth-divider::before,
-        .auth-divider::after {
-            content: "";
-            flex: 1;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .auth-divider span {
-            padding: 0 10px;
-        }
-
-        .google-signin-btn {
-            background-color: #fff;
-            color: #444;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            margin-bottom: 20px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .google-signin-btn:hover {
-            background-color: #f5f5f5;
-        }
-
-        .google-icon {
-            margin-right: 10px;
-        }
-
-        .auth-error {
-            color: #dc3545;
-            margin: 10px 0;
-            display: none;
-        }
-    </style>
 </head>
-<body class="landing-page">
-    <div class="hero-container">
-        <div class="hero-image"></div>
-        <div class="content-overlay">
-            <h1 style="position: absolute; top: 0; left: 0; padding: 0px 40px 40px 40px; font-size: 5rem; color: #FFF371; text-align: left; line-height: 0.96; font-weight: bold;">Connect your phone in &lt;1 min.</h1>
-            <div class="onboarding-content" style="background: transparent; position: absolute; bottom: 0; margin-bottom: 0;">
-                <div id="auth-error" class="auth-error"></div>
+<body class="signup-page">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card signup-card">
+                    <div class="card-body">
+                        <h2 class="text-center mb-4">Join dot eSIM</h2>
 
-                <button id="google-signin" class="google-signin-btn">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" class="google-icon">
-                    Continue with Google
-                </button>
+                        <div class="mb-4">
+                            <button id="google-signin" class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center">
+                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" width="18" height="18" class="me-2">
+                                Continue with Google
+                            </button>
+                        </div>
 
-                <div class="auth-divider">
-                    <span>or sign up with email</span>
+                        <div class="divider mb-4">
+                            <span>or sign up with email</span>
+                        </div>
+
+                        <div id="auth-error" class="alert alert-danger" style="display: none;"></div>
+
+                        <form id="signup-form">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="imei" class="form-label">IMEI Number (optional)</label>
+                                <input type="text" class="form-control" id="imei" placeholder="You can add this later in your profile">
+                                <small class="form-text text-muted">Find this by dialing *#06# on your phone</small>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">Sign Up</button>
+                            </div>
+                        </form>
+
+                        <div class="mt-4 text-center">
+                            Already have an account? <a href="/signup" class="signin-link">Sign in</a>
+                        </div>
+                    </div>
                 </div>
-
-                <form id="signup-form">
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email" placeholder="Provide valid email" required>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label class="form-label">IMEI Number (optional)</label>
-                        <input type="text" class="form-control" id="imei" name="imei" placeholder="Provide 15-digit IMEI (dial *#06#)" pattern="\d{15,}">
-                        <small class="form-text text-muted">You can add this later in your profile</small>
-                    </div>
-                    <button type="submit" class="btn btn-primary mt-4">Sign Up</button>
-                </form>
-
-                <p class="mt-3 text-center">
-                    Already have an account? <a href="#" id="show-login">Sign in</a>
-                </p>
-
-                <!-- Login form (initially hidden) -->
-                <form id="login-form" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="login-email" name="email" placeholder="Your email" required>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-control" id="login-password" name="password" placeholder="Your password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary mt-4">Sign In</button>
-
-                    <p class="mt-3 text-center">
-                        Need an account? <a href="#" id="show-signup">Sign up</a>
-                    </p>
-                </form>
             </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Get form elements
             const signupForm = document.getElementById('signup-form');
-            const loginForm = document.getElementById('login-form');
-            const showLoginLink = document.getElementById('show-login');
-            const showSignupLink = document.getElementById('show-signup');
-            const googleSigninBtn = document.getElementById('google-signin');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const imeiInput = document.getElementById('imei');
             const authError = document.getElementById('auth-error');
+            const googleSigninBtn = document.getElementById('google-signin');
 
-            // Toggle between signup and login forms
-            showLoginLink.addEventListener('click', function(e) {
-                e.preventDefault();
-                signupForm.style.display = 'none';
-                loginForm.style.display = 'block';
-                authError.style.display = 'none';
-            });
-
-            showSignupLink.addEventListener('click', function(e) {
-                e.preventDefault();
-                loginForm.style.display = 'none';
-                signupForm.style.display = 'block';
-                authError.style.display = 'none';
-            });
-
-            // Handle signup form submission
+            // Handle form submission
             signupForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                const imei = document.getElementById('imei').value;
 
-                // Store IMEI for later use after successful signup
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+                const imei = imeiInput.value.trim();
+
+                // Store IMEI to local storage for later use
                 if (imei) {
                     localStorage.setItem('pendingImei', imei);
                 }
 
+                // Create user with email and password
                 window.firebaseAuth.createUserWithEmailPassword(email, password)
                     .then((userCredential) => {
                         // Handle successful signup
-                        console.log('User created:', userCredential.user);
+                        console.log('User signed up successfully:', userCredential.user);
+
+                        // If IMEI was provided, update user profile
+                        if (imei) {
+                            fetch('/api/auth/update-imei', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    firebaseUid: userCredential.user.uid,
+                                    imei: imei
+                                })
+                            });
+                        }
                     })
                     .catch((error) => {
                         // Handle signup errors
-                        console.error('Error signing up:', error);
-                        authError.textContent = error.message;
-                        authError.style.display = 'block';
-                    });
-            });
-
-            // Handle login form submission
-            loginForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
-
-                window.firebaseAuth.signInWithEmailPassword(email, password)
-                    .then((userCredential) => {
-                        // Handle successful login
-                        console.log('User signed in:', userCredential.user);
-                    })
-                    .catch((error) => {
-                        // Handle login errors
-                        console.error('Error signing in:', error);
+                        console.log('Error signing up:', error);
                         authError.textContent = error.message;
                         authError.style.display = 'block';
                     });
