@@ -1,13 +1,15 @@
+
 // Initialize Firebase for web
 document.addEventListener('DOMContentLoaded', function() {
   // Firebase configuration
   const firebaseConfig = {
-    apiKey: window.FIREBASE_API_KEY || "YOUR_API_KEY",
-    authDomain: window.FIREBASE_AUTH_DOMAIN || "your-project-id.firebaseapp.com",
-    projectId: window.FIREBASE_PROJECT_ID || "your-project-id",
-    storageBucket: window.FIREBASE_STORAGE_BUCKET || "your-project-id.appspot.com",
-    messagingSenderId: window.FIREBASE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID",
-    appId: window.FIREBASE_APP_ID || "YOUR_APP_ID"
+    apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
+    authDomain: "gorse-24e76.firebaseapp.com",
+    projectId: "gorse-24e76",
+    storageBucket: "gorse-24e76.appspot.com",
+    messagingSenderId: "212829848250",
+    appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
+    measurementId: "G-WHW3XT925P"
   };
 
   try {
