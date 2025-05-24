@@ -1,9 +1,8 @@
 
 // Firebase Authentication handler
 document.addEventListener('DOMContentLoaded', function() {
-  // Firebase configuration is already initialized in firebase-init.js
   try {
-    // Initialize auth
+    // Check if Firebase is already initialized
     if (!firebase.apps.length) {
       // Initialize Firebase if not already done
       firebase.initializeApp({
@@ -18,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     const auth = firebase.auth();
+    console.log("Firebase Auth initialized successfully");
     
     // Configure Google auth provider
     const googleProvider = new firebase.auth.GoogleAuthProvider();
@@ -87,15 +87,27 @@ document.addEventListener('DOMContentLoaded', function() {
     // Expose auth functions to global scope
     window.firebaseAuth = {
       signInWithEmailPassword: function(email, password) {
-        return auth.signInWithEmailAndPassword(email, password);
+        return auth.signInWithEmailAndPassword(email, password)
+          .catch(error => {
+            console.error("Auth error:", error);
+            throw error;
+          });
       },
       
       signInWithGoogle: function() {
-        return auth.signInWithPopup(googleProvider);
+        return auth.signInWithPopup(googleProvider)
+          .catch(error => {
+            console.error("Google sign-in error:", error);
+            throw error;
+          });
       },
       
       createUserWithEmailPassword: function(email, password) {
-        return auth.createUserWithEmailAndPassword(email, password);
+        return auth.createUserWithEmailAndPassword(email, password)
+          .catch(error => {
+            console.error("User creation error:", error);
+            throw error;
+          });
       },
       
       signOut: function() {
