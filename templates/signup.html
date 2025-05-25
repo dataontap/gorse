@@ -59,7 +59,7 @@
                         </form>
 
                         <div class="mt-4 text-center">
-                            Already have an account? <a href="/signup" class="signin-link">Sign in</a>
+                            Already have an account? <a href="#" class="signin-link" id="signinLink">Member Login</a>
                         </div>
                     </div>
                 </div>
@@ -158,6 +158,40 @@
                         console.error('Error updating IMEI:', error);
                     });
                 }
+            });
+
+            // Handle the sign in link click
+            document.getElementById('signinLink').addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Switch the form to sign in mode
+                document.querySelector('h2.text-center').textContent = 'Member Login';
+                document.querySelector('.d-grid button').textContent = 'Sign In';
+                
+                // Hide the IMEI field which is only needed for signup
+                const imeiContainer = document.querySelector('#imei').closest('.mb-3');
+                imeiContainer.style.display = 'none';
+                
+                // Change form submission behavior to sign in instead of sign up
+                signupForm.onsubmit = function(e) {
+                    e.preventDefault();
+                    
+                    const email = emailInput.value.trim();
+                    const password = passwordInput.value;
+                    
+                    // Sign in with email and password
+                    window.firebaseAuth.signInWithEmailPassword(email, password)
+                        .then((userCredential) => {
+                            // Handle successful login
+                            console.log('User logged in successfully:', userCredential.user);
+                        })
+                        .catch((error) => {
+                            // Handle login errors
+                            console.error('Error logging in:', error);
+                            authError.textContent = error.message;
+                            authError.style.display = 'block';
+                        });
+                };
             });
         });
     </script>
