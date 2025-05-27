@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Redirect to home if on protected page
         const currentPath = window.location.pathname;
-        const publicPages = ['/', '/signup'];
+        const publicPages = ['/', '/signup', '/login'];
         if (!publicPages.includes(currentPath)) {
           window.location.href = '/';
         }
