@@ -35,11 +35,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Register user with our backend
         registerUserWithBackend(user);
         
-        // Redirect to dashboard if on login/signup page
+        // Redirect to dashboard if on signup page, but allow login page access
         const currentPath = window.location.pathname;
         if (currentPath === '/' || currentPath === '/signup') {
           window.location.href = '/dashboard';
         }
+        // Note: Login page (/login) is allowed for signed-in users
       } else {
         // User is signed out
         console.log("User is signed out");

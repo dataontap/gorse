@@ -40,12 +40,14 @@
                         <form id="login-form">
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email Address</label>
-                                <input type="email" class="form-control" id="email" required>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       autocomplete="email" required>
                             </div>
 
                             <div class="mb-3">
                                 <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" required>
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       autocomplete="current-password" required>
                             </div>
 
                             <div class="d-grid">
@@ -71,6 +73,35 @@
             const authError = document.getElementById('auth-error');
             const googleSigninBtn = document.getElementById('google-signin');
 
+            // Cookie helpers
+            function setCookie(name, value, days) {
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+                document.cookie = name + '=' + value + ';expires=' + expires.toUTCString() + ';path=/';
+            }
+
+            function getCookie(name) {
+                const nameEQ = name + '=';
+                const ca = document.cookie.split(';');
+                for (let i = 0; i < ca.length; i++) {
+                    let c = ca[i];
+                    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+                }
+                return null;
+            }
+
+            // Load saved email from cookie
+            const savedEmail = getCookie('loginEmail');
+            if (savedEmail) {
+                emailInput.value = savedEmail;
+            }
+
+            // Save email to cookie when user types
+            emailInput.addEventListener('input', function() {
+                setCookie('loginEmail', emailInput.value, 30); // Save for 30 days
+            });
+
             // Handle form submission for login
             loginForm.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -78,44 +109,64 @@
                 const email = emailInput.value.trim();
                 const password = passwordInput.value;
 
-                // Sign in with email and password
-                window.firebaseAuth.signInWithEmailPassword(email, password)
-                    .then((userCredential) => {
-                        // Handle successful login
-                        console.log('User logged in successfully:', userCredential.user);
-                        // Redirect will be handled by auth state change
-                    })
-                    .catch((error) => {
-                        // Handle login errors
-                        console.error('Error logging in:', error);
-                        authError.textContent = error.message;
-                        authError.style.display = 'block';
-                    });
+                // Save email to cookie for next time
+                setCookie('loginEmail', email, 30);
+
+                // Check if Firebase auth is available
+                if (window.firebaseAuth && window.firebaseAuth.signInWithEmailPassword) {
+                    // Sign in with email and password
+                    window.firebaseAuth.signInWithEmailPassword(email, password)
+                        .then((userCredential) => {
+                            // Handle successful login
+                            console.log('User logged in successfully:', userCredential.user);
+                            // Redirect to dashboard
+                            window.location.href = '/dashboard';
+                        })
+                        .catch((error) => {
+                            // Handle login errors
+                            console.error('Error logging in:', error);
+                            authError.textContent = error.message;
+                            authError.style.display = 'block';
+                        });
+                } else {
+                    // Firebase not available, show message
+                    authError.textContent = 'Authentication service is not available. Please try again later.';
+                    authError.style.display = 'block';
+                }
             });
 
             // Handle Google sign-in
             googleSigninBtn.addEventListener('click', function() {
-                window.firebaseAuth.signInWithGoogle()
-                    .then((result) => {
-                        // Handle successful Google sign-in
-                        console.log('Google sign-in successful:', result.user);
-                        // Redirect will be handled by auth state change
-                    })
-                    .catch((error) => {
-                        // Handle Google sign-in errors
-                        console.error('Error with Google sign-in:', error);
-                        authError.textContent = error.message;
-                        authError.style.display = 'block';
-                    });
-            });
-
-            // Handle auth state changes
-            firebase.auth().onAuthStateChanged(function(user) {
-                if (user) {
-                    // User is signed in, redirect to dashboard
-                    window.location.href = '/dashboard';
+                if (window.firebaseAuth && window.firebaseAuth.signInWithGoogle) {
+                    window.firebaseAuth.signInWithGoogle()
+                        .then((result) => {
+                            // Handle successful Google sign-in
+                            console.log('Google sign-in successful:', result.user);
+                            // Redirect to dashboard
+                            window.location.href = '/dashboard';
+                        })
+                        .catch((error) => {
+                            // Handle Google sign-in errors
+                            console.error('Error with Google sign-in:', error);
+                            authError.textContent = error.message;
+                            authError.style.display = 'block';
+                        });
+                } else {
+                    // Firebase not available, show message
+                    authError.textContent = 'Google sign-in is not available. Please try again later.';
+                    authError.style.display = 'block';
                 }
             });
+
+            // Optional: Handle auth state changes but don't auto-redirect from login page
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        console.log('User is already signed in:', user.email);
+                        // Don't auto-redirect - let user stay on login page if they want
+                    }
+                });
+            }
         });
     </script>
 </body>

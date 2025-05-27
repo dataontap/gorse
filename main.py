@@ -180,7 +180,7 @@ def register_firebase_user():
                         # Create users table with Firebase fields
                         cur.execute("""
                             CREATE TABLE users (
-                                UserID SERIAL PRIMARY KEY,
+                                userid SERIAL PRIMARY KEY,
                                 email VARCHAR(255) NOT NULL,
                                 firebase_uid VARCHAR(128) UNIQUE NOT NULL,
                                 stripe_customer_id VARCHAR(100),
@@ -194,7 +194,7 @@ def register_firebase_user():
                         print("Users table created with Firebase fields")
 
                     # Check if user already exists
-                    cur.execute("SELECT UserID FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    cur.execute("SELECT userid FROM users WHERE firebase_uid = %s", (firebase_uid,))
                     existing_user = cur.fetchone()
 
                     if existing_user:
@@ -208,7 +208,7 @@ def register_firebase_user():
                                 email = %s, 
                                 display_name = %s, 
                                 photo_url = %s 
-                            WHERE UserID = %s""",
+                            WHERE userid = %s""",
                             (email, display_name, photo_url, user_id)
                         )
                         conn.commit()
@@ -218,7 +218,7 @@ def register_firebase_user():
                             """INSERT INTO users 
                                 (email, firebase_uid, display_name, photo_url) 
                             VALUES (%s, %s, %s, %s) 
-                            RETURNING UserID""",
+                            RETURNING userid""",
                             (email, firebase_uid, display_name, photo_url)
                         )
                         user_id = cur.fetchone()[0]
