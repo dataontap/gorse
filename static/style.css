@@ -117,6 +117,10 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+    background: transparent;
+    padding: 0;
+    z-index: 1000;
+}
 
 /* Wallet value pill styling */
 .wallet-value-pill {
@@ -148,10 +152,6 @@ body {
     color: #99ccff;
 }
 
-    background: transparent;
-    padding: 0;
-}
-
 .promo-text {
     position: absolute;
     top: 20px;
@@ -168,7 +168,7 @@ body {
     padding-right: 40px;
     padding-bottom: 40px;
     padding-left: 40px;
-    z-index: 100000;
+    z-index: 1000000;
     margin: 0;
     pointer-events: none;
     display: flex;
@@ -189,6 +189,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    z-index: 1001;
 }
 
 .signup-btn {
