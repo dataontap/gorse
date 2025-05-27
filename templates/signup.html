@@ -69,6 +69,10 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Check if we should start in login mode
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+            
             // Get form elements
             const signupForm = document.getElementById('signup-form');
             const emailInput = document.getElementById('email');
@@ -76,6 +80,11 @@
             const imeiInput = document.getElementById('imei');
             const authError = document.getElementById('auth-error');
             const googleSigninBtn = document.getElementById('google-signin');
+            
+            // If mode=login, automatically switch to login form
+            if (mode === 'login') {
+                switchToLoginMode();
+            }
 
             // Handle form submission
             signupForm.addEventListener('submit', function(e) {
@@ -160,10 +169,8 @@
                 }
             });
 
-            // Handle the sign in link click
-            document.getElementById('signinLink').addEventListener('click', function(e) {
-                e.preventDefault();
-                
+            // Function to switch to login mode
+            function switchToLoginMode() {
                 // Switch the form to sign in mode
                 document.querySelector('h2.text-center').textContent = 'Member Login';
                 document.querySelector('.d-grid button').textContent = 'Sign In';
@@ -171,6 +178,14 @@
                 // Hide the IMEI field which is only needed for signup
                 const imeiContainer = document.querySelector('#imei').closest('.mb-3');
                 imeiContainer.style.display = 'none';
+                
+                // Change the signin link text and behavior
+                const signinLink = document.getElementById('signinLink');
+                signinLink.textContent = 'Sign Up';
+                signinLink.onclick = function(e) {
+                    e.preventDefault();
+                    window.location.href = '/signup'; // Go back to signup mode
+                };
                 
                 // Change form submission behavior to sign in instead of sign up
                 signupForm.onsubmit = function(e) {
@@ -192,6 +207,12 @@
                             authError.style.display = 'block';
                         });
                 };
+            }
+
+            // Handle the sign in link click
+            document.getElementById('signinLink').addEventListener('click', function(e) {
+                e.preventDefault();
+                switchToLoginMode();
             });
         });
     </script>
