@@ -719,9 +719,13 @@ def stripe_webhook():
 def home():
     return render_template('index.html')
 
-@app.route('/signup', methods=['GET'])
+@app.route('/signup')
 def signup():
-    return render_template('signup.html')  # Assumes signup.html exists
+    return render_template('signup.html')
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
 
 @app.route('/submit-signup', methods=['POST'])
 def submit_signup():
@@ -889,7 +893,8 @@ def get_user_data_balance():
         print(f"Error getting user data balance: {str(e)}")
         # Return a placeholder value if database fails
         return jsonify({
-            'userId': user_id,
+            'userId':```python
+user_id,
             'dataBalance': None,  # Using None to indicate no valid value
             'unit': 'GB',
             'note': 'Default value due to error'
