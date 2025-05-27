@@ -240,11 +240,11 @@
         function openDialer(code) {
             // Try to open the dialer with the code
             if (navigator.userAgent.match(/Android/i)) {
-                // For Android devices
-                window.location.href = 'tel:' + code;
+                // For Android devices - encode the code properly
+                window.location.href = 'tel:' + encodeURIComponent(code);
             } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
-                // For iOS devices
-                window.location.href = 'tel:' + code;
+                // For iOS devices - encode the code properly
+                window.location.href = 'tel:' + encodeURIComponent(code);
             } else {
                 // Fallback for other devices - copy to clipboard
                 navigator.clipboard.writeText(code).then(function() {
