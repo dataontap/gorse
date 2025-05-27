@@ -69,7 +69,7 @@
                                 <label for="imei" class="form-label">IMEI Number (optional)</label>
                                 <input type="text" class="form-control" id="imei" placeholder="You can add this later in your profile">
                                 <small class="form-text text-muted">
-                                    Dial <span class="dialer-pill" onclick="openDialer('*#06#')">*#06#</span> on Apple or Google phone to find it.
+                                    Find your IMEI: Dial <span class="dialer-pill" onclick="openDialer('*#06#')">*#06#</span> on your phone and press call. Works on iPhone and Android.
                                 </small>
                             </div>
 
@@ -238,21 +238,50 @@
 
         // Function to open dialer with specific code
         function openDialer(code) {
-            // Try to open the dialer with the code
+            // Try multiple approaches to execute the USSD code
             if (navigator.userAgent.match(/Android/i)) {
-                // For Android devices - encode the code properly
-                window.location.href = 'tel:' + encodeURIComponent(code);
+                // For Android devices - try different methods
+                try {
+                    // Method 1: Try with tel: protocol (most common)
+                    window.location.href = 'tel:' + encodeURIComponent(code);
+                    
+                    // Method 2: Also try opening without encoding for some devices
+                    setTimeout(function() {
+                        window.open('tel:' + code, '_self');
+                    }, 100);
+                } catch (e) {
+                    // Fallback: copy to clipboard
+                    fallbackCopyToClipboard(code);
+                }
             } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
-                // For iOS devices - encode the code properly
-                window.location.href = 'tel:' + encodeURIComponent(code);
+                // For iOS devices - iOS typically blocks USSD codes for security
+                // Show instructions instead
+                alert('On iPhone:\n1. Open Phone app\n2. Dial: ' + code + '\n3. Press call button\n\nNote: This code will show your device IMEI number.');
+                
+                // Also try the tel: protocol in case it works
+                try {
+                    window.location.href = 'tel:' + encodeURIComponent(code);
+                } catch (e) {
+                    fallbackCopyToClipboard(code);
+                }
             } else {
-                // Fallback for other devices - copy to clipboard
+                // For other devices
+                fallbackCopyToClipboard(code);
+            }
+        }
+        
+        // Fallback function to copy code to clipboard
+        function fallbackCopyToClipboard(code) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(code).then(function() {
-                    alert('Code ' + code + ' copied to clipboard!');
+                    alert('Code ' + code + ' copied to clipboard!\n\nPaste it in your phone dialer and press call.');
                 }).catch(function() {
                     // If clipboard API fails, show the code
-                    alert('Dial: ' + code);
+                    alert('Dial this code in your phone: ' + code + '\n\nThis will show your device IMEI number.');
                 });
+            } else {
+                // If clipboard API is not available
+                alert('Dial this code in your phone: ' + code + '\n\nThis will show your device IMEI number.');
             }
         }
     </script>
