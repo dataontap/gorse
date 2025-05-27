@@ -304,21 +304,22 @@ function loadDataFromSession() {
     const globalStatus = document.getElementById('globalStatus');
 
     if (dataDisplay) {
-        // Always show the icon immediately for better UX
-        dataDisplay.innerHTML = `<i class="fas fa-sync-alt refresh-icon" title="Loading data..."></i><span>GB</span>`;
-        dataDisplay.style.display = 'block';
+        // Hide data display initially until we have actual data
+        dataDisplay.style.display = 'none';
         
         if (globalStatus) {
-            globalStatus.style.display = 'block';
+            globalStatus.style.display = 'none';
         }
         
-        // First show cached data immediately 
+        // Check if we have cached data and show it immediately if valid
         const walletBalance = localStorage.getItem('walletBalance');
-        if (walletBalance) {
+        if (walletBalance && parseFloat(walletBalance) > 0) {
             const amount = parseFloat(walletBalance);
-            setTimeout(() => {
-                dataDisplay.innerHTML = `${amount.toFixed(1)}<span>GB</span>`;
-            }, 500);
+            dataDisplay.innerHTML = `${amount.toFixed(1)}<span>GB</span>`;
+            dataDisplay.style.display = 'block';
+            if (globalStatus) {
+                globalStatus.style.display = 'block';
+            }
         }
 
         // Then fetch fresh data from API
@@ -334,37 +335,43 @@ function fetchUserDataBalance() {
         .then(response => response.json())
         .then(data => {
             if (data) {
-                // Update localStorage
-                if (data.dataBalance !== null && data.dataBalance !== undefined) {
-                    localStorage.setItem('walletBalance', data.dataBalance.toString());
-                } else {
-                    localStorage.removeItem('walletBalance');
-                }
-
-                // Update display if on dashboard
                 const dataDisplay = document.getElementById('dataDisplay');
-                if (dataDisplay) {
-                    if (data.dataBalance === null || data.dataBalance === undefined) {
-                        // Use refresh icon that allows user to retry
-                        dataDisplay.innerHTML = `<i class="fas fa-sync-alt refresh-icon" onclick="fetchUserDataBalance()" title="Refresh data"></i><span>GB</span>`;
-                    } else {
-                        dataDisplay.innerHTML = `${data.dataBalance.toFixed(1)}<span>GB</span>`;
-                    }
-                    dataDisplay.style.display = 'block';
+                const globalStatus = document.getElementById('globalStatus');
 
-                    const globalStatus = document.getElementById('globalStatus');
-                    if (globalStatus) {
-                        globalStatus.style.display = 'block';
+                // Update localStorage
+                if (data.dataBalance !== null && data.dataBalance !== undefined && data.dataBalance > 0) {
+                    localStorage.setItem('walletBalance', data.dataBalance.toString());
+                    
+                    // Show data display with actual balance
+                    if (dataDisplay) {
+                        dataDisplay.innerHTML = `${data.dataBalance.toFixed(1)}<span>GB</span>`;
+                        dataDisplay.style.display = 'block';
+                        if (globalStatus) {
+                            globalStatus.style.display = 'block';
+                        }
+                    }
+                } else {
+                    // No data or zero balance - don't show anything
+                    localStorage.removeItem('walletBalance');
+                    if (dataDisplay) {
+                        dataDisplay.style.display = 'none';
+                        if (globalStatus) {
+                            globalStatus.style.display = 'none';
+                        }
                     }
                 }
             }
         })
         .catch(error => {
             console.error('Error fetching data balance:', error);
-            // Show refresh icon on error to allow retry
+            // Hide display on error - don't show placeholder
             const dataDisplay = document.getElementById('dataDisplay');
+            const globalStatus = document.getElementById('globalStatus');
             if (dataDisplay) {
-                dataDisplay.innerHTML = `<i class="fas fa-sync-alt refresh-icon" onclick="fetchUserDataBalance()" title="Refresh data"></i><span>GB</span>`;
+                dataDisplay.style.display = 'none';
+                if (globalStatus) {
+                    globalStatus.style.display = 'none';
+                }
             }
         });
 }
