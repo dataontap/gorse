@@ -893,8 +893,7 @@ def get_user_data_balance():
         print(f"Error getting user data balance: {str(e)}")
         # Return a placeholder value if database fails
         return jsonify({
-            'userId':```python
-user_id,
+            'userId': user_id,
             'dataBalance': None,  # Using None to indicate no valid value
             'unit': 'GB',
             'note': 'Default value due to error'
