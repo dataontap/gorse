@@ -1,50 +1,32 @@
+// Global menu toggle function (matches other pages)
+function toggleMenu(menuIcon) {
+    const menuDropdown = menuIcon.querySelector('.menu-dropdown');
+    
+    if (menuDropdown.style.display === 'block') {
+        menuDropdown.style.display = 'none';
+    } else {
+        menuDropdown.style.display = 'block';
+    }
+    
+    console.log('Menu toggled:', menuDropdown.style.display);
+}
+
+// Close menu when clicking outside
+document.addEventListener('click', function(e) {
+    const menuDropdown = document.querySelector('.menu-dropdown');
+    const menuIcon = document.querySelector('.menu-icon');
+    
+    if (menuDropdown && menuIcon && !menuIcon.contains(e.target)) {
+        menuDropdown.style.display = 'none';
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     initializeMarketplace();
     initializeServiceCarousel();
     initializeAuctionCountdown();
     initializeCartPreview();
-    initializeMenuToggle();
 });
-
-
-
-function initializeMenuToggle() {
-    const menuIcon = document.querySelector('.menu-icon');
-    const menuDropdown = document.querySelector('.menu-dropdown');
-    
-    if (menuIcon && menuDropdown) {
-        // Ensure menu is initially hidden
-        menuDropdown.style.display = 'none';
-        
-        menuIcon.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Toggle the menu visibility
-            const isVisible = menuDropdown.style.display === 'block';
-            menuDropdown.style.display = isVisible ? 'none' : 'block';
-            
-            console.log('Menu toggled:', menuDropdown.style.display);
-        });
-
-        // Close menu when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!menuIcon.contains(e.target) && !menuDropdown.contains(e.target)) {
-                menuDropdown.style.display = 'none';
-            }
-        });
-
-        // Close menu when clicking on menu links
-        const menuLinks = menuDropdown.querySelectorAll('a');
-        menuLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                menuDropdown.style.display = 'none';
-            });
-        });
-    } else {
-        console.error('Menu elements not found:', { menuIcon, menuDropdown });
-    }
-}
 
 function initializeMarketplace() {
     // Implement dark mode compatibility
