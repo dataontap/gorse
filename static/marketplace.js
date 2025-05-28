@@ -6,6 +6,16 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeMenuToggle();
 });
 
+function toggleMenu(menuIcon) {
+    const menuDropdown = menuIcon.querySelector('.menu-dropdown');
+    
+    if (menuDropdown.style.display === 'block') {
+        menuDropdown.style.display = 'none';
+    } else {
+        menuDropdown.style.display = 'block';
+    }
+}
+
 function initializeMenuToggle() {
     const menuIcon = document.querySelector('.menu-icon');
     const menuDropdown = document.querySelector('.menu-dropdown');
