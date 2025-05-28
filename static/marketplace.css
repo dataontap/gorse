@@ -7,7 +7,7 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     display: none;
     min-width: 200px;
-    z-index: 1005;
+    z-index: 9999;
     left: 0;
     top: 40px;
 }
@@ -43,7 +43,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    z-index: 1003;
+    z-index: 9998;
     position: relative;
 }
 
