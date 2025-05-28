@@ -54,6 +54,9 @@ function initializeMarketplace() {
         document.body.classList.add('dark-mode');
     }
 
+    // Initialize dark mode toggle functionality
+    initializeDarkModeToggle();
+
     // Handle add to cart buttons
     const addToCartButtons = document.querySelectorAll('.add-to-cart');
     addToCartButtons.forEach(button => {
@@ -378,6 +381,46 @@ function initializeAuctionCountdown() {
         button.addEventListener('touchend', cancelPress);
         button.addEventListener('touchcancel', cancelPress);
     });
+}
+
+function initializeDarkModeToggle() {
+    const settingsToggle = document.getElementById('settingsToggle');
+    const settingsSubmenu = document.querySelector('.settings-submenu');
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const body = document.body;
+
+    // Initialize settings toggle
+    if (settingsToggle && settingsSubmenu) {
+        settingsToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            settingsSubmenu.style.display = settingsSubmenu.style.display === 'none' ? 'block' : 'none';
+        });
+    }
+
+    // Initialize dark mode toggle
+    if (darkModeToggle) {
+        const isDarkMode = localStorage.getItem('darkMode') === 'true';
+        const icon = darkModeToggle.querySelector('i');
+        const textSpan = darkModeToggle.querySelector('span');
+
+        // Set initial state
+        if (isDarkMode) {
+            icon.classList.replace('fa-moon', 'fa-sun');
+            textSpan.textContent = 'Light Mode';
+        }
+
+        darkModeToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+
+            icon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', 
+                                 isDark ? 'fa-sun' : 'fa-moon');
+            textSpan.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+            localStorage.setItem('darkMode', isDark);
+        });
+    }
 }
 
 function initializeCartPreview() {
