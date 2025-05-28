@@ -3,7 +3,39 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeServiceCarousel();
     initializeAuctionCountdown();
     initializeCartPreview();
+    initializeMenuToggle();
 });
+
+function initializeMenuToggle() {
+    const menuIcon = document.querySelector('.menu-icon');
+    const menuDropdown = document.querySelector('.menu-dropdown');
+    
+    if (menuIcon && menuDropdown) {
+        menuIcon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (menuDropdown.style.display === 'block') {
+                menuDropdown.style.display = 'none';
+            } else {
+                menuDropdown.style.display = 'block';
+            }
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!menuIcon.contains(e.target)) {
+                menuDropdown.style.display = 'none';
+            }
+        });
+
+        // Close menu when clicking on menu links
+        const menuLinks = menuDropdown.querySelectorAll('a');
+        menuLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                menuDropdown.style.display = 'none';
+            });
+        });
+    }
+}
 
 function initializeMarketplace() {
     // Implement dark mode compatibility
