@@ -62,6 +62,19 @@ try:
                 else:
                     print("Purchases table already exists")
 
+                # Check if subscriptions table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'subscriptions')")
+                subscriptions_exists = cur.fetchone()[0]
+
+                if not subscriptions_exists:
+                    print("Creating subscriptions table...")
+                    with open('create_subscriptions_table.sql', 'r') as sql_file:
+                        sql_script = sql_file.read()
+                        cur.execute(sql_script)
+                    print("Subscriptions table created successfully")
+                else:
+                    print("Subscriptions table already exists")
+
                 conn.commit()
         else:
             print("No database connection available for table creation")
@@ -473,6 +486,24 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
 
     return None
 
+def create_subscription(user_id, subscription_type, stripe_subscription_id=None):
+    """Creates a subscription record in the database"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Calculate validity end date (1 year = 365.25 days for leap years)
+                    cur.execute("INSERT INTO subscriptions (user_id, subscription_type, stripe_subscription_id, start_date, end_date) VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days') RETURNING end_date", (user_id, subscription_type, stripe_subscription_id))
+                    end_date = cur.fetchone()[0]
+                    conn.commit()
+                    print(f"Subscription created for user {user_id}, valid until {end_date}")
+                    return end_date
+            else:
+                print("No database connection available")
+                return None
+    except Exception as e:
+        print(f"Error creating subscription: {str(e)}")
+        return None
 
 @delivery_ns.route('')
 class DeliveryResource(Resource):
@@ -697,6 +728,14 @@ def stripe_webhook():
                         user_id=session.customer,  # Use Stripe customer ID until we link to our user ID
                         transaction_id=transaction_id
                     )
+
+                    # Create subscription for membership products
+                    if product_id in ['basic_membership', 'full_membership']:
+                        create_subscription(
+                            user_id=1,  # Default user for demo
+                            subscription_type=product_id,
+                            stripe_subscription_id=session.subscription if hasattr(session, 'subscription') else None
+                        )
 
                     print(f"Recorded purchase {purchase_id} for product {product_id}, price {price_id}, amount {amount}")
                 except Exception as e:
@@ -1024,6 +1063,21 @@ def create_tables_route():
                     );
                     """
                     cur.execute(create_users_sql)
+
+                    # Create the subscriptions table
+                    create_subscriptions_sql = """
+                    CREATE TABLE IF NOT EXISTS subscriptions (
+                        subscription_id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        subscription_type VARCHAR(100) NOT NULL,
+                        stripe_subscription_id VARCHAR(100),
+                        start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        end_date TIMESTAMP NOT NULL,
+                        FOREIGN KEY (user_id) REFERENCES users(UserID)
+                    );
+                    """
+                    cur.execute(create_subscriptions_sql)
+
 
                     conn.commit()
                     results = {
@@ -1622,7 +1676,22 @@ def get_member_count():
                     if count == 0:
                         count = 1
 
-                    return jsonify({'count': count})
+                    # Get subscription validity for the user
+                    cur.execute("""
+                        SELECT end_date 
+                        FROM subscriptions 
+                        WHERE user_id = %s 
+                        ORDER BY end_date DESC 
+                        LIMIT 1
+                    """, (1,))  # Assuming user_id = 1 for demo
+
+                    subscription_result = cur.fetchone()
+                    subscription_validity = subscription_result[0].isoformat() if subscription_result else None
+
+                    return jsonify({
+                        'count': count,
+                        'subscription_validity': subscription_validity
+                    })
 
             # If no database connection, return default count of 1
             return jsonify({'count': 1, 'error': 'No database connection'})

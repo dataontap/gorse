@@ -259,6 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeDotRefresh();
     loadDataFromSession();
     updateMembershipCount();
+    loadSubscriptionStatus();
 });
 
 // Function to update membership count
@@ -1430,6 +1431,10 @@ window.confirmPurchase = function(productId) {
                 // Check if this was a membership purchase and update offers
                 if (productId === 'basic_membership' || productId === 'full_membership') {
                     updateOffersCarousel(productId);
+                    // Refresh subscription status to show validity
+                    setTimeout(() => {
+                        loadSubscriptionStatus();
+                    }, 1000);
                 }
             } else {
                 console.error('Purchase failed:', data.message);
@@ -1567,18 +1572,11 @@ function showDataAdded(productId) {
 }
 
 function checkPurchasedMemberships() {
-    // Check local storage first for quick response
-    if (localStorage.getItem('has_membership') === 'true') {
-        updateOffersCarousel();
-        return;
-    }
-
     // Make an API call to check if user has a membership
     fetch('/api/check-memberships')
         .then(response => response.json())
         .then(data => {
             if (data.has_membership) {
-                localStorage.setItem('has_membership', 'true');
                 updateOffersCarousel(data.membership_type);
             }
         })
@@ -1591,14 +1589,8 @@ function updateOffersCarousel(membershipType = null) {
     const carousel = document.getElementById('promotionsCarousel');
     if (!carousel) return;
 
-    // If a membership was just purchased, update localStorage
-    if (membershipType && (membershipType === 'basic_membership' || membershipType === 'full_membership')) {
-        localStorage.setItem('has_membership', 'true');
-    }
-
     // Only proceed with removing offers if user has a membership
-    const hasMembership = localStorage.getItem('has_membership') === 'true' || membershipType;
-    if (!hasMembership) return;
+    if (!membershipType) return;
 
     // Remove membership offers from carousel
     const items = carousel.querySelectorAll('.carousel-item');
@@ -1655,6 +1647,37 @@ function updateCarouselControlsVisibility() {
     } else if (controlsContainer) {
         controlsContainer.style.display = 'flex';
     }
+}
+
+function loadSubscriptionStatus() {
+    fetch('/api/subscription-status')
+        .then(response => response.json())
+        .then(data => {
+            const subscriptionStatus = document.getElementById('subscriptionStatus');
+            const subscriptionType = document.getElementById('subscriptionType');
+            const subscriptionValidity = document.getElementById('subscriptionValidity');
+
+            if (data.has_subscription && subscriptionStatus && subscriptionType && subscriptionValidity) {
+                // Display subscription info
+                subscriptionStatus.style.display = 'block';
+                subscriptionStatus.className = `subscription-status ${data.type.replace('_membership', '')}`;
+                
+                const typeName = data.type === 'basic_membership' ? 'Basic Member' : 'Full Member';
+                subscriptionType.textContent = typeName;
+                subscriptionValidity.textContent = `Valid until ${data.valid_until} (${data.days_remaining} days remaining)`;
+                
+                // Hide membership offers in carousel
+                updateOffersCarousel(data.type);
+            } else {
+                // No subscription, hide status
+                if (subscriptionStatus) {
+                    subscriptionStatus.style.display = 'none';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading subscription status:', error);
+        });
 }
 
 function initializeChart(canvas) {
