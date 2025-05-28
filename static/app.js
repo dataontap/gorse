@@ -239,6 +239,9 @@ const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', '
 function showCountriesPopup() {
     alert("That's a lot of countries!");
 }
+function showCountriesPopup() {
+    alert("That's a lot of countries!");
+}
 const userTypes = ['Admin', 'Parent', 'Child', 'Family', 'Friend', 'Device', 'Car', 'Pet'];
 
 document.addEventListener('DOMContentLoaded', () => {

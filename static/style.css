@@ -561,6 +561,11 @@ body {
     color: #333;
 }
 
+.dark-mode .offer-content h3,
+.dark-mode .offer-content p {
+    color: #333;
+}
+
 .offer-button {
     text-align: center;
     padding: 15px 0;
