@@ -427,13 +427,44 @@ function initializeCarousel() {
                 if (items[nextIndex] && items[nextIndex].classList) {
                     items[nextIndex].classList.add('active');
                 }
+                setActiveControlButton(nextIndex);
             } else { // Swipe right
                 const prevIndex = (currentIndex - 1 + items.length) % items.length;
                 if (items[prevIndex] && items[prevIndex].classList) {
                     items[prevIndex].classList.add('active');
                 }
+                setActiveControlButton(prevIndex);
             }
         }
+    }
+}
+
+// Function to set active carousel item
+window.setActiveCarouselItem = function(index) {
+    const carousel = document.getElementById('promotionsCarousel');
+    if (!carousel) return;
+
+    const items = carousel.querySelectorAll('.carousel-item');
+    const controls = document.querySelectorAll('.carousel-controls button');
+
+    // Remove active class from all items and controls
+    items.forEach(item => item.classList.remove('active'));
+    controls.forEach(control => control.classList.remove('active'));
+
+    // Add active class to selected item and control
+    if (items[index]) {
+        items[index].classList.add('active');
+    }
+    if (controls[index]) {
+        controls[index].classList.add('active');
+    }
+};
+
+function setActiveControlButton(index) {
+    const controls = document.querySelectorAll('.carousel-controls button');
+    controls.forEach(control => control.classList.remove('active'));
+    if (controls[index]) {
+        controls[index].classList.add('active');
     }
 }
 
@@ -1572,7 +1603,9 @@ function showDataAdded(productId) {
 }
 
 function checkPurchasedMemberships() {
-    // Make an API call to check if user has a membership
+    // For now, show all cards to debug carousel visibility
+    // Comment out API call temporarily
+    /*
     fetch('/api/check-memberships')
         .then(response => response.json())
         .then(data => {
@@ -1583,6 +1616,7 @@ function checkPurchasedMemberships() {
         .catch(error => {
             console.error('Error checking memberships:', error);
         });
+    */
 }
 
 function updateOffersCarousel(membershipType = null) {
@@ -1642,10 +1676,13 @@ function updateCarouselControlsVisibility() {
     const items = carousel.querySelectorAll('.carousel-item');
     const controlsContainer = document.querySelector('.carousel-controls');
 
-    if (controlsContainer && items.length <= 1) {
-        controlsContainer.style.display = 'none';
-    } else if (controlsContainer) {
-        controlsContainer.style.display = 'flex';
+    // Always show controls if there are multiple items
+    if (controlsContainer) {
+        if (items.length > 1) {
+            controlsContainer.style.display = 'flex';
+        } else {
+            controlsContainer.style.display = 'none';
+        }
     }
 }
 
