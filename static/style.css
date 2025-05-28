@@ -1122,17 +1122,51 @@ body {
 }
 
 .carousel {
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-    position: relative;
-    padding: 0 10px;
-    box-sizing: border-box;
+    margin-bottom: 30px;
+    display: block !important;
 }
 
 .carousel-inner {
+    position: relative;
     overflow: hidden;
-    padding: 10px 0;
+    width: 100%;
+}
+
+.carousel-item {
+    display: none;
+    position: relative;
+    width: 100%;
+    transition: transform 0.3s ease-in-out;
+}
+
+.carousel-item.active {
+    display: block;
+}
+
+.carousel-controls {
+    display: flex !important;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.carousel-controls button {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.carousel-controls button.active {
+    background: #007bff;
+    border-color: #007bff;
+}
+
+.carousel-controls button:hover {
+    border-color: #007bff;
 }
 
 .carousel-item {
