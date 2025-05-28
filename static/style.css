@@ -152,6 +152,16 @@ body {
     color: #99ccff;
 }
 
+.countries-link {
+    color: #0066ff;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.countries-link:hover {
+    color: #0052cc;
+}
+
 .promo-text {
     position: absolute;
     top: 20px;
@@ -543,6 +553,12 @@ body {
     z-index: 2;
     width: 100%;
     box-sizing: border-box;
+    color: #333;
+}
+
+.offer-content h3,
+.offer-content p {
+    color: #333;
 }
 
 .offer-button {

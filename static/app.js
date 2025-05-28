@@ -234,6 +234,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // Initialize arrays at the top level
 const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
 const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis'];
+
+// Countries popup function
+function showCountriesPopup() {
+    alert("That's a lot of countries!");
+}
 const userTypes = ['Admin', 'Parent', 'Child', 'Family', 'Friend', 'Device', 'Car', 'Pet'];
 
 document.addEventListener('DOMContentLoaded', () => {
