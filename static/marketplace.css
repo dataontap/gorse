@@ -1,3 +1,51 @@
+/* Menu dropdown base styles */
+.menu-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 200px;
+}
+
+.menu-dropdown a {
+    display: block;
+    padding: 12px 16px;
+    color: #333;
+    text-decoration: none;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s;
+}
+
+.menu-dropdown a:last-child {
+    border-bottom: none;
+}
+
+.menu-dropdown a:hover {
+    background-color: #f5f5f5;
+}
+
+.menu-dropdown a.active {
+    background-color: #007bff;
+    color: #ffffff;
+}
+
+.menu-icon {
+    position: relative;
+    cursor: pointer;
+    padding: 8px;
+}
+
+/* Container and layout styles */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
 
 /* Marketplace Styles */
 .container {
@@ -751,6 +799,67 @@ body.dark-mode .quantity-btn {
     color: #ddd;
 }
 
+/* Dark mode styles */
+.dark-mode {
+    background-color: #1a1a1a;
+    color: #ffffff;
+}
+
+.dark-mode .top-bar {
+    background-color: #2d2d2d;
+    border-bottom: 1px solid #444;
+}
+
+.dark-mode .menu-dropdown {
+    background-color: #2d2d2d !important;
+    border: 1px solid #444 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark-mode .menu-dropdown a {
+    color: #ffffff !important;
+    border-bottom: 1px solid #444 !important;
+}
+
+.dark-mode .menu-dropdown a:hover {
+    background-color: #444 !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .menu-dropdown a.active {
+    background-color: #007bff !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .profile-dropdown {
+    background-color: #2d2d2d !important;
+    border: 1px solid #444 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark-mode .profile-dropdown a {
+    color: #ffffff !important;
+    border-bottom: 1px solid #444 !important;
+}
+
+.dark-mode .profile-dropdown a:hover {
+    background-color: #444 !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .settings-submenu {
+    background-color: #333 !important;
+    border: 1px solid #555 !important;
+}
+
+.dark-mode .settings-submenu a {
+    color: #ffffff !important;
+}
+
+.dark-mode .settings-submenu a:hover {
+    background-color: #555 !important;
+}
+
 /* Responsive Styles */
 @media (max-width: 768px) {
     .device-details {
@@ -758,16 +867,16 @@ body.dark-mode .quantity-btn {
         align-items: center;
         text-align: center;
     }
-    
+
     .device-image {
         margin-right: 0;
         margin-bottom: 15px;
     }
-    
+
     .accessories-grid {
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     }
-    
+
     .cart-preview {
         width: 300px;
         right: 10px;
@@ -778,11 +887,11 @@ body.dark-mode .quantity-btn {
     .accessories-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .action-buttons {
         flex-direction: column;
     }
-    
+
     .cart-preview {
         width: 280px;
         right: 5px;
