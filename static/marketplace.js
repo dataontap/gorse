@@ -1,11 +1,20 @@
 // Global menu toggle function (matches other pages)
 function toggleMenu(menuIcon) {
+    console.log('toggleMenu called with:', menuIcon);
     const menuDropdown = menuIcon.querySelector('.menu-dropdown');
+    console.log('menuDropdown found:', menuDropdown);
+    
+    if (!menuDropdown) {
+        console.error('Menu dropdown not found!');
+        return;
+    }
     
     if (menuDropdown.style.display === 'block') {
         menuDropdown.style.display = 'none';
+        console.log('Menu closed');
     } else {
         menuDropdown.style.display = 'block';
+        console.log('Menu opened');
     }
     
     console.log('Menu toggled:', menuDropdown.style.display);
