@@ -1,36 +1,27 @@
-/* Menu dropdown base styles */
+/* Menu dropdown base styles - matching profile dropdown */
 .menu-dropdown {
+    position: absolute;
+    background: rgba(204, 204, 255, 0.95);
+    backdrop-filter: blur(5px);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     display: none;
-    position: fixed !important;
-    top: 60px !important;
-    left: 10px !important;
-    background-color: #ffffff !important;
-    border: 1px solid #ddd !important;
-    border-radius: 8px !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-    z-index: 99999999 !important;
-    min-width: 200px !important;
-    max-width: 250px !important;
-    max-height: calc(100vh - 80px) !important;
-    overflow-y: auto !important;
-    pointer-events: auto !important;
+    min-width: 200px;
+    z-index: 1005;
+    left: 0;
+    top: 40px;
 }
 
 .menu-dropdown a {
     display: block;
-    padding: 12px 16px;
+    padding: 10px 15px;
     color: #333;
     text-decoration: none;
-    border-bottom: 1px solid #eee;
-    transition: background-color 0.2s;
-}
-
-.menu-dropdown a:last-child {
-    border-bottom: none;
+    transition: background 0.3s;
 }
 
 .menu-dropdown a:hover {
-    background-color: #f5f5f5;
+    background: #f5f5f5;
 }
 
 .menu-dropdown a.active {
@@ -39,25 +30,21 @@
 }
 
 .menu-icon {
-    position: relative !important;
-    cursor: pointer !important;
-    padding: 12px !important;
-    z-index: 100000000 !important;
-    user-select: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    min-width: 40px !important;
-    min-height: 40px !important;
-    pointer-events: auto !important;
+    position: relative;
+    cursor: pointer;
 }
 
 /* Top bar styling for marketplace */
 .top-bar {
-    position: relative !important;
-    z-index: 10000 !important;
-    background: rgba(0, 0, 0, 0.8) !important;
-    backdrop-filter: blur(10px) !important;
+    background: transparent;
+    backdrop-filter: blur(5px);
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    z-index: 1003;
+    position: relative;
 }
 
 .top-bar .menu-icon i,
@@ -837,25 +824,21 @@ body.dark-mode .quantity-btn {
 }
 
 .dark-mode .menu-dropdown {
-    background-color: #2d2d2d !important;
-    border: 1px solid #444 !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-    z-index: 9999 !important;
+    background: rgba(50, 50, 50, 0.95);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .dark-mode .menu-dropdown a {
-    color: #ffffff !important;
-    border-bottom: 1px solid #444 !important;
+    color: #fff;
 }
 
 .dark-mode .menu-dropdown a:hover {
-    background-color: #444 !important;
-    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .dark-mode .menu-dropdown a.active {
-    background-color: #007bff !important;
-    color: #ffffff !important;
+    background-color: #007bff;
+    color: #ffffff;
 }
 
 .dark-mode .profile-dropdown {
