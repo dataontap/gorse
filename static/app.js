@@ -207,7 +207,29 @@ function createSparkle(element) {
     }
 }
 
-// Removed offer card scroll animation
+// Add scroll animation for offer cards
+function checkOfferCardsInView() {
+    const offerCards = document.querySelectorAll('.offer-card');
+    const windowHeight = window.innerHeight;
+
+    offerCards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        // Check if card is in the center of the viewport
+        if (rect.top <= windowHeight/2 && rect.bottom >= windowHeight/2) {
+            card.classList.add('in-view');
+        } else {
+            card.classList.remove('in-view');
+        }
+    });
+}
+
+// Add scroll event listener
+document.addEventListener('DOMContentLoaded', function() {
+    window.addEventListener('scroll', checkOfferCardsInView, { passive: true });
+
+    // Check on initial load as well
+    setTimeout(checkOfferCardsInView, 500);
+});
 
 // Initialize arrays at the top level
 const firstNames = ['Jenny', 'Mike', 'Sarah', 'Alex', 'Emma', 'James', 'Lisa', 'David'];
