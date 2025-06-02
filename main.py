@@ -405,7 +405,22 @@ def get_member_count():
                     if count == 0:
                         count = 1
 
-                    return jsonify({'count': count})
+                    # Get subscription validity for the user
+                    cur.execute("""
+                        SELECT end_date 
+                        FROM subscriptions 
+                        WHERE user_id = %s 
+                        ORDER BY end_date DESC 
+                        LIMIT 1
+                    """, (1,))  # Assuming user_id = 1 for demo
+
+                    subscription_result = cur.fetchone()
+                    subscription_validity = subscription_result[0].isoformat() if subscription_result else None
+
+                    return jsonify({
+                        'count': count,
+                        'subscription_validity': subscription_validity
+                    })
 
             # If no database connection, return default count of 1
             return jsonify({'count': 1, 'error': 'No database connection'})
@@ -1753,53 +1768,3 @@ class UpdateEthAddress(Resource):
             print(f"Error updating Ethereum address: {str(e)}")
             return {'error': str(e)}, 500
 
-@app.route('/api/member-count', methods=['GET'])
-def get_member_count():
-    """Get the total number of members from the users table"""
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Check if users table exists
-                    cur.execute("""
-                        SELECT EXISTS (
-                            SELECT FROM information_schema.tables 
-                            WHERE table_name = 'users'
-                        )
-                    """)
-                    table_exists = cur.fetchone()[0]
-
-                    if not table_exists:
-                        return jsonify({'count': 1, 'error': 'Users table does not exist'})
-
-                    # Count total number of users
-                    cur.execute("SELECT COUNT(*) FROM users")
-                    count = cur.fetchone()[0]
-
-                    # If count is 0, return at least 1 for the current user
-                    if count == 0:
-                        count = 1
-
-                    # Get subscription validity for the user
-                    cur.execute("""
-                        SELECT end_date 
-                        FROM subscriptions 
-                        WHERE user_id = %s 
-                        ORDER BY end_date DESC 
-                        LIMIT 1
-                    """, (1,))  # Assuming user_id = 1 for demo
-
-                    subscription_result = cur.fetchone()
-                    subscription_validity = subscription_result[0].isoformat() if subscription_result else None
-
-                    return jsonify({
-                        'count': count,
-                        'subscription_validity': subscription_validity
-                    })
-
-            # If no database connection, return default count of 1
-            return jsonify({'count': 1, 'error': 'No database connection'})
-    except Exception as e:
-        print(f"Error getting member count: {str(e)}")
-        # Return default count if there's an error
-        return jsonify({'count': 1, 'error': str(e)})
