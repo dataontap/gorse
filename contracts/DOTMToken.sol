@@ -9,8 +9,8 @@ contract DOTMToken is ERC20, Ownable {
     // Initial supply of 100,000 tokens with 18 decimals
     uint256 public constant INITIAL_SUPPLY = 100000 * 10**18;
     
-    // Reward percentage for data purchases (10%)
-    uint256 public dataRewardPercentage = 10;
+    // Reward percentage for data purchases (1%)
+    uint256 public dataRewardPercentage = 1;
     
     constructor() ERC20("DOTM Token", "DOTM") Ownable(msg.sender) {
         _mint(msg.sender, INITIAL_SUPPLY);
@@ -31,5 +31,11 @@ contract DOTMToken is ERC20, Ownable {
     function setDataRewardPercentage(uint256 newPercentage) public onlyOwner {
         require(newPercentage <= 100, "Percentage cannot exceed 100");
         dataRewardPercentage = newPercentage;
+    }
+    
+    // Function to award new member tokens (1 DOTM per new member)
+    function awardNewMember(address newMember) public onlyOwner {
+        uint256 memberReward = 1 * 10**18; // 1 DOTM token
+        _mint(newMember, memberReward);
     }
 }

@@ -35,6 +35,7 @@ stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 # Import product setup function
 from stripe_products import create_stripe_products
 import ethereum_helper
+import product_rules_helper
 
 # Create products in Stripe if they don't exist
 if stripe.api_key:
@@ -74,6 +75,19 @@ try:
                     print("Subscriptions table created successfully")
                 else:
                     print("Subscriptions table already exists")
+
+                # Check if product_rules table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'product_rules')")
+                product_rules_exists = cur.fetchone()[0]
+
+                if not product_rules_exists:
+                    print("Creating product_rules table...")
+                    with open('create_product_rules_table.sql', 'r') as sql_file:
+                        sql_script = sql_file.read()
+                        cur.execute(sql_script)
+                    print("Product rules table created successfully")
+                else:
+                    print("Product rules table already exists")
 
                 conn.commit()
         else:
@@ -226,17 +240,31 @@ def register_firebase_user():
                         )
                         conn.commit()
                     else:
-                        # Create new user
+                        # Create new user with Sepolia test wallet
+                        from web3 import Web3
+                        web3 = Web3()
+                        test_account = web3.eth.account.create()
+                        
                         cur.execute(
                             """INSERT INTO users 
-                                (email, firebase_uid, display_name, photo_url) 
-                            VALUES (%s, %s, %s, %s) 
+                                (email, firebase_uid, display_name, photo_url, eth_address) 
+                            VALUES (%s, %s, %s, %s, %s) 
                             RETURNING userid""",
-                            (email, firebase_uid, display_name, photo_url)
+                            (email, firebase_uid, display_name, photo_url, test_account.address)
                         )
                         user_id = cur.fetchone()[0]
                         conn.commit()
-                        print(f"New Firebase user created: {user_id}")
+                        print(f"New Firebase user created: {user_id} with Sepolia wallet: {test_account.address}")
+                        
+                        # Award 1 DOTM token to new member
+                        try:
+                            success, result = ethereum_helper.award_new_member_token(test_account.address)
+                            if success:
+                                print(f"Awarded 1 DOTM token to new member: {result}")
+                            else:
+                                print(f"Failed to award new member token: {result}")
+                        except Exception as token_err:
+                            print(f"Error awarding new member token: {str(token_err)}")
 
                     # Get or create Stripe customer for this user
                     stripe_customer_id = None
@@ -736,6 +764,21 @@ def stripe_webhook():
                             subscription_type=product_id,
                             stripe_subscription_id=session.subscription if hasattr(session, 'subscription') else None
                         )
+                    
+                    # Award tokens based on product rules
+                    try:
+                        product_rules = product_rules_helper.get_product_rules(product_id)
+                        if product_rules:
+                            reward_percentage = product_rules['token_reward_percentage'] / 100.0  # Convert to decimal
+                            token_reward = amount * reward_percentage / 100  # amount is in cents
+                            
+                            # Get user's wallet address and award tokens
+                            # For now, use a default wallet for demo
+                            print(f"Would award {token_reward} tokens for product {product_id} based on {product_rules['token_reward_percentage']}% rule")
+                        else:
+                            print(f"No product rules found for {product_id}")
+                    except Exception as token_err:
+                        print(f"Error awarding tokens based on product rules: {str(token_err)}")
 
                     print(f"Recorded purchase {purchase_id} for product {product_id}, price {price_id}, amount {amount}")
                 except Exception as e:
@@ -1297,6 +1340,67 @@ def update_token_price():
             'message': 'Token price updated',
             'data': price_data
         })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/product-rules', methods=['GET'])
+def get_product_rules_api():
+    """Get all product rules"""
+    try:
+        rules = product_rules_helper.get_all_product_rules()
+        return jsonify({
+            'status': 'success',
+            'product_rules': rules
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/product-rules/<product_id>', methods=['GET'])
+def get_single_product_rule(product_id):
+    """Get product rule for specific Stripe product ID"""
+    try:
+        rule = product_rules_helper.get_product_rules(product_id)
+        if rule:
+            return jsonify({
+                'status': 'success',
+                'product_rule': rule
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Product rule not found'
+            }), 404
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/product-rules/<product_id>', methods=['PUT'])
+def update_product_rule(product_id):
+    """Update product rule for specific Stripe product ID"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        success = product_rules_helper.update_product_rules(product_id, **data)
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': 'Product rule updated successfully'
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to update product rule'
+            }), 400
     except Exception as e:
         return jsonify({
             'status': 'error',
