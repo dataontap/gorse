@@ -783,7 +783,7 @@ body.light-mode {
 
 /* Default dark mode styles (no class needed) */
 .dot-indicator {
-    background: #FFF371;
+    background: #666666;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
