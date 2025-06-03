@@ -6,10 +6,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (darkModePreference === null) {
         // Set dark mode as default for new users
         localStorage.setItem('darkMode', 'true');
-        document.body.classList.add('dark-mode');
-    } else if (darkModePreference === 'true') {
-        // Apply dark mode if user has it enabled
-        document.body.classList.add('dark-mode');
+        // Body is already in dark mode by default, no class needed
+    } else if (darkModePreference === 'false') {
+        // Apply light mode if user has it disabled
+        document.body.classList.add('light-mode');
     }
 });
 
@@ -934,9 +934,16 @@ function initializeDarkMode() {
         });
     }
 
-    // Apply dark mode and set localStorage if not previously set
-    if (isDarkMode) {
-        body.classList.add('dark-mode');
+    // Apply light mode if user prefers it, otherwise stay in default dark mode
+    if (!isDarkMode) {
+        body.classList.add('light-mode');
+        if (darkModeToggle) {
+            const moonIcon = darkModeToggle.querySelector('i');
+            const modeText = darkModeToggle.querySelector('span');
+            if (moonIcon) moonIcon.classList.replace('fa-sun', 'fa-moon');
+            if (modeText) modeText.textContent = 'Dark Mode';
+        }
+    } else {
         // Set localStorage to dark mode if it wasn't set before (new users)
         if (darkModePreference === null) {
             localStorage.setItem('darkMode', 'true');
@@ -951,15 +958,15 @@ function initializeDarkMode() {
 
     darkModeToggle.addEventListener('click', (e) => {
         e.preventDefault();
-        body.classList.toggle('dark-mode');
+        body.classList.toggle('light-mode');
         const icon = darkModeToggle.querySelector('i');
         const textSpan = darkModeToggle.querySelector('span');
-        const isDark = body.classList.contains('dark-mode');
+        const isLight = body.classList.contains('light-mode');
 
-        icon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', 
-                             isDark ? 'fa-sun' : 'fa-moon');
-        textSpan.textContent = isDark ? 'Light Mode' : 'Dark Mode';
-        localStorage.setItem('darkMode', isDark);
+        icon.classList.replace(isLight ? 'fa-sun' : 'fa-moon', 
+                             isLight ? 'fa-moon' : 'fa-sun');
+        textSpan.textContent = isLight ? 'Dark Mode' : 'Light Mode';
+        localStorage.setItem('darkMode', !isLight);
     });
 }
 

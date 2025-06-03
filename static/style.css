@@ -2,13 +2,13 @@ body {
     min-height: 100vh;
     margin: 0;
     overflow-x: hidden;
-    /* Default to dark mode styles if no class is applied */
+    /* Default to dark mode styles */
     background: #222222;
     color: #fff;
 }
 
-/* Light mode overrides when not in dark mode */
-body:not(.dark-mode) {
+/* Light mode overrides when light-mode class is present */
+body.light-mode {
     background: #fff;
     color: #333;
 }
@@ -81,14 +81,13 @@ body:not(.dark-mode) {
 }
 
 .landing-page {
-    background: linear-gradient(135deg, #6B6BA7 0%, #C3C3E5 50%, #FFF371 100%);
-    animation: gradientShift 15s ease infinite;
+    background: #222222;  /* Dark mode by default */
 }
 
-/* Ensure dark mode overrides landing page gradient */
-.landing-page.dark-mode {
-    background: #222222 !important;
-    animation: none !important;
+/* Light mode override for landing page */
+.landing-page.light-mode {
+    background: linear-gradient(135deg, #6B6BA7 0%, #C3C3E5 50%, #FFF371 100%);
+    animation: gradientShift 15s ease infinite;
 }
 
 @keyframes gradientShift {
@@ -773,60 +772,91 @@ body:not(.dark-mode) {
     background: #222222;  /* Dark mode by default */
     color: #fff;
     transition: all 0.3s ease;
+    background-image: none !important;  /* Override any gradient backgrounds */
 }
 
 /* Light mode override */
-.dashboard-body:not(.dark-mode) {
+.dashboard-body.light-mode {
     background: #CCCCFF;  /* Periwinkle background */
     color: #333;
 }
 
-.dashboard-body.dark-mode {
-    background: #222222;
-    color: #fff;
-    background-image: none !important;  /* Override any gradient backgrounds */
+/* Default dark mode styles (no class needed) */
+.dot-indicator {
+    background: #FFF371;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
-.dark-mode .dot-indicator {
-    background: #333333;
-    box-shadow: 0 0 30px rgba(147, 112, 219, 0.4),
-                0 0 60px rgba(147, 112, 219, 0.2),
-                0 0 90px rgba(147, 112, 219, 0.1);
-}
-
-.dark-mode .dashboard-content {
+.dashboard-content {
     background: rgba(40, 40, 40, 0.9);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
-.dark-mode .top-bar {
+.top-bar {
     background: transparent;
 }
 
-.dark-mode .menu-dropdown,
-.dark-mode .profile-dropdown {
+.menu-dropdown,
+.profile-dropdown {
     background: rgba(50, 50, 50, 0.95);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-.dark-mode .menu-dropdown a,
-.dark-mode .profile-dropdown a {
+.menu-dropdown a,
+.profile-dropdown a {
     color: #fff;
 }
 
-.dark-mode .menu-dropdown a i,
-.dark-mode .profile-dropdown a i,
-.dark-mode .menu-dropdown div i,
-.dark-mode .profile-dropdown div i,
-.dark-mode .menu-icon i, 
-.dark-mode .profile-section i,
-.dark-mode .profile-info {
-    color: #cccccc; /* Lighter grey for icons in dark mode */
+.menu-dropdown a i,
+.profile-dropdown a i,
+.menu-dropdown div i,
+.profile-dropdown div i,
+.menu-icon i, 
+.profile-section i,
+.profile-info {
+    color: #cccccc;
 }
 
-.dark-mode .menu-dropdown a:hover,
-.dark-mode .profile-dropdown a:hover {
+.menu-dropdown a:hover,
+.profile-dropdown a:hover {
     background: rgba(255, 255, 255, 0.1);
+}
+
+/* Light mode overrides */
+.light-mode .dot-indicator {
+    background: #FFF371;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.light-mode .dashboard-content {
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.light-mode .menu-dropdown,
+.light-mode .profile-dropdown {
+    background: rgba(204, 204, 255, 0.95);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.light-mode .menu-dropdown a,
+.light-mode .profile-dropdown a {
+    color: #333;
+}
+
+.light-mode .menu-dropdown a i,
+.light-mode .profile-dropdown a i,
+.light-mode .menu-dropdown div i,
+.light-mode .profile-dropdown div i,
+.light-mode .menu-icon i, 
+.light-mode .profile-section i,
+.light-mode .profile-info {
+    color: #333;
+}
+
+.light-mode .menu-dropdown a:hover,
+.light-mode .profile-dropdown a:hover {
+    background: #f5f5f5;
 }
 
 .top-bar {
