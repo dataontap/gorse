@@ -390,12 +390,18 @@ function initializeDarkModeToggle() {
 
     // Initialize dark mode toggle
     if (darkModeToggle) {
-        const isDarkMode = localStorage.getItem('darkMode') === 'true';
+        // Check if dark mode preference exists, if not set it to true (dark mode default)
+        const darkModePreference = localStorage.getItem('darkMode');
+        const isDarkMode = darkModePreference === null ? true : darkModePreference === 'true';
         const icon = darkModeToggle.querySelector('i');
         const textSpan = darkModeToggle.querySelector('span');
 
-        // Set initial state
+        // Set initial state and localStorage for new users
         if (isDarkMode) {
+            body.classList.add('dark-mode');
+            if (darkModePreference === null) {
+                localStorage.setItem('darkMode', 'true');
+            }
             icon.classList.replace('fa-moon', 'fa-sun');
             textSpan.textContent = 'Light Mode';
         }

@@ -1,3 +1,19 @@
+
+// Initialize dark mode as default for all new users
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if this is a new user (no dark mode preference set)
+    const darkModePreference = localStorage.getItem('darkMode');
+    if (darkModePreference === null) {
+        // Set dark mode as default for new users
+        localStorage.setItem('darkMode', 'true');
+        document.body.classList.add('dark-mode');
+    } else if (darkModePreference === 'true') {
+        // Apply dark mode if user has it enabled
+        document.body.classList.add('dark-mode');
+    }
+});
+
+
 // Update token value pill on all pages
 // Initialize session user (always user #1)
 if (!localStorage.getItem('userId')) {
@@ -848,7 +864,10 @@ function initializeDarkMode() {
     const helpToggle = document.getElementById('helpToggle');
     const helpSection = document.querySelector('.help-section');
     const body = document.body;
-    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    
+    // Check if dark mode preference exists, if not set it to true (dark mode default)
+    const darkModePreference = localStorage.getItem('darkMode');
+    const isDarkMode = darkModePreference === null ? true : darkModePreference === 'true';
 
     // Initialize settings toggle
     if (settingsToggle) {
@@ -915,9 +934,13 @@ function initializeDarkMode() {
         });
     }
 
-    // Apply dark mode if needed
+    // Apply dark mode and set localStorage if not previously set
     if (isDarkMode) {
         body.classList.add('dark-mode');
+        // Set localStorage to dark mode if it wasn't set before (new users)
+        if (darkModePreference === null) {
+            localStorage.setItem('darkMode', 'true');
+        }
         if (darkModeToggle) {
             const moonIcon = darkModeToggle.querySelector('i');
             const modeText = darkModeToggle.querySelector('span');

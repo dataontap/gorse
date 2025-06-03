@@ -2,6 +2,15 @@ body {
     min-height: 100vh;
     margin: 0;
     overflow-x: hidden;
+    /* Default to dark mode styles if no class is applied */
+    background: #222222;
+    color: #fff;
+}
+
+/* Light mode overrides when not in dark mode */
+body:not(.dark-mode) {
+    background: #fff;
+    color: #333;
 }
 
 .main-content {
@@ -761,8 +770,15 @@ body {
 }
 
 .dashboard-body {
-    background: #CCCCFF;  /* Periwinkle background */
+    background: #222222;  /* Dark mode by default */
+    color: #fff;
     transition: all 0.3s ease;
+}
+
+/* Light mode override */
+.dashboard-body:not(.dark-mode) {
+    background: #CCCCFF;  /* Periwinkle background */
+    color: #333;
 }
 
 .dashboard-body.dark-mode {
