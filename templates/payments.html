@@ -148,6 +148,33 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Ethereum Transactions Section -->
+            <div class="address-section mb-4">
+                <h3 class="mb-3"><i class="fab fa-ethereum"></i> Recent Transactions</h3>
+                <div class="transactions-container">
+                    <div class="network-indicator">
+                        <span class="network-badge sepolia">Sepolia Testnet</span>
+                        <button class="btn btn-sm btn-outline-secondary refresh-transactions-btn" onclick="refreshTransactions()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div id="transactionsLoading" class="loading-state" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Fetching transactions from Sepolia...</p>
+                    </div>
+                    <div id="transactionsList" class="transactions-list">
+                        <!-- Transactions will be loaded here -->
+                    </div>
+                    <div id="transactionsEmpty" class="empty-state" style="display: none;">
+                        <i class="fas fa-receipt"></i>
+                        <p>No transactions found</p>
+                        <small>Transactions will appear here once you start using your wallet</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <style>
@@ -258,6 +285,140 @@
         }
         .dark-mode .metamask-powered {
             color: #aaa;
+        }
+        
+        /* Transactions Section Styles */
+        .transactions-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .network-indicator {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .network-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .network-badge.sepolia {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #90caf9;
+        }
+        
+        .network-badge.mainnet {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #81c784;
+        }
+        
+        .refresh-transactions-btn {
+            border-radius: 20px;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-transactions-btn.rotating {
+            animation: rotate 1s linear infinite;
+        }
+        
+        .transactions-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+        
+        .transaction-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+        
+        .transaction-info {
+            flex: 1;
+        }
+        
+        .transaction-hash {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        .transaction-details {
+            font-size: 0.8rem;
+            color: #888;
+        }
+        
+        .transaction-amount {
+            text-align: right;
+        }
+        
+        .transaction-value {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .transaction-type {
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+        
+        .transaction-type.received {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .transaction-type.sent {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .loading-state, .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+        
+        .dark-mode .transactions-container {
+            background-color: #2d2d2d;
+            border-color: #444;
+        }
+        
+        .dark-mode .transaction-item:hover {
+            background-color: #3a3a3a;
+        }
+        
+        .dark-mode .network-badge.sepolia {
+            background-color: #1e3a8a;
+            color: #93c5fd;
+            border-color: #3b82f6;
         }
     </style>
 
@@ -404,6 +565,143 @@
                 alert("There was an error processing your order. Please try again.");
             });
         }
+        
+        function refreshTransactions() {
+            const refreshButton = document.querySelector('.refresh-transactions-btn');
+            const loadingState = document.getElementById('transactionsLoading');
+            const transactionsList = document.getElementById('transactionsList');
+            const emptyState = document.getElementById('transactionsEmpty');
+            
+            // Show loading state
+            refreshButton.classList.add('rotating');
+            loadingState.style.display = 'block';
+            transactionsList.style.display = 'none';
+            emptyState.style.display = 'none';
+            
+            // Get user ID (default to 1 for demo)
+            const userId = localStorage.getItem('userId') || '1';
+            
+            // Fetch transactions from API
+            fetch(`/api/ethereum-transactions?userId=${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading state
+                    loadingState.style.display = 'none';
+                    refreshButton.classList.remove('rotating');
+                    
+                    if (data.status === 'success' && data.transactions && data.transactions.length > 0) {
+                        displayTransactions(data.transactions, data.network, data.address);
+                        transactionsList.style.display = 'block';
+                    } else {
+                        emptyState.style.display = 'block';
+                        transactionsList.innerHTML = '';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching transactions:', error);
+                    loadingState.style.display = 'none';
+                    refreshButton.classList.remove('rotating');
+                    emptyState.style.display = 'block';
+                    transactionsList.innerHTML = '';
+                });
+        }
+        
+        function displayTransactions(transactions, network, userAddress) {
+            const transactionsList = document.getElementById('transactionsList');
+            transactionsList.innerHTML = '';
+            
+            transactions.forEach(tx => {
+                const transactionItem = document.createElement('div');
+                transactionItem.className = 'transaction-item';
+                
+                // Format timestamp
+                const date = new Date(tx.timestamp * 1000);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                
+                // Format hash (show first 10 and last 6 characters)
+                const shortHash = tx.hash.substring(0, 10) + '...' + tx.hash.substring(tx.hash.length - 6);
+                
+                // Format value
+                const value = parseFloat(tx.value);
+                const valueDisplay = value > 0 ? `${value.toFixed(6)} ETH` : '0 ETH';
+                
+                transactionItem.innerHTML = `
+                    <div class="transaction-info">
+                        <div class="transaction-hash">${shortHash}</div>
+                        <div class="transaction-details">
+                            Block: ${tx.block_number} • ${formattedDate}
+                        </div>
+                    </div>
+                    <div class="transaction-amount">
+                        <div class="transaction-value">${valueDisplay}</div>
+                        <span class="transaction-type ${tx.type}">${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}</span>
+                    </div>
+                `;
+                
+                // Add click handler to show full transaction details
+                transactionItem.addEventListener('click', () => {
+                    showTransactionDetails(tx, network);
+                });
+                
+                transactionsList.appendChild(transactionItem);
+            });
+        }
+        
+        function showTransactionDetails(tx, network) {
+            const explorerUrl = network === 'sepolia' 
+                ? `https://sepolia.etherscan.io/tx/${tx.hash}`
+                : `https://etherscan.io/tx/${tx.hash}`;
+                
+            const modal = document.createElement('div');
+            modal.className = 'transaction-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; padding: 20px; border-radius: 12px; max-width: 500px; width: 90%;">
+                    <h4>Transaction Details</h4>
+                    <p><strong>Hash:</strong> ${tx.hash}</p>
+                    <p><strong>From:</strong> ${tx.from}</p>
+                    <p><strong>To:</strong> ${tx.to}</p>
+                    <p><strong>Value:</strong> ${tx.value} ETH</p>
+                    <p><strong>Block:</strong> ${tx.block_number}</p>
+                    <p><strong>Gas:</strong> ${tx.gas}</p>
+                    <p><strong>Gas Price:</strong> ${tx.gas_price} Gwei</p>
+                    <div style="margin-top: 15px;">
+                        <button onclick="window.open('${explorerUrl}', '_blank')" class="btn btn-primary btn-sm">
+                            View on ${network === 'sepolia' ? 'Sepolia ' : ''}Etherscan
+                        </button>
+                        <button onclick="this.closest('.transaction-modal').remove()" class="btn btn-secondary btn-sm" style="margin-left: 10px;">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Close modal when clicking outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
+        // Load transactions on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshTransactions();
+        });
     </script>
 </body>
 </html>

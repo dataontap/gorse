@@ -1619,6 +1619,92 @@ def create_token_pings_table():
 # Call the function on startup
 create_token_pings_table()
 
+@app.route('/api/ethereum-transactions', methods=['GET'])
+def get_ethereum_transactions():
+    """Get the last 10 Ethereum transactions for the current user"""
+    try:
+        user_id = request.args.get('userId', '1')
+        
+        # Get user's Ethereum address from database
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT eth_address FROM users WHERE userid = %s", (user_id,))
+                    result = cur.fetchone()
+                    
+                    if not result or not result[0]:
+                        return jsonify({
+                            'status': 'error',
+                            'message': 'No Ethereum address found for user',
+                            'transactions': []
+                        })
+                    
+                    eth_address = result[0]
+        
+        # Fetch transactions from Sepolia using Web3
+        from ethereum_helper import get_web3_connection
+        web3 = get_web3_connection()
+        
+        # Get latest block number
+        latest_block = web3.eth.get_block('latest')
+        latest_block_number = latest_block['number']
+        
+        transactions = []
+        blocks_to_check = 1000  # Check last 1000 blocks
+        
+        # Search through recent blocks for transactions involving this address
+        for block_num in range(max(0, latest_block_number - blocks_to_check), latest_block_number + 1):
+            try:
+                block = web3.eth.get_block(block_num, full_transactions=True)
+                
+                for tx in block['transactions']:
+                    if (tx['to'] and tx['to'].lower() == eth_address.lower()) or \
+                       (tx['from'] and tx['from'].lower() == eth_address.lower()):
+                        
+                        # Convert values for display
+                        value_eth = web3.from_wei(tx['value'], 'ether')
+                        gas_price_gwei = web3.from_wei(tx['gasPrice'], 'gwei') if tx['gasPrice'] else 0
+                        
+                        transactions.append({
+                            'hash': tx['hash'].hex(),
+                            'block_number': tx['blockNumber'],
+                            'from': tx['from'],
+                            'to': tx['to'],
+                            'value': str(value_eth),
+                            'gas': tx['gas'],
+                            'gas_price': str(gas_price_gwei),
+                            'timestamp': block['timestamp'],
+                            'type': 'received' if (tx['to'] and tx['to'].lower() == eth_address.lower()) else 'sent'
+                        })
+                        
+                        if len(transactions) >= 10:
+                            break
+                
+                if len(transactions) >= 10:
+                    break
+                    
+            except Exception as block_err:
+                print(f"Error fetching block {block_num}: {str(block_err)}")
+                continue
+        
+        # Sort by block number (most recent first)
+        transactions.sort(key=lambda x: x['block_number'], reverse=True)
+        
+        return jsonify({
+            'status': 'success',
+            'address': eth_address,
+            'network': 'sepolia',
+            'transactions': transactions[:10]
+        })
+        
+    except Exception as e:
+        print(f"Error fetching Ethereum transactions: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'transactions': []
+        })
+
 @app.route('/token-price-pings', methods=['GET'])
 def token_price_pings():
     """Endpoint to view token price ping history"""
