@@ -1388,7 +1388,7 @@ body.light-mode {
 .data-amount {
     font-size: 56px;
     font-weight: bold;
-    color: #666666;
+    color: #ffffff;
     display: flex;
     justify-content: center;
     align-items: baseline;
@@ -1401,9 +1401,18 @@ body.light-mode {
 
 .refresh-icon {
     font-size: 36px;
-    color: #666666;
+    color: #ffffff;
     animation: spin 2s linear infinite;
     cursor: pointer;
+}
+
+/* Light mode overrides for dot content text */
+.light-mode .data-amount {
+    color: #666666;
+}
+
+.light-mode .refresh-icon {
+    color: #666666;
 }
 
 @keyframes spin {
