@@ -1028,25 +1028,33 @@ def get_user_stripe_purchases(stripe_customer_id):
 def get_user_data_balance():
     """Get the current data balance for a member"""
     firebase_uid = request.args.get('firebaseUid')
-    user_id = request.args.get('userId', '1')  # Fallback to user ID 1 for demo
-
+    user_id_param = request.args.get('userId')
+    
+    # Default user_id for fallback
+    user_id = 1
+    
     try:
+        # If Firebase UID is provided, look up the internal user ID
         if firebase_uid:
-            # Look up user by Firebase UID first
             user_data = get_user_by_firebase_uid(firebase_uid)
             if user_data:
-                user_id = user_data[0]  # Get the actual user ID
+                user_id = user_data[0]  # Get the actual internal user ID (integer)
                 stripe_customer_id = user_data[3]  # Get Stripe customer ID
-                
-                # Use Stripe customer ID to look up purchases if available
-                if stripe_customer_id:
-                    print(f"Looking up data balance for user {user_id} with Stripe customer {stripe_customer_id}")
+                print(f"Found user {user_id} for Firebase UID {firebase_uid} with Stripe customer {stripe_customer_id}")
+            else:
+                print(f"No user found for Firebase UID {firebase_uid}, using default user_id=1")
+        elif user_id_param and user_id_param.isdigit():
+            # If a numeric user ID is provided, use it
+            user_id = int(user_id_param)
+            print(f"Using provided numeric user_id: {user_id}")
+        else:
+            print(f"Invalid or no user identifier provided, using default user_id=1")
 
-        # Get total global data purchases for this user
+        # Get total global data purchases for this user using internal user ID
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Get total global data purchases
+                    # Get total global data purchases using internal UserID
                     cur.execute("""
                         SELECT SUM(TotalAmount) 
                         FROM purchases 
@@ -1059,21 +1067,31 @@ def get_user_data_balance():
                     # Convert cents to dollars and then to data amount (10GB per $10)
                     data_amount = (total_amount / 100) * 1.0  # 1GB per dollar
 
+                    print(f"Data balance lookup: user_id={user_id}, total_amount={total_amount}, data_amount={data_amount}")
+
                     return jsonify({
                         'userId': user_id,
                         'firebaseUid': firebase_uid,
                         'dataBalance': data_amount,
                         'unit': 'GB'
                     })
-    except Exception as e:
-        print(f"Error getting user data balance: {str(e)}")
-        # Return a placeholder value if database fails
+                    
         return jsonify({
             'userId': user_id,
             'firebaseUid': firebase_uid,
-            'dataBalance': None,  # Using None to indicate no valid value
+            'dataBalance': 0,
             'unit': 'GB',
-            'note': 'Default value due to error'
+            'error': 'No database connection'
+        })
+        
+    except Exception as e:
+        print(f"Error getting user data balance: {str(e)}")
+        return jsonify({
+            'userId': user_id,
+            'firebaseUid': firebase_uid,
+            'dataBalance': 0,
+            'unit': 'GB',
+            'error': str(e)
         })
 
 @app.route('/api/record-global-purchase', methods=['POST'])
