@@ -204,29 +204,31 @@ def register_firebase_user():
                     table_exists = cur.fetchone()[0]
 
                     if not table_exists:
-                        # Create users table with Firebase fields
+                        # Create users table with correct column names
                         cur.execute("""
                             CREATE TABLE users (
-                                userid SERIAL PRIMARY KEY,
+                                id SERIAL PRIMARY KEY,
                                 email VARCHAR(255) NOT NULL,
                                 firebase_uid VARCHAR(128) UNIQUE NOT NULL,
                                 stripe_customer_id VARCHAR(100),
                                 display_name VARCHAR(255),
                                 photo_url TEXT,
                                 imei VARCHAR(100),
+                                eth_address VARCHAR(42),
                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                             )
                         """)
                         conn.commit()
                         print("Users table created with Firebase fields")
 
-                    # Check if user already exists
-                    cur.execute("SELECT userid FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    # Check if user already exists by Firebase UID
+                    cur.execute("SELECT id, stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
                     existing_user = cur.fetchone()
 
                     if existing_user:
                         # User exists, return the user ID
                         user_id = existing_user[0]
+                        existing_stripe_id = existing_user[1]
                         print(f"Existing Firebase user found: {user_id}")
 
                         # Update user information if needed
@@ -235,10 +237,13 @@ def register_firebase_user():
                                 email = %s, 
                                 display_name = %s, 
                                 photo_url = %s 
-                            WHERE userid = %s""",
+                            WHERE id = %s""",
                             (email, display_name, photo_url, user_id)
                         )
                         conn.commit()
+
+                        # Use existing Stripe customer ID if available
+                        stripe_customer_id = existing_stripe_id
                     else:
                         # Create new user with Sepolia test wallet
                         from web3 import Web3
@@ -249,7 +254,7 @@ def register_firebase_user():
                             """INSERT INTO users 
                                 (email, firebase_uid, display_name, photo_url, eth_address) 
                             VALUES (%s, %s, %s, %s, %s) 
-                            RETURNING userid""",
+                            RETURNING id""",
                             (email, firebase_uid, display_name, photo_url, test_account.address)
                         )
                         user_id = cur.fetchone()[0]
@@ -266,16 +271,12 @@ def register_firebase_user():
                         except Exception as token_err:
                             print(f"Error awarding new member token: {str(token_err)}")
 
-                    # Get or create Stripe customer for this user
-                    stripe_customer_id = None
+                        stripe_customer_id = None
+
+                    # Create or update Stripe customer
                     if stripe.api_key:
                         try:
-                            # Check if user already has a Stripe customer ID
-                            cur.execute("SELECT stripe_customer_id FROM users WHERE userid = %s", (user_id,))
-                            result = cur.fetchone()
-                            if result and result[0]:
-                                stripe_customer_id = result[0]
-                            else:
+                            if not stripe_customer_id:
                                 # Create new Stripe customer
                                 customer = stripe.Customer.create(
                                     email=email,
@@ -286,10 +287,13 @@ def register_firebase_user():
 
                                 # Update user with Stripe ID
                                 cur.execute(
-                                    "UPDATE users SET stripe_customer_id = %s WHERE userid = %s",
+                                    "UPDATE users SET stripe_customer_id = %s WHERE id = %s",
                                     (stripe_customer_id, user_id)
                                 )
                                 conn.commit()
+                                print(f"Created Stripe customer {stripe_customer_id} for user {user_id}")
+                            else:
+                                print(f"Using existing Stripe customer {stripe_customer_id} for user {user_id}")
                         except Exception as stripe_err:
                             print(f"Error creating Stripe customer: {str(stripe_err)}")
 
@@ -322,7 +326,7 @@ def update_user_imei():
             if conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "UPDATE users SET imei = %s WHERE firebase_uid = %s RETURNING userid",
+                        "UPDATE users SET imei = %s WHERE firebase_uid = %s RETURNING id",
                         (imei, firebase_uid)
                     )
                     result = cur.fetchone()
@@ -354,7 +358,7 @@ def get_current_user():
             if conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        """SELECT userid, email, display_name, photo_url, imei 
+                        """SELECT id, email, display_name, photo_url, imei, stripe_customer_id 
                         FROM users WHERE firebase_uid = %s""",
                         (firebase_uid,)
                     )
@@ -367,7 +371,8 @@ def get_current_user():
                             'email': user[1],
                             'displayName': user[2],
                             'photoURL': user[3],
-                            'imei': user[4]
+                            'imei': user[4],
+                            'stripeCustomerId': user[5]
                         })
 
                     return jsonify({'error': 'User not found'}), 404
@@ -444,7 +449,7 @@ imei_model = api.model('IMEI', {
     'imei2': fields.String(required=False, description='Secondary IMEI number (dual SIM devices)')
 })
 
-def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, transaction_id=None):
+def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, transaction_id=None, firebase_uid=None):
     """Records a purchase in the database"""
     attempts = 0
     max_attempts = 3
@@ -485,6 +490,14 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                             # Handle null StripeID (make it empty string instead)
                             if stripe_id is None:
                                 stripe_id = ''
+
+                            # If Firebase UID is provided but no user_id, look up the user
+                            if firebase_uid and not user_id:
+                                cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                                user_result = cur.fetchone()
+                                if user_result:
+                                    user_id = user_result[0]
+                                    print(f"Found user {user_id} for Firebase UID {firebase_uid}")
 
                             # Now insert the purchase record
                             cur.execute(
@@ -958,13 +971,66 @@ purchase_model = api.model('Purchase', {
     'productId': fields.String(required=True, description='Product ID')
 })
 
+def get_user_by_firebase_uid(firebase_uid):
+    """Helper function to get user data by Firebase UID"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """SELECT id, email, firebase_uid, stripe_customer_id, display_name, 
+                                  photo_url, imei, eth_address 
+                        FROM users WHERE firebase_uid = %s""",
+                        (firebase_uid,)
+                    )
+                    return cur.fetchone()
+        return None
+    except Exception as e:
+        print(f"Error getting user by Firebase UID: {str(e)}")
+        return None
+
+def get_user_stripe_purchases(stripe_customer_id):
+    """Helper function to get user purchases by Stripe customer ID"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get purchases linked to Stripe customer
+                    cur.execute("""
+                        SELECT SUM(TotalAmount) 
+                        FROM purchases 
+                        WHERE StripeID IN (
+                            SELECT id FROM stripe_sessions_or_invoices 
+                            WHERE customer_id = %s
+                        ) OR UserID = (
+                            SELECT id FROM users WHERE stripe_customer_id = %s
+                        )
+                    """, (stripe_customer_id, stripe_customer_id))
+                    return cur.fetchone()
+        return None
+    except Exception as e:
+        print(f"Error getting Stripe purchases: {str(e)}")
+        return None
+
 @app.route('/api/user/data-balance', methods=['GET'])
 def get_user_data_balance():
     """Get the current data balance for a member"""
-    user_id = request.args.get('userId', '1')  # Default to member #1
+    firebase_uid = request.args.get('firebaseUid')
+    user_id = request.args.get('userId', '1')  # Fallback to user ID 1 for demo
 
     try:
-        # For demo purposes, we'll calculate based on purchases
+        if firebase_uid:
+            # Look up user by Firebase UID first
+            user_data = get_user_by_firebase_uid(firebase_uid)
+            if user_data:
+                user_id = user_data[0]  # Get the actual user ID
+                stripe_customer_id = user_data[3]  # Get Stripe customer ID
+                
+                # Use Stripe customer ID to look up purchases if available
+                if stripe_customer_id:
+                    print(f"Looking up data balance for user {user_id} with Stripe customer {stripe_customer_id}")
+
+        # Get total global data purchases for this user
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
@@ -983,6 +1049,7 @@ def get_user_data_balance():
 
                     return jsonify({
                         'userId': user_id,
+                        'firebaseUid': firebase_uid,
                         'dataBalance': data_amount,
                         'unit': 'GB'
                     })
@@ -991,6 +1058,7 @@ def get_user_data_balance():
         # Return a placeholder value if database fails
         return jsonify({
             'userId': user_id,
+            'firebaseUid': firebase_uid,
             'dataBalance': None,  # Using None to indicate no valid value
             'unit': 'GB',
             'note': 'Default value due to error'
@@ -1829,25 +1897,53 @@ class UpdateEthAddress(Resource):
     def post(self):
         try:
             data = request.json
-            user_id = 1  # Default for demo, should be from session
+            firebase_uid = data.get('firebaseUid')
             eth_address = data.get('address')
 
-            if not eth_address or not web3.isAddress(eth_address):
-                return {'error': 'Invalid Ethereum address'}, 400
+            if not eth_address:
+                return {'error': 'Ethereum address is required'}, 400
+
+            # Validate Ethereum address if web3 is available
+            try:
+                from web3 import Web3
+                web3 = Web3()
+                if not web3.is_address(eth_address):
+                    return {'error': 'Invalid Ethereum address'}, 400
+            except:
+                # If web3 is not available, do basic validation
+                if not eth_address.startswith('0x') or len(eth_address) != 42:
+                    return {'error': 'Invalid Ethereum address format'}, 400
 
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
-                        cur.execute("""
-                            UPDATE users 
-                            SET eth_address = %s 
-                            WHERE userid = %s
-                        """, (eth_address, user_id))
-                        conn.commit()
-                        return {
-                            'status': 'success',
-                            'message': 'Ethereum address updated'
-                        }
+                        if firebase_uid:
+                            # Update by Firebase UID
+                            cur.execute("""
+                                UPDATE users 
+                                SET eth_address = %s 
+                                WHERE firebase_uid = %s
+                                RETURNING id
+                            """, (eth_address, firebase_uid))
+                        else:
+                            # Fallback to user ID 1 for demo
+                            cur.execute("""
+                                UPDATE users 
+                                SET eth_address = %s 
+                                WHERE id = %s
+                                RETURNING id
+                            """, (eth_address, 1))
+                        
+                        result = cur.fetchone()
+                        if result:
+                            conn.commit()
+                            return {
+                                'status': 'success',
+                                'message': 'Ethereum address updated',
+                                'userId': result[0]
+                            }
+                        else:
+                            return {'error': 'User not found'}, 404
 
             return {'error': 'Database connection error'}, 500
         except Exception as e:
