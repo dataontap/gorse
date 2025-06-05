@@ -271,7 +271,7 @@ def register_firebase_user():
                     if stripe.api_key:
                         try:
                             # Check if user already has a Stripe customer ID
-                            cur.execute("SELECT stripe_customer_id FROM users WHERE UserID = %s", (user_id,))
+                            cur.execute("SELECT stripe_customer_id FROM users WHERE userid = %s", (user_id,))
                             result = cur.fetchone()
                             if result and result[0]:
                                 stripe_customer_id = result[0]
@@ -286,7 +286,7 @@ def register_firebase_user():
 
                                 # Update user with Stripe ID
                                 cur.execute(
-                                    "UPDATE users SET stripe_customer_id = %s WHERE UserID = %s",
+                                    "UPDATE users SET stripe_customer_id = %s WHERE userid = %s",
                                     (stripe_customer_id, user_id)
                                 )
                                 conn.commit()
@@ -322,7 +322,7 @@ def update_user_imei():
             if conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "UPDATE users SET imei = %s WHERE firebase_uid = %s RETURNING UserID",
+                        "UPDATE users SET imei = %s WHERE firebase_uid = %s RETURNING userid",
                         (imei, firebase_uid)
                     )
                     result = cur.fetchone()
@@ -354,7 +354,7 @@ def get_current_user():
             if conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        """SELECT UserID, email, display_name, photo_url, imei 
+                        """SELECT userid, email, display_name, photo_url, imei 
                         FROM users WHERE firebase_uid = %s""",
                         (firebase_uid,)
                     )
@@ -1841,7 +1841,7 @@ class UpdateEthAddress(Resource):
                         cur.execute("""
                             UPDATE users 
                             SET eth_address = %s 
-                            WHERE UserID = %s
+                            WHERE userid = %s
                         """, (eth_address, user_id))
                         conn.commit()
                         return {
