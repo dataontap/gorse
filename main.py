@@ -1073,7 +1073,9 @@ def get_user_data_balance():
                         'userId': user_id,
                         'firebaseUid': firebase_uid,
                         'dataBalance': data_amount,
-                        'unit': 'GB'
+                        'unit': 'GB',
+                        'billing_type': 'purchase_based',
+                        'note': 'Future releases will include real-time usage tracking with Stripe metering'
                     })
                     
         return jsonify({
@@ -1093,6 +1095,89 @@ def get_user_data_balance():
             'unit': 'GB',
             'error': str(e)
         })
+
+@app.route('/api/report-data-usage', methods=['POST'])
+def report_data_usage():
+    """Report actual data usage to Stripe for metering"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid')
+        megabytes_used = data.get('megabytesUsed', 0)
+        
+        if not firebase_uid or megabytes_used <= 0:
+            return jsonify({'error': 'Firebase UID and megabytes used are required'}), 400
+        
+        # Get user's Stripe customer ID
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data or not user_data[3]:  # user_data[3] is stripe_customer_id
+            return jsonify({'error': 'No Stripe customer found for user'}), 404
+        
+        stripe_customer_id = user_data[3]
+        
+        # Import and use metering function
+        from stripe_metering import report_data_usage as stripe_report_usage
+        
+        # Report usage to Stripe
+        result = stripe_report_usage(stripe_customer_id, megabytes_used)
+        
+        if result['success']:
+            # Also log in local database for redundancy
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            INSERT INTO data_usage_log 
+                            (user_id, stripe_customer_id, megabytes_used, stripe_event_id, created_at)
+                            VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
+                        """, (user_data[0], stripe_customer_id, megabytes_used, result.get('event_id')))
+                        conn.commit()
+            
+            return jsonify({
+                'status': 'success',
+                'message': 'Data usage reported to Stripe',
+                'megabytes_used': megabytes_used,
+                'stripe_event_id': result.get('event_id')
+            })
+        else:
+            return jsonify({'error': result.get('error')}), 500
+            
+    except Exception as e:
+        print(f"Error reporting data usage: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/usage-summary', methods=['GET'])
+def get_usage_summary():
+    """Get usage summary for a user from Stripe metering"""
+    try:
+        firebase_uid = request.args.get('firebaseUid')
+        if not firebase_uid:
+            return jsonify({'error': 'Firebase UID is required'}), 400
+        
+        # Get user's Stripe customer ID
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data or not user_data[3]:
+            return jsonify({'error': 'No Stripe customer found for user'}), 404
+        
+        stripe_customer_id = user_data[3]
+        
+        # Import and use metering function
+        from stripe_metering import get_customer_usage_summary
+        
+        # Get usage from Stripe
+        result = get_customer_usage_summary(stripe_customer_id)
+        
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'usage_summary': result,
+                'billing_note': 'Usage-based billing will be charged monthly'
+            })
+        else:
+            return jsonify({'error': result.get('error')}), 500
+            
+    except Exception as e:
+        print(f"Error getting usage summary: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/record-global-purchase', methods=['POST'])
 def record_global_purchase():

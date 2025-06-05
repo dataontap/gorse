@@ -160,6 +160,55 @@ def create_stripe_products():
         except Exception as e:
             print(f"Error creating Metal Card price: {str(e)}")
         
+        # 5. Create Meter for Data Usage Tracking
+        try:
+            # Check if meter already exists
+            meters = stripe.billing.Meter.list(limit=100)
+            data_meter = None
+            for meter in meters.data:
+                if meter.event_name == 'data_usage':
+                    data_meter = meter
+                    print(f"Data usage meter already exists: {meter.id}")
+                    break
+            
+            if not data_meter:
+                data_meter = stripe.billing.Meter.create(
+                    display_name='Data Usage',
+                    event_name='data_usage',
+                    value_settings={
+                        'event_payload_key': 'megabytes_used'
+                    }
+                )
+                print(f"Created data usage meter: {data_meter.id}")
+                
+            # Create usage-based pricing for existing products
+            try:
+                # Add usage-based price to global data product
+                usage_prices = stripe.Price.list(product='global_data_10gb', type='recurring')
+                if len(usage_prices.data) == 0:
+                    usage_price = stripe.Price.create(
+                        product='global_data_10gb',
+                        currency='usd',
+                        recurring={
+                            'interval': 'month',
+                            'usage_type': 'metered',
+                            'meter': data_meter.id
+                        },
+                        billing_scheme='per_unit',
+                        unit_amount=10,  # $0.10 per MB
+                        metadata={
+                            'usage_type': 'data_consumption'
+                        }
+                    )
+                    print(f"Created usage-based price: {usage_price.id}")
+                else:
+                    print(f"Usage-based price already exists: {usage_prices.data[0].id}")
+            except Exception as e:
+                print(f"Error creating usage-based price: {str(e)}")
+                
+        except Exception as e:
+            print(f"Error setting up data usage meter: {str(e)}")
+
         print("Stripe products setup completed successfully!")
         return True
         
