@@ -135,12 +135,17 @@ body.light-mode {
     display: inline-block;
     background-color: rgba(0, 102, 255, 0.1);
     color: #0066ff;
-    padding: 2px 8px;
-    border-radius: 12px;
+    padding: 6px 12px;
+    border-radius: 16px;
     font-size: 0.9em;
-    margin-left: 10px;
     text-decoration: none;
     border: 1px solid rgba(0, 102, 255, 0.2);
+    text-align: center;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    max-width: calc(100% - 10px);
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .dark-mode .wallet-value-pill {
@@ -153,11 +158,14 @@ body.light-mode {
     background-color: rgba(0, 102, 255, 0.2);
     text-decoration: none;
     color: #0066ff;
+    transform: scale(1.02);
+    box-shadow: 0 2px 4px rgba(0, 102, 255, 0.2);
 }
 
 .dark-mode .wallet-value-pill:hover {
     background-color: rgba(0, 102, 255, 0.3);
     color: #99ccff;
+    box-shadow: 0 2px 4px rgba(0, 102, 255, 0.3);
 }
 
 .countries-link {
@@ -913,6 +921,8 @@ body.light-mode {
 .profile-dropdown {
     right: 0;
     top: 40px;
+    overflow: hidden;
+    max-width: 250px;
 }
 
 .menu-icon:hover .menu-dropdown,
@@ -1033,13 +1043,40 @@ body.light-mode {
 
 .profile-info {
     margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
 }
 
-.member-count {
+.profile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.account-text {
+    flex: 1;
+}
+
+.wallet-pill-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 0 5px;
+}
+
+.member-count-qr {
     font-size: 12px;
     color: #666;
-    margin-left: 8px;
-    display: inline-block;
+    margin: 5px 0;
+    font-family: monospace;
+    font-weight: bold;
+}
+
+.dark-mode .member-count-qr {
+    color: #aaa;
 }
 
 .qr-code-icon {

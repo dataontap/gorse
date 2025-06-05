@@ -20,11 +20,16 @@
             <i class="fas fa-user-circle"></i>
             <div class="profile-dropdown">
                 <div class="profile-info">
-                    My Account 
-                    <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
-                    <a href="/payments" class="wallet-value-pill">$10,000.00 USD</a>
+                    <div class="profile-header">
+                        <span class="account-text">My Account</span>
+                        <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
+                    </div>
+                    <div class="wallet-pill-container">
+                        <a href="/payments" class="wallet-value-pill">$10,000.00 USD</a>
+                    </div>
                     <div id="qrCodePopup" class="qr-code-popup">
                         <div id="qrcode"></div>
+                        <p id="qrMemberCount" class="member-count-qr">#1/X</p>
                         <p>Scan to link accounts</p>
                     </div>
                 </div>

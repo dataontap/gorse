@@ -1,4 +1,3 @@
-
 // Initialize dark mode as default for all new users
 document.addEventListener('DOMContentLoaded', function() {
     // Check if this is a new user (no dark mode preference set)
@@ -196,7 +195,7 @@ function refreshDataAmount() {
 // Function to create sparkle animation
 function createSparkle(element) {
     if (!element) return;
-    
+
     const rect = element.getBoundingClientRect();
 
     for (let i = 0; i < 5; i++) {
@@ -292,7 +291,7 @@ function updateMembershipCount() {
     if (totalMembersElement) {
         // First show a default value
         totalMembersElement.textContent = 'X';
-        
+
         // Then fetch from API
         fetch('/api/member-count')
             .then(response => response.json())
@@ -304,14 +303,14 @@ function updateMembershipCount() {
                     const userCards = document.querySelectorAll('.user-card');
                     const userCountElement = document.querySelector('.user-count');
                     let totalCount = userCards.length || 1;
-                    
+
                     if (userCountElement && userCountElement.textContent) {
                         const countFromElement = parseInt(userCountElement.textContent, 10);
                         if (!isNaN(countFromElement) && countFromElement > 0) {
                             totalCount = countFromElement;
                         }
                     }
-                    
+
                     totalMembersElement.textContent = totalCount.toString();
                 }
             })
@@ -331,11 +330,11 @@ function loadDataFromSession() {
     if (dataDisplay) {
         // Hide data display initially until we have actual data
         dataDisplay.style.display = 'none';
-        
+
         if (globalStatus) {
             globalStatus.style.display = 'none';
         }
-        
+
         // Check if we have cached data and show it immediately if valid
         const walletBalance = localStorage.getItem('walletBalance');
         if (walletBalance && parseFloat(walletBalance) > 0) {
@@ -366,7 +365,7 @@ function fetchUserDataBalance() {
                 // Update localStorage
                 if (data.dataBalance !== null && data.dataBalance !== undefined && data.dataBalance > 0) {
                     localStorage.setItem('walletBalance', data.dataBalance.toString());
-                    
+
                     // Show data display with actual balance
                     if (dataDisplay) {
                         dataDisplay.innerHTML = `${data.dataBalance.toFixed(1)}<span>GB</span>`;
@@ -864,7 +863,7 @@ function initializeDarkMode() {
     const helpToggle = document.getElementById('helpToggle');
     const helpSection = document.querySelector('.help-section');
     const body = document.body;
-    
+
     // Check if dark mode preference exists, if not set it to true (dark mode default)
     const darkModePreference = localStorage.getItem('darkMode');
     const isDarkMode = darkModePreference === null ? true : darkModePreference === 'true';
@@ -966,8 +965,7 @@ function initializeDarkMode() {
         icon.classList.replace(isLight ? 'fa-sun' : 'fa-moon', 
                              isLight ? 'fa-moon' : 'fa-sun');
         textSpan.textContent = isLight ? 'Dark Mode' : 'Light Mode';
-        localStorage.setItem('darkMode', !isLight);
-    });
+        localStorage.setItem('darkMode', !isLight);    });
 }
 
 function initializeButtons() {
@@ -1404,19 +1402,19 @@ window.confirmPurchase = function(productId) {
             hideConfirmationDrawer();
         }
     }
-    
+
     // Track if purchase already processed to prevent duplicates
     if (window.processingPurchase) {
         return;
     }
     window.processingPurchase = true;
-    
+
     // Show processing UI
     const processingElement = document.querySelector('.processing-text');
     if (processingElement) {
         processingElement.style.display = 'block';
     }
-    
+
     // Prevent double submissions by disabling all Buy buttons
     const buyButtons = document.querySelectorAll('.btn-primary');
     buyButtons.forEach(btn => {
@@ -1454,14 +1452,14 @@ window.confirmPurchase = function(productId) {
         // Calculate how much time has elapsed
         const elapsedTime = Date.now() - startTime;
         const remainingTime = Math.max(0, animationDuration - elapsedTime);
-        
+
         // Wait for the animation to complete before updating UI
         setTimeout(() => {
             // Hide processing UI
             if (processingElement) {
                 processingElement.style.display = 'none';
             }
-            
+
             // Re-enable buttons
             buyButtons.forEach(btn => {
                 if (btn.textContent.trim() === 'Processing...') {
@@ -1469,7 +1467,7 @@ window.confirmPurchase = function(productId) {
                     btn.textContent = 'Buy';
                 }
             });
-            
+
             if (data.status === 'success') {
                 // Clear any existing purchase items first to prevent duplicates
                 const purchaseList = document.getElementById('purchaseList');
@@ -1478,17 +1476,17 @@ window.confirmPurchase = function(productId) {
                     const tempId = 'temp_' + Date.now();
                     window.lastPurchaseId = tempId;
                 }
-                
+
                 // Show purchase in history
                 addPurchaseToHistory(productId, data.purchaseId);
-                
+
                 // Show data added
                 showDataAdded(productId);
-    
+
                 if (data.simulated) {
                     console.info('Note: Using simulated purchase ID due to database issue');
                 }
-    
+
                 // Check if this was a membership purchase and update offers
                 if (productId === 'basic_membership' || productId === 'full_membership') {
                     updateOffersCarousel(productId);
@@ -1502,25 +1500,25 @@ window.confirmPurchase = function(productId) {
                 // Show a user-friendly error message
                 alert('Purchase could not be completed. Please try again later.');
             }
-            
+
             // Reset processing flag after everything is done
             window.processingPurchase = false;
         }, remainingTime);
     })
     .catch(error => {
         console.error('Error recording purchase:', error);
-        
+
         // Calculate remaining animation time
         const elapsedTime = Date.now() - startTime;
         const remainingTime = Math.max(0, animationDuration - elapsedTime);
-        
+
         // Wait for animation to complete before updating UI
         setTimeout(() => {
             // Hide processing UI
             if (processingElement) {
                 processingElement.style.display = 'none';
             }
-            
+
             // Re-enable buttons
             buyButtons.forEach(btn => {
                 if (btn.textContent.trim() === 'Processing...') {
@@ -1528,11 +1526,11 @@ window.confirmPurchase = function(productId) {
                     btn.textContent = 'Buy';
                 }
             });
-            
+
             // Still show the purchase in the UI to improve user experience
             addPurchaseToHistory(productId, 'local_' + Date.now());
             showDataAdded(productId);
-            
+
             // Reset processing flag after everything is done
             window.processingPurchase = false;
         }, remainingTime);
@@ -1728,11 +1726,11 @@ function loadSubscriptionStatus() {
                 // Display subscription info
                 subscriptionStatus.style.display = 'block';
                 subscriptionStatus.className = `subscription-status ${data.type.replace('_membership', '')}`;
-                
+
                 const typeName = data.type === 'basic_membership' ? 'Basic Member' : 'Full Member';
                 subscriptionType.textContent = typeName;
                 subscriptionValidity.textContent = `Valid until ${data.valid_until} (${data.days_remaining} days remaining)`;
-                
+
                 // Hide membership offers in carousel
                 updateOffersCarousel(data.type);
             } else {
@@ -2057,3 +2055,57 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+function toggleQRCode(event) {
+            event.stopPropagation();
+            const popup = document.getElementById('qrCodePopup');
+
+            if (popup.style.display === 'block') {
+                popup.style.display = 'none';
+            } else {
+                popup.style.display = 'block';
+
+                // Generate QR code if it doesn't exist yet
+                if (!document.querySelector('#qrcode canvas')) {
+                    const userId = localStorage.getItem('userId') || '1';
+                    const userHash = generateUserHash(userId);
+
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: `https://replit.dev/link/${userHash}`,
+                        width: 150,
+                        height: 150,
+                        colorDark: "#333333",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
+
+                // Update member count display in popup
+                updateMemberCountInPopup();
+            }
+        }
+
+        function generateUserHash(userId) {
+            // Generate a consistent hash based on user ID
+            const baseString = `r6kUVJulApaUkVv7ksXqaQhwjo33${userId}`;
+            return baseString.substring(0, 32) + '/' + Math.random().toString(36).substring(2, 6);
+        }
+
+        function updateMemberCountInPopup() {
+            const memberCountElement = document.getElementById('qrMemberCount');
+            if (memberCountElement) {
+                const currentMemberId = localStorage.getItem('userId') || '1';
+
+                // Fetch total member count
+                fetch('/api/member-count')
+                    .then(response => response.json())
+                    .then(data => {
+                        const totalCount = data && data.count ? data.count : '1';
+                        memberCountElement.textContent = `#${currentMemberId}/${totalCount}`;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching member count:', error);
+                        memberCountElement.textContent = `#${currentMemberId}/1`;
+                    });
+            }
+        }
