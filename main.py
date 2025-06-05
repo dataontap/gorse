@@ -997,75 +997,6 @@ def get_user_by_firebase_uid(firebase_uid):
                     )
                     return cur.fetchone()
         return None
-
-
-@app.route('/api/subscription-status', methods=['GET'])
-def get_subscription_status():
-    """Get the subscription status for a user"""
-    firebase_uid = request.args.get('firebaseUid')
-    user_id_param = request.args.get('userId')
-    
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    user_id = None
-                    
-                    # Look up user by Firebase UID first
-                    if firebase_uid:
-                        cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                        user_data = cur.fetchone()
-                        if user_data:
-                            user_id = user_data[0]
-                    
-                    # Try user_id_param if Firebase UID lookup failed
-                    if not user_id and user_id_param:
-                        if len(user_id_param) > 10 and not user_id_param.isdigit():
-                            # It's a Firebase UID
-                            cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (user_id_param,))
-                            user_data = cur.fetchone()
-                            if user_data:
-                                user_id = user_data[0]
-                        else:
-                            try:
-                                user_id = int(user_id_param)
-                            except ValueError:
-                                pass
-                    
-                    # Default to user 1 if no user found
-                    if not user_id:
-                        user_id = 1
-                    
-                    # Check for active subscriptions
-                    cur.execute("""
-                        SELECT subscription_type, end_date, stripe_subscription_id
-                        FROM subscriptions 
-                        WHERE user_id = %s AND end_date > CURRENT_TIMESTAMP
-                        ORDER BY end_date DESC
-                        LIMIT 1
-                    """, (user_id,))
-                    
-                    subscription = cur.fetchone()
-                    
-                    if subscription:
-                        return jsonify({
-                            'status': 'active',
-                            'subscription_type': subscription[0],
-                            'end_date': subscription[1].isoformat(),
-                            'stripe_subscription_id': subscription[2],
-                            'user_id': user_id
-                        })
-                    else:
-                        return jsonify({
-                            'status': 'inactive',
-                            'user_id': user_id
-                        })
-        
-        return jsonify({'error': 'Database connection failed'}), 500
-    except Exception as e:
-        print(f"Error getting subscription status: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
     except Exception as e:
         print(f"Error getting user by Firebase UID: {str(e)}")
         return None
@@ -1097,65 +1028,25 @@ def get_user_stripe_purchases(stripe_customer_id):
 def get_user_data_balance():
     """Get the current data balance for a member"""
     firebase_uid = request.args.get('firebaseUid')
-    user_id_param = request.args.get('userId')
-    
-    # Initialize variables
-    user_id = None
-    stripe_customer_id = None
-    
+    user_id = request.args.get('userId', '1')  # Fallback to user ID 1 for demo
+
     try:
+        if firebase_uid:
+            # Look up user by Firebase UID first
+            user_data = get_user_by_firebase_uid(firebase_uid)
+            if user_data:
+                user_id = user_data[0]  # Get the actual user ID
+                stripe_customer_id = user_data[3]  # Get Stripe customer ID
+                
+                # Use Stripe customer ID to look up purchases if available
+                if stripe_customer_id:
+                    print(f"Looking up data balance for user {user_id} with Stripe customer {stripe_customer_id}")
+
+        # Get total global data purchases for this user
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # First, try to identify the user
-                    if firebase_uid:
-                        # Look up user by Firebase UID
-                        cur.execute("""
-                            SELECT id, stripe_customer_id, firebase_uid
-                            FROM users WHERE firebase_uid = %s
-                        """, (firebase_uid,))
-                        user_data = cur.fetchone()
-                        if user_data:
-                            user_id = user_data[0]
-                            stripe_customer_id = user_data[1]
-                            print(f"Found user {user_id} by Firebase UID {firebase_uid}")
-                    
-                    # If Firebase UID lookup failed, check if user_id_param is a Firebase UID
-                    if not user_id and user_id_param:
-                        # Check if user_id_param looks like a Firebase UID (long alphanumeric string)
-                        if len(user_id_param) > 10 and not user_id_param.isdigit():
-                            cur.execute("""
-                                SELECT id, stripe_customer_id, firebase_uid
-                                FROM users WHERE firebase_uid = %s
-                            """, (user_id_param,))
-                            user_data = cur.fetchone()
-                            if user_data:
-                                user_id = user_data[0]
-                                stripe_customer_id = user_data[1]
-                                firebase_uid = user_data[2]  # Update firebase_uid for response
-                                print(f"Found user {user_id} by Firebase UID in userId param {user_id_param}")
-                        else:
-                            # Try as numeric user ID
-                            try:
-                                user_id = int(user_id_param)
-                                cur.execute("""
-                                    SELECT stripe_customer_id, firebase_uid
-                                    FROM users WHERE id = %s
-                                """, (user_id,))
-                                user_data = cur.fetchone()
-                                if user_data:
-                                    stripe_customer_id = user_data[0]
-                                    firebase_uid = user_data[1]
-                                    print(f"Found user {user_id} by numeric ID")
-                            except ValueError:
-                                print(f"Could not parse user ID: {user_id_param}")
-                    
-                    # Default to user ID 1 if no user found
-                    if not user_id:
-                        user_id = 1
-                        print(f"Defaulting to user ID 1")
-                    
-                    # Get total global data purchases for this user
+                    # Get total global data purchases
                     cur.execute("""
                         SELECT SUM(TotalAmount) 
                         FROM purchases 
@@ -1165,33 +1056,24 @@ def get_user_data_balance():
                     result = cur.fetchone()
                     total_amount = result[0] if result and result[0] else 0
 
-                    # Convert cents to dollars and then to data amount (1GB per $1)
+                    # Convert cents to dollars and then to data amount (10GB per $10)
                     data_amount = (total_amount / 100) * 1.0  # 1GB per dollar
 
                     return jsonify({
                         'userId': user_id,
                         'firebaseUid': firebase_uid,
-                        'stripeCustomerId': stripe_customer_id,
                         'dataBalance': data_amount,
                         'unit': 'GB'
                     })
-                    
-        return jsonify({
-            'error': 'Database connection failed',
-            'userId': user_id,
-            'firebaseUid': firebase_uid,
-            'dataBalance': 0,
-            'unit': 'GB'
-        })
-        
     except Exception as e:
         print(f"Error getting user data balance: {str(e)}")
+        # Return a placeholder value if database fails
         return jsonify({
-            'error': str(e),
             'userId': user_id,
             'firebaseUid': firebase_uid,
-            'dataBalance': 0,
-            'unit': 'GB'
+            'dataBalance': None,  # Using None to indicate no valid value
+            'unit': 'GB',
+            'note': 'Default value due to error'
         })
 
 @app.route('/api/record-global-purchase', methods=['POST'])
