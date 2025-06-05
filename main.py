@@ -461,15 +461,15 @@ imei_model = api.model('IMEI', {
     'imei2': fields.String(required=False, description='Secondary IMEI number (dual SIM devices)')
 })
 
-def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, transaction_id=None, firebase_uid=None):
-    """Records a purchase in the database"""
+def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, transaction_id=None, firebase_uid=None, stripe_transaction_id=None):
+    """Records a purchase in the database with proper Firebase UID lookup and Stripe transaction tracking"""
     attempts = 0
     max_attempts = 3
 
     while attempts < max_attempts:
         attempts += 1
         try:
-            print(f"Attempting to record purchase: StripeID={stripe_id}, ProductID={product_id}, PriceID={price_id}, Amount={amount}, TransactionID={transaction_id}")
+            print(f"Attempting to record purchase: StripeID={stripe_id}, ProductID={product_id}, PriceID={price_id}, Amount={amount}, TransactionID={transaction_id}, StripeTransactionID={stripe_transaction_id}, FirebaseUID={firebase_uid}")
             with get_db_connection() as conn:
                 if conn:
                     try:
@@ -489,37 +489,68 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                                     PriceID VARCHAR(100) NOT NULL,
                                     TotalAmount INTEGER NOT NULL,
                                     DateCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                    UserID INTEGER
+                                    UserID INTEGER,
+                                    StripeTransactionID VARCHAR(100),
+                                    FirebaseUID VARCHAR(128)
                                 );
 
                                 CREATE INDEX IF NOT EXISTS idx_purchases_stripe ON purchases(StripeID);
                                 CREATE INDEX IF NOT EXISTS idx_purchases_product ON purchases(StripeProductID);
+                                CREATE INDEX IF NOT EXISTS idx_purchases_user ON purchases(UserID);
+                                CREATE INDEX IF NOT EXISTS idx_purchases_firebase_uid ON purchases(FirebaseUID);
                                 """
                                 cur.execute(create_table_sql)
                                 conn.commit()
                                 print("Purchases table created successfully")
+                            else:
+                                # Check if new columns exist and add them if needed
+                                cur.execute("""
+                                    SELECT column_name FROM information_schema.columns 
+                                    WHERE table_name = 'purchases'
+                                """)
+                                columns = [row[0] for row in cur.fetchall()]
+                                
+                                if 'stripetransactionid' not in [col.lower() for col in columns]:
+                                    print("Adding StripeTransactionID column to purchases table...")
+                                    cur.execute("ALTER TABLE purchases ADD COLUMN StripeTransactionID VARCHAR(100)")
+                                    
+                                if 'firebaseuid' not in [col.lower() for col in columns]:
+                                    print("Adding FirebaseUID column to purchases table...")
+                                    cur.execute("ALTER TABLE purchases ADD COLUMN FirebaseUID VARCHAR(128)")
+                                
+                                conn.commit()
 
                             # Handle null StripeID (make it empty string instead)
                             if stripe_id is None:
                                 stripe_id = ''
 
-                            # If Firebase UID is provided but no user_id, look up the user
-                            if firebase_uid and not user_id:
+                            # Always try to look up user by Firebase UID first if provided
+                            if firebase_uid:
                                 cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
                                 user_result = cur.fetchone()
                                 if user_result:
                                     user_id = user_result[0]
                                     print(f"Found user {user_id} for Firebase UID {firebase_uid}")
+                                else:
+                                    print(f"No user found for Firebase UID {firebase_uid}")
+                                    # Don't fail the purchase, just log it
+                            
+                            # Use default user_id if still not found
+                            if not user_id:
+                                user_id = 1
+                                print(f"Using default user_id: {user_id}")
 
-                            # Now insert the purchase record
+                            # Now insert the purchase record with all tracking information
                             cur.execute(
-                                "INSERT INTO purchases (StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated) "
-                                "VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING PurchaseID",
-                                (stripe_id, product_id, price_id, amount, user_id)
+                                """INSERT INTO purchases 
+                                   (StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated, StripeTransactionID, FirebaseUID) 
+                                   VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s, %s) 
+                                   RETURNING PurchaseID""",
+                                (stripe_id, product_id, price_id, amount, user_id, stripe_transaction_id, firebase_uid)
                             )
                             purchase_id = cur.fetchone()[0]
                             conn.commit()
-                            print(f"Purchase successfully recorded: {purchase_id}")
+                            print(f"Purchase successfully recorded: {purchase_id} for user {user_id} with Firebase UID {firebase_uid}")
                             return purchase_id
                     except psycopg2.Error as db_err:
                         print(f"Database error recording purchase (attempt {attempts}/{max_attempts}): {str(db_err)}")
@@ -554,12 +585,28 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
 
     return None
 
-def create_subscription(user_id, subscription_type, stripe_subscription_id=None):
+def create_subscription(user_id, subscription_type, stripe_subscription_id=None, firebase_uid=None):
     """Creates a subscription record in the database with exactly 365.25 days validity"""
     try:
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
+                    # If Firebase UID is provided but no user_id, look up the user
+                    if firebase_uid and not user_id:
+                        cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                        user_result = cur.fetchone()
+                        if user_result:
+                            user_id = user_result[0]
+                            print(f"Found user {user_id} for Firebase UID {firebase_uid} when creating subscription")
+                        else:
+                            print(f"No user found for Firebase UID {firebase_uid} when creating subscription")
+                            user_id = 1  # Default fallback
+                    
+                    # Use default user_id if still not found
+                    if not user_id:
+                        user_id = 1
+                        print(f"Using default user_id for subscription: {user_id}")
+                    
                     # First, deactivate any existing active subscriptions for this user
                     cur.execute("""
                         UPDATE subscriptions 
@@ -580,7 +627,7 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None)
                     subscription_id = result[1]
                     conn.commit()
                     
-                    print(f"Subscription {subscription_id} created for user {user_id}, type {subscription_type}, valid until {end_date}")
+                    print(f"Subscription {subscription_id} created for user {user_id} (Firebase UID: {firebase_uid}), type {subscription_type}, valid until {end_date}")
                     
                     # If this is a Stripe subscription, we should also create the recurring subscription in Stripe
                     if stripe.api_key and subscription_type in ['basic_membership', 'full_membership']:
@@ -605,7 +652,8 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None)
                                             metadata={
                                                 'user_id': user_id,
                                                 'subscription_type': subscription_type,
-                                                'internal_subscription_id': subscription_id
+                                                'internal_subscription_id': subscription_id,
+                                                'firebase_uid': firebase_uid or ''
                                             }
                                         )
                                         stripe_subscription_id = stripe_subscription.id
@@ -848,31 +896,43 @@ def stripe_webhook():
                     product_id = price.product
                     amount = item.amount_total
 
-                    # Get user ID from Stripe customer
+                    # Get user ID and Firebase UID from Stripe customer and session metadata
                     customer_id = session.customer
-                    user_id = 1  # Default fallback
+                    user_id = None
+                    firebase_uid = None
+                    
+                    # Extract Firebase UID from session metadata
+                    if hasattr(session, 'metadata') and session.metadata:
+                        firebase_uid = session.metadata.get('firebase_uid')
                     
                     if customer_id:
                         try:
                             with get_db_connection() as conn:
                                 if conn:
                                     with conn.cursor() as cur:
-                                        cur.execute("SELECT id FROM users WHERE stripe_customer_id = %s", (customer_id,))
+                                        # Try to get both user ID and Firebase UID from customer
+                                        cur.execute("SELECT id, firebase_uid FROM users WHERE stripe_customer_id = %s", (customer_id,))
                                         user_result = cur.fetchone()
                                         if user_result:
                                             user_id = user_result[0]
-                                            print(f"Found user {user_id} for Stripe customer {customer_id}")
+                                            if not firebase_uid and user_result[1]:
+                                                firebase_uid = user_result[1]
+                                            print(f"Found user {user_id} with Firebase UID {firebase_uid} for Stripe customer {customer_id}")
                         except Exception as e:
                             print(f"Error looking up user by customer ID: {str(e)}")
 
                     transaction_id = f"SESS_{session.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                    stripe_transaction_id = session.id  # Use session ID as Stripe transaction ID
+                    
                     purchase_id = record_purchase(
                         stripe_id=session.id,
                         product_id=product_id,
                         price_id=price_id,
                         amount=amount,
                         user_id=user_id,
-                        transaction_id=transaction_id
+                        transaction_id=transaction_id,
+                        firebase_uid=firebase_uid,
+                        stripe_transaction_id=stripe_transaction_id
                     )
 
                     # Create subscription for membership products
@@ -880,9 +940,10 @@ def stripe_webhook():
                         subscription_end_date = create_subscription(
                             user_id=user_id,
                             subscription_type=product_id,
-                            stripe_subscription_id=session.subscription if hasattr(session, 'subscription') else None
+                            stripe_subscription_id=session.subscription if hasattr(session, 'subscription') else None,
+                            firebase_uid=firebase_uid
                         )
-                        print(f"Created subscription for user {user_id}, product {product_id}, valid until {subscription_end_date}")
+                        print(f"Created subscription for user {user_id} (Firebase UID: {firebase_uid}), product {product_id}, valid until {subscription_end_date}")
                     
                     # Award tokens based on product rules
                     try:
@@ -899,7 +960,7 @@ def stripe_webhook():
                     except Exception as token_err:
                         print(f"Error awarding tokens based on product rules: {str(token_err)}")
 
-                    print(f"Recorded purchase {purchase_id} for product {product_id}, price {price_id}, amount {amount}")
+                    print(f"Recorded purchase {purchase_id} for product {product_id}, price {price_id}, amount {amount} with Stripe transaction {stripe_transaction_id}")
                 except Exception as e:
                     print(f"Error processing line item: {str(e)}")
                     continue
@@ -1369,7 +1430,9 @@ def get_subscription_status():
 def record_global_purchase():
     data = request.get_json()
     product_id = data.get('productId')
-    print(f"===== RECORDING PURCHASE FOR PRODUCT: {product_id} =====")
+    firebase_uid = data.get('firebaseUid')  # Get Firebase UID from request
+    print(f"===== RECORDING PURCHASE FOR PRODUCT: {product_id} with Firebase UID: {firebase_uid} =====")
+    
     try:
         with get_db_connection() as conn:
             if conn:
@@ -1394,9 +1457,6 @@ def record_global_purchase():
         'basic_membership': 'price_basic_membership',
         'full_membership': 'price_full_membership',
     }
-
-    # In a real application, fetch the member ID from a secure session or authentication system.
-    user_id = 1  # Placeholder member ID
 
     # Try to get price from Stripe if available
     price_id = None
@@ -1428,18 +1488,30 @@ def record_global_purchase():
     transaction_id = f"API_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
     print(f"Generated transaction ID: {transaction_id}")
 
-    # Record the purchase
+    # Record the purchase with Firebase UID
     purchase_id = record_purchase(
         stripe_id=None,  # No stripe id in this case
         product_id=product_id,
         price_id=price_id,
         amount=amount,
-        user_id=user_id,
-        transaction_id=transaction_id
+        user_id=None,  # Will be looked up from Firebase UID
+        transaction_id=transaction_id,
+        firebase_uid=firebase_uid,
+        stripe_transaction_id=None  # No Stripe transaction for API purchases
     )
 
+    # Create subscription for membership products
+    if purchase_id and product_id in ['basic_membership', 'full_membership']:
+        subscription_end_date = create_subscription(
+            user_id=None,  # Will be looked up from Firebase UID
+            subscription_type=product_id,
+            stripe_subscription_id=None,
+            firebase_uid=firebase_uid
+        )
+        print(f"Created subscription for Firebase UID {firebase_uid}, product {product_id}, valid until {subscription_end_date}")
+
     if purchase_id:
-        print(f"Successfully recorded purchase: {purchase_id} for product: {product_id}")
+        print(f"Successfully recorded purchase: {purchase_id} for product: {product_id} with Firebase UID: {firebase_uid}")
         return {'status': 'success', 'purchaseId': purchase_id}
     else:
         print(f"Failed to record purchase for product: {product_id}")

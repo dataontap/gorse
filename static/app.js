@@ -1434,7 +1434,10 @@ window.confirmPurchase = function(productId) {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ productId: productId || 'global_data_10gb' })
+        body: JSON.stringify({ 
+            productId: productId || 'global_data_10gb',
+            firebaseUid: window.currentUser ? window.currentUser.uid : null
+        })
     })
     .then(response => {
         if (!response.ok && response.status >= 500) {
