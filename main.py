@@ -555,16 +555,77 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
     return None
 
 def create_subscription(user_id, subscription_type, stripe_subscription_id=None):
-    """Creates a subscription record in the database"""
+    """Creates a subscription record in the database with exactly 365.25 days validity"""
     try:
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Calculate validity end date (1 year = 365.25 days for leap years)
-                    cur.execute("INSERT INTO subscriptions (user_id, subscription_type, stripe_subscription_id, start_date, end_date) VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days') RETURNING end_date", (user_id, subscription_type, stripe_subscription_id))
-                    end_date = cur.fetchone()[0]
+                    # First, deactivate any existing active subscriptions for this user
+                    cur.execute("""
+                        UPDATE subscriptions 
+                        SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+                        WHERE user_id = %s AND status = 'active'
+                    """, (user_id,))
+                    
+                    # Calculate validity end date (1 year = 365.25 days exactly for leap years)
+                    cur.execute("""
+                        INSERT INTO subscriptions 
+                        (user_id, subscription_type, stripe_subscription_id, start_date, end_date, status, created_at, updated_at) 
+                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
+                        RETURNING end_date, subscription_id
+                    """, (user_id, subscription_type, stripe_subscription_id))
+                    
+                    result = cur.fetchone()
+                    end_date = result[0]
+                    subscription_id = result[1]
                     conn.commit()
-                    print(f"Subscription created for user {user_id}, valid until {end_date}")
+                    
+                    print(f"Subscription {subscription_id} created for user {user_id}, type {subscription_type}, valid until {end_date}")
+                    
+                    # If this is a Stripe subscription, we should also create the recurring subscription in Stripe
+                    if stripe.api_key and subscription_type in ['basic_membership', 'full_membership']:
+                        try:
+                            # Get the user's Stripe customer ID
+                            cur.execute("SELECT stripe_customer_id FROM users WHERE id = %s", (user_id,))
+                            customer_result = cur.fetchone()
+                            
+                            if customer_result and customer_result[0]:
+                                customer_id = customer_result[0]
+                                
+                                # Get the appropriate price ID for the subscription
+                                prices = stripe.Price.list(product=subscription_type, active=True, type='recurring')
+                                if prices.data:
+                                    price_id = prices.data[0].id
+                                    
+                                    # Create Stripe subscription if not already provided
+                                    if not stripe_subscription_id:
+                                        stripe_subscription = stripe.Subscription.create(
+                                            customer=customer_id,
+                                            items=[{'price': price_id}],
+                                            metadata={
+                                                'user_id': user_id,
+                                                'subscription_type': subscription_type,
+                                                'internal_subscription_id': subscription_id
+                                            }
+                                        )
+                                        stripe_subscription_id = stripe_subscription.id
+                                        
+                                        # Update our record with the Stripe subscription ID
+                                        cur.execute("""
+                                            UPDATE subscriptions 
+                                            SET stripe_subscription_id = %s, updated_at = CURRENT_TIMESTAMP
+                                            WHERE subscription_id = %s
+                                        """, (stripe_subscription_id, subscription_id))
+                                        conn.commit()
+                                        
+                                        print(f"Created Stripe subscription {stripe_subscription_id} for user {user_id}")
+                                else:
+                                    print(f"No recurring price found for product {subscription_type}")
+                            else:
+                                print(f"No Stripe customer ID found for user {user_id}")
+                        except Exception as stripe_err:
+                            print(f"Error creating Stripe subscription: {str(stripe_err)}")
+                    
                     return end_date
             else:
                 print("No database connection available")
@@ -787,23 +848,41 @@ def stripe_webhook():
                     product_id = price.product
                     amount = item.amount_total
 
+                    # Get user ID from Stripe customer
+                    customer_id = session.customer
+                    user_id = 1  # Default fallback
+                    
+                    if customer_id:
+                        try:
+                            with get_db_connection() as conn:
+                                if conn:
+                                    with conn.cursor() as cur:
+                                        cur.execute("SELECT id FROM users WHERE stripe_customer_id = %s", (customer_id,))
+                                        user_result = cur.fetchone()
+                                        if user_result:
+                                            user_id = user_result[0]
+                                            print(f"Found user {user_id} for Stripe customer {customer_id}")
+                        except Exception as e:
+                            print(f"Error looking up user by customer ID: {str(e)}")
+
                     transaction_id = f"SESS_{session.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
                     purchase_id = record_purchase(
                         stripe_id=session.id,
                         product_id=product_id,
                         price_id=price_id,
                         amount=amount,
-                        user_id=session.customer,  # Use Stripe customer ID until we link to our user ID
+                        user_id=user_id,
                         transaction_id=transaction_id
                     )
 
                     # Create subscription for membership products
                     if product_id in ['basic_membership', 'full_membership']:
-                        create_subscription(
-                            user_id=1,  # Default user for demo
+                        subscription_end_date = create_subscription(
+                            user_id=user_id,
                             subscription_type=product_id,
                             stripe_subscription_id=session.subscription if hasattr(session, 'subscription') else None
                         )
+                        print(f"Created subscription for user {user_id}, product {product_id}, valid until {subscription_end_date}")
                     
                     # Award tokens based on product rules
                     try:
@@ -931,11 +1010,23 @@ def create_checkout_session():
         product_id = data.get('productId')
         is_subscription = data.get('isSubscription', False)
         email = data.get('email')
+        firebase_uid = data.get('firebaseUid')
 
-        # Get price ID for the product
-        prices = stripe.Price.list(product=product_id, active=True)
+        # Determine if this should be a subscription based on product type
+        membership_products = ['basic_membership', 'full_membership']
+        if product_id in membership_products:
+            is_subscription = True
+
+        # Get appropriate price ID for the product
+        if is_subscription:
+            # Get recurring price for subscriptions
+            prices = stripe.Price.list(product=product_id, active=True, type='recurring')
+        else:
+            # Get one-time price for regular purchases
+            prices = stripe.Price.list(product=product_id, active=True, type='one_time')
+        
         if not prices.data:
-            return jsonify({'error': f'No price found for product {product_id}'}), 400
+            return jsonify({'error': f'No appropriate price found for product {product_id}'}), 400
 
         price_id = prices.data[0].id
 
@@ -952,7 +1043,10 @@ def create_checkout_session():
                 customer_id = customers.data[0].id
             else:
                 # Create a new customer
-                customer = stripe.Customer.create(email=email)
+                customer = stripe.Customer.create(
+                    email=email,
+                    metadata={'firebase_uid': firebase_uid} if firebase_uid else {}
+                )
                 customer_id = customer.id
             customer_params['customer'] = customer_id
 
@@ -965,10 +1059,15 @@ def create_checkout_session():
             mode='subscription' if is_subscription else 'payment',
             success_url=success_url,
             cancel_url=cancel_url,
+            metadata={
+                'product_id': product_id,
+                'firebase_uid': firebase_uid if firebase_uid else '',
+                'subscription_type': 'yearly' if is_subscription else 'one_time'
+            },
             **customer_params  # Add customer ID if available
         )
 
-        print(f"Created checkout session: {checkout_session.id} for product: {product_id}")
+        print(f"Created checkout session: {checkout_session.id} for product: {product_id} (subscription: {is_subscription})")
         return jsonify({'url': checkout_session.url})
     except Exception as e:
         print(f"Error creating checkout session: {str(e)}")
@@ -1178,6 +1277,93 @@ def get_usage_summary():
     except Exception as e:
         print(f"Error getting usage summary: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/subscription-status', methods=['GET'])
+def get_subscription_status():
+    """Get current subscription status for a user"""
+    firebase_uid = request.args.get('firebaseUid')
+    user_id_param = request.args.get('userId')
+    
+    # Default user_id for fallback
+    user_id = 1
+    
+    try:
+        # If Firebase UID is provided, look up the internal user ID
+        if firebase_uid:
+            user_data = get_user_by_firebase_uid(firebase_uid)
+            if user_data:
+                user_id = user_data[0]  # Get the actual internal user ID (integer)
+                print(f"Found user {user_id} for Firebase UID {firebase_uid}")
+            else:
+                print(f"No user found for Firebase UID {firebase_uid}, using default user_id=1")
+        elif user_id_param and user_id_param.isdigit():
+            # If a numeric user ID is provided, use it
+            user_id = int(user_id_param)
+            print(f"Using provided numeric user_id: {user_id}")
+        else:
+            print(f"Invalid or no user identifier provided, using default user_id=1")
+
+        # Get active subscriptions for this user
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get the most recent active subscription
+                    cur.execute("""
+                        SELECT subscription_type, start_date, end_date, status, stripe_subscription_id
+                        FROM subscriptions 
+                        WHERE user_id = %s AND status = 'active' AND end_date > CURRENT_TIMESTAMP
+                        ORDER BY end_date DESC 
+                        LIMIT 1
+                    """, (user_id,))
+
+                    subscription = cur.fetchone()
+                    if subscription:
+                        return jsonify({
+                            'status': 'active',
+                            'subscription_type': subscription[0],
+                            'start_date': subscription[1].isoformat() if subscription[1] else None,
+                            'end_date': subscription[2].isoformat() if subscription[2] else None,
+                            'stripe_subscription_id': subscription[4],
+                            'user_id': user_id
+                        })
+                    else:
+                        # Check if user has any expired subscriptions
+                        cur.execute("""
+                            SELECT subscription_type, end_date
+                            FROM subscriptions 
+                            WHERE user_id = %s
+                            ORDER BY end_date DESC 
+                            LIMIT 1
+                        """, (user_id,))
+                        
+                        expired_sub = cur.fetchone()
+                        if expired_sub:
+                            return jsonify({
+                                'status': 'expired',
+                                'last_subscription_type': expired_sub[0],
+                                'expired_date': expired_sub[1].isoformat() if expired_sub[1] else None,
+                                'user_id': user_id
+                            })
+                        else:
+                            return jsonify({
+                                'status': 'none',
+                                'message': 'No subscriptions found',
+                                'user_id': user_id
+                            })
+                            
+        return jsonify({
+            'status': 'error',
+            'message': 'Database connection error',
+            'user_id': user_id
+        })
+        
+    except Exception as e:
+        print(f"Error getting subscription status: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'user_id': user_id
+        })
 
 @app.route('/api/record-global-purchase', methods=['POST'])
 def record_global_purchase():
@@ -1794,9 +1980,28 @@ def create_token_pings_table():
                         conn.commit()
                         print("token_price_pings table created successfully")
                         return True
+                    else:
+                        # Check if all required columns exist
+                        cur.execute("""
+                            SELECT column_name FROM information_schema.columns 
+                            WHERE table_name = 'token_price_pings'
+                        """)
+                        columns = [row[0] for row in cur.fetchall()]
+                        required_columns = ['ping_destination', 'source', 'additional_data']
+                        
+                        for column in required_columns:
+                            if column not in columns:
+                                print(f"Adding missing column {column} to token_price_pings table...")
+                                if column == 'ping_destination':
+                                    cur.execute("ALTER TABLE token_price_pings ADD COLUMN ping_destination VARCHAR(255)")
+                                elif column == 'source':
+                                    cur.execute("ALTER TABLE token_price_pings ADD COLUMN source VARCHAR(100)")
+                                elif column == 'additional_data':
+                                    cur.execute("ALTER TABLE token_price_pings ADD COLUMN additional_data TEXT")
+                        conn.commit()
                     return True
     except Exception as e:
-        print(f"Error creating token_price_pings table: {str(e)}")
+        print(f"Error creating/updating token_price_pings table: {str(e)}")
         return False
 
 # Call the function on startup
@@ -1812,7 +2017,7 @@ def get_ethereum_transactions():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT eth_address FROM users WHERE userid = %s", (user_id,))
+                    cur.execute("SELECT eth_address FROM users WHERE id = %s", (user_id,))
                     result = cur.fetchone()
                     
                     if not result or not result[0]:
