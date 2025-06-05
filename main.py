@@ -228,8 +228,8 @@ def register_firebase_user():
                     if existing_user:
                         # User exists, return the user ID
                         user_id = existing_user[0]
-                        existing_stripe_id = existing_user[1]
-                        print(f"Existing Firebase user found: {user_id}")
+                        stripe_customer_id = existing_user[1]
+                        print(f"Existing Firebase user found: {user_id} with Stripe customer: {stripe_customer_id}")
 
                         # Update user information if needed
                         cur.execute(
@@ -242,8 +242,25 @@ def register_firebase_user():
                         )
                         conn.commit()
 
-                        # Use existing Stripe customer ID if available
-                        stripe_customer_id = existing_stripe_id
+                        # If no Stripe customer exists, create one
+                        if not stripe_customer_id and stripe.api_key:
+                            try:
+                                customer = stripe.Customer.create(
+                                    email=email,
+                                    name=display_name,
+                                    metadata={'firebase_uid': firebase_uid, 'user_id': user_id}
+                                )
+                                stripe_customer_id = customer.id
+
+                                # Update user with Stripe ID
+                                cur.execute(
+                                    "UPDATE users SET stripe_customer_id = %s WHERE id = %s",
+                                    (stripe_customer_id, user_id)
+                                )
+                                conn.commit()
+                                print(f"Created Stripe customer {stripe_customer_id} for existing user {user_id}")
+                            except Exception as stripe_err:
+                                print(f"Error creating Stripe customer for existing user: {str(stripe_err)}")
                     else:
                         # Create new user with Sepolia test wallet
                         from web3 import Web3
@@ -271,13 +288,10 @@ def register_firebase_user():
                         except Exception as token_err:
                             print(f"Error awarding new member token: {str(token_err)}")
 
+                        # Create Stripe customer for new user
                         stripe_customer_id = None
-
-                    # Create or update Stripe customer
-                    if stripe.api_key:
-                        try:
-                            if not stripe_customer_id:
-                                # Create new Stripe customer
+                        if stripe.api_key:
+                            try:
                                 customer = stripe.Customer.create(
                                     email=email,
                                     name=display_name,
@@ -291,11 +305,9 @@ def register_firebase_user():
                                     (stripe_customer_id, user_id)
                                 )
                                 conn.commit()
-                                print(f"Created Stripe customer {stripe_customer_id} for user {user_id}")
-                            else:
-                                print(f"Using existing Stripe customer {stripe_customer_id} for user {user_id}")
-                        except Exception as stripe_err:
-                            print(f"Error creating Stripe customer: {str(stripe_err)}")
+                                print(f"Created Stripe customer {stripe_customer_id} for new user {user_id}")
+                            except Exception as stripe_err:
+                                print(f"Error creating Stripe customer for new user: {str(stripe_err)}")
 
                     return jsonify({
                         'status': 'success',
