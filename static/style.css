@@ -1349,6 +1349,7 @@ body.light-mode {
     opacity: 0;
     transition: opacity 0.5s ease-out;
     pointer-events: none;
+    z-index: 1;
 }
 
 .dot-indicator.peeling::before {
@@ -1420,6 +1421,13 @@ body.light-mode {
     text-align: center;
     width: 100%;
     padding: 0 20px;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
 }
 
 .data-amount {
@@ -1430,6 +1438,9 @@ body.light-mode {
     justify-content: center;
     align-items: baseline;
     gap: 8px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    position: relative;
+    z-index: 11;
 }
 
 .data-amount span {
@@ -1441,15 +1452,20 @@ body.light-mode {
     color: #ffffff;
     animation: spin 2s linear infinite;
     cursor: pointer;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    position: relative;
+    z-index: 11;
 }
 
 /* Light mode overrides for dot content text */
 .light-mode .data-amount {
-    color: #666666;
+    color: #333333;
+    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
 }
 
 .light-mode .refresh-icon {
-    color: #666666;
+    color: #333333;
+    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
 }
 
 @keyframes spin {
