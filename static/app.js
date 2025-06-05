@@ -1867,58 +1867,91 @@ function sendTestNotification() {
   });
 }
 
-// Add notification testing UI when document is loaded
-document.addEventListener('DOMContentLoaded', function() {
-  // Check if we're on the dashboard page
-  if (window.location.pathname === '/dashboard') {
-    const dashboardContainer = document.querySelector('.container');
-    if (dashboardContainer) {
-      const notificationTester = document.createElement('div');
-      notificationTester.className = 'notification-tester';
+// Function to show notification tester (called from menu)
+window.showNotificationTester = function() {
+  // Remove any existing notification tester
+  const existingTester = document.querySelector('.notification-tester');
+  if (existingTester) {
+    existingTester.remove();
+  }
 
-      // Check if Notification API is supported
-      const notificationSupported = typeof Notification !== 'undefined';
-      const permissionStatus = notificationSupported ? Notification.permission : 'not-supported';
+  const container = document.querySelector('.container');
+  if (container) {
+    const notificationTester = document.createElement('div');
+    notificationTester.className = 'notification-tester';
 
-      notificationTester.innerHTML = `
+    // Check if Notification API is supported
+    const notificationSupported = typeof Notification !== 'undefined';
+    const permissionStatus = notificationSupported ? Notification.permission : 'not-supported';
+
+    notificationTester.innerHTML = `
+      <div class="notification-header">
         <h3>Test Push Notifications</h3>
-        <p>Send a test notification to verify your FCM setup:</p>
-        <div class="notification-permission-status">
-          <strong>Current Permission Status:</strong> 
-          <span id="permission-status">${permissionStatus}</span>
-          ${notificationSupported && Notification.permission !== 'granted' ? 
-            '<button id="request-permission-btn">Request Permission</button>' : 
-            (notificationSupported ? '<span class="permission-granted">✓ Notifications enabled</span>' : 
-            '<span class="permission-not-supported">Notifications not supported in this browser</span>')}
-        </div>
-        <div class="notification-troubleshooting" ${Notification.permission !== 'denied' ? 'style="display:none"' : ''}>
-          <p><strong>Troubleshooting:</strong> If notifications are blocked, please:</p>
-          <ol>
-            <li>Click the lock/info icon in your browser's address bar</li>
-            <li>Find "Notifications" and change the setting to "Allow"</li>
-            <li>Reload this page</li>
-          </ol>
-        </div>
-        <div class="notification-controls" ${Notification.permission !== 'granted' ? 'style="display:none"' : ''}>
-          <select id="notification-target">
-            <option value="all">All Devices (Web & App)</option>
-            <option value="web">Web Only</option>
-            <option value="app">App Only</option>
-          </select>
-          <button onclick="sendTestNotification()">Send Test Notification</button>
-        </div>
-        <p id="notification-status"></p>
-      `;
+        <button class="close-btn" onclick="this.closest('.notification-tester').remove()">×</button>
+      </div>
+      <p>Send a test notification to verify your FCM setup:</p>
+      <div class="notification-permission-status">
+        <strong>Current Permission Status:</strong> 
+        <span id="permission-status">${permissionStatus}</span>
+        ${notificationSupported && Notification.permission !== 'granted' ? 
+          '<button id="request-permission-btn">Request Permission</button>' : 
+          (notificationSupported ? '<span class="permission-granted">✓ Notifications enabled</span>' : 
+          '<span class="permission-not-supported">Notifications not supported in this browser</span>')}
+      </div>
+      <div class="notification-troubleshooting" ${Notification.permission !== 'denied' ? 'style="display:none"' : ''}>
+        <p><strong>Troubleshooting:</strong> If notifications are blocked, please:</p>
+        <ol>
+          <li>Click the lock/info icon in your browser's address bar</li>
+          <li>Find "Notifications" and change the setting to "Allow"</li>
+          <li>Reload this page</li>
+        </ol>
+      </div>
+      <div class="notification-controls" ${Notification.permission !== 'granted' ? 'style="display:none"' : ''}>
+        <select id="notification-target">
+          <option value="all">All Devices (Web & App)</option>
+          <option value="web">Web Only</option>
+          <option value="app">App Only</option>
+        </select>
+        <button onclick="sendTestNotification()">Send Test Notification</button>
+      </div>
+      <p id="notification-status"></p>
+    `;
 
-      // Add some basic styling
+    // Add some basic styling if not already added
+    if (!document.querySelector('#notification-tester-styles')) {
       const style = document.createElement('style');
+      style.id = 'notification-tester-styles';
       style.textContent = `
         .notification-tester {
-          margin-top: 20px;
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          width: 400px;
+          max-width: 90vw;
           padding: 15px;
           background-color: #f0f8ff;
           border-radius: 8px;
           border: 1px solid #ccc;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          z-index: 1000;
+        }
+        .notification-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+        }
+        .notification-tester .close-btn {
+          background: none;
+          border: none;
+          font-size: 20px;
+          cursor: pointer;
+          padding: 0;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .notification-tester button {
           margin-top: 10px;
@@ -1963,35 +1996,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       `;
       document.head.appendChild(style);
+    }
 
-      // Add the notification tester to the dashboard
-      dashboardContainer.appendChild(notificationTester);
+    // Insert at the top of the container
+    container.insertBefore(notificationTester, container.firstChild);
 
-      // Add event listener for permission request button
-      const permissionBtn = document.getElementById('request-permission-btn');
-      if (permissionBtn) {
-        permissionBtn.addEventListener('click', function() {
-          Notification.requestPermission().then(function(permission) {
-            document.getElementById('permission-status').textContent = permission;
-            if (permission === 'granted') {
-              document.querySelector('.notification-controls').style.display = 'block';
-              document.querySelector('.notification-troubleshooting').style.display = 'none';
-              permissionBtn.parentElement.removeChild(permissionBtn);
-              const permissionGranted = document.createElement('span');
-              permissionGranted.className = 'permission-granted';
-              permissionGranted.textContent = '✓ Notifications enabled';
-              document.getElementById('permission-status').parentElement.appendChild(permissionGranted);
-              // Reload the page to initialize Firebase with the new permission
-              window.location.reload();
-            } else if (permission === 'denied') {
-              document.querySelector('.notification-troubleshooting').style.display = 'block';
-            }
-          });
+    // Add event listener for permission request button
+    const permissionBtn = document.getElementById('request-permission-btn');
+    if (permissionBtn) {
+      permissionBtn.addEventListener('click', function() {
+        Notification.requestPermission().then(function(permission) {
+          document.getElementById('permission-status').textContent = permission;
+          if (permission === 'granted') {
+            document.querySelector('.notification-controls').style.display = 'block';
+            document.querySelector('.notification-troubleshooting').style.display = 'none';
+            permissionBtn.parentElement.removeChild(permissionBtn);
+            const permissionGranted = document.createElement('span');
+            permissionGranted.className = 'permission-granted';
+            permissionGranted.textContent = '✓ Notifications enabled';
+            document.getElementById('permission-status').parentElement.appendChild(permissionGranted);
+            // Reload the page to initialize Firebase with the new permission
+            window.location.reload();
+          } else if (permission === 'denied') {
+            document.querySelector('.notification-troubleshooting').style.display = 'block';
+          }
         });
-      }
+      });
     }
   }
-});
+};
 
 // Firebase logout function
 window.logoutUser = function() {
