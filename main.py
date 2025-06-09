@@ -266,7 +266,7 @@ def register_firebase_user():
                         from web3 import Web3
                         web3 = Web3()
                         test_account = web3.eth.account.create()
-                        
+
                         cur.execute(
                             """INSERT INTO users 
                                 (email, firebase_uid, display_name, photo_url, eth_address) 
@@ -277,7 +277,7 @@ def register_firebase_user():
                         user_id = cur.fetchone()[0]
                         conn.commit()
                         print(f"New Firebase user created: {user_id} with Sepolia wallet: {test_account.address}")
-                        
+
                         # Award 1 DOTM token to new member
                         try:
                             success, result = ethereum_helper.award_new_member_token(test_account.address)
@@ -509,15 +509,15 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                                     WHERE table_name = 'purchases'
                                 """)
                                 columns = [row[0] for row in cur.fetchall()]
-                                
+
                                 if 'stripetransactionid' not in [col.lower() for col in columns]:
                                     print("Adding StripeTransactionID column to purchases table...")
                                     cur.execute("ALTER TABLE purchases ADD COLUMN StripeTransactionID VARCHAR(100)")
-                                    
+
                                 if 'firebaseuid' not in [col.lower() for col in columns]:
                                     print("Adding FirebaseUID column to purchases table...")
                                     cur.execute("ALTER TABLE purchases ADD COLUMN FirebaseUID VARCHAR(128)")
-                                
+
                                 conn.commit()
 
                             # Handle null StripeID (make it empty string instead)
@@ -534,7 +534,7 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                                 else:
                                     print(f"No user found for Firebase UID {firebase_uid}")
                                     # Don't fail the purchase, just log it
-                            
+
                             # Use default user_id if still not found
                             if not user_id:
                                 user_id = 1
@@ -601,19 +601,19 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
                         else:
                             print(f"No user found for Firebase UID {firebase_uid} when creating subscription")
                             user_id = 1  # Default fallback
-                    
+
                     # Use default user_id if still not found
                     if not user_id:
                         user_id = 1
                         print(f"Using default user_id for subscription: {user_id}")
-                    
+
                     # First, deactivate any existing active subscriptions for this user
                     cur.execute("""
                         UPDATE subscriptions 
                         SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
                         WHERE user_id = %s AND status = 'active'
                     """, (user_id,))
-                    
+
                     # Create Stripe subscription FIRST if this is a membership product
                     actual_stripe_subscription_id = stripe_subscription_id
                     if stripe.api_key and subscription_type in ['basic_membership', 'full_membership'] and not stripe_subscription_id:
@@ -621,15 +621,15 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
                             # Get the user's Stripe customer ID
                             cur.execute("SELECT stripe_customer_id FROM users WHERE id = %s", (user_id,))
                             customer_result = cur.fetchone()
-                            
+
                             if customer_result and customer_result[0]:
                                 customer_id = customer_result[0]
-                                
+
                                 # Get the appropriate price ID for the subscription
                                 prices = stripe.Price.list(product=subscription_type, active=True, type='recurring')
                                 if prices.data:
                                     price_id = prices.data[0].id
-                                    
+
                                     # Create Stripe subscription
                                     stripe_subscription = stripe.Subscription.create(
                                         customer=customer_id,
@@ -649,7 +649,7 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
                         except Exception as stripe_err:
                             print(f"Error creating Stripe subscription: {str(stripe_err)}")
                             # Continue with local subscription creation even if Stripe fails
-                    
+
                     # Calculate validity end date (1 year = 365.25 days exactly for leap years)
                     cur.execute("""
                         INSERT INTO subscriptions 
@@ -657,14 +657,14 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
                         VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
                         RETURNING end_date, subscription_id
                     """, (user_id, subscription_type, actual_stripe_subscription_id))
-                    
+
                     result = cur.fetchone()
                     end_date = result[0]
                     subscription_id = result[1]
                     conn.commit()
-                    
+
                     print(f"Subscription {subscription_id} created for user {user_id} (Firebase UID: {firebase_uid}), type {subscription_type}, Stripe ID: {actual_stripe_subscription_id}, valid until {end_date}")
-                    
+
                     return end_date
             else:
                 print("No database connection available")
@@ -891,11 +891,11 @@ def stripe_webhook():
                     customer_id = session.customer
                     user_id = None
                     firebase_uid = None
-                    
+
                     # Extract Firebase UID from session metadata
                     if hasattr(session, 'metadata') and session.metadata:
                         firebase_uid = session.metadata.get('firebase_uid')
-                    
+
                     if customer_id:
                         try:
                             with get_db_connection() as conn:
@@ -914,7 +914,7 @@ def stripe_webhook():
 
                     transaction_id = f"SESS_{session.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
                     stripe_transaction_id = session.id  # Use session ID as Stripe transaction ID
-                    
+
                     purchase_id = record_purchase(
                         stripe_id=session.id,
                         product_id=product_id,
@@ -935,14 +935,14 @@ def stripe_webhook():
                             firebase_uid=firebase_uid
                         )
                         print(f"Created subscription for user {user_id} (Firebase UID: {firebase_uid}), product {product_id}, valid until {subscription_end_date}")
-                    
+
                     # Award tokens based on product rules
                     try:
                         product_rules = product_rules_helper.get_product_rules(product_id)
                         if product_rules:
                             reward_percentage = product_rules['token_reward_percentage'] / 100.0  # Convert to decimal
                             token_reward = amount * reward_percentage / 100  # amount is in cents
-                            
+
                             # Get user's wallet address and award tokens
                             # For now, use a default wallet for demo
                             print(f"Would award {token_reward} tokens for product {product_id} based on {product_rules['token_reward_percentage']}% rule")
@@ -1076,7 +1076,7 @@ def create_checkout_session():
         else:
             # Get one-time price for regular purchases
             prices = stripe.Price.list(product=product_id, active=True, type='one_time')
-        
+
         if not prices.data:
             return jsonify({'error': f'No appropriate price found for product {product_id}'}), 400
 
@@ -1180,10 +1180,10 @@ def get_user_data_balance():
     """Get the current data balance for a member"""
     firebase_uid = request.args.get('firebaseUid')
     user_id_param = request.args.get('userId')
-    
+
     # Default user_id for fallback
     user_id = 1
-    
+
     try:
         # If Firebase UID is provided, look up the internal user ID
         if firebase_uid:
@@ -1228,7 +1228,7 @@ def get_user_data_balance():
                         'billing_type': 'purchase_based',
                         'note': 'Future releases will include real-time usage tracking with Stripe metering'
                     })
-                    
+
         return jsonify({
             'userId': user_id,
             'firebaseUid': firebase_uid,
@@ -1236,7 +1236,7 @@ def get_user_data_balance():
             'unit': 'GB',
             'error': 'No database connection'
         })
-        
+
     except Exception as e:
         print(f"Error getting user data balance: {str(e)}")
         return jsonify({
@@ -1254,23 +1254,23 @@ def report_data_usage():
         data = request.get_json()
         firebase_uid = data.get('firebaseUid')
         megabytes_used = data.get('megabytesUsed', 0)
-        
+
         if not firebase_uid or megabytes_used <= 0:
             return jsonify({'error': 'Firebase UID and megabytes used are required'}), 400
-        
+
         # Get user's Stripe customer ID
         user_data = get_user_by_firebase_uid(firebase_uid)
         if not user_data or not user_data[3]:  # user_data[3] is stripe_customer_id
             return jsonify({'error': 'No Stripe customer found for user'}), 404
-        
+
         stripe_customer_id = user_data[3]
-        
+
         # Import and use metering function
         from stripe_metering import report_data_usage as stripe_report_usage
-        
+
         # Report usage to Stripe
         result = stripe_report_usage(stripe_customer_id, megabytes_used)
-        
+
         if result['success']:
             # Also log in local database for redundancy
             with get_db_connection() as conn:
@@ -1282,7 +1282,7 @@ def report_data_usage():
                             VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
                         """, (user_data[0], stripe_customer_id, megabytes_used, result.get('event_id')))
                         conn.commit()
-            
+
             return jsonify({
                 'status': 'success',
                 'message': 'Data usage reported to Stripe',
@@ -1291,7 +1291,7 @@ def report_data_usage():
             })
         else:
             return jsonify({'error': result.get('error')}), 500
-            
+
     except Exception as e:
         print(f"Error reporting data usage: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -1303,20 +1303,20 @@ def get_usage_summary():
         firebase_uid = request.args.get('firebaseUid')
         if not firebase_uid:
             return jsonify({'error': 'Firebase UID is required'}), 400
-        
+
         # Get user's Stripe customer ID
         user_data = get_user_by_firebase_uid(firebase_uid)
         if not user_data or not user_data[3]:
             return jsonify({'error': 'No Stripe customer found for user'}), 404
-        
+
         stripe_customer_id = user_data[3]
-        
+
         # Import and use metering function
         from stripe_metering import get_customer_usage_summary
-        
+
         # Get usage from Stripe
         result = get_customer_usage_summary(stripe_customer_id)
-        
+
         if result['success']:
             return jsonify({
                 'status': 'success',
@@ -1325,7 +1325,7 @@ def get_usage_summary():
             })
         else:
             return jsonify({'error': result.get('error')}), 500
-            
+
     except Exception as e:
         print(f"Error getting usage summary: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -1335,10 +1335,10 @@ def get_subscription_status():
     """Get current subscription status for a user"""
     firebase_uid = request.args.get('firebaseUid')
     user_id_param = request.args.get('userId')
-    
+
     # Default user_id for fallback
     user_id = 1
-    
+
     try:
         # If Firebase UID is provided, look up the internal user ID
         if firebase_uid:
@@ -1387,7 +1387,7 @@ def get_subscription_status():
                             ORDER BY end_date DESC 
                             LIMIT 1
                         """, (user_id,))
-                        
+
                         expired_sub = cur.fetchone()
                         if expired_sub:
                             return jsonify({
@@ -1402,13 +1402,13 @@ def get_subscription_status():
                                 'message': 'No subscriptions found',
                                 'user_id': user_id
                             })
-                            
+
         return jsonify({
             'status': 'error',
             'message': 'Database connection error',
             'user_id': user_id
         })
-        
+
     except Exception as e:
         print(f"Error getting subscription status: {str(e)}")
         return jsonify({
@@ -1423,7 +1423,7 @@ def record_global_purchase():
     product_id = data.get('productId')
     firebase_uid = data.get('firebaseUid')  # Get Firebase UID from request
     print(f"===== RECORDING PURCHASE FOR PRODUCT: {product_id} with Firebase UID: {firebase_uid} =====")
-    
+
     try:
         with get_db_connection() as conn:
             if conn:
@@ -1836,7 +1836,7 @@ def update_product_rule(product_id):
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
-        
+
         success = product_rules_helper.update_product_rules(product_id, **data)
         if success:
             return jsonify({
@@ -2051,7 +2051,7 @@ def create_token_pings_table():
                         """)
                         columns = [row[0] for row in cur.fetchall()]
                         required_columns = ['ping_destination', 'source', 'additional_data']
-                        
+
                         for column in required_columns:
                             if column not in columns:
                                 print(f"Adding missing column {column} to token_price_pings table...")
@@ -2075,47 +2075,47 @@ def get_ethereum_transactions():
     """Get the last 10 Ethereum transactions for the current user"""
     try:
         user_id = request.args.get('userId', '1')
-        
+
         # Get user's Ethereum address from database
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("SELECT eth_address FROM users WHERE id = %s", (user_id,))
                     result = cur.fetchone()
-                    
+
                     if not result or not result[0]:
                         return jsonify({
                             'status': 'error',
                             'message': 'No Ethereum address found for user',
                             'transactions': []
                         })
-                    
+
                     eth_address = result[0]
-        
+
         # Fetch transactions from Sepolia using Web3
         from ethereum_helper import get_web3_connection
         web3 = get_web3_connection()
-        
+
         # Get latest block number
         latest_block = web3.eth.get_block('latest')
         latest_block_number = latest_block['number']
-        
+
         transactions = []
         blocks_to_check = 1000  # Check last 1000 blocks
-        
+
         # Search through recent blocks for transactions involving this address
         for block_num in range(max(0, latest_block_number - blocks_to_check), latest_block_number + 1):
             try:
                 block = web3.eth.get_block(block_num, full_transactions=True)
-                
+
                 for tx in block['transactions']:
                     if (tx['to'] and tx['to'].lower() == eth_address.lower()) or \
                        (tx['from'] and tx['from'].lower() == eth_address.lower()):
-                        
+
                         # Convert values for display
                         value_eth = web3.from_wei(tx['value'], 'ether')
                         gas_price_gwei = web3.from_wei(tx['gasPrice'], 'gwei') if tx['gasPrice'] else 0
-                        
+
                         transactions.append({
                             'hash': tx['hash'].hex(),
                             'block_number': tx['blockNumber'],
@@ -2127,27 +2127,27 @@ def get_ethereum_transactions():
                             'timestamp': block['timestamp'],
                             'type': 'received' if (tx['to'] and tx['to'].lower() == eth_address.lower()) else 'sent'
                         })
-                        
+
                         if len(transactions) >= 10:
                             break
-                
+
                 if len(transactions) >= 10:
                     break
-                    
+
             except Exception as block_err:
                 print(f"Error fetching block {block_num}: {str(block_err)}")
                 continue
-        
+
         # Sort by block number (most recent first)
         transactions.sort(key=lambda x: x['block_number'], reverse=True)
-        
+
         return jsonify({
             'status': 'success',
             'address': eth_address,
             'network': 'sepolia',
             'transactions': transactions[:10]
         })
-        
+
     except Exception as e:
         print(f"Error fetching Ethereum transactions: {str(e)}")
         return jsonify({
@@ -2316,7 +2316,7 @@ class UpdateEthAddress(Resource):
                                 WHERE id = %s
                                 RETURNING id
                             """, (eth_address, 1))
-                        
+
                         result = cur.fetchone()
                         if result:
                             conn.commit()
@@ -2333,3 +2333,101 @@ class UpdateEthAddress(Resource):
             print(f"Error updating Ethereum address: {str(e)}")
             return {'error': str(e)}, 500
 
+
+@app.route('/api/user/stripe-id/<int:user_id>', methods=['GET'])
+def get_user_stripe_id(user_id):
+    """Get Stripe customer ID for a specific user"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT id, email, firebase_uid, stripe_customer_id, display_name
+                        FROM users 
+                        WHERE id = %s
+                    """, (user_id,))
+
+                    user = cur.fetchone()
+                    if user:
+                        return jsonify({
+                            'status': 'success',
+                            'user_id': user[0],
+                            'email': user[1],
+                            'firebase_uid': user[2],
+                            'stripe_customer_id': user[3],
+                            'display_name': user[4]
+                        })
+                    else:
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'User {user_id} not found'
+                        }), 404
+
+        return jsonify({
+            'status': 'error',
+            'message': 'Database connection error'
+        }), 500
+
+    except Exception as e:
+        print(f"Error getting user Stripe ID: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/admin/create-subscription', methods=['POST'])
+def create_subscription_record():
+    """Manually create a subscription record for a user"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id', 1)
+        subscription_type = data.get('subscription_type', 'basic_membership')
+        stripe_subscription_id = data.get('stripe_subscription_id')
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check if user exists
+                    cur.execute("SELECT id, stripe_customer_id FROM users WHERE id = %s", (user_id,))
+                    user = cur.fetchone()
+
+                    if not user:
+                        return jsonify({
+                            'status': 'error',
+                            'message': f'User {user_id} not found'
+                        }), 404
+
+                    # Create subscription record
+                    cur.execute("""
+                        INSERT INTO subscriptions 
+                        (user_id, subscription_type, stripe_subscription_id, start_date, end_date, status, created_at, updated_at) 
+                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
+                        RETURNING subscription_id, end_date
+                    """, (user_id, subscription_type, stripe_subscription_id))
+
+                    result = cur.fetchone()
+                    subscription_id = result[0]
+                    end_date = result[1]
+                    conn.commit()
+
+                    return jsonify({
+                        'status': 'success',
+                        'subscription_id': subscription_id,
+                        'user_id': user_id,
+                        'subscription_type': subscription_type,
+                        'stripe_subscription_id': stripe_subscription_id,
+                        'end_date': end_date.isoformat(),
+                        'message': 'Subscription created successfully'
+                    })
+
+        return jsonify({
+            'status': 'error',
+            'message': 'Database connection error'
+        }), 500
+
+    except Exception as e:
+        print(f"Error creating subscription record: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
