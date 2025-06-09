@@ -614,23 +614,9 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
                         WHERE user_id = %s AND status = 'active'
                     """, (user_id,))
                     
-                    # Calculate validity end date (1 year = 365.25 days exactly for leap years)
-                    cur.execute("""
-                        INSERT INTO subscriptions 
-                        (user_id, subscription_type, stripe_subscription_id, start_date, end_date, status, created_at, updated_at) 
-                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
-                        RETURNING end_date, subscription_id
-                    """, (user_id, subscription_type, stripe_subscription_id))
-                    
-                    result = cur.fetchone()
-                    end_date = result[0]
-                    subscription_id = result[1]
-                    conn.commit()
-                    
-                    print(f"Subscription {subscription_id} created for user {user_id} (Firebase UID: {firebase_uid}), type {subscription_type}, valid until {end_date}")
-                    
-                    # If this is a Stripe subscription, we should also create the recurring subscription in Stripe
-                    if stripe.api_key and subscription_type in ['basic_membership', 'full_membership']:
+                    # Create Stripe subscription FIRST if this is a membership product
+                    actual_stripe_subscription_id = stripe_subscription_id
+                    if stripe.api_key and subscription_type in ['basic_membership', 'full_membership'] and not stripe_subscription_id:
                         try:
                             # Get the user's Stripe customer ID
                             cur.execute("SELECT stripe_customer_id FROM users WHERE id = %s", (user_id,))
@@ -644,35 +630,40 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
                                 if prices.data:
                                     price_id = prices.data[0].id
                                     
-                                    # Create Stripe subscription if not already provided
-                                    if not stripe_subscription_id:
-                                        stripe_subscription = stripe.Subscription.create(
-                                            customer=customer_id,
-                                            items=[{'price': price_id}],
-                                            metadata={
-                                                'user_id': user_id,
-                                                'subscription_type': subscription_type,
-                                                'internal_subscription_id': subscription_id,
-                                                'firebase_uid': firebase_uid or ''
-                                            }
-                                        )
-                                        stripe_subscription_id = stripe_subscription.id
-                                        
-                                        # Update our record with the Stripe subscription ID
-                                        cur.execute("""
-                                            UPDATE subscriptions 
-                                            SET stripe_subscription_id = %s, updated_at = CURRENT_TIMESTAMP
-                                            WHERE subscription_id = %s
-                                        """, (stripe_subscription_id, subscription_id))
-                                        conn.commit()
-                                        
-                                        print(f"Created Stripe subscription {stripe_subscription_id} for user {user_id}")
+                                    # Create Stripe subscription
+                                    stripe_subscription = stripe.Subscription.create(
+                                        customer=customer_id,
+                                        items=[{'price': price_id}],
+                                        metadata={
+                                            'user_id': str(user_id),
+                                            'subscription_type': subscription_type,
+                                            'firebase_uid': firebase_uid or ''
+                                        }
+                                    )
+                                    actual_stripe_subscription_id = stripe_subscription.id
+                                    print(f"Created Stripe subscription {actual_stripe_subscription_id} for user {user_id}")
                                 else:
                                     print(f"No recurring price found for product {subscription_type}")
                             else:
                                 print(f"No Stripe customer ID found for user {user_id}")
                         except Exception as stripe_err:
                             print(f"Error creating Stripe subscription: {str(stripe_err)}")
+                            # Continue with local subscription creation even if Stripe fails
+                    
+                    # Calculate validity end date (1 year = 365.25 days exactly for leap years)
+                    cur.execute("""
+                        INSERT INTO subscriptions 
+                        (user_id, subscription_type, stripe_subscription_id, start_date, end_date, status, created_at, updated_at) 
+                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
+                        RETURNING end_date, subscription_id
+                    """, (user_id, subscription_type, actual_stripe_subscription_id))
+                    
+                    result = cur.fetchone()
+                    end_date = result[0]
+                    subscription_id = result[1]
+                    conn.commit()
+                    
+                    print(f"Subscription {subscription_id} created for user {user_id} (Firebase UID: {firebase_uid}), type {subscription_type}, Stripe ID: {actual_stripe_subscription_id}, valid until {end_date}")
                     
                     return end_date
             else:
