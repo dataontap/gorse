@@ -1023,14 +1023,6 @@ function initializeDarkMode() {
     }
 }
 
-            icon.classList.replace(isLight ? 'fa-sun' : 'fa-moon', 
-                                 isLight ? 'fa-moon' : 'fa-sun');
-            textSpan.textContent = isLight ? 'Dark Mode' : 'Light Mode';
-            localStorage.setItem('darkMode', !isLight);
-        });
-    }
-}
-
 function initializeButtons() {
     document.querySelectorAll('.btn-primary').forEach(btn => {
         btn.addEventListener('click', (e) => {
