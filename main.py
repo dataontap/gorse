@@ -37,17 +37,6 @@ from stripe_products import create_stripe_products
 import ethereum_helper
 import product_rules_helper
 
-# Import beta tester integrations
-try:
-    from firebase_distribution_helper import firebase_distribution
-    from github_helper import github_integration
-    INTEGRATIONS_AVAILABLE = True
-except ImportError as e:
-    print(f"Beta tester integrations not available: {str(e)}")
-    firebase_distribution = None
-    github_integration = None
-    INTEGRATIONS_AVAILABLE = False
-
 # Create products in Stripe if they don't exist
 if stripe.api_key:
     try:
@@ -99,19 +88,6 @@ try:
                     print("Product rules table created successfully")
                 else:
                     print("Product rules table already exists")
-
-                # Check if beta_testers table exists
-                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'beta_testers')")
-                beta_testers_exists = cur.fetchone()[0]
-
-                if not beta_testers_exists:
-                    print("Creating beta_testers table...")
-                    with open('create_beta_testers_table.sql', 'r') as sql_file:
-                        sql_script = sql_file.read()
-                        cur.execute(sql_script)
-                    print("Beta testers table created successfully")
-                else:
-                    print("Beta testers table already exists")
 
                 conn.commit()
         else:
@@ -1075,6 +1051,10 @@ def marketplace():
 @app.route('/tokens', methods=['GET'])
 def tokens():
     return render_template('tokens.html')
+
+@app.route('/help-admin', methods=['GET'])
+def help_admin():
+    return render_template('help_admin.html')
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
@@ -2398,213 +2378,6 @@ def get_user_stripe_id(user_id):
             'status': 'error',
             'message': str(e)
         }), 500
-
-@app.route('/api/beta-tester/toggle', methods=['POST'])
-def toggle_beta_tester():
-    """Toggle beta tester status for a user"""
-    try:
-        data = request.get_json()
-        firebase_uid = data.get('firebaseUid')
-        action = data.get('action', 'ON').upper()  # 'ON' or 'OFF'
-        github_username = data.get('githubUsername')
-        device_info = data.get('deviceInfo')
-        app_version = data.get('appVersion')
-
-        if not firebase_uid or action not in ['ON', 'OFF']:
-            return jsonify({'error': 'Firebase UID and valid action (ON/OFF) are required'}), 400
-
-        # Get user data
-        user_data = get_user_by_firebase_uid(firebase_uid)
-        if not user_data:
-            return jsonify({'error': 'User not found'}), 404
-
-        user_id = user_data[0]
-        stripe_customer_id = user_data[3]
-
-        # Handle Stripe subscription
-        stripe_subscription_id = None
-        if action == 'ON' and stripe.api_key and stripe_customer_id:
-            try:
-                # Get Beta Tester price ID
-                prices = stripe.Price.list(product='beta_tester', active=True)
-                if prices.data:
-                    price_id = prices.data[0].id
-                    
-                    # Create free subscription
-                    subscription = stripe.Subscription.create(
-                        customer=stripe_customer_id,
-                        items=[{'price': price_id}],
-                        metadata={
-                            'type': 'beta_tester',
-                            'firebase_uid': firebase_uid,
-                            'github_username': github_username or ''
-                        }
-                    )
-                    stripe_subscription_id = subscription.id
-                    print(f"Created Beta Tester subscription: {stripe_subscription_id}")
-            except Exception as stripe_err:
-                print(f"Error creating Stripe subscription: {str(stripe_err)}")
-
-        elif action == 'OFF' and stripe.api_key:
-            try:
-                # Cancel existing subscription
-                with get_db_connection() as conn:
-                    if conn:
-                        with conn.cursor() as cur:
-                            cur.execute("""
-                                SELECT stripe_subscription_id FROM beta_testers 
-                                WHERE user_id = %s AND action = 'ON' 
-                                ORDER BY timestamp DESC LIMIT 1
-                            """, (user_id,))
-                            result = cur.fetchone()
-                            if result and result[0]:
-                                stripe.Subscription.cancel(result[0])
-                                print(f"Cancelled Beta Tester subscription: {result[0]}")
-            except Exception as stripe_err:
-                print(f"Error cancelling Stripe subscription: {str(stripe_err)}")
-
-        # Record in database
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    cur.execute("""
-                        INSERT INTO beta_testers 
-                        (user_id, firebase_uid, stripe_customer_id, stripe_subscription_id, 
-                         action, github_username, device_info, app_version, timestamp)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-                        RETURNING id
-                    """, (user_id, firebase_uid, stripe_customer_id, stripe_subscription_id, 
-                          action, github_username, device_info, app_version))
-                    
-                    beta_record_id = cur.fetchone()[0]
-                    conn.commit()
-
-                    # Firebase App Distribution integration
-                    firebase_result = None
-                    if INTEGRATIONS_AVAILABLE and firebase_distribution:
-                        try:
-                            email = user_data[1] if len(user_data) > 1 else None  # user email
-                            if email:
-                                if action == 'ON':
-                                    firebase_result = firebase_distribution.add_tester_to_group(email)
-                                else:
-                                    firebase_result = firebase_distribution.remove_tester_from_group(email)
-                                print(f"Firebase App Distribution result: {firebase_result}")
-                        except Exception as firebase_err:
-                            print(f"Firebase App Distribution error: {str(firebase_err)}")
-
-                    # GitHub integration
-                    github_result = None
-                    if INTEGRATIONS_AVAILABLE and github_integration and github_username:
-                        try:
-                            if action == 'ON':
-                                github_result = github_integration.add_user_to_beta_team(github_username)
-                            else:
-                                github_result = github_integration.remove_user_from_beta_team(github_username)
-                            print(f"GitHub integration result: {github_result}")
-                        except Exception as github_err:
-                            print(f"GitHub integration error: {str(github_err)}")
-                    
-                    return jsonify({
-                        'status': 'success',
-                        'action': action,
-                        'user_id': user_id,
-                        'beta_record_id': beta_record_id,
-                        'stripe_subscription_id': stripe_subscription_id,
-                        'firebase_result': firebase_result,
-                        'github_result': github_result,
-                        'message': f'Beta tester status set to {action}'
-                    })
-
-        return jsonify({'error': 'Database connection error'}), 500
-
-    except Exception as e:
-        print(f"Error toggling beta tester: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/beta-tester/status', methods=['GET'])
-def get_beta_tester_status():
-    """Get current beta tester status for a user"""
-    firebase_uid = request.args.get('firebaseUid')
-    
-    if not firebase_uid:
-        return jsonify({'error': 'Firebase UID is required'}), 400
-
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Get most recent beta tester action
-                    cur.execute("""
-                        SELECT action, timestamp, stripe_subscription_id, github_username
-                        FROM beta_testers 
-                        WHERE firebase_uid = %s 
-                        ORDER BY timestamp DESC 
-                        LIMIT 1
-                    """, (firebase_uid,))
-                    
-                    result = cur.fetchone()
-                    if result:
-                        return jsonify({
-                            'status': 'found',
-                            'is_beta_tester': result[0] == 'ON',
-                            'action': result[0],
-                            'timestamp': result[1].isoformat() if result[1] else None,
-                            'stripe_subscription_id': result[2],
-                            'github_username': result[3]
-                        })
-                    else:
-                        return jsonify({
-                            'status': 'not_found',
-                            'is_beta_tester': False,
-                            'message': 'No beta tester record found'
-                        })
-
-        return jsonify({'error': 'Database connection error'}), 500
-
-    except Exception as e:
-        print(f"Error getting beta tester status: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/admin/beta-testers', methods=['GET'])
-def list_beta_testers():
-    """Admin endpoint to list all current beta testers"""
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    cur.execute("""
-                        SELECT u.email, bt.firebase_uid, bt.action, bt.timestamp, 
-                               bt.github_username, bt.stripe_subscription_id
-                        FROM current_beta_testers bt
-                        JOIN users u ON bt.user_id = u.id
-                        WHERE bt.action = 'ON'
-                        ORDER BY bt.timestamp DESC
-                    """)
-                    
-                    results = cur.fetchall()
-                    beta_testers = []
-                    for row in results:
-                        beta_testers.append({
-                            'email': row[0],
-                            'firebase_uid': row[1],
-                            'action': row[2],
-                            'timestamp': row[3].isoformat() if row[3] else None,
-                            'github_username': row[4],
-                            'stripe_subscription_id': row[5]
-                        })
-
-                    return jsonify({
-                        'status': 'success',
-                        'beta_testers': beta_testers,
-                        'count': len(beta_testers)
-                    })
-
-        return jsonify({'error': 'Database connection error'}), 500
-
-    except Exception as e:
-        print(f"Error listing beta testers: {str(e)}")
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admin/create-subscription', methods=['POST'])
 def create_subscription_record():
