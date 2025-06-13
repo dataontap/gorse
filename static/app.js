@@ -328,18 +328,18 @@ function loadDataFromSession() {
     const globalStatus = document.getElementById('globalStatus');
 
     if (dataDisplay) {
-        // Hide data display initially until we have actual data
-        dataDisplay.style.display = 'none';
-
-        if (globalStatus) {
-            globalStatus.style.display = 'none';
-        }
-
         // Check if we have cached data and show it immediately if valid
         const walletBalance = localStorage.getItem('walletBalance');
         if (walletBalance && parseFloat(walletBalance) > 0) {
             const amount = parseFloat(walletBalance);
             dataDisplay.innerHTML = `${amount.toFixed(1)}<span>GB</span>`;
+            dataDisplay.style.display = 'block';
+            if (globalStatus) {
+                globalStatus.style.display = 'block';
+            }
+        } else {
+            // Show default state with refresh icon
+            dataDisplay.innerHTML = '<i class="fas fa-sync-alt refresh-icon" title="Loading data..."></i><span>GB</span>';
             dataDisplay.style.display = 'block';
             if (globalStatus) {
                 globalStatus.style.display = 'block';
@@ -375,12 +375,12 @@ function fetchUserDataBalance() {
                         }
                     }
                 } else {
-                    // No data or zero balance - don't show anything
-                    localStorage.removeItem('walletBalance');
+                    // No data or zero balance - show default state
                     if (dataDisplay) {
-                        dataDisplay.style.display = 'none';
+                        dataDisplay.innerHTML = '<i class="fas fa-sync-alt refresh-icon" title="No data available"></i><span>GB</span>';
+                        dataDisplay.style.display = 'block';
                         if (globalStatus) {
-                            globalStatus.style.display = 'none';
+                            globalStatus.style.display = 'block';
                         }
                     }
                 }
@@ -388,13 +388,14 @@ function fetchUserDataBalance() {
         })
         .catch(error => {
             console.error('Error fetching data balance:', error);
-            // Hide display on error - don't show placeholder
+            // Show error state but keep display visible
             const dataDisplay = document.getElementById('dataDisplay');
             const globalStatus = document.getElementById('globalStatus');
             if (dataDisplay) {
-                dataDisplay.style.display = 'none';
+                dataDisplay.innerHTML = '<i class="fas fa-sync-alt refresh-icon" title="Error loading data"></i><span>GB</span>';
+                dataDisplay.style.display = 'block';
                 if (globalStatus) {
-                    globalStatus.style.display = 'none';
+                    globalStatus.style.display = 'block';
                 }
             }
         });
@@ -501,7 +502,7 @@ function initializeProfileDropdown() {
             e.preventDefault();
             e.stopPropagation();
 
-            const isExpanded = helpSection.style.display === 'block';
+            const isExpanded = helpSection.classList.contains('expanded');
 
             // Toggle help section
             if (isExpanded) {
@@ -1006,17 +1007,20 @@ function initializeDarkMode() {
         }
     }
 
-    darkModeToggle.addEventListener('click', (e) => {
-        e.preventDefault();
-        body.classList.toggle('light-mode');
-        const icon = darkModeToggle.querySelector('i');
-        const textSpan = darkModeToggle.querySelector('span');
-        const isLight = body.classList.contains('light-mode');
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            body.classList.toggle('light-mode');
+            const icon = darkModeToggle.querySelector('i');
+            const textSpan = darkModeToggle.querySelector('span');
+            const isLight = body.classList.contains('light-mode');
 
-        icon.classList.replace(isLight ? 'fa-sun' : 'fa-moon', 
-                             isLight ? 'fa-moon' : 'fa-sun');
-        textSpan.textContent = isLight ? 'Dark Mode' : 'Light Mode';
-        localStorage.setItem('darkMode', !isLight);    });
+            icon.classList.replace(isLight ? 'fa-sun' : 'fa-moon', 
+                                 isLight ? 'fa-moon' : 'fa-sun');
+            textSpan.textContent = isLight ? 'Dark Mode' : 'Light Mode';
+            localStorage.setItem('darkMode', !isLight);
+        });
+    }
 }
 
 function initializeButtons() {
