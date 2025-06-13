@@ -514,47 +514,27 @@ function initializeProfileDropdown() {
             if (!isExpanded) {
                 // Start help session
                 currentHelpSession = await startHelpSession();
-
+                
                 // Start timer
                 helpTimer.style.display = 'inline';
                 helpTimeRemaining = 260; // Reset to 4 minutes and 20 seconds
                 updateHelpTimer();
                 helpTimerInterval = setInterval(updateHelpTimer, 1000);
+
+                // Hide phone icon initially
+                if (phoneIcon) {
+                    phoneIcon.style.display = 'none';
+                }
+            } else {
+                // Stop timer
+                clearInterval(helpTimerInterval);
+                helpTimer.style.display = 'none';
+
+                // Hide phone icon when help is closed
+                if (phoneIcon) {
+                    phoneIcon.style.display = 'none';
+                }
             }
-        });
-
-        // Handle info icon click
-        const helpInfoIcon = document.getElementById('helpInfoIcon');
-        if (helpInfoIcon) {
-            helpInfoIcon.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                showHelpInfoModal();
-            });
-        }
-    }
-
-    // Function to show help info modal
-    function showHelpInfoModal() {
-        const modal = document.createElement('div');
-        modal.className = 'help-info-modal';
-        modal.innerHTML = `
-            <div class="help-info-content">
-                <h3>Callback Time Information</h3>
-                <p>This is the actual time it will take us to call you back. We use AI to predict that from observing our support agents' availability.</p>
-                <button class="help-info-close" onclick="this.closest('.help-info-modal').remove()">Got it</button>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        // Close modal when clicking outside
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
-    }
 
 // Handle notification permission
 document.addEventListener('DOMContentLoaded', function() {
@@ -972,7 +952,6 @@ function initializeDarkMode() {
             localStorage.setItem('darkMode', 'true');
         }
         if (darkModeToggle) {
-            ```text
             const moonIcon = darkModeToggle.querySelector('i');
             const modeText = darkModeToggle.querySelector('span');
             if (moonIcon) moonIcon.classList.replace('fa-moon', 'fa-sun');
