@@ -1021,9 +1021,7 @@ function initializeDarkMode() {
             localStorage.setItem('darkMode', !isLight);
         });
     }
-        darkModeToggle.addEventListener('click', (e) => {
-            e.preventDefault();
-            body.classList.toggle('light-mode');
+}
             const icon = darkModeToggle.querySelector('i');
             const textSpan = darkModeToggle.querySelector('span');
             const isLight = body.classList.contains('light-mode');
