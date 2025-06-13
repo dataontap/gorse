@@ -1022,9 +1022,6 @@ function initializeDarkMode() {
         });
     }
 }
-            const icon = darkModeToggle.querySelector('i');
-            const textSpan = darkModeToggle.querySelector('span');
-            const isLight = body.classList.contains('light-mode');
 
             icon.classList.replace(isLight ? 'fa-sun' : 'fa-moon', 
                                  isLight ? 'fa-moon' : 'fa-sun');
