@@ -58,30 +58,23 @@
                 </div>
                 <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 <a href="#" id="helpToggle">
-                    <i class="fas fa-question-circle"></i> Help
-                    <i class="fas fa-info-circle help-info-icon" id="helpInfoIcon" title="Click for callback time info"></i>
+                    <i class="fas fa-phone-alt"></i> Live Person Callback
+                    <span id="helpTimer" class="help-timer" style="display: none;">00:04:20</span>
+                    <i id="helpPhoneIcon" class="fas fa-phone-alt" style="display: none;"></i>
                 </a>
                 <div class="help-section" style="display: none;">
                     <div class="help-content">
-                        <div class="help-option live-person-option">
-                            <a href="#" id="livePersonToggle">
-                                <i class="fas fa-phone-alt"></i> Live Person Callback
-                                <span id="helpTimer" class="help-timer" style="display: none;">00:04:00</span>
-                            </a>
-                        </div>
-                        <div class="help-option ai-option">
-                            <p><i class="fas fa-robot"></i> Talk to AI instead:</p>
-                            <ul>
-                                <li style="display: flex; align-items: center;">
-                                    <span class="online-indicator chatgpt-indicator"></span>
-                                    <a href="https://chat.openai.com" class="help-link" target="_blank">ChatGPT</a>
-                                </li>
-                                <li style="display: flex; align-items: center;">
-                                    <span class="online-indicator gemini-indicator"></span>
-                                    <a href="https://gemini.google.com" class="help-link" target="_blank">Google Gemini</a>
-                                </li>
-                            </ul>
-                        </div>
+                        <p><i class="fas fa-question-circle"></i> Talk to AI instead:</p>
+                        <ul>
+                            <li style="display: flex; align-items: center;">
+                                <span class="online-indicator chatgpt-indicator"></span>
+                                <a href="https://chat.openai.com" class="help-link" target="_blank">ChatGPT</a>
+                            </li>
+                            <li style="display: flex; align-items: center;">
+                                <span class="online-indicator gemini-indicator"></span>
+                                <a href="https://gemini.google.com" class="help-link" target="_blank">Google Gemini</a>
+                            </li>
+                        </ul>
                         <p class="help-note">Timer when live help is available. Cancel anytime.<br>Powered by mcp.dotmobile.app</p>
                     </div>
                 </div>

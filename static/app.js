@@ -328,18 +328,18 @@ function loadDataFromSession() {
     const globalStatus = document.getElementById('globalStatus');
 
     if (dataDisplay) {
+        // Hide data display initially until we have actual data
+        dataDisplay.style.display = 'none';
+
+        if (globalStatus) {
+            globalStatus.style.display = 'none';
+        }
+
         // Check if we have cached data and show it immediately if valid
         const walletBalance = localStorage.getItem('walletBalance');
         if (walletBalance && parseFloat(walletBalance) > 0) {
             const amount = parseFloat(walletBalance);
             dataDisplay.innerHTML = `${amount.toFixed(1)}<span>GB</span>`;
-            dataDisplay.style.display = 'block';
-            if (globalStatus) {
-                globalStatus.style.display = 'block';
-            }
-        } else {
-            // Show default state with refresh icon
-            dataDisplay.innerHTML = '<i class="fas fa-sync-alt refresh-icon" title="Loading data..."></i><span>GB</span>';
             dataDisplay.style.display = 'block';
             if (globalStatus) {
                 globalStatus.style.display = 'block';
@@ -375,12 +375,12 @@ function fetchUserDataBalance() {
                         }
                     }
                 } else {
-                    // No data or zero balance - show default state
+                    // No data or zero balance - don't show anything
+                    localStorage.removeItem('walletBalance');
                     if (dataDisplay) {
-                        dataDisplay.innerHTML = '<i class="fas fa-sync-alt refresh-icon" title="No data available"></i><span>GB</span>';
-                        dataDisplay.style.display = 'block';
+                        dataDisplay.style.display = 'none';
                         if (globalStatus) {
-                            globalStatus.style.display = 'block';
+                            globalStatus.style.display = 'none';
                         }
                     }
                 }
@@ -388,14 +388,13 @@ function fetchUserDataBalance() {
         })
         .catch(error => {
             console.error('Error fetching data balance:', error);
-            // Show error state but keep display visible
+            // Hide display on error - don't show placeholder
             const dataDisplay = document.getElementById('dataDisplay');
             const globalStatus = document.getElementById('globalStatus');
             if (dataDisplay) {
-                dataDisplay.innerHTML = '<i class="fas fa-sync-alt refresh-icon" title="Error loading data"></i><span>GB</span>';
-                dataDisplay.style.display = 'block';
+                dataDisplay.style.display = 'none';
                 if (globalStatus) {
-                    globalStatus.style.display = 'block';
+                    globalStatus.style.display = 'none';
                 }
             }
         });
@@ -497,7 +496,7 @@ function initializeProfileDropdown() {
     const helpTimer = document.getElementById('helpTimer');
     const phoneIcon = document.getElementById('helpPhoneIcon');
 
-    if (helpToggle && helpSection) {
+    if (helpToggle && helpSection && helpTimer) {
         helpToggle.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -505,79 +504,37 @@ function initializeProfileDropdown() {
             const isExpanded = helpSection.classList.contains('expanded');
 
             // Toggle help section
-            if (isExpanded) {
-                helpSection.style.display = 'none';
-                helpSection.classList.remove('expanded');
-                helpToggle.classList.remove('active');
-                if (helpTimerInterval) {
-                    clearInterval(helpTimerInterval);
+            helpSection.style.display = isExpanded ? 'none' : 'block';
+            helpSection.classList.toggle('expanded');
+
+            // Toggle active class for red color
+            helpToggle.classList.toggle('active', !isExpanded);
+
+            // Handle help session tracking
+            if (!isExpanded) {
+                // Start help session
+                currentHelpSession = await startHelpSession();
+                
+                // Start timer
+                helpTimer.style.display = 'inline';
+                helpTimeRemaining = 260; // Reset to 4 minutes and 20 seconds
+                updateHelpTimer();
+                helpTimerInterval = setInterval(updateHelpTimer, 1000);
+
+                // Hide phone icon initially
+                if (phoneIcon) {
+                    phoneIcon.style.display = 'none';
                 }
             } else {
-                helpSection.style.display = 'block';
-                helpSection.classList.add('expanded');
-                helpToggle.classList.add('active');
+                // Stop timer
+                clearInterval(helpTimerInterval);
+                helpTimer.style.display = 'none';
 
-                // Start help session
-                if (typeof startHelpSession === 'function') {
-                    currentHelpSession = await startHelpSession();
-                }
-
-                // Start timer
-                if (helpTimer) {
-                    helpTimer.style.display = 'inline';
-                    helpTimeRemaining = 260; // Reset to 4 minutes and 20 seconds
-                    updateHelpTimer();
-                    helpTimerInterval = setInterval(updateHelpTimer, 1000);
+                // Hide phone icon when help is closed
+                if (phoneIcon) {
+                    phoneIcon.style.display = 'none';
                 }
             }
-        });
-
-        // Handle info icon click
-        const helpInfoIcon = document.getElementById('helpInfoIcon');
-        if (helpInfoIcon) {
-            helpInfoIcon.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                showHelpInfoModal();
-            });
-        }
-    }
-
-    // Function to show help info modal
-    function showHelpInfoModal() {
-        // Remove any existing modal first
-        const existingModal = document.querySelector('.help-info-modal');
-        if (existingModal) {
-            existingModal.remove();
-        }
-
-        const modal = document.createElement('div');
-        modal.className = 'help-info-modal';
-        modal.innerHTML = `
-            <div class="help-info-content">
-                <h3>Callback Time Information</h3>
-                <p>This is the actual time it will take us to call you back. We use AI to predict that from observing our support agents' availability.</p>
-                <button class="help-info-close">Got it</button>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        // Add click handler for close button
-        const closeButton = modal.querySelector('.help-info-close');
-        if (closeButton) {
-            closeButton.addEventListener('click', () => {
-                modal.remove();
-            });
-        }
-
-        // Close modal when clicking outside
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
-    }
 
 // Handle notification permission
 document.addEventListener('DOMContentLoaded', function() {
@@ -682,16 +639,14 @@ window.sendTestNotification = function() {
     }
 
     function updateHelpTimer() {
-        const helpTimer = document.getElementById('helpTimer');
-        const phoneIcon = document.getElementById('helpPhoneIcon');
-        
         if (helpTimeRemaining <= 0) {
             // Timer reached zero
-            if (helpTimerInterval) {
-                clearInterval(helpTimerInterval);
-            }
-            if (helpTimer) {
-                helpTimer.textContent = '00:00:00';
+            clearInterval(helpTimerInterval);
+            helpTimer.textContent = '00:00:00';
+
+            // Show the help section if it's not already shown
+            if (!helpSection.classList.contains('expanded')) {
+                helpSection.style.display = 'none';
             }
 
             // Show phone icon in green when timer is done
@@ -723,9 +678,7 @@ window.sendTestNotification = function() {
             (minutes < 10 ? '0' : '') + minutes + ':' +
             (seconds < 10 ? '0' : '') + seconds;
 
-        if (helpTimer) {
-            helpTimer.textContent = formattedTime;
-        }
+        helpTimer.textContent = formattedTime;
     }
 
     window.hideProfileDropdown = function(event) {
@@ -999,7 +952,6 @@ function initializeDarkMode() {
             localStorage.setItem('darkMode', 'true');
         }
         if (darkModeToggle) {
-            ```text
             const moonIcon = darkModeToggle.querySelector('i');
             const modeText = darkModeToggle.querySelector('span');
             if (moonIcon) moonIcon.classList.replace('fa-moon', 'fa-sun');
@@ -1007,20 +959,17 @@ function initializeDarkMode() {
         }
     }
 
-    if (darkModeToggle) {
-        darkModeToggle.addEventListener('click', (e) => {
-            e.preventDefault();
-            body.classList.toggle('light-mode');
-            const icon = darkModeToggle.querySelector('i');
-            const textSpan = darkModeToggle.querySelector('span');
-            const isLight = body.classList.contains('light-mode');
+    darkModeToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        body.classList.toggle('light-mode');
+        const icon = darkModeToggle.querySelector('i');
+        const textSpan = darkModeToggle.querySelector('span');
+        const isLight = body.classList.contains('light-mode');
 
-            icon.classList.replace(isLight ? 'fa-sun' : 'fa-moon', 
-                                 isLight ? 'fa-moon' : 'fa-sun');
-            textSpan.textContent = isLight ? 'Dark Mode' : 'Light Mode';
-            localStorage.setItem('darkMode', !isLight);
-        });
-    }
+        icon.classList.replace(isLight ? 'fa-sun' : 'fa-moon', 
+                             isLight ? 'fa-moon' : 'fa-sun');
+        textSpan.textContent = isLight ? 'Dark Mode' : 'Light Mode';
+        localStorage.setItem('darkMode', !isLight);    });
 }
 
 function initializeButtons() {
