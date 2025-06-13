@@ -964,7 +964,7 @@ body.light-mode {
 }
 
 .help-section.expanded {
-    max-height: 300px;
+    max-height: 400px;
     padding-top: 10px;
     padding-bottom: 10px;
 }
@@ -977,6 +977,32 @@ body.light-mode {
     margin-top: 0;
     margin-bottom: 10px;
     font-size: 16px;
+}
+
+.help-option {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(200, 200, 200, 0.3);
+}
+
+.help-option:last-child {
+    border-bottom: none;
+}
+
+.live-person-option a {
+    color: #333;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+.live-person-option a:hover {
+    color: #0066ff;
+}
+
+.ai-option p {
+    margin-bottom: 8px;
+    color: #333;
 }
 
 .help-content ul {
@@ -1008,19 +1034,75 @@ body.light-mode {
     font-family: monospace;
 }
 
-#helpToggle.active {
-    color: #ff0000;
+.help-info-icon {
+    margin-left: 8px;
+    color: #666;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.3s ease;
 }
 
-#helpPhoneIcon {
-    margin-left: 8px;
-    animation: pulse-icon 1.5s infinite;
+.help-info-icon:hover {
+    color: #0066ff;
+}
+
+#helpToggle {
+    display: flex;
+    align-items: center;
+}
+
+#helpToggle.active {
+    color: #ff0000;
 }
 
 @keyframes pulse-icon {
     0% { transform: scale(1); }
     50% { transform: scale(1.2); }
     100% { transform: scale(1); }
+}
+
+/* Modal styles for info popup */
+.help-info-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.help-info-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.help-info-content h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.help-info-content p {
+    color: #666;
+    line-height: 1.5;
+}
+
+.help-info-close {
+    background: #0066ff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 15px;
 }
 
 .dark-mode .help-timer {
