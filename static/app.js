@@ -496,30 +496,38 @@ function initializeProfileDropdown() {
     const helpTimer = document.getElementById('helpTimer');
     const phoneIcon = document.getElementById('helpPhoneIcon');
 
-    if (helpToggle && helpSection && helpTimer) {
+    if (helpToggle && helpSection) {
         helpToggle.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
 
-            const isExpanded = helpSection.classList.contains('expanded');
+            const isExpanded = helpSection.style.display === 'block';
 
             // Toggle help section
-            helpSection.style.display = isExpanded ? 'none' : 'block';
-            helpSection.classList.toggle('expanded');
+            if (isExpanded) {
+                helpSection.style.display = 'none';
+                helpSection.classList.remove('expanded');
+                helpToggle.classList.remove('active');
+                if (helpTimerInterval) {
+                    clearInterval(helpTimerInterval);
+                }
+            } else {
+                helpSection.style.display = 'block';
+                helpSection.classList.add('expanded');
+                helpToggle.classList.add('active');
 
-            // Toggle active class for red color
-            helpToggle.classList.toggle('active', !isExpanded);
-
-            // Handle help session tracking
-            if (!isExpanded) {
                 // Start help session
-                currentHelpSession = await startHelpSession();
+                if (typeof startHelpSession === 'function') {
+                    currentHelpSession = await startHelpSession();
+                }
 
                 // Start timer
-                helpTimer.style.display = 'inline';
-                helpTimeRemaining = 260; // Reset to 4 minutes and 20 seconds
-                updateHelpTimer();
-                helpTimerInterval = setInterval(updateHelpTimer, 1000);
+                if (helpTimer) {
+                    helpTimer.style.display = 'inline';
+                    helpTimeRemaining = 260; // Reset to 4 minutes and 20 seconds
+                    updateHelpTimer();
+                    helpTimerInterval = setInterval(updateHelpTimer, 1000);
+                }
             }
         });
 
@@ -536,17 +544,31 @@ function initializeProfileDropdown() {
 
     // Function to show help info modal
     function showHelpInfoModal() {
+        // Remove any existing modal first
+        const existingModal = document.querySelector('.help-info-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
         const modal = document.createElement('div');
         modal.className = 'help-info-modal';
         modal.innerHTML = `
             <div class="help-info-content">
                 <h3>Callback Time Information</h3>
                 <p>This is the actual time it will take us to call you back. We use AI to predict that from observing our support agents' availability.</p>
-                <button class="help-info-close" onclick="this.closest('.help-info-modal').remove()">Got it</button>
+                <button class="help-info-close">Got it</button>
             </div>
         `;
 
         document.body.appendChild(modal);
+
+        // Add click handler for close button
+        const closeButton = modal.querySelector('.help-info-close');
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                modal.remove();
+            });
+        }
 
         // Close modal when clicking outside
         modal.addEventListener('click', (e) => {
@@ -659,14 +681,16 @@ window.sendTestNotification = function() {
     }
 
     function updateHelpTimer() {
+        const helpTimer = document.getElementById('helpTimer');
+        const phoneIcon = document.getElementById('helpPhoneIcon');
+        
         if (helpTimeRemaining <= 0) {
             // Timer reached zero
-            clearInterval(helpTimerInterval);
-            helpTimer.textContent = '00:00:00';
-
-            // Show the help section if it's not already shown
-            if (!helpSection.classList.contains('expanded')) {
-                helpSection.style.display = 'none';
+            if (helpTimerInterval) {
+                clearInterval(helpTimerInterval);
+            }
+            if (helpTimer) {
+                helpTimer.textContent = '00:00:00';
             }
 
             // Show phone icon in green when timer is done
@@ -698,7 +722,9 @@ window.sendTestNotification = function() {
             (minutes < 10 ? '0' : '') + minutes + ':' +
             (seconds < 10 ? '0' : '') + seconds;
 
-        helpTimer.textContent = formattedTime;
+        if (helpTimer) {
+            helpTimer.textContent = formattedTime;
+        }
     }
 
     window.hideProfileDropdown = function(event) {
