@@ -968,7 +968,7 @@ function initializeDarkMode() {
         localStorage.setItem('darkMode', !isLight);    });
 }
 
-function initializeButtons() {
+function initializeButtons() {```tool_code
     document.querySelectorAll('.btn-primary').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -2112,3 +2112,174 @@ function toggleQRCode(event) {
                     });
             }
         }
+
+// Initialize Firebase Auth listener
+    initializeAuthListener();
+
+    // Initialize beta tester toggle
+    initializeBetaTesterToggle();
+
+function updateMemberCount() {
+    fetch('/api/member-count')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Member count data:', data);
+            const countElement = document.getElementById('memberCount');
+            if (countElement) {
+                countElement.textContent = data.count.toLocaleString();
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching member count:', error);
+        });
+}
+
+function initializeBetaTesterToggle() {
+    const toggle = document.getElementById('betaTesterToggle');
+    const status = document.getElementById('betaTesterStatus');
+    const info = document.getElementById('betaTesterInfo');
+    const connectButton = document.getElementById('connectGitHub');
+
+    if (!toggle || !status) return;
+
+    // Load current beta tester status
+    loadBetaTesterStatus();
+
+    // Handle toggle change
+    toggle.addEventListener('change', function() {
+        const action = this.checked ? 'ON' : 'OFF';
+        toggleBetaTester(action);
+    });
+
+    // Handle GitHub connection
+    if (connectButton) {
+        connectButton.addEventListener('click', function() {
+            connectToGitHub();
+        });
+    }
+}
+
+function loadBetaTesterStatus() {
+    const user = firebase.auth().currentUser;
+    if (!user) return;
+
+    const status = document.getElementById('betaTesterStatus');
+    const toggle = document.getElementById('betaTesterToggle');
+    const info = document.getElementById('betaTesterInfo');
+    const githubUser = document.getElementById('githubUser');
+
+    fetch(`/api/beta-tester/status?firebaseUid=${user.uid}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Beta tester status:', data);
+
+            if (data.status === 'found') {
+                toggle.checked = data.is_beta_tester;
+                status.textContent = data.is_beta_tester ? 'Active Beta Tester' : 'Not enrolled';
+
+                if (data.is_beta_tester) {
+                    info.style.display = 'block';
+                    if (data.github_username) {
+                        githubUser.textContent = data.github_username;
+                    }
+                }
+            } else {
+                toggle.checked = false;
+                status.textContent = 'Not enrolled';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading beta tester status:', error);
+            status.textContent = 'Error loading status';
+        });
+}
+
+function toggleBetaTester(action) {
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        alert('Please sign in to use beta tester features');
+        return;
+    }
+
+    const status = document.getElementById('betaTesterStatus');
+    const info = document.getElementById('betaTesterInfo');
+
+    status.textContent = 'Updating...';
+
+    const payload = {
+        firebaseUid: user.uid,
+        action: action,
+        deviceInfo: navigator.userAgent,
+        appVersion: '1.0.0' // You can make this dynamic
+    };
+
+    fetch('/api/beta-tester/toggle', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Beta tester toggle result:', data);
+
+        if (data.status === 'success') {
+            status.textContent = action === 'ON' ? 'Active Beta Tester' : 'Not enrolled';
+
+            if (action === 'ON') {
+                info.style.display = 'block';
+                alert('Welcome to the Beta Tester program! You now have access to early features.');
+            } else {
+                info.style.display = 'none';
+                alert('You have been removed from the Beta Tester program.');
+            }
+        } else {
+            status.textContent = 'Error updating status';
+            alert('Error updating beta tester status: ' + (data.error || 'Unknown error'));
+            // Revert toggle
+            document.getElementById('betaTesterToggle').checked = action === 'OFF';
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling beta tester:', error);
+        status.textContent = 'Error updating status';
+        alert('Error updating beta tester status');
+        // Revert toggle
+        document.getElementById('betaTesterToggle').checked = action === 'OFF';
+    });
+}
+
+function connectToGitHub() {
+    // GitHub OAuth integration would go here
+    // For now, we'll simulate it with a prompt
+    const githubUsername = prompt('Enter your GitHub username:');
+
+    if (githubUsername) {
+        const user = firebase.auth().currentUser;
+        if (!user) return;
+
+        // Update the database with GitHub username
+        fetch('/api/beta-tester/toggle', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                firebaseUid: user.uid,
+                action: 'ON', // Maintain current status
+                githubUsername: githubUsername
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('githubUser').textContent = githubUsername;
+                alert('GitHub account connected successfully!');
+            }
+        })
+        .catch(error => {
+            console.error('Error connecting GitHub:', error);
+        });
+    }
+}

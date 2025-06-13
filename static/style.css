@@ -2420,3 +2420,92 @@ body.light-mode {
                 opacity: 1;
             }
         }
+
+/* Dashboard specific styles */
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Beta Tester Toggle Styles */
+.beta-tester-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.beta-tester-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.4em;
+}
+
+.toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255,255,255,0.3);
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #2196F3;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+.secondary-button {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+}
+
+.secondary-button:hover {
+    background: rgba(255,255,255,0.3);
+}

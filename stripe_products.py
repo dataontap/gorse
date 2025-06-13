@@ -160,7 +160,46 @@ def create_stripe_products():
         except Exception as e:
             print(f"Error creating Metal Card price: {str(e)}")
         
-        # 5. Create Meter for Data Usage Tracking
+        # 5. Beta Tester - Free subscription
+        try:
+            beta_tester_product = stripe.Product.retrieve('beta_tester')
+            print(f"Beta Tester product already exists: {beta_tester_product.id}")
+        except stripe.error.InvalidRequestError:
+            beta_tester_product = stripe.Product.create(
+                id='beta_tester',
+                name='Beta Tester Program',
+                description='Free access to beta features and early releases',
+                metadata={
+                    'type': 'subscription',
+                    'product_catalog': 'beta_program',
+                    'tier': 'beta'
+                }
+            )
+            print(f"Created Beta Tester product: {beta_tester_product.id}")
+        
+        # Create free price for Beta Tester
+        try:
+            prices = stripe.Price.list(product=beta_tester_product.id, active=True)
+            if len(prices.data) == 0:
+                beta_tester_price = stripe.Price.create(
+                    product=beta_tester_product.id,
+                    unit_amount=0,  # Free
+                    currency='usd',
+                    recurring={
+                        'interval': 'month'
+                    },
+                    metadata={
+                        'tier': 'beta',
+                        'access_level': 'early_features'
+                    }
+                )
+                print(f"Created Beta Tester price: {beta_tester_price.id}")
+            else:
+                print(f"Beta Tester price already exists: {prices.data[0].id}")
+        except Exception as e:
+            print(f"Error creating Beta Tester price: {str(e)}")
+
+        # 6. Create Meter for Data Usage Tracking
         try:
             # Check if meter already exists
             meters = stripe.billing.Meter.list(limit=100)
