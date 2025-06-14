@@ -10,6 +10,12 @@ class OXIOService:
         self.auth_token = os.environ.get('OXIO_AUTH_TOKEN')
         self.base_url = "https://api-staging.brandvno.com/v3"
         
+        # Debug information
+        print(f"OXIO Service initialized:")
+        print(f"  Base URL: {self.base_url}")
+        print(f"  API Key configured: {bool(self.api_key)} (length: {len(self.api_key) if self.api_key else 0})")
+        print(f"  Auth Token configured: {bool(self.auth_token)} (length: {len(self.auth_token) if self.auth_token else 0})")
+        
         if not self.api_key or not self.auth_token:
             raise ValueError("OXIO_API_KEY and OXIO_AUTH_TOKEN must be set in secrets")
     
@@ -23,7 +29,9 @@ class OXIOService:
         
         return {
             'Content-Type': 'application/json',
-            'Authorization': f'Basic {encoded_credentials}'
+            'Accept': 'application/json',
+            'Authorization': f'Basic {encoded_credentials}',
+            'User-Agent': 'DOTM-Platform/1.0'
         }
     
     def activate_line(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -54,8 +62,21 @@ class OXIOService:
             print(f"OXIO API Response Status: {response.status_code}")
             print(f"OXIO API Response Headers: {dict(response.headers)}")
             
-            response_data = response.json() if response.content else {}
-            print(f"OXIO API Response Body: {json.dumps(response_data, indent=2)}")
+            # Check if response is JSON
+            content_type = response.headers.get('content-type', '').lower()
+            response_text = response.text
+            
+            if 'application/json' in content_type:
+                try:
+                    response_data = response.json() if response.content else {}
+                    print(f"OXIO API Response Body: {json.dumps(response_data, indent=2)}")
+                except json.JSONDecodeError:
+                    print(f"Failed to parse JSON response: {response_text[:500]}...")
+                    response_data = {'error': 'Invalid JSON response', 'raw_response': response_text[:500]}
+            else:
+                print(f"Non-JSON response received (Content-Type: {content_type})")
+                print(f"Response body (first 500 chars): {response_text[:500]}...")
+                response_data = {'error': 'Non-JSON response', 'content_type': content_type, 'raw_response': response_text[:500]}
             
             if response.status_code >= 200 and response.status_code < 300:
                 return {
@@ -116,8 +137,8 @@ class OXIOService:
                     'auth_token_configured': bool(self.auth_token)
                 }
             
-            # Try a simple GET request to test authentication
-            test_url = f"{self.base_url}/health"  # Try health endpoint first
+            # Test with a simple endpoint that should exist
+            test_url = f"{self.base_url}/lines"  # Try lines endpoint with GET
             headers = self.get_headers()
             
             print(f"Testing OXIO connection to: {test_url}")
@@ -127,27 +148,42 @@ class OXIOService:
             
             try:
                 response = requests.get(test_url, headers=headers, timeout=10)
-                print(f"Health check response: {response.status_code}")
+                print(f"Test response status: {response.status_code}")
+                print(f"Test response content-type: {response.headers.get('content-type', 'Unknown')}")
                 
-                if response.status_code == 404:
-                    # Health endpoint doesn't exist, try another approach
+                # Log response for debugging
+                response_text = response.text[:200]
+                print(f"Response preview: {response_text}...")
+                
+                if response.status_code == 401:
+                    return {
+                        'success': False,
+                        'message': 'Authentication failed - check API credentials',
+                        'status_code': response.status_code,
+                        'api_key_configured': bool(self.api_key),
+                        'auth_token_configured': bool(self.auth_token),
+                        'response_preview': response_text
+                    }
+                elif response.status_code == 403:
+                    return {
+                        'success': False,
+                        'message': 'Access forbidden - domain may need whitelisting',
+                        'status_code': response.status_code,
+                        'api_key_configured': bool(self.api_key),
+                        'auth_token_configured': bool(self.auth_token),
+                        'response_preview': response_text
+                    }
+                elif response.status_code == 404:
                     return {
                         'success': True,
-                        'message': 'OXIO credentials configured (health endpoint not available)',
+                        'message': 'OXIO API endpoint reached (404 expected for GET /lines)',
+                        'status_code': response.status_code,
                         'base_url': self.base_url,
                         'api_key_configured': bool(self.api_key),
                         'auth_token_configured': bool(self.auth_token),
-                        'note': 'Use line activation to test actual API functionality'
+                        'note': 'Authentication appears to be working'
                     }
-                elif response.status_code == 401 or response.status_code == 403:
-                    return {
-                        'success': False,
-                        'message': 'Authentication failed - check API credentials or domain whitelist',
-                        'status_code': response.status_code,
-                        'api_key_configured': bool(self.api_key),
-                        'auth_token_configured': bool(self.auth_token)
-                    }
-                else:
+                elif response.status_code >= 200 and response.status_code < 300:
                     return {
                         'success': True,
                         'message': 'OXIO API connection successful',
@@ -155,6 +191,14 @@ class OXIOService:
                         'base_url': self.base_url,
                         'api_key_configured': bool(self.api_key),
                         'auth_token_configured': bool(self.auth_token)
+                    }
+                else:
+                    return {
+                        'success': False,
+                        'message': f'Unexpected response code: {response.status_code}',
+                        'status_code': response.status_code,
+                        'response_preview': response_text,
+                        'content_type': response.headers.get('content-type', 'Unknown')
                     }
                     
             except requests.exceptions.ConnectionError:
