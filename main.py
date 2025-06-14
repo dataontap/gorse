@@ -32,6 +32,9 @@ import stripe
 # Initialize Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
+# Import OXIO service
+from oxio_service import oxio_service
+
 # Import product setup function
 from stripe_products import create_stripe_products
 import ethereum_helper
@@ -1055,6 +1058,10 @@ def tokens():
 @app.route('/help-admin', methods=['GET'])
 def help_admin():
     return render_template('help_admin.html')
+
+@app.route('/oxio-test', methods=['GET'])
+def oxio_test():
+    return render_template('oxio_test.html')
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
@@ -2434,4 +2441,95 @@ def create_subscription_record():
         return jsonify({
             'status': 'error',
             'message': str(e)
+        }), 500
+
+# OXIO API Integration Endpoints
+@app.route('/api/oxio/test-connection', methods=['GET'])
+def test_oxio_connection():
+    """Test OXIO API connection and credentials"""
+    try:
+        result = oxio_service.test_connection()
+        status_code = 200 if result['success'] else 400
+        return jsonify(result), status_code
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to test OXIO connection'
+        }), 500
+
+@app.route('/api/oxio/activate-line', methods=['POST'])
+def activate_oxio_line():
+    """Activate a line using OXIO API"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No payload provided',
+                'message': 'Request body is required'
+            }), 400
+
+        # You can add payload validation here if needed
+        required_fields = ['lineType', 'sim', 'endUser', 'countryCode']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'success': False,
+                    'error': f'Missing required field: {field}',
+                    'message': f'Field {field} is required in the payload'
+                }), 400
+
+        result = oxio_service.activate_line(data)
+        status_code = 200 if result['success'] else (result.get('status_code', 400))
+        
+        return jsonify(result), status_code
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to activate line'
+        }), 500
+
+@app.route('/api/oxio/test-sample-activation', methods=['POST'])
+def test_sample_activation():
+    """Test line activation with the provided sample payload"""
+    try:
+        # Use the sample payload you provided
+        sample_payload = {
+            "lineType": "LINE_TYPE_MOBILITY",
+            "sim": {
+                "simType": "EMBEDDED",
+                "iccid": "8910650420001501340F"
+            },
+            "endUser": {
+                "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
+            },
+            "phoneNumberRequirements": {
+                "preferredAreaCode": "212"
+            },
+            "countryCode": "US",
+            "activateOnAttach": False
+        }
+        
+        # Allow override of payload values from request
+        data = request.get_json()
+        if data:
+            # Merge any provided fields with the sample payload
+            sample_payload.update(data)
+        
+        result = oxio_service.activate_line(sample_payload)
+        status_code = 200 if result['success'] else (result.get('status_code', 400))
+        
+        # Add the payload used for reference
+        result['payload_used'] = sample_payload
+        
+        return jsonify(result), status_code
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to test sample activation'
         }), 500

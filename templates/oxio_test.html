@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OXIO API Testing</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: var(--card-background);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        .test-button {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background: var(--primary-dark);
+        }
+        .result-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        .payload-editor {
+            width: 100%;
+            height: 300px;
+            font-family: monospace;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>OXIO API Testing</h1>
+        
+        <!-- Connection Test -->
+        <div class="test-section">
+            <h2>1. Test Connection</h2>
+            <p>Test if OXIO API credentials are configured correctly.</p>
+            <button class="test-button" onclick="testConnection()">Test Connection</button>
+            <div id="connection-result" class="result-box" style="display: none;"></div>
+        </div>
+        
+        <!-- Sample Activation Test -->
+        <div class="test-section">
+            <h2>2. Test Sample Line Activation</h2>
+            <p>Test line activation using the provided sample payload.</p>
+            <button class="test-button" onclick="testSampleActivation()">Test Sample Activation</button>
+            <div id="sample-result" class="result-box" style="display: none;"></div>
+        </div>
+        
+        <!-- Custom Activation Test -->
+        <div class="test-section">
+            <h2>3. Custom Line Activation</h2>
+            <p>Test line activation with custom payload:</p>
+            <textarea id="custom-payload" class="payload-editor" placeholder="Enter JSON payload here...">{
+  "lineType": "LINE_TYPE_MOBILITY",
+  "sim": {
+    "simType": "EMBEDDED",
+    "iccid": "8910650420001501340F"
+  },
+  "endUser": {
+    "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
+  },
+  "phoneNumberRequirements": {
+    "preferredAreaCode": "212"
+  },
+  "countryCode": "US",
+  "activateOnAttach": false
+}</textarea>
+            <button class="test-button" onclick="testCustomActivation()">Test Custom Activation</button>
+            <div id="custom-result" class="result-box" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function showResult(elementId, data, isSuccess) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent = JSON.stringify(data, null, 2);
+            element.className = `result-box ${isSuccess ? 'success' : 'error'}`;
+        }
+
+        async function testConnection() {
+            try {
+                const response = await fetch('/api/oxio/test-connection');
+                const data = await response.json();
+                showResult('connection-result', data, data.success);
+            } catch (error) {
+                showResult('connection-result', { error: error.message }, false);
+            }
+        }
+
+        async function testSampleActivation() {
+            try {
+                const response = await fetch('/api/oxio/test-sample-activation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                showResult('sample-result', data, data.success);
+            } catch (error) {
+                showResult('sample-result', { error: error.message }, false);
+            }
+        }
+
+        async function testCustomActivation() {
+            try {
+                const payload = document.getElementById('custom-payload').value;
+                let parsedPayload;
+                
+                try {
+                    parsedPayload = JSON.parse(payload);
+                } catch (e) {
+                    showResult('custom-result', { error: 'Invalid JSON payload' }, false);
+                    return;
+                }
+
+                const response = await fetch('/api/oxio/activate-line', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(parsedPayload)
+                });
+                const data = await response.json();
+                showResult('custom-result', data, data.success);
+            } catch (error) {
+                showResult('custom-result', { error: error.message }, false);
+            }
+        }
+    </script>
+</body>
+</html>
