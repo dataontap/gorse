@@ -2443,14 +2443,17 @@ def create_subscription_record():
             'message': str(e)
         }), 500
 
-# OXIO API Integration Endpoints - Use direct Flask routes for better compatibility
+# OXIO API Integration Endpoints
 @app.route('/api/oxio/test-connection', methods=['GET'])
 def oxio_test_connection():
     """Test OXIO API connection and credentials"""
     try:
+        print("Testing OXIO connection...")
         result = oxio_service.test_connection()
+        print(f"OXIO connection test result: {result}")
         return jsonify(result)
     except Exception as e:
+        print(f"Error in OXIO connection test: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
@@ -2461,9 +2464,12 @@ def oxio_test_connection():
 def oxio_test_plans():
     """Test OXIO plans endpoint specifically"""
     try:
+        print("Testing OXIO plans endpoint...")
         result = oxio_service.test_plans_endpoint()
+        print(f"OXIO plans test result: {result}")
         return jsonify(result)
     except Exception as e:
+        print(f"Error in OXIO plans test: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),

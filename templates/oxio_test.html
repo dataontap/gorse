@@ -106,6 +106,195 @@
         <!-- Custom Activation Test -->
         <div class="test-section">
             <h2>3. Custom Line Activation</h2>
+            <p>Test line activation with custom payload.</p>
+            <div class="form-group">
+                <label for="custom-payload">Custom Payload (JSON):</label>
+                <textarea id="custom-payload" rows="10" cols="50" placeholder='{"lineType": "LINE_TYPE_MOBILITY", "sim": {"simType": "EMBEDDED", "iccid": "8910650420001501340F"}, "endUser": {"brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"}, "phoneNumberRequirements": {"preferredAreaCode": "212"}, "countryCode": "US", "activateOnAttach": false}'></textarea>
+            </div>
+            <button class="test-button" onclick="testCustomActivation()">Test Custom Activation</button>
+            <div id="custom-result" class="result-box" style="display: none;"></div>
+        </div>
+    </div>
+
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .test-button {
+            background-color: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .test-button:hover {
+            background-color: #005a87;
+        }
+
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: white;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .success {
+            border-color: #4CAF50;
+            background-color: #f4f8f4;
+        }
+
+        .error {
+            border-color: #f44336;
+            background-color: #fdf4f4;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        code {
+            background-color: #f5f5f5;
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-family: monospace;
+        }
+    </style>
+
+    <script>
+        // Set current domain on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('current-domain').textContent = window.location.origin;
+        });
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Testing connection...';
+            resultDiv.className = 'result-box';
+
+            try {
+                console.log('Making request to /api/oxio/test-connection');
+                const response = await fetch('/api/oxio/test-connection');
+                console.log('Response status:', response.status);
+                
+                const result = await response.json();
+                console.log('Response data:', result);
+
+                if (result.success) {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.innerHTML = `✅ SUCCESS\n${JSON.stringify(result, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result-box error';
+                    resultDiv.innerHTML = `❌ ERROR\n${JSON.stringify(result, null, 2)}`;
+                }
+            } catch (error) {
+                console.error('Connection test error:', error);
+                resultDiv.className = 'result-box error';
+                resultDiv.innerHTML = `❌ ERROR\n${error.message}`;
+            }
+        }
+
+        async function testSampleActivation() {
+            const resultDiv = document.getElementById('sample-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Testing sample activation...';
+            resultDiv.className = 'result-box';
+
+            try {
+                const response = await fetch('/api/oxio/test-sample-activation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.innerHTML = `✅ SUCCESS\n${JSON.stringify(result, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result-box error';
+                    resultDiv.innerHTML = `❌ ERROR\n${JSON.stringify(result, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result-box error';
+                resultDiv.innerHTML = `❌ ERROR\n${error.message}`;
+            }
+        }
+
+        async function testCustomActivation() {
+            const resultDiv = document.getElementById('custom-result');
+            const payloadText = document.getElementById('custom-payload').value;
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Testing custom activation...';
+            resultDiv.className = 'result-box';
+
+            try {
+                let payload = {};
+                if (payloadText.trim()) {
+                    payload = JSON.parse(payloadText);
+                }
+
+                const response = await fetch('/api/oxio/activate-line', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.innerHTML = `✅ SUCCESS\n${JSON.stringify(result, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result-box error';
+                    resultDiv.innerHTML = `❌ ERROR\n${JSON.stringify(result, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result-box error';
+                resultDiv.innerHTML = `❌ ERROR\n${error.message}`;
+            }
+        }
+    </script>
+        <div class="test-section">
+            <h2>3. Custom Line Activation</h2>
             <p>Test line activation with custom payload:</p>
             <textarea id="custom-payload" class="payload-editor" placeholder="Enter JSON payload here...">{
   "lineType": "LINE_TYPE_MOBILITY",
