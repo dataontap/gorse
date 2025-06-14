@@ -15,10 +15,15 @@ class OXIOService:
     
     def get_headers(self) -> Dict[str, str]:
         """Get standard headers for OXIO API requests"""
+        import base64
+        
+        # Create Basic Auth credentials: username = API_KEY, password = AUTH_TOKEN
+        credentials = f"{self.api_key}:{self.auth_token}"
+        encoded_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
+        
         return {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {self.auth_token}',
-            'X-API-Key': self.api_key
+            'Authorization': f'Basic {encoded_credentials}'
         }
     
     def activate_line(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -116,7 +121,7 @@ class OXIOService:
             headers = self.get_headers()
             
             print(f"Testing OXIO connection to: {test_url}")
-            print(f"Headers (API key masked): {dict(headers, **{'X-API-Key': f'{self.api_key[:8]}...' if self.api_key else 'None'})}")
+            print(f"Headers (Basic Auth masked): {dict(headers, **{'Authorization': f'Basic {headers[\"Authorization\"][-8:]}...' if 'Authorization' in headers else 'None'})}")
             
             try:
                 response = requests.get(test_url, headers=headers, timeout=10)
