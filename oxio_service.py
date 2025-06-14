@@ -121,7 +121,9 @@ class OXIOService:
             headers = self.get_headers()
             
             print(f"Testing OXIO connection to: {test_url}")
-            print(f"Headers (Basic Auth masked): {dict(headers, **{'Authorization': f'Basic {headers[\"Authorization\"][-8:]}...' if 'Authorization' in headers else 'None'})}")
+            auth_masked = f'Basic ...{headers["Authorization"][-8:]}' if 'Authorization' in headers else 'None'
+            headers_masked = dict(headers, **{'Authorization': auth_masked})
+            print(f"Headers (Basic Auth masked): {headers_masked}")
             
             try:
                 response = requests.get(test_url, headers=headers, timeout=10)
