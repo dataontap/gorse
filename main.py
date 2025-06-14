@@ -2444,107 +2444,111 @@ def create_subscription_record():
         }), 500
 
 # OXIO API Integration Endpoints
-@app.route('/api/oxio/test-connection', methods=['GET'])
-def oxio_test_connection():
-    """Test OXIO API connection and credentials"""
-    try:
-        print("Testing OXIO connection...")
-        result = oxio_service.test_connection()
-        print(f"OXIO connection test result: {result}")
-        return jsonify(result)
-    except Exception as e:
-        print(f"Error in OXIO connection test: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Failed to test OXIO connection'
-        }), 500
-
-@app.route('/api/oxio/test-plans', methods=['GET'])
-def oxio_test_plans():
-    """Test OXIO plans endpoint specifically"""
-    try:
-        print("Testing OXIO plans endpoint...")
-        result = oxio_service.test_plans_endpoint()
-        print(f"OXIO plans test result: {result}")
-        return jsonify(result)
-    except Exception as e:
-        print(f"Error in OXIO plans test: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Failed to test OXIO plans endpoint'
-        }), 500
-
-@app.route('/api/oxio/activate-line', methods=['POST'])
-def oxio_activate_line():
-    """Activate a line using OXIO API"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({
+@api.route('/oxio/test-connection')
+class OXIOTestConnection(Resource):
+    def get(self):
+        """Test OXIO API connection and credentials"""
+        try:
+            print("Testing OXIO connection...")
+            result = oxio_service.test_connection()
+            print(f"OXIO connection test result: {result}")
+            return result
+        except Exception as e:
+            print(f"Error in OXIO connection test: {str(e)}")
+            return {
                 'success': False,
-                'error': 'No payload provided',
-                'message': 'Request body is required'
-            }), 400
+                'error': str(e),
+                'message': 'Failed to test OXIO connection'
+            }, 500
 
-        # Validate required fields
-        required_fields = ['lineType', 'sim', 'endUser', 'countryCode']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({
+@api.route('/oxio/test-plans')
+class OXIOTestPlans(Resource):
+    def get(self):
+        """Test OXIO plans endpoint specifically"""
+        try:
+            print("Testing OXIO plans endpoint...")
+            result = oxio_service.test_plans_endpoint()
+            print(f"OXIO plans test result: {result}")
+            return result
+        except Exception as e:
+            print(f"Error in OXIO plans test: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'Failed to test OXIO plans endpoint'
+            }, 500
+
+@api.route('/oxio/activate-line')
+class OXIOActivateLine(Resource):
+    def post(self):
+        """Activate a line using OXIO API"""
+        try:
+            data = request.get_json()
+            if not data:
+                return {
                     'success': False,
-                    'error': f'Missing required field: {field}',
-                    'message': f'Field {field} is required in the payload'
-                }), 400
+                    'error': 'No payload provided',
+                    'message': 'Request body is required'
+                }, 400
 
-        result = oxio_service.activate_line(data)
-        return jsonify(result)
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Failed to activate line'
-        }), 500
+            # Validate required fields
+            required_fields = ['lineType', 'sim', 'endUser', 'countryCode']
+            for field in required_fields:
+                if field not in data:
+                    return {
+                        'success': False,
+                        'error': f'Missing required field: {field}',
+                        'message': f'Field {field} is required in the payload'
+                    }, 400
 
-@app.route('/api/oxio/test-sample-activation', methods=['POST'])
-def oxio_test_sample_activation():
-    """Test line activation with the provided sample payload"""
-    try:
-        # Use the sample payload you provided
-        sample_payload = {
-            "lineType": "LINE_TYPE_MOBILITY",
-            "sim": {
-                "simType": "EMBEDDED",
-                "iccid": "8910650420001501340F"
-            },
-            "endUser": {
-                "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
-            },
-            "phoneNumberRequirements": {
-                "preferredAreaCode": "212"
-            },
-            "countryCode": "US",
-            "activateOnAttach": False
-        }
-        
-        # Allow override of payload values from request
-        data = request.get_json()
-        if data:
-            # Merge any provided fields with the sample payload
-            sample_payload.update(data)
-        
-        result = oxio_service.activate_line(sample_payload)
-        
-        # Add the payload used for reference
-        result['payload_used'] = sample_payload
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Failed to test sample activation'
-        }), 500
+            result = oxio_service.activate_line(data)
+            return result
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'Failed to activate line'
+            }, 500
+
+@api.route('/oxio/test-sample-activation')
+class OXIOTestSampleActivation(Resource):
+    def post(self):
+        """Test line activation with the provided sample payload"""
+        try:
+            # Use the sample payload you provided
+            sample_payload = {
+                "lineType": "LINE_TYPE_MOBILITY",
+                "sim": {
+                    "simType": "EMBEDDED",
+                    "iccid": "8910650420001501340F"
+                },
+                "endUser": {
+                    "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
+                },
+                "phoneNumberRequirements": {
+                    "preferredAreaCode": "212"
+                },
+                "countryCode": "US",
+                "activateOnAttach": False
+            }
+            
+            # Allow override of payload values from request
+            data = request.get_json()
+            if data:
+                # Merge any provided fields with the sample payload
+                sample_payload.update(data)
+            
+            result = oxio_service.activate_line(sample_payload)
+            
+            # Add the payload used for reference
+            result['payload_used'] = sample_payload
+            
+            return result
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'Failed to test sample activation'
+            }, 500
