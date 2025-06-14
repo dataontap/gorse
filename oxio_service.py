@@ -102,26 +102,72 @@ class OXIOService:
     def test_connection(self) -> Dict[str, Any]:
         """Test connection to OXIO API"""
         try:
-            # You can implement a health check endpoint here if OXIO provides one
-            # For now, we'll just verify our credentials are set
+            # First verify our credentials are set
             if not self.api_key or not self.auth_token:
                 return {
                     'success': False,
-                    'message': 'API credentials not configured'
+                    'message': 'API credentials not configured',
+                    'api_key_configured': bool(self.api_key),
+                    'auth_token_configured': bool(self.auth_token)
                 }
             
-            return {
-                'success': True,
-                'message': 'OXIO service configured successfully',
-                'base_url': self.base_url,
-                'api_key_configured': bool(self.api_key),
-                'auth_token_configured': bool(self.auth_token)
-            }
+            # Try a simple GET request to test authentication
+            test_url = f"{self.base_url}/health"  # Try health endpoint first
+            headers = self.get_headers()
+            
+            print(f"Testing OXIO connection to: {test_url}")
+            print(f"Headers (API key masked): {dict(headers, **{'X-API-Key': f'{self.api_key[:8]}...' if self.api_key else 'None'})}")
+            
+            try:
+                response = requests.get(test_url, headers=headers, timeout=10)
+                print(f"Health check response: {response.status_code}")
+                
+                if response.status_code == 404:
+                    # Health endpoint doesn't exist, try another approach
+                    return {
+                        'success': True,
+                        'message': 'OXIO credentials configured (health endpoint not available)',
+                        'base_url': self.base_url,
+                        'api_key_configured': bool(self.api_key),
+                        'auth_token_configured': bool(self.auth_token),
+                        'note': 'Use line activation to test actual API functionality'
+                    }
+                elif response.status_code == 401 or response.status_code == 403:
+                    return {
+                        'success': False,
+                        'message': 'Authentication failed - check API credentials or domain whitelist',
+                        'status_code': response.status_code,
+                        'api_key_configured': bool(self.api_key),
+                        'auth_token_configured': bool(self.auth_token)
+                    }
+                else:
+                    return {
+                        'success': True,
+                        'message': 'OXIO API connection successful',
+                        'status_code': response.status_code,
+                        'base_url': self.base_url,
+                        'api_key_configured': bool(self.api_key),
+                        'auth_token_configured': bool(self.auth_token)
+                    }
+                    
+            except requests.exceptions.ConnectionError:
+                return {
+                    'success': False,
+                    'message': 'Cannot connect to OXIO API - check network or URL',
+                    'base_url': self.base_url
+                }
+            except requests.exceptions.Timeout:
+                return {
+                    'success': False,
+                    'message': 'OXIO API request timed out',
+                    'base_url': self.base_url
+                }
+            
         except Exception as e:
             return {
                 'success': False,
                 'error': str(e),
-                'message': 'Failed to initialize OXIO service'
+                'message': 'Failed to test OXIO connection'
             }
 
 # Create a singleton instance
