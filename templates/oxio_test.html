@@ -45,8 +45,31 @@
             max-height: 400px;
             overflow-y: auto;
         }
-        .success { border-left: 4px solid #28a745; }
-        .error { border-left: 4px solid #dc3545; }
+        .success { 
+            border-left: 4px solid #28a745; 
+            background-color: #d4edda;
+        }
+        .error { 
+            border-left: 4px solid #dc3545; 
+            background-color: #f8d7da;
+        }
+        .status-header {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: block;
+        }
+        .status-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-error {
+            background-color: #dc3545;
+            color: white;
+        }
         .payload-editor {
             width: 100%;
             height: 300px;
@@ -106,7 +129,16 @@
         function showResult(elementId, data, isSuccess) {
             const element = document.getElementById(elementId);
             element.style.display = 'block';
-            element.textContent = JSON.stringify(data, null, 2);
+            
+            // Create status header
+            const statusText = isSuccess ? '✅ SUCCESS' : '❌ ERROR';
+            const statusClass = isSuccess ? 'status-success' : 'status-error';
+            
+            // Format the content with status header
+            const statusHeader = `<span class="status-header ${statusClass}">${statusText}</span>`;
+            const jsonContent = JSON.stringify(data, null, 2);
+            
+            element.innerHTML = statusHeader + '<pre>' + jsonContent + '</pre>';
             element.className = `result-box ${isSuccess ? 'success' : 'error'}`;
         }
 
