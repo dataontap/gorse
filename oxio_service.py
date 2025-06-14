@@ -125,8 +125,77 @@ class OXIOService:
                 'message': f'Unexpected error: {str(e)}'
             }
     
+    def test_plans_endpoint(self) -> Dict[str, Any]:
+        """Test the plans endpoint for health check"""
+        try:
+            # Use the v2-internal/plans endpoint for health check
+            test_url = "https://api-staging.brandvno.com/v2-internal/plans"
+            headers = self.get_headers()
+            
+            print(f"Testing OXIO plans endpoint: {test_url}")
+            auth_masked = f'Basic ...{headers["Authorization"][-8:]}' if 'Authorization' in headers else 'None'
+            headers_masked = dict(headers, **{'Authorization': auth_masked})
+            print(f"Headers (Basic Auth masked): {headers_masked}")
+            
+            response = requests.get(test_url, headers=headers, timeout=10)
+            print(f"Plans endpoint response status: {response.status_code}")
+            print(f"Plans endpoint content-type: {response.headers.get('content-type', 'Unknown')}")
+            
+            # Log response for debugging
+            response_text = response.text[:500]
+            print(f"Response preview: {response_text}...")
+            
+            if response.status_code == 200:
+                try:
+                    response_data = response.json()
+                    return {
+                        'success': True,
+                        'message': 'OXIO plans endpoint accessible - API connection working',
+                        'status_code': response.status_code,
+                        'endpoint': test_url,
+                        'data': response_data,
+                        'api_key_configured': bool(self.api_key),
+                        'auth_token_configured': bool(self.auth_token)
+                    }
+                except json.JSONDecodeError:
+                    return {
+                        'success': True,
+                        'message': 'OXIO plans endpoint accessible but returned non-JSON',
+                        'status_code': response.status_code,
+                        'response_preview': response_text,
+                        'content_type': response.headers.get('content-type', 'Unknown')
+                    }
+            else:
+                return {
+                    'success': False,
+                    'message': f'Plans endpoint returned status {response.status_code}',
+                    'status_code': response.status_code,
+                    'endpoint': test_url,
+                    'response_preview': response_text,
+                    'content_type': response.headers.get('content-type', 'Unknown')
+                }
+                
+        except requests.exceptions.ConnectionError:
+            return {
+                'success': False,
+                'message': 'Cannot connect to OXIO plans endpoint - check network',
+                'endpoint': test_url
+            }
+        except requests.exceptions.Timeout:
+            return {
+                'success': False,
+                'message': 'OXIO plans endpoint request timed out',
+                'endpoint': test_url
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'Failed to test OXIO plans endpoint'
+            }
+
     def test_connection(self) -> Dict[str, Any]:
-        """Test connection to OXIO API"""
+        """Test connection to OXIO API using plans endpoint"""
         try:
             # First verify our credentials are set
             if not self.api_key or not self.auth_token:
@@ -137,82 +206,8 @@ class OXIOService:
                     'auth_token_configured': bool(self.auth_token)
                 }
             
-            # Test with a simple endpoint that should exist
-            test_url = f"{self.base_url}/lines"  # Try lines endpoint with GET
-            headers = self.get_headers()
-            
-            print(f"Testing OXIO connection to: {test_url}")
-            auth_masked = f'Basic ...{headers["Authorization"][-8:]}' if 'Authorization' in headers else 'None'
-            headers_masked = dict(headers, **{'Authorization': auth_masked})
-            print(f"Headers (Basic Auth masked): {headers_masked}")
-            
-            try:
-                response = requests.get(test_url, headers=headers, timeout=10)
-                print(f"Test response status: {response.status_code}")
-                print(f"Test response content-type: {response.headers.get('content-type', 'Unknown')}")
-                
-                # Log response for debugging
-                response_text = response.text[:200]
-                print(f"Response preview: {response_text}...")
-                
-                if response.status_code == 401:
-                    return {
-                        'success': False,
-                        'message': 'Authentication failed - check API credentials',
-                        'status_code': response.status_code,
-                        'api_key_configured': bool(self.api_key),
-                        'auth_token_configured': bool(self.auth_token),
-                        'response_preview': response_text
-                    }
-                elif response.status_code == 403:
-                    return {
-                        'success': False,
-                        'message': 'Access forbidden - domain may need whitelisting',
-                        'status_code': response.status_code,
-                        'api_key_configured': bool(self.api_key),
-                        'auth_token_configured': bool(self.auth_token),
-                        'response_preview': response_text
-                    }
-                elif response.status_code == 404:
-                    return {
-                        'success': True,
-                        'message': 'OXIO API endpoint reached (404 expected for GET /lines)',
-                        'status_code': response.status_code,
-                        'base_url': self.base_url,
-                        'api_key_configured': bool(self.api_key),
-                        'auth_token_configured': bool(self.auth_token),
-                        'note': 'Authentication appears to be working'
-                    }
-                elif response.status_code >= 200 and response.status_code < 300:
-                    return {
-                        'success': True,
-                        'message': 'OXIO API connection successful',
-                        'status_code': response.status_code,
-                        'base_url': self.base_url,
-                        'api_key_configured': bool(self.api_key),
-                        'auth_token_configured': bool(self.auth_token)
-                    }
-                else:
-                    return {
-                        'success': False,
-                        'message': f'Unexpected response code: {response.status_code}',
-                        'status_code': response.status_code,
-                        'response_preview': response_text,
-                        'content_type': response.headers.get('content-type', 'Unknown')
-                    }
-                    
-            except requests.exceptions.ConnectionError:
-                return {
-                    'success': False,
-                    'message': 'Cannot connect to OXIO API - check network or URL',
-                    'base_url': self.base_url
-                }
-            except requests.exceptions.Timeout:
-                return {
-                    'success': False,
-                    'message': 'OXIO API request timed out',
-                    'base_url': self.base_url
-                }
+            # Use the plans endpoint for health check
+            return self.test_plans_endpoint()
             
         except Exception as e:
             return {

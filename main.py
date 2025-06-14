@@ -2457,6 +2457,19 @@ def oxio_test_connection():
             'message': 'Failed to test OXIO connection'
         }), 500
 
+@app.route('/api/oxio/test-plans', methods=['GET'])
+def oxio_test_plans():
+    """Test OXIO plans endpoint specifically"""
+    try:
+        result = oxio_service.test_plans_endpoint()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to test OXIO plans endpoint'
+        }), 500
+
 @app.route('/api/oxio/activate-line', methods=['POST'])
 def oxio_activate_line():
     """Activate a line using OXIO API"""
