@@ -49,8 +49,20 @@ class OXIOService:
             headers = self.get_headers()
             
             print(f"OXIO API Request URL: {url}")
-            print(f"OXIO API Request Headers: {headers}")
+            print(f"OXIO API Request Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
             print(f"OXIO API Request Payload: {json.dumps(payload, indent=2)}")
+            
+            # Validate payload structure before sending
+            required_fields = ['lineType', 'sim', 'endUser', 'countryCode']
+            missing_fields = [field for field in required_fields if field not in payload]
+            if missing_fields:
+                return {
+                    'success': False,
+                    'error': 'Missing required fields',
+                    'message': f'Missing required fields: {", ".join(missing_fields)}',
+                    'required_fields': required_fields,
+                    'payload_received': payload
+                }
             
             response = requests.post(
                 url,
@@ -62,67 +74,98 @@ class OXIOService:
             print(f"OXIO API Response Status: {response.status_code}")
             print(f"OXIO API Response Headers: {dict(response.headers)}")
             
+            # Get response text first
+            response_text = response.text
+            print(f"Raw response body: {response_text}")
+            
             # Check if response is JSON
             content_type = response.headers.get('content-type', '').lower()
-            response_text = response.text
             
             if 'application/json' in content_type:
                 try:
                     response_data = response.json() if response.content else {}
-                    print(f"OXIO API Response Body: {json.dumps(response_data, indent=2)}")
-                except json.JSONDecodeError:
-                    print(f"Failed to parse JSON response: {response_text[:500]}...")
-                    response_data = {'error': 'Invalid JSON response', 'raw_response': response_text[:500]}
+                    print(f"OXIO API Response Body (parsed): {json.dumps(response_data, indent=2)}")
+                except json.JSONDecodeError as json_err:
+                    print(f"Failed to parse JSON response: {str(json_err)}")
+                    print(f"Raw response (first 1000 chars): {response_text[:1000]}...")
+                    response_data = {
+                        'error': 'Invalid JSON response', 
+                        'json_error': str(json_err),
+                        'raw_response': response_text[:1000]
+                    }
             else:
                 print(f"Non-JSON response received (Content-Type: {content_type})")
-                print(f"Response body (first 500 chars): {response_text[:500]}...")
-                response_data = {'error': 'Non-JSON response', 'content_type': content_type, 'raw_response': response_text[:500]}
+                print(f"Response body (first 1000 chars): {response_text[:1000]}...")
+                response_data = {
+                    'error': 'Non-JSON response', 
+                    'content_type': content_type, 
+                    'raw_response': response_text[:1000]
+                }
             
             if response.status_code >= 200 and response.status_code < 300:
                 return {
                     'success': True,
                     'status_code': response.status_code,
                     'data': response_data,
-                    'message': 'Line activation successful'
+                    'message': 'Line activation successful',
+                    'request_payload': payload
                 }
             else:
-                return {
+                error_details = {
                     'success': False,
                     'status_code': response.status_code,
                     'data': response_data,
                     'error': f'OXIO API error: {response.status_code}',
-                    'message': response_data.get('message', 'Unknown error')
+                    'message': response_data.get('message', f'HTTP {response.status_code} error'),
+                    'request_payload': payload,
+                    'response_headers': dict(response.headers)
                 }
+                
+                # Add specific error details if available
+                if isinstance(response_data, dict):
+                    if 'error' in response_data:
+                        error_details['oxio_error'] = response_data['error']
+                    if 'details' in response_data:
+                        error_details['oxio_details'] = response_data['details']
+                    if 'validation_errors' in response_data:
+                        error_details['validation_errors'] = response_data['validation_errors']
+                
+                return error_details
                 
         except requests.exceptions.Timeout:
             return {
                 'success': False,
                 'error': 'Request timeout',
-                'message': 'OXIO API request timed out'
+                'message': 'OXIO API request timed out after 30 seconds',
+                'request_payload': payload
             }
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as conn_err:
             return {
                 'success': False,
                 'error': 'Connection error',
-                'message': 'Could not connect to OXIO API'
+                'message': f'Could not connect to OXIO API: {str(conn_err)}',
+                'request_payload': payload
             }
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException as req_err:
             return {
                 'success': False,
                 'error': 'Request error',
-                'message': f'Request failed: {str(e)}'
+                'message': f'Request failed: {str(req_err)}',
+                'request_payload': payload
             }
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as json_err:
             return {
                 'success': False,
                 'error': 'Invalid JSON response',
-                'message': 'OXIO API returned invalid JSON'
+                'message': f'OXIO API returned invalid JSON: {str(json_err)}',
+                'request_payload': payload
             }
         except Exception as e:
             return {
                 'success': False,
                 'error': 'Unexpected error',
-                'message': f'Unexpected error: {str(e)}'
+                'message': f'Unexpected error: {str(e)}',
+                'request_payload': payload
             }
     
     def test_plans_endpoint(self) -> Dict[str, Any]:

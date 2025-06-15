@@ -334,6 +334,34 @@
             }
         }
 
+        async function testPlansEndpoint() {
+            const resultDiv = document.getElementById('plans-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Testing plans endpoint...';
+            resultDiv.className = 'result-box';
+
+            try {
+                console.log('Making request to /api/oxio/test-plans');
+                const response = await fetch('/api/oxio/test-plans');
+                console.log('Response status:', response.status);
+
+                const result = await response.json();
+                console.log('Response data:', result);
+
+                if (result.success) {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.innerHTML = `✅ SUCCESS\n${JSON.stringify(result, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result-box error';
+                    resultDiv.innerHTML = `❌ ERROR\n${JSON.stringify(result, null, 2)}`;
+                }
+            } catch (error) {
+                console.error('Plans endpoint test error:', error);
+                resultDiv.className = 'result-box error';
+                resultDiv.innerHTML = `❌ ERROR\n${error.message}`;
+            }
+        }
+
         async function testSampleActivation() {
             const resultDiv = document.getElementById('sample-result');
             resultDiv.style.display = 'block';
@@ -370,21 +398,31 @@
 
         async function testCustomActivation() {
             const resultDiv = document.getElementById('custom-result');
+            const payloadText = document.getElementById('activation-payload').value;
+
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = 'Testing custom activation...';
             resultDiv.className = 'result-box';
 
-            const payload = document.getElementById('activation-payload').value;
-
             try {
-                const payloadObj = JSON.parse(payload);
+                // Validate JSON first
+                let payloadObj;
+                try {
+                    payloadObj = JSON.parse(payloadText);
+                    console.log('Parsed payload:', payloadObj);
+                } catch (parseError) {
+                    resultDiv.className = 'result-box error';
+                    resultDiv.innerHTML = `❌ JSON PARSE ERROR\n${parseError.message}`;
+                    return;
+                }
+
                 console.log('Making request to /api/oxio/activate-line');
                 const response = await fetch('/api/oxio/activate-line', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: payload
+                    body: JSON.stringify(payloadObj)
                 });
                 console.log('Response status:', response.status);
 
@@ -400,100 +438,6 @@
                 }
             } catch (error) {
                 console.error('Custom activation test error:', error);
-                resultDiv.className = 'result-box error';
-                resultDiv.innerHTML = `❌ ERROR\n${error.message}`;
-            }
-        }
-
-        async function testPlansEndpoint() {
-            const resultDiv = document.getElementById('plans-result');
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = 'Testing plans endpoint...';
-            resultDiv.className = 'result-box';
-
-            try {
-                console.log('Making request to /api/oxio/test-plans');
-                const response = await fetch('/api/oxio/test-plans');
-                console.log('Response status:', response.status);
-
-                const result = await response.json();
-                console.log('Response data:', result);
-
-                if (result.success) {
-                    resultDiv.className = 'result-box success';
-                    resultDiv.innerHTML = `✅ SUCCESS\n${JSON.stringify(result, null, 2)}`;
-                } else {
-                    resultDiv.className = 'result-box error';
-                    resultDiv.innerHTML = `❌ ERROR\n${JSON.stringify(result, null, 2)}`;
-                }
-            } catch (error) {
-                console.error('Plans endpoint test error:', error);
-                resultDiv.className = 'result-box error';
-                resultDiv.innerHTML = `❌ ERROR\n${error.message}`;
-            }
-        }
-
-        async function testSampleActivation() {
-            const resultDiv = document.getElementById('sample-result');
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = 'Testing sample activation...';
-            resultDiv.className = 'result-box';
-
-            try {
-                const response = await fetch('/api/oxio/test-sample-activation', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    resultDiv.className = 'result-box success';
-                    resultDiv.innerHTML = `✅ SUCCESS\n${JSON.stringify(result, null, 2)}`;
-                } else {
-                    resultDiv.className = 'result-box error';
-                    resultDiv.innerHTML = `❌ ERROR\n${JSON.stringify(result, null, 2)}`;
-                }
-            } catch (error) {
-                resultDiv.className = 'result-box error';
-                resultDiv.innerHTML = `❌ ERROR\n${error.message}`;
-            }
-        }
-
-        async function testCustomActivation() {
-            const resultDiv = document.getElementById('custom-result');
-            const payloadText = document.getElementById('activation-payload').value;
-
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = 'Testing custom activation...';
-            resultDiv.className = 'result-box';
-
-            try {
-                let payload = {};
-                if (payloadText.trim()) {
-                    payload = JSON.parse(payloadText);
-                }
-
-                const response = await fetch('/api/oxio/activate-line', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    resultDiv.className = 'result-box success';
-                    resultDiv.innerHTML = `✅ SUCCESS\n${JSON.stringify(result, null, 2)}`;
-                } else {
-                    resultDiv.className = 'result-box error';
-                    resultDiv.innerHTML = `❌ ERROR\n${JSON.stringify(result, null, 2)}`;
-                }
-            } catch (error) {
                 resultDiv.className = 'result-box error';
                 resultDiv.innerHTML = `❌ ERROR\n${error.message}`;
             }
