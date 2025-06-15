@@ -64,6 +64,38 @@ class OXIOService:
                     'payload_received': payload
                 }
             
+            # Additional payload validation
+            validation_errors = []
+            
+            # Validate sim structure
+            if 'sim' in payload:
+                sim = payload['sim']
+                if not isinstance(sim, dict):
+                    validation_errors.append("'sim' must be an object")
+                else:
+                    if 'simType' not in sim:
+                        validation_errors.append("'sim.simType' is required")
+                    if 'iccid' not in sim:
+                        validation_errors.append("'sim.iccid' is required")
+            
+            # Validate endUser structure
+            if 'endUser' in payload:
+                endUser = payload['endUser']
+                if not isinstance(endUser, dict):
+                    validation_errors.append("'endUser' must be an object")
+                else:
+                    if 'brandId' not in endUser:
+                        validation_errors.append("'endUser.brandId' is required")
+            
+            if validation_errors:
+                return {
+                    'success': False,
+                    'error': 'Payload validation failed',
+                    'message': 'Payload structure is invalid',
+                    'validation_errors': validation_errors,
+                    'payload_received': payload
+                }
+            
             response = requests.post(
                 url,
                 headers=headers,
