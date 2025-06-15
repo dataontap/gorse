@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -84,7 +83,7 @@
 <body>
     <div class="test-container">
         <h1>OXIO API Testing</h1>
-        
+
         <!-- Connection Test -->
         <div class="test-section">
             <h2>1. Test Connection</h2>
@@ -94,7 +93,7 @@
             <button class="test-button" onclick="testConnection()">Test Connection</button>
             <div id="connection-result" class="result-box" style="display: none;"></div>
         </div>
-        
+
         <!-- Sample Activation Test -->
         <div class="test-section">
             <h2>2. Test Sample Line Activation</h2>
@@ -102,7 +101,7 @@
             <button class="test-button" onclick="testSampleActivation()">Test Sample Activation</button>
             <div id="sample-result" class="result-box" style="display: none;"></div>
         </div>
-        
+
         <!-- Plans Endpoint Test -->
         <div class="test-section">
             <h2>2. Test Plans Endpoint</h2>
@@ -113,9 +112,9 @@
 
         <!-- Custom Activation Test -->
         <div class="test-section">
-            <h2>3. Custom Line Activation</h2>
+            <h2>3. Test Custom Line Activation</h2>
             <p>Test line activation with custom payload.</p>
-            <textarea id="custom-payload" placeholder="Enter custom JSON payload (optional)" rows="10" cols="80">{
+            <textarea id="activation-payload" rows="15" style="width: 100%; font-family: monospace;" placeholder="Enter JSON payload here">{
   "lineType": "LINE_TYPE_MOBILITY",
   "sim": {
     "simType": "EMBEDDED",
@@ -130,7 +129,6 @@
   "countryCode": "US",
   "activateOnAttach": false
 }</textarea>
-            <br><br>
             <button class="test-button" onclick="testCustomActivation()">Test Custom Activation</button>
             <div id="custom-result" class="result-box" style="display: none;"></div>
         </div>
@@ -318,7 +316,7 @@
                 console.log('Making request to /api/oxio/test-connection');
                 const response = await fetch('/api/oxio/test-connection');
                 console.log('Response status:', response.status);
-                
+
                 const result = await response.json();
                 console.log('Response data:', result);
 
@@ -348,10 +346,11 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({})
                 });
                 console.log('Response status:', response.status);
-                
+
                 const result = await response.json();
                 console.log('Response data:', result);
 
@@ -375,25 +374,20 @@
             resultDiv.innerHTML = 'Testing custom activation...';
             resultDiv.className = 'result-box';
 
-            // Get custom payload from textarea
-            const customPayload = document.getElementById('custom-payload').value;
-            
-            try {
-                let payload = {};
-                if (customPayload.trim()) {
-                    payload = JSON.parse(customPayload);
-                }
+            const payload = document.getElementById('activation-payload').value;
 
+            try {
+                const payloadObj = JSON.parse(payload);
                 console.log('Making request to /api/oxio/activate-line');
                 const response = await fetch('/api/oxio/activate-line', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(payload)
+                    body: payload
                 });
                 console.log('Response status:', response.status);
-                
+
                 const result = await response.json();
                 console.log('Response data:', result);
 
@@ -421,7 +415,7 @@
                 console.log('Making request to /api/oxio/test-plans');
                 const response = await fetch('/api/oxio/test-plans');
                 console.log('Response status:', response.status);
-                
+
                 const result = await response.json();
                 console.log('Response data:', result);
 
@@ -469,7 +463,7 @@
         async function testCustomActivation() {
             const resultDiv = document.getElementById('custom-result');
             const payloadText = document.getElementById('custom-payload').value;
-            
+
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = 'Testing custom activation...';
             resultDiv.className = 'result-box';
@@ -535,11 +529,11 @@
         function showResult(elementId, data, isSuccess) {
             const element = document.getElementById(elementId);
             element.style.display = 'block';
-            
+
             // Create status header
             const statusText = isSuccess ? '✅ SUCCESS' : '❌ ERROR';
             const statusClass = isSuccess ? 'status-success' : 'status-error';
-            
+
             // Add helpful messages for common errors
             let helpfulMessage = '';
             if (!isSuccess && data.status_code === 401) {
@@ -549,11 +543,11 @@
             } else if (!isSuccess && data.message && data.message.includes('domain')) {
                 helpfulMessage = '\n\n🌐 Domain Issue: Contact OXIO to whitelist: ' + window.location.origin;
             }
-            
+
             // Format the content with status header
             const statusHeader = `<span class="status-header ${statusClass}">${statusText}</span>`;
             const jsonContent = JSON.stringify(data, null, 2) + helpfulMessage;
-            
+
             element.innerHTML = statusHeader + '<pre>' + jsonContent + '</pre>';
             element.className = `result-box ${isSuccess ? 'success' : 'error'}`;
         }
@@ -587,7 +581,7 @@
             try {
                 const payload = document.getElementById('custom-payload').value;
                 let parsedPayload;
-                
+
                 try {
                     parsedPayload = JSON.parse(payload);
                 } catch (e) {

@@ -8,7 +8,7 @@ class OXIOService:
     def __init__(self):
         self.api_key = os.environ.get('OXIO_API_KEY')
         self.auth_token = os.environ.get('OXIO_AUTH_TOKEN')
-        self.base_url = "https://api-staging.brandvno.com/v3"
+        self.base_url = "https://api-staging.brandvno.com"
         
         # Debug information
         print(f"OXIO Service initialized:")
@@ -45,7 +45,7 @@ class OXIOService:
             API response as dictionary
         """
         try:
-            url = f"{self.base_url}/lines/line"
+            url = f"{self.base_url}/v3/lines/line"
             headers = self.get_headers()
             
             print(f"OXIO API Request URL: {url}")

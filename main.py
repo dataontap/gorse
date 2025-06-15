@@ -2443,8 +2443,10 @@ def create_subscription_record():
             'message': str(e)
         }), 500
 
-# OXIO API Integration Endpoints
-@api.route('/oxio/test-connection')
+# OXIO API Integration namespace
+oxio_ns = api.namespace('oxio', description='OXIO API operations')
+
+@oxio_ns.route('/test-connection')
 class OXIOTestConnection(Resource):
     def get(self):
         """Test OXIO API connection and credentials"""
@@ -2461,7 +2463,7 @@ class OXIOTestConnection(Resource):
                 'message': 'Failed to test OXIO connection'
             }, 500
 
-@api.route('/oxio/test-plans')
+@oxio_ns.route('/test-plans')
 class OXIOTestPlans(Resource):
     def get(self):
         """Test OXIO plans endpoint specifically"""
@@ -2478,7 +2480,7 @@ class OXIOTestPlans(Resource):
                 'message': 'Failed to test OXIO plans endpoint'
             }, 500
 
-@api.route('/oxio/activate-line')
+@oxio_ns.route('/activate-line')
 class OXIOActivateLine(Resource):
     def post(self):
         """Activate a line using OXIO API"""
@@ -2511,7 +2513,7 @@ class OXIOActivateLine(Resource):
                 'message': 'Failed to activate line'
             }, 500
 
-@api.route('/oxio/test-sample-activation')
+@oxio_ns.route('/test-sample-activation')
 class OXIOTestSampleActivation(Resource):
     def post(self):
         """Test line activation with the provided sample payload"""
