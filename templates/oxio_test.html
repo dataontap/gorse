@@ -103,10 +103,119 @@
             <div id="sample-result" class="result-box" style="display: none;"></div>
         </div>
         
+        <!-- Plans Endpoint Test -->
+        <div class="test-section">
+            <h2>2. Test Plans Endpoint</h2>
+            <p>Test the OXIO plans endpoint specifically for health check.</p>
+            <button class="test-button" onclick="testPlansEndpoint()">Test Plans Endpoint</button>
+            <div id="plans-result" class="result-box" style="display: none;"></div>
+        </div>
+
         <!-- Custom Activation Test -->
         <div class="test-section">
             <h2>3. Custom Line Activation</h2>
             <p>Test line activation with custom payload.</p>
+            <textarea id="custom-payload" placeholder="Enter custom JSON payload (optional)" rows="10" cols="80">{
+  "lineType": "LINE_TYPE_MOBILITY",
+  "sim": {
+    "simType": "EMBEDDED",
+    "iccid": "8910650420001501340F"
+  },
+  "endUser": {
+    "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
+  },
+  "phoneNumberRequirements": {
+    "preferredAreaCode": "212"
+  },
+  "countryCode": "US",
+  "activateOnAttach": false
+}</textarea>
+            <br><br>
+            <button class="test-button" onclick="testCustomActivation()">Test Custom Activation</button>
+            <div id="custom-result" class="result-box" style="display: none;"></div>
+        </div>
+    </div>
+
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        .test-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .test-button:hover {
+            background-color: #0056b3;
+        }
+
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result-box.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result-box.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        textarea {
+            width: 100%;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        code {
+            background-color: #f1f1f1;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        h2 {
+            color: #666;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+    </style>
             <div class="form-group">
                 <label for="custom-payload">Custom Payload (JSON):</label>
                 <textarea id="custom-payload" rows="10" cols="50" placeholder='{"lineType": "LINE_TYPE_MOBILITY", "sim": {"simType": "EMBEDDED", "iccid": "8910650420001501340F"}, "endUser": {"brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"}, "phoneNumberRequirements": {"preferredAreaCode": "212"}, "countryCode": "US", "activateOnAttach": false}'></textarea>
@@ -228,6 +337,107 @@
         }
 
         async function testSampleActivation() {
+            const resultDiv = document.getElementById('sample-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Testing sample activation...';
+            resultDiv.className = 'result-box';
+
+            try {
+                console.log('Making request to /api/oxio/test-sample-activation');
+                const response = await fetch('/api/oxio/test-sample-activation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                console.log('Response status:', response.status);
+                
+                const result = await response.json();
+                console.log('Response data:', result);
+
+                if (result.success) {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.innerHTML = `✅ SUCCESS\n${JSON.stringify(result, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result-box error';
+                    resultDiv.innerHTML = `❌ ERROR\n${JSON.stringify(result, null, 2)}`;
+                }
+            } catch (error) {
+                console.error('Sample activation test error:', error);
+                resultDiv.className = 'result-box error';
+                resultDiv.innerHTML = `❌ ERROR\n${error.message}`;
+            }
+        }
+
+        async function testCustomActivation() {
+            const resultDiv = document.getElementById('custom-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Testing custom activation...';
+            resultDiv.className = 'result-box';
+
+            // Get custom payload from textarea
+            const customPayload = document.getElementById('custom-payload').value;
+            
+            try {
+                let payload = {};
+                if (customPayload.trim()) {
+                    payload = JSON.parse(customPayload);
+                }
+
+                console.log('Making request to /api/oxio/activate-line');
+                const response = await fetch('/api/oxio/activate-line', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                console.log('Response status:', response.status);
+                
+                const result = await response.json();
+                console.log('Response data:', result);
+
+                if (result.success) {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.innerHTML = `✅ SUCCESS\n${JSON.stringify(result, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result-box error';
+                    resultDiv.innerHTML = `❌ ERROR\n${JSON.stringify(result, null, 2)}`;
+                }
+            } catch (error) {
+                console.error('Custom activation test error:', error);
+                resultDiv.className = 'result-box error';
+                resultDiv.innerHTML = `❌ ERROR\n${error.message}`;
+            }
+        }
+
+        async function testPlansEndpoint() {
+            const resultDiv = document.getElementById('plans-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Testing plans endpoint...';
+            resultDiv.className = 'result-box';
+
+            try {
+                console.log('Making request to /api/oxio/test-plans');
+                const response = await fetch('/api/oxio/test-plans');
+                console.log('Response status:', response.status);
+                
+                const result = await response.json();
+                console.log('Response data:', result);
+
+                if (result.success) {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.innerHTML = `✅ SUCCESS\n${JSON.stringify(result, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result-box error';
+                    resultDiv.innerHTML = `❌ ERROR\n${JSON.stringify(result, null, 2)}`;
+                }
+            } catch (error) {
+                console.error('Plans endpoint test error:', error);
+                resultDiv.className = 'result-box error';
+                resultDiv.innerHTML = `❌ ERROR\n${error.message}`;
+            }
+        }tion() {
             const resultDiv = document.getElementById('sample-result');
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = 'Testing sample activation...';
