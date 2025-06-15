@@ -109,6 +109,9 @@ api = Api(app, version='1.0', title='IMEI API',
 
 ns = api.namespace('imei', description='IMEI operations')
 
+# OXIO API Integration namespace - Define early
+oxio_ns = api.namespace('oxio', description='OXIO API operations')
+
 # FCM token registration endpoint
 @app.route('/api/register-fcm-token', methods=['POST'])
 def register_fcm_token():
@@ -2442,9 +2445,6 @@ def create_subscription_record():
             'status': 'error',
             'message': str(e)
         }), 500
-
-# OXIO API Integration namespace - Define and register early
-oxio_ns = api.namespace('oxio', description='OXIO API operations', path='/api/oxio')
 
 @oxio_ns.route('/test-connection')
 class OXIOTestConnection(Resource):
