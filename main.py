@@ -2443,11 +2443,8 @@ def create_subscription_record():
             'message': str(e)
         }), 500
 
-# OXIO API Integration namespace
-oxio_ns = api.namespace('oxio', description='OXIO API operations')
-
-# Register the namespace with the API
-api.add_namespace(oxio_ns)
+# OXIO API Integration namespace - Define and register early
+oxio_ns = api.namespace('oxio', description='OXIO API operations', path='/api/oxio')
 
 @oxio_ns.route('/test-connection')
 class OXIOTestConnection(Resource):
