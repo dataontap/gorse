@@ -128,8 +128,8 @@ class OXIOService:
     def test_plans_endpoint(self) -> Dict[str, Any]:
         """Test the plans endpoint for health check"""
         try:
-            # Use the v2-internal/plans endpoint for health check
-            test_url = "https://api-staging.brandvno.com/v2-internal/plans"
+            # Use the v3 endpoint for health check
+            test_url = f"{self.base_url}/v3"
             headers = self.get_headers()
             
             print(f"Testing OXIO plans endpoint: {test_url}")

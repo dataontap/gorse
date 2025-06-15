@@ -431,7 +431,9 @@
                 resultDiv.className = 'result-box error';
                 resultDiv.innerHTML = `❌ ERROR\n${error.message}`;
             }
-        }tion() {
+        }
+
+        async function testSampleActivation() {
             const resultDiv = document.getElementById('sample-result');
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = 'Testing sample activation...';
@@ -462,7 +464,7 @@
 
         async function testCustomActivation() {
             const resultDiv = document.getElementById('custom-result');
-            const payloadText = document.getElementById('custom-payload').value;
+            const payloadText = document.getElementById('activation-payload').value;
 
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = 'Testing custom activation...';
