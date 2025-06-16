@@ -141,6 +141,255 @@ class HelpDeskClient {
         }
     }
 
+    async startGeminiLive() {
+        try {
+            if (!this.currentSession) {
+                alert('Please start a help session first');
+                return;
+            }
+
+            const userData = this.getCurrentUserData();
+
+            // First, get ephemeral token
+            const tokenResponse = await fetch('/api/help/gemini-token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sessionId: this.currentSession.sessionId
+                })
+            });
+
+            const tokenResult = await tokenResponse.json();
+            
+            if (tokenResult.status !== 'success') {
+                throw new Error(tokenResult.message || 'Failed to get ephemeral token');
+            }
+
+            // Start live session
+            const liveResponse = await fetch('/api/help/gemini-live-start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sessionId: this.currentSession.sessionId,
+                    ephemeralToken: tokenResult.token,
+                    userId: userData.userId,
+                    firebaseUid: userData.firebaseUid,
+                    pageUrl: window.location.href
+                })
+            });
+
+            const liveResult = await liveResponse.json();
+            
+            if (liveResult.status === 'success') {
+                this.initializeGeminiWebSocket(liveResult.ws_url, liveResult.config);
+                this.showGeminiLiveInterface();
+            } else {
+                throw new Error(liveResult.message || 'Failed to start live session');
+            }
+
+        } catch (error) {
+            console.error('Error starting Gemini Live:', error);
+            alert('Failed to start live conversation: ' + error.message);
+        }
+    }
+
+    initializeGeminiWebSocket(wsUrl, config) {
+        try {
+            this.geminiWebSocket = new WebSocket(wsUrl);
+            
+            this.geminiWebSocket.onopen = () => {
+                console.log('Gemini Live WebSocket connected');
+                // Send initial configuration
+                this.geminiWebSocket.send(JSON.stringify(config));
+                this.updateGeminiStatus('Connected', 'success');
+            };
+
+            this.geminiWebSocket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    this.handleGeminiMessage(data);
+                } catch (e) {
+                    console.error('Error parsing Gemini message:', e);
+                }
+            };
+
+            this.geminiWebSocket.onclose = () => {
+                console.log('Gemini Live WebSocket disconnected');
+                this.updateGeminiStatus('Disconnected', 'error');
+            };
+
+            this.geminiWebSocket.onerror = (error) => {
+                console.error('Gemini WebSocket error:', error);
+                this.updateGeminiStatus('Connection Error', 'error');
+            };
+
+        } catch (error) {
+            console.error('Error initializing Gemini WebSocket:', error);
+        }
+    }
+
+    handleGeminiMessage(data) {
+        console.log('Gemini message:', data);
+        
+        if (data.serverContent && data.serverContent.modelTurn) {
+            const parts = data.serverContent.modelTurn.parts;
+            if (parts && parts.length > 0) {
+                const text = parts[0].text;
+                if (text) {
+                    this.displayGeminiResponse(text);
+                }
+            }
+        }
+    }
+
+    sendGeminiMessage(text) {
+        if (this.geminiWebSocket && this.geminiWebSocket.readyState === WebSocket.OPEN) {
+            const message = {
+                clientContent: {
+                    turns: [{
+                        role: "user",
+                        parts: [{ text: text }]
+                    }]
+                }
+            };
+            
+            this.geminiWebSocket.send(JSON.stringify(message));
+            this.displayUserMessage(text);
+        } else {
+            alert('Gemini Live is not connected. Please start a new session.');
+        }
+    }
+
+    showGeminiLiveInterface() {
+        const helpSection = document.querySelector('.help-section');
+        if (helpSection) {
+            const liveInterface = document.createElement('div');
+            liveInterface.className = 'gemini-live-interface';
+            liveInterface.innerHTML = `
+                <div class="gemini-live-container">
+                    <div class="gemini-header">
+                        <h4><i class="fas fa-microphone"></i> Gemini Live Conversation</h4>
+                        <span id="geminiStatus" class="status-indicator">Connecting...</span>
+                    </div>
+                    
+                    <div class="conversation-display" id="conversationDisplay">
+                        <div class="welcome-message">
+                            <i class="fas fa-robot"></i>
+                            <p>Hello! I'm your Gemini AI assistant. How can I help you today?</p>
+                        </div>
+                    </div>
+                    
+                    <div class="message-input-section">
+                        <div class="input-group">
+                            <input type="text" id="geminiMessageInput" placeholder="Type your message..." />
+                            <button onclick="helpDesk.sendGeminiMessageFromInput()" class="btn-send">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <div class="live-controls">
+                            <button onclick="helpDesk.startVoiceInput()" class="btn-voice" title="Voice Input">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <button onclick="helpDesk.endGeminiLive()" class="btn-end">End Conversation</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing interfaces
+            const existingInterface = helpSection.querySelector('.gemini-live-interface');
+            if (existingInterface) {
+                existingInterface.remove();
+            }
+            
+            helpSection.appendChild(liveInterface);
+
+            // Add enter key listener
+            const input = document.getElementById('geminiMessageInput');
+            if (input) {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendGeminiMessageFromInput();
+                    }
+                });
+            }
+        }
+    }
+
+    sendGeminiMessageFromInput() {
+        const input = document.getElementById('geminiMessageInput');
+        if (input && input.value.trim()) {
+            this.sendGeminiMessage(input.value.trim());
+            input.value = '';
+        }
+    }
+
+    displayUserMessage(text) {
+        const display = document.getElementById('conversationDisplay');
+        if (display) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'user-message';
+            messageDiv.innerHTML = `
+                <div class="message-bubble user-bubble">
+                    <i class="fas fa-user"></i>
+                    <span>${text}</span>
+                </div>
+            `;
+            display.appendChild(messageDiv);
+            display.scrollTop = display.scrollHeight;
+        }
+    }
+
+    displayGeminiResponse(text) {
+        const display = document.getElementById('conversationDisplay');
+        if (display) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'ai-message';
+            messageDiv.innerHTML = `
+                <div class="message-bubble ai-bubble">
+                    <i class="fas fa-robot"></i>
+                    <span>${text}</span>
+                </div>
+            `;
+            display.appendChild(messageDiv);
+            display.scrollTop = display.scrollHeight;
+        }
+    }
+
+    updateGeminiStatus(status, type) {
+        const statusElement = document.getElementById('geminiStatus');
+        if (statusElement) {
+            statusElement.textContent = status;
+            statusElement.className = `status-indicator status-${type}`;
+        }
+    }
+
+    endGeminiLive() {
+        if (this.geminiWebSocket) {
+            this.geminiWebSocket.close();
+            this.geminiWebSocket = null;
+        }
+        
+        const liveInterface = document.querySelector('.gemini-live-interface');
+        if (liveInterface) {
+            liveInterface.remove();
+        }
+        
+        // Track end of live session
+        if (this.currentSession) {
+            this.trackInteraction('gemini_live_end');
+        }
+    }
+
+    startVoiceInput() {
+        // Placeholder for voice input functionality
+        alert('Voice input feature coming soon!');
+    }
+
     async requestCallback(phoneNumber, preferredTime = null) {
         if (!this.currentSession) {
             alert('Please start a help session first');
@@ -248,6 +497,13 @@ class HelpDeskClient {
                             <input type="datetime-local" id="preferredTime" />
                             <button onclick="helpDesk.handleCallbackRequest()" class="btn-callback">Request Callback</button>
                         </div>
+                    </div>
+                    
+                    <div class="live-ai-section">
+                        <button onclick="helpDesk.startGeminiLive()" class="btn-gemini-live">
+                            <i class="fas fa-comments"></i> Start Live AI Conversation
+                        </button>
+                        <p class="gemini-note">Real-time conversation with Gemini AI using secure ephemeral tokens</p>
                     </div>
                     
                     <div class="quick-actions">

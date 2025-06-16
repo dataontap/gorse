@@ -162,6 +162,118 @@ def request_callback():
             'message': str(e)
         }), 500
 
+@app.route('/api/help/gemini-token', methods=['POST'])
+def create_gemini_token():
+    """Create ephemeral token for Gemini Live"""
+    try:
+        from gemini_live_helper import gemini_live
+        
+        data = request.get_json() or {}
+        session_id = data.get('sessionId')
+        
+        if not session_id:
+            return jsonify({'status': 'error', 'message': 'Session ID required'}), 400
+        
+        # Create ephemeral token
+        token_result = gemini_live.create_ephemeral_token(
+            uses=10,  # Allow multiple uses in the session
+            expire_time_minutes=60  # 1 hour expiry
+        )
+        
+        if token_result['success']:
+            return jsonify({
+                'status': 'success',
+                'token': token_result['token'],
+                'expiry': token_result['expiry']
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': token_result.get('error', 'Failed to create token')
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/help/gemini-live-start', methods=['POST'])
+def start_gemini_live():
+    """Start Gemini Live session"""
+    try:
+        from gemini_live_helper import gemini_live
+        
+        data = request.get_json() or {}
+        session_id = data.get('sessionId')
+        ephemeral_token = data.get('ephemeralToken')
+        
+        if not session_id or not ephemeral_token:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Session ID and ephemeral token required'
+            }), 400
+        
+        user_context = {
+            'session_id': session_id,
+            'user_id': data.get('userId'),
+            'firebase_uid': data.get('firebaseUid'),
+            'page_url': data.get('pageUrl'),
+            'user_agent': request.headers.get('User-Agent')
+        }
+        
+        # Start live session
+        session_result = await gemini_live.start_live_session(ephemeral_token, user_context)
+        
+        if session_result['success']:
+            # Log the start of live session
+            help_desk.track_help_interaction(session_id, 'gemini_live_start', {
+                'ephemeral_token_created': True,
+                'live_session_started': True
+            })
+            
+            return jsonify({
+                'status': 'success',
+                'ws_url': session_result['ws_url'],
+                'config': session_result['config']
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': session_result.get('error', 'Failed to start live session')
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/help/gemini-conversation', methods=['GET'])
+def get_gemini_conversation():
+    """Get Gemini conversation history"""
+    try:
+        from gemini_live_helper import gemini_live
+        
+        session_id = request.args.get('sessionId')
+        
+        if not session_id:
+            return jsonify({'status': 'error', 'message': 'Session ID required'}), 400
+        
+        history_result = gemini_live.get_conversation_history(session_id)
+        
+        return jsonify({
+            'status': 'success' if history_result['success'] else 'error',
+            'history': history_result.get('history', []),
+            'message': history_result.get('error')
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 @app.route('/api/help/analytics', methods=['GET'])
 def get_help_analytics():
     """Get help desk analytics"""
