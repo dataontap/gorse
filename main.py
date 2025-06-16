@@ -109,8 +109,8 @@ api = Api(app, version='1.0', title='IMEI API',
 
 ns = api.namespace('imei', description='IMEI operations')
 
-# OXIO API Integration namespace - Define early with explicit path
-oxio_ns = api.namespace('oxio', description='OXIO API operations', path='/oxio')
+# OXIO API Integration namespace - Define early
+oxio_ns = api.namespace('oxio', description='OXIO API operations')
 
 # FCM token registration endpoint
 @app.route('/api/register-fcm-token', methods=['POST'])
