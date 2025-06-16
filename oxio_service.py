@@ -270,7 +270,7 @@ class OXIOService:
             }
 
     def test_connection(self) -> Dict[str, Any]:
-        """Test connection to OXIO API using plans endpoint"""
+        """Test connection to OXIO API using specific SIM endpoint"""
         try:
             # First verify our credentials are set
             if not self.api_key or not self.auth_token:
@@ -281,14 +281,71 @@ class OXIOService:
                     'auth_token_configured': bool(self.auth_token)
                 }
             
-            # Use the plans endpoint for health check
-            return self.test_plans_endpoint()
+            # Use the specific SIM endpoint for authentication test
+            test_url = f"{self.base_url}/v3/sims/8910650420001501340F"
+            headers = self.get_headers()
             
+            print(f"Testing OXIO SIM endpoint: {test_url}")
+            auth_masked = f'Basic ...{headers["Authorization"][-8:]}' if 'Authorization' in headers else 'None'
+            headers_masked = dict(headers, **{'Authorization': auth_masked})
+            print(f"Headers (Basic Auth masked): {headers_masked}")
+            
+            response = requests.get(test_url, headers=headers, timeout=10)
+            print(f"SIM endpoint response status: {response.status_code}")
+            print(f"SIM endpoint content-type: {response.headers.get('content-type', 'Unknown')}")
+            
+            # Log response for debugging
+            response_text = response.text[:500]
+            print(f"Response preview: {response_text}...")
+            
+            if response.status_code == 200:
+                try:
+                    response_data = response.json()
+                    return {
+                        'success': True,
+                        'message': 'OXIO SIM endpoint accessible - API connection working',
+                        'status_code': response.status_code,
+                        'endpoint': test_url,
+                        'data': response_data,
+                        'api_key_configured': bool(self.api_key),
+                        'auth_token_configured': bool(self.auth_token)
+                    }
+                except json.JSONDecodeError:
+                    return {
+                        'success': True,
+                        'message': 'OXIO SIM endpoint accessible but returned non-JSON',
+                        'status_code': response.status_code,
+                        'response_preview': response_text,
+                        'content_type': response.headers.get('content-type', 'Unknown'),
+                        'endpoint': test_url
+                    }
+            else:
+                return {
+                    'success': False,
+                    'message': f'SIM endpoint returned status {response.status_code}',
+                    'status_code': response.status_code,
+                    'endpoint': test_url,
+                    'response_preview': response_text,
+                    'content_type': response.headers.get('content-type', 'Unknown')
+                }
+                
+        except requests.exceptions.ConnectionError:
+            return {
+                'success': False,
+                'message': 'Cannot connect to OXIO SIM endpoint - check network',
+                'endpoint': test_url
+            }
+        except requests.exceptions.Timeout:
+            return {
+                'success': False,
+                'message': 'OXIO SIM endpoint request timed out',
+                'endpoint': test_url
+            }
         except Exception as e:
             return {
                 'success': False,
                 'error': str(e),
-                'message': 'Failed to test OXIO connection'
+                'message': 'Failed to test OXIO SIM endpoint'
             }
 
 # Create a singleton instance
