@@ -27,6 +27,11 @@ class OXIOService:
         credentials = f"{self.api_key}:{self.auth_token}"
         encoded_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
         
+        # Debug output to show the exact Base64 encoding
+        print(f"DEBUG - Raw credentials format: {self.api_key[:10]}...:{self.auth_token[:10]}...")
+        print(f"DEBUG - Base64 encoded credentials: {encoded_credentials}")
+        print(f"DEBUG - Full Authorization header: Basic {encoded_credentials}")
+        
         return {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
