@@ -2521,7 +2521,7 @@ class OXIOActivateLine(Resource):
 
             result = oxio_service.activate_line(data)
             return result
-            
+
         except Exception as e:
             return {
                 'success': False,
@@ -2550,20 +2550,20 @@ class OXIOTestSampleActivation(Resource):
                 "countryCode": "US",
                 "activateOnAttach": False
             }
-            
+
             # Allow override of payload values from request
             data = request.get_json()
             if data:
                 # Merge any provided fields with the sample payload
                 sample_payload.update(data)
-            
+
             result = oxio_service.activate_line(sample_payload)
-            
+
             # Add the payload used for reference
             result['payload_used'] = sample_payload
-            
+
             return result
-            
+
         except Exception as e:
             return {
                 'success': False,
