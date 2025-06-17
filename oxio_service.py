@@ -18,6 +18,14 @@ class OXIOService:
         
         if not self.api_key or not self.auth_token:
             raise ValueError("OXIO_API_KEY and OXIO_AUTH_TOKEN must be set in secrets")
+        
+        # Show Base64 credentials immediately for debugging
+        import base64
+        credentials = f"{self.api_key}:{self.auth_token}"
+        encoded_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
+        print(f"DEBUG - OXIO Base64 Credentials: {encoded_credentials}")
+        print(f"DEBUG - Expected Base64: Z29yc2VvX0FZZ0thNlZja2Nac01wQkRLd2l6MjA1STp1NzBKaTNUcXBuZGM4elRBUDk2S1RrSjNEWVIwOXBGTw==")
+        print(f"DEBUG - Credentials match: {encoded_credentials == 'Z29yc2VvX0FZZ0thNlZja2Nac01wQkRLd2l6MjA1STp1NzBKaTNUcXBuZGM4elRBUDk2S1RrSjNEWVIwOXBGTw=='}")
     
     def get_headers(self) -> Dict[str, str]:
         """Get standard headers for OXIO API requests"""
