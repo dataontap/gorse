@@ -112,9 +112,6 @@ ns = api.namespace('imei', description='IMEI operations')
 # OXIO API Integration namespace - Define early
 oxio_ns = api.namespace('oxio', description='OXIO API operations')
 
-# Explicitly register the OXIO namespace to ensure routes are available
-api.add_namespace(oxio_ns)
-
 # FCM token registration endpoint
 @app.route('/api/register-fcm-token', methods=['POST'])
 def register_fcm_token():
@@ -2462,6 +2459,7 @@ def create_subscription_record():
             'message': str(e)
         }), 500
 
+# Define OXIO routes after the namespace is created
 @oxio_ns.route('/test-connection')
 class OXIOTestConnection(Resource):
     def get(self):
@@ -2570,3 +2568,6 @@ class OXIOTestSampleActivation(Resource):
                 'error': str(e),
                 'message': 'Failed to test sample activation'
             }, 500
+
+# Explicitly register the OXIO namespace to ensure routes are available
+api.add_namespace(oxio_ns)
