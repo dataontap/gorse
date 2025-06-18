@@ -1,0 +1,342 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en"
+      class="">
+
+<head>
+  <meta charset="utf-8">
+  <title>Page not found | Replicate</title>
+
+  
+  
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  
+
+  <link id="favicon-ico"
+        rel="icon"
+        href="https://d31rfu1d3w8e4q.cloudfront.net/static/favicon.121ea3afd763.ico"
+        sizes="any" />
+  <link id="favicon-png"
+        rel="icon"
+        href="https://d31rfu1d3w8e4q.cloudfront.net/static/favicon.fdf5ef8729cc.png"
+        type="image/png">
+  <link rel="mask-icon"
+        href="https://d31rfu1d3w8e4q.cloudfront.net/static/safari-pinned-tab.4c32b8e091a9.svg"
+        color="#FFFFFF">
+  <link rel="apple-touch-icon"
+        sizes="180x180"
+        href="https://d31rfu1d3w8e4q.cloudfront.net/static/apple-touch-icon.39c0aa0659e3.png" />
+
+  
+<script>
+  (function(w, d, s, l, i) {
+    w[l] = w[l] || [];
+    w[l].push({
+      'gtm.start': new Date().getTime(),
+      event: 'gtm.js'
+    });
+    var f = d.getElementsByTagName(s)[0],
+      j = d.createElement(s),
+      dl = l != 'dataLayer' ? '&l=' + l : '';
+    j.async = true;
+    j.src =
+      'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+    f.parentNode.insertBefore(j, f);
+  })(window, document, 'script', 'dataLayer', 'GTM-KZDCFZR9');
+
+</script>
+
+
+
+  
+  
+  <link  rel="stylesheet" href="https://d31rfu1d3w8e4q.cloudfront.net/static/dist/index-b8eb393a.css" />
+<script type="module" crossorigin="" src="https://d31rfu1d3w8e4q.cloudfront.net/static/dist/index-b1e46a94.js"></script>
+
+  <link rel="stylesheet"
+        href="https://d31rfu1d3w8e4q.cloudfront.net/static/dist/index-d6816e73.css">
+
+  <link rel="alternate"
+        type="application/rss+xml"
+        title="Blog (RSS)"
+        href="https://replicate.com/blog/rss">
+  <link rel="alternate"
+        type="application/atom+xml"
+        title="Blog (Atom)"
+        href="https://replicate.com/blog/atom">
+  <link rel="alternate"
+        type="application/rss+xml"
+        title="Changelog (RSS)"
+        href="https://replicate.com/changelog/rss">
+  <link rel="alternate"
+        type="application/atom+xml"
+        title="Changelog (Atom)"
+        href="https://replicate.com/changelog/atom">
+  <link rel="alternate"
+        type="application/rss+xml"
+        title="Status (RSS)"
+        href="https://replicatestatus.com/feed">
+
+  
+  <link rel="dns-prefetch"
+        href="https://replicate.delivery">
+  
+  <link rel="dns-prefetch"
+        href="https://tjzk.replicate.delivery">
+  
+
+  
+
+  <link rel="canonical"
+        href="https://replicate.com/api/files/user_uploads/favicon_image.png">
+
+  
+<meta name="robots"
+      content="noindex" />
+
+
+  <meta name="sentry-dsn-js"
+        content="https://3dc017e574684610bbc7fd3b5519a4e8@o255771.ingest.sentry.io/5909364" />
+  
+  
+  <meta name="anonymous-id"
+        content="40c4321e-df46-4bb8-b62d-0a98490ec848" />
+  
+
+  
+  <script nonce="/QfvrF2L5ZO396XlM87D4w==">
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (prefersDarkScheme) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.add("light");
+    }
+
+  </script>
+  
+
+  
+</head>
+
+
+
+<body class="font-sans overflow-y-scroll antialiased flex min-h-screen flex-col">
+  
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KZDCFZR9"
+          height="0"
+          width="0"
+          style="display:none;visibility:hidden"></iframe></noscript>
+
+
+  
+
+  
+
+  
+  
+
+
+
+  
+
+
+
+<div class="h-[var(--header-height)] lg:mb-6">
+  
+  <script id="react-component-props-9898ccb6-319b-4cfb-ab6a-ab27744b7624" type="application/json">{"activePath": "/api/files/user_uploads/favicon_image.png", "isAuthenticated": false, "theme": "", "__flags": {"show-pylon-widget": false, "show-open-ai-api-instructions": false}}</script>
+
+<div data-component="Navigation"
+     data-props="react-component-props-9898ccb6-319b-4cfb-ab6a-ab27744b7624"></div>
+
+  
+</div>
+
+  
+
+  
+
+  
+  
+
+  
+
+  <main class="layout-main flex-1">
+    
+
+    
+
+<article class="mb-lh pb-4lh">
+  <div class="max-w-md pb-lh">
+    <h3 class="mb-lh">Page not found</h3>
+
+    <p class="my-lh">
+      Sorry, we can't find the page you're looking for. If you followed a broken link from somewhere, you can
+      <a href="/support">contact us</a> and let us know.
+    </p>
+
+    <p class="my-lh">
+      If you're browsing around, why not
+      <a href="/explore">explore the models on Replicate</a>.
+      
+      Or just look at this one we've picked out for you!
+      
+    </p>
+  </div>
+
+  
+  <div class="h-80 mb-2">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-flow-row auto-rows-max gap-2lh ">
+  
+  
+
+
+
+
+
+
+<a class="no-default flex flex-col group border border-r8-gray-12 focus:bg-r8-gray-12"
+   href="/google/imagen-4-ultra"
+   title="google/imagen-4-ultra">
+  <div class="h-80 group-focus:ring ring-r8-gray-12 flex-shrink-0 bg-r8-gray-3">
+    
+
+
+
+<div class=" h-full w-full overflow-hidden">
+  
+  <img data-src="https://tjzk.replicate.delivery/models_models_featured_image/de4e6a23-fc3a-46cd-9001-23d395228ce7/replicate-prediction-2rhm6xx1.webp"
+       alt=""
+       role="presentation"
+       class="object-cover object-center w-full h-full lazy" />
+  
+</div>
+
+
+  </div>
+  <div class="flex-1">
+    <div class="p-3 h-full flex flex-col justify-between">
+      <div>
+        <h4 class="inline-block group-focus:bg-r8-gray-12"
+            translate="no">
+          
+          <span title="Official models are always on, maintained, and have predictable pricing."
+                class="relative"><svg class="icon"
+     xmlns="http://www.w3.org/2000/svg"
+     fill="currentColor"
+     viewBox="0 0 256 256">
+  <path d="M225.86,102.82c-3.77-3.94-7.67-8-9.14-11.57-1.36-3.27-1.44-8.69-1.52-13.94-.15-9.76-.31-20.82-8-28.51s-18.75-7.85-28.51-8c-5.25-.08-10.67-.16-13.94-1.52-3.56-1.47-7.63-5.37-11.57-9.14C146.28,23.51,138.44,16,128,16s-18.27,7.51-25.18,14.14c-3.94,3.77-8,7.67-11.57,9.14C88,40.64,82.56,40.72,77.31,40.8c-9.76.15-20.82.31-28.51,8S41,67.55,40.8,77.31c-.08,5.25-.16,10.67-1.52,13.94-1.47,3.56-5.37,7.63-9.14,11.57C23.51,109.72,16,117.56,16,128s7.51,18.27,14.14,25.18c3.77,3.94,7.67,8,9.14,11.57,1.36,3.27,1.44,8.69,1.52,13.94.15,9.76.31,20.82,8,28.51s18.75,7.85,28.51,8c5.25.08,10.67.16,13.94,1.52,3.56,1.47,7.63,5.37,11.57,9.14C109.72,232.49,117.56,240,128,240s18.27-7.51,25.18-14.14c3.94-3.77,8-7.67,11.57-9.14,3.27-1.36,8.69-1.44,13.94-1.52,9.76-.15,20.82-.31,28.51-8s7.85-18.75,8-28.51c.08-5.25.16-10.67,1.52-13.94,1.47-3.56,5.37-7.63,9.14-11.57C232.49,146.28,240,138.44,240,128S232.49,109.73,225.86,102.82Zm-52.2,6.84-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z"></path>
+</svg>
+</span>
+          
+          <span class="text-r8-gray-11 group-focus:text-r8-gray-1">google</span>
+          <span class="text-r8-gray-11 group-focus:text-r8-gray-1">/</span>
+          <span class="font-semibold text-r8-gray-12 group-focus:text-r8-gray-1">imagen-4-ultra</span>
+        </h4>
+        <p class="mt-2 text-r8-sm text-r8-gray-12 group-focus:text-r8-gray-1">
+          Use this ultra version of Imagen 4 when quality matters more than speed and cost
+        </p>
+        
+      </div>
+      <div class="mt-4 flex items-center justify-between">
+        <div class="text-r8-sm text-branding-red">
+          
+<svg class="icon"
+     xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 24 24"
+     width="24"
+     height="24">
+  <path fill="currentColor"
+        fill-rule="evenodd"
+        d="M20.322.75a10.75 10.75 0 00-7.373 2.926l-1.304 1.23A23.743 23.743 0 0010.103 6.5H5.066a1.75 1.75 0 00-1.5.85l-2.71 4.514a.75.75 0 00.49 1.12l4.571.963c.039.049.082.096.129.14L8.04 15.96l1.872 1.994c.044.047.091.09.14.129l.963 4.572a.75.75 0 001.12.488l4.514-2.709a1.75 1.75 0 00.85-1.5v-5.038a23.741 23.741 0 001.596-1.542l1.228-1.304a10.75 10.75 0 002.925-7.374V2.499A1.75 1.75 0 0021.498.75h-1.177zM16 15.112c-.333.248-.672.487-1.018.718l-3.393 2.262.678 3.223 3.612-2.167a.25.25 0 00.121-.214v-3.822zm-10.092-2.7L8.17 9.017c.23-.346.47-.685.717-1.017H5.066a.25.25 0 00-.214.121l-2.167 3.612 3.223.679zm8.07-7.644a9.25 9.25 0 016.344-2.518h1.177a.25.25 0 01.25.25v1.176a9.25 9.25 0 01-2.517 6.346l-1.228 1.303a22.248 22.248 0 01-3.854 3.257l-3.288 2.192-1.743-1.858a.764.764 0 00-.034-.034l-1.859-1.744 2.193-3.29a22.248 22.248 0 013.255-3.851l1.304-1.23zM17.5 8a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm-11 13c.9-.9.9-2.6 0-3.5-.9-.9-2.6-.9-3.5 0-1.209 1.209-1.445 3.901-1.49 4.743a.232.232 0 00.247.247c.842-.045 3.534-.281 4.743-1.49z"></path>
+</svg>
+ 22K runs
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</a>
+
+  
+</div>
+
+  </div>
+  
+</article>
+
+
+  </main>
+
+  
+  <div class="layout-footer">
+    
+
+<footer class="flex flex-col lg:flex-row gap-lh justify-between lg:items-center">
+  <div class="flex items-center gap-3 overflow-hidden">
+    <a class="flex-shrink-0"
+       href="/">Replicate</a>
+    <div class="flex-1">
+      <script id="react-component-props-56a0c29f-1cb4-41ab-9d6b-8cfb799fb25f" type="application/json">{"__flags": {"show-pylon-widget": false, "show-open-ai-api-instructions": false}}</script>
+
+<div data-component="PlatformStatus"
+     data-props="react-component-props-56a0c29f-1cb4-41ab-9d6b-8cfb799fb25f"></div>
+
+    </div>
+  </div>
+  <div class="flex items-end gap-x-2lh flex-wrap sm:flex-nowrap gap-y-1lh">
+    <div class="flex items-center flex-wrap gap-x-05lh gap-y-0">
+      
+      <a href="/home">Home</a>
+      <a href="/about">About</a>
+      <a href="/about#join-us">Join us</a>
+      <a href="/terms">Terms</a>
+      <a href="/privacy">Privacy</a>
+      <a href="https://replicatestatus.com/">Status</a>
+      <a href="/support">Support</a>
+    </div>
+
+    <script id="react-component-props-4600de21-ed75-42d2-95af-0f6d729224f6" type="application/json">{"theme": "", "__flags": {"show-pylon-widget": false, "show-open-ai-api-instructions": false}}</script>
+
+<div data-component="DarkModeToggle"
+     data-props="react-component-props-4600de21-ed75-42d2-95af-0f6d729224f6"></div>
+
+  </div>
+</footer>
+
+  </div>
+  
+
+  
+
+  <script nonce="/QfvrF2L5ZO396XlM87D4w==">
+    window.VIDEOJS_NO_DYNAMIC_STYLE = true;
+
+  </script>
+
+  <script nonce="/QfvrF2L5ZO396XlM87D4w==">
+    const header = document.getElementById("app-header");
+
+    function monitorHeaderStickiness() {
+      if (header) {
+        header.setAttribute("data-stuck", window.scrollY > 0);
+      }
+    }
+
+    monitorHeaderStickiness();
+
+    document.addEventListener("scroll", (event) => {
+      monitorHeaderStickiness();
+    });
+
+  </script>
+  
+
+</body>
+
+</html>

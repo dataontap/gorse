@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Sign Up | dot eSIM</title>
+    <title>Sign Up - dot eSIM</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
-    
+
     <style>
         .dialer-pill {
             background-color: #28a745;
@@ -18,7 +19,7 @@
             transition: background-color 0.2s ease;
             text-decoration: none;
         }
-        
+
         .dialer-pill:hover {
             background-color: #218838;
             color: white;
@@ -92,7 +93,7 @@
             // Check if we should start in login mode
             const urlParams = new URLSearchParams(window.location.search);
             const mode = urlParams.get('mode');
-            
+
             // Get form elements
             const signupForm = document.getElementById('signup-form');
             const emailInput = document.getElementById('email');
@@ -100,7 +101,7 @@
             const imeiInput = document.getElementById('imei');
             const authError = document.getElementById('auth-error');
             const googleSigninBtn = document.getElementById('google-signin');
-            
+
             // If mode=login, automatically switch to login form
             if (mode === 'login') {
                 switchToLoginMode();
@@ -194,11 +195,11 @@
                 // Switch the form to sign in mode
                 document.querySelector('h2.text-center').textContent = 'Member Login';
                 document.querySelector('.d-grid button').textContent = 'Sign In';
-                
+
                 // Hide the IMEI field which is only needed for signup
                 const imeiContainer = document.querySelector('#imei').closest('.mb-3');
                 imeiContainer.style.display = 'none';
-                
+
                 // Change the signin link text and behavior
                 const signinLink = document.getElementById('signinLink');
                 signinLink.textContent = 'Sign Up';
@@ -206,14 +207,14 @@
                     e.preventDefault();
                     window.location.href = '/signup'; // Go back to signup mode
                 };
-                
+
                 // Change form submission behavior to sign in instead of sign up
                 signupForm.onsubmit = function(e) {
                     e.preventDefault();
-                    
+
                     const email = emailInput.value.trim();
                     const password = passwordInput.value;
-                    
+
                     // Sign in with email and password
                     window.firebaseAuth.signInWithEmailPassword(email, password)
                         .then((userCredential) => {
@@ -241,7 +242,7 @@
             // Copy to clipboard and show instructions
             fallbackCopyToClipboard(code);
         }
-        
+
         // Function to copy code to clipboard and show instructions
         function fallbackCopyToClipboard(code) {
             if (navigator.clipboard && navigator.clipboard.writeText) {
