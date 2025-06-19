@@ -1235,6 +1235,10 @@ def create_checkout_session():
 def serve_static(path):
     return send_from_directory('static', path)
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory('static', 'favicon.ico')
+
 # New API endpoint to record global data purchases
 purchase_model = api.model('Purchase', {
     'productId': fields.String(required=True, description='Product ID')
