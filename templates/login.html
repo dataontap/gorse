@@ -68,7 +68,17 @@
                             <span>Canada's First Full Mobile Virtual Network Operator. Operating Network 302 100 in Canada and globally.</span>
                         </div>
 
-                        <div id="auth-error" class="alert alert-danger" style="display: none;"></div>
+                        <div id="auth-error" class="alert alert-danger" style="display: none;">
+                            <div id="error-message"></div>
+                            <div id="forgot-password-section" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.3);">
+                                <p style="margin-bottom: 10px; font-size: 14px;">Forgot your password? Enter your email to receive a magic link:</p>
+                                <div class="input-group mb-2">
+                                    <input type="email" class="form-control form-control-sm" id="reset-email" placeholder="Enter email for magic link">
+                                    <button class="btn btn-outline-light btn-sm" type="button" id="send-magic-link-btn">Send Link</button>
+                                </div>
+                                <div id="reset-status" style="font-size: 12px; margin-top: 5px;"></div>
+                            </div>
+                        </div>
 
                         <form id="login-form">
                             <div class="mb-3">
@@ -105,6 +115,11 @@
             const passwordInput = document.getElementById('password');
             const authError = document.getElementById('auth-error');
             const googleSigninBtn = document.getElementById('google-signin');
+            const resetEmailInput = document.getElementById('reset-email');
+            const sendMagicLinkBtn = document.getElementById('send-magic-link-btn');
+            const resetStatus = document.getElementById('reset-status');
+            const errorMessage = document.getElementById('error-message');
+            const forgotPasswordSection = document.getElementById('forgot-password-section');
 
             // Cookie helpers
             function setCookie(name, value, days) {
@@ -158,13 +173,11 @@
                         .catch((error) => {
                             // Handle login errors
                             console.error('Error logging in:', error);
-                            authError.textContent = error.message;
-                            authError.style.display = 'block';
+                            showAuthError(error.message, true);
                         });
                 } else {
                     // Firebase not available, show message
-                    authError.textContent = 'Authentication service is not available. Please try again later.';
-                    authError.style.display = 'block';
+                    showAuthError('Authentication service is not available. Please try again later.', false);
                 }
             });
 
@@ -181,13 +194,102 @@
                         .catch((error) => {
                             // Handle Google sign-in errors
                             console.error('Error with Google sign-in:', error);
-                            authError.textContent = error.message;
-                            authError.style.display = 'block';
+                            showAuthError(error.message, false);
                         });
                 } else {
                     // Firebase not available, show message
-                    authError.textContent = 'Google sign-in is not available. Please try again later.';
-                    authError.style.display = 'block';
+                    showAuthError('Google sign-in is not available. Please try again later.', false);
+                }
+            });
+
+            // Show auth error with optional forgot password section
+            function showAuthError(message, showForgotPassword = false) {
+                errorMessage.textContent = message;
+                authError.style.display = 'block';
+                
+                if (showForgotPassword) {
+                    forgotPasswordSection.style.display = 'block';
+                    resetEmailInput.value = emailInput.value; // Pre-fill with entered email
+                } else {
+                    forgotPasswordSection.style.display = 'none';
+                }
+            }
+
+            // Send magic link for password reset
+            function sendMagicLink() {
+                const email = resetEmailInput.value.trim();
+                
+                if (!email) {
+                    resetStatus.innerHTML = '<span style="color: #ff6b6b;">Please enter your email address.</span>';
+                    return;
+                }
+
+                // Show loading state
+                const originalText = sendMagicLinkBtn.textContent;
+                sendMagicLinkBtn.textContent = 'Sending...';
+                sendMagicLinkBtn.disabled = true;
+                resetStatus.innerHTML = '<span style="color: #74c0fc;">Sending magic link...</span>';
+
+                // Configure action code settings for magic link
+                const actionCodeSettings = {
+                    // Use gorse.dotmobile.app domain for magic link redirect
+                    url: 'https://gorse.dotmobile.app/login?mode=signIn',
+                    handleCodeInApp: true
+                };
+
+                // Send magic link for sign-in
+                firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings)
+                    .then(() => {
+                        // Save the email locally for verification when user clicks the link
+                        window.localStorage.setItem('emailForSignIn', email);
+                        
+                        resetStatus.innerHTML = '<span style="color: #51cf66;">✓ Magic link sent! Check your email and click the link to sign in.</span>';
+                        resetEmailInput.value = '';
+                        
+                        // Hide the forgot password section after 3 seconds
+                        setTimeout(() => {
+                            forgotPasswordSection.style.display = 'none';
+                            authError.style.display = 'none';
+                        }, 3000);
+                    })
+                    .catch((error) => {
+                        console.error('Magic link error:', error);
+                        let errorMessage = 'Failed to send magic link. ';
+                        
+                        switch (error.code) {
+                            case 'auth/invalid-email':
+                                errorMessage += 'Invalid email address.';
+                                break;
+                            case 'auth/too-many-requests':
+                                errorMessage += 'Too many attempts. Please try again later.';
+                                break;
+                            case 'auth/quota-exceeded':
+                                errorMessage += 'Email quota exceeded. Please try again later.';
+                                break;
+                            case 'auth/operation-not-allowed':
+                                errorMessage += 'Magic link sign-in is not enabled. Please contact support.';
+                                break;
+                            default:
+                                errorMessage += error.message;
+                        }
+                        
+                        resetStatus.innerHTML = `<span style="color: #ff6b6b;">${errorMessage}</span>`;
+                    })
+                    .finally(() => {
+                        // Restore button state
+                        sendMagicLinkBtn.textContent = originalText;
+                        sendMagicLinkBtn.disabled = false;
+                    });
+            }
+
+            // Add event listener for magic link button
+            sendMagicLinkBtn.addEventListener('click', sendMagicLink);
+
+            // Handle Enter key in reset email input
+            resetEmailInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    sendMagicLink();
                 }
             });
 
@@ -214,7 +316,7 @@
                                 // Show success message
                                 const alertDiv = document.createElement('div');
                                 alertDiv.className = 'alert alert-success';
-                                alertDiv.textContent = 'Successfully signed in with magic link!';
+                                alertDiv.innerHTML = '<strong>✓ Success!</strong> Signed in with magic link from gorse.dotmobile.app';
                                 document.body.insertBefore(alertDiv, document.body.firstChild);
                                 
                                 // Redirect to dashboard after a short delay
@@ -226,7 +328,7 @@
                                 console.error('Magic link sign-in error:', error);
                                 const alertDiv = document.createElement('div');
                                 alertDiv.className = 'alert alert-danger';
-                                alertDiv.textContent = 'Error signing in with magic link: ' + error.message;
+                                alertDiv.innerHTML = '<strong>Error:</strong> Failed to sign in with magic link from gorse.dotmobile.app - ' + error.message;
                                 document.body.insertBefore(alertDiv, document.body.firstChild);
                             });
                     }
