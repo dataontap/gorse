@@ -62,14 +62,14 @@
                         <div class="mb-3">
                             <label for="resetEmail" class="form-label">Email address</label>
                             <input type="email" class="form-control" id="resetEmail" required>
-                            <div class="form-text">We'll send you a password reset link.</div>
+                            <div class="form-text">We'll send you a magic link to sign in without a password.</div>
                         </div>
                         <div id="resetMessage" class="alert" style="display: none;"></div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="sendPasswordReset()">Send Reset Link</button>
+                    <button type="button" class="btn btn-primary" onclick="sendPasswordReset()">Send Magic Link</button>
                 </div>
             </div>
         </div>
@@ -94,7 +94,7 @@
             modal.show();
         }
 
-        // Send password reset email
+        // Send magic link for password reset
         function sendPasswordReset() {
             const email = document.getElementById('resetEmail').value;
             const messageDiv = document.getElementById('resetMessage');
@@ -110,10 +110,20 @@
             sendButton.textContent = 'Sending...';
             sendButton.disabled = true;
 
-            // Send password reset email using Firebase
-            firebase.auth().sendPasswordResetEmail(email)
+            // Configure action code settings for magic link
+            const actionCodeSettings = {
+                // URL you want to redirect back to after the email link is clicked
+                url: window.location.origin + '/login?mode=signIn',
+                handleCodeInApp: true
+            };
+
+            // Send magic link for sign-in
+            firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings)
                 .then(() => {
-                    showResetMessage('Password reset link sent! Check your email.', 'success');
+                    // Save the email locally for verification when user clicks the link
+                    window.localStorage.setItem('emailForSignIn', email);
+                    
+                    showResetMessage('Magic link sent! Check your email and click the link to sign in.', 'success');
                     document.getElementById('resetEmail').value = '';
                     
                     // Auto-close modal after 3 seconds
@@ -123,18 +133,18 @@
                     }, 3000);
                 })
                 .catch((error) => {
-                    console.error('Password reset error:', error);
-                    let errorMessage = 'Failed to send reset email. ';
+                    console.error('Magic link error:', error);
+                    let errorMessage = 'Failed to send magic link. ';
                     
                     switch (error.code) {
-                        case 'auth/user-not-found':
-                            errorMessage += 'No account found with this email address.';
-                            break;
                         case 'auth/invalid-email':
                             errorMessage += 'Invalid email address.';
                             break;
                         case 'auth/too-many-requests':
                             errorMessage += 'Too many attempts. Please try again later.';
+                            break;
+                        case 'auth/quota-exceeded':
+                            errorMessage += 'Email quota exceeded. Please try again later.';
                             break;
                         default:
                             errorMessage += error.message;

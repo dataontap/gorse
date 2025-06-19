@@ -193,12 +193,52 @@
 
             // Optional: Handle auth state changes but don't auto-redirect from login page
             if (typeof firebase !== 'undefined' && firebase.auth) {
-                firebase.auth().onAuthStateChanged(function(user) {
-                    if (user) {
-                        console.log('User is already signed in:', user.email);
-                        // Don't auto-redirect - let user stay on login page if they want
+                // Check if this is a magic link sign-in
+                if (firebase.auth().isSignInWithEmailLink(window.location.href)) {
+                    // Get the email from localStorage
+                    let email = window.localStorage.getItem('emailForSignIn');
+                    
+                    if (!email) {
+                        // If email is not available, ask user to provide it
+                        email = window.prompt('Please provide your email for confirmation');
                     }
-                });
+                    
+                    if (email) {
+                        // Sign in with the magic link
+                        firebase.auth().signInWithEmailLink(email, window.location.href)
+                            .then((result) => {
+                                // Clear the email from storage
+                                window.localStorage.removeItem('emailForSignIn');
+                                console.log('Magic link sign-in successful:', result.user.email);
+                                
+                                // Show success message
+                                const alertDiv = document.createElement('div');
+                                alertDiv.className = 'alert alert-success';
+                                alertDiv.textContent = 'Successfully signed in with magic link!';
+                                document.body.insertBefore(alertDiv, document.body.firstChild);
+                                
+                                // Redirect to dashboard after a short delay
+                                setTimeout(() => {
+                                    window.location.href = '/dashboard';
+                                }, 1500);
+                            })
+                            .catch((error) => {
+                                console.error('Magic link sign-in error:', error);
+                                const alertDiv = document.createElement('div');
+                                alertDiv.className = 'alert alert-danger';
+                                alertDiv.textContent = 'Error signing in with magic link: ' + error.message;
+                                document.body.insertBefore(alertDiv, document.body.firstChild);
+                            });
+                    }
+                } else {
+                    // Normal auth state change handling
+                    firebase.auth().onAuthStateChanged(function(user) {
+                        if (user) {
+                            console.log('User is already signed in:', user.email);
+                            // Don't auto-redirect - let user stay on login page if they want
+                        }
+                    });
+                }
             }
         });
     </script>
