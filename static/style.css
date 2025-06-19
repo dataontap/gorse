@@ -255,7 +255,22 @@ body.light-mode {
 }
 
 .signin-link:hover {
-    text-decoration: underline;
+    color: #fff !important;
+    text-decoration: underline !important;
+}
+
+.forgot-password-link {
+    color: #CCCCFF !important;
+    font-size: 12px !important;
+    text-decoration: none !important;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.forgot-password-link:hover {
+    color: #fff !important;
+    opacity: 1;
+    text-decoration: underline !important;
 }
 
 .bottom-content {
@@ -2166,7 +2181,7 @@ body.light-mode {
     background: none;
     border: none;
     padding: 8px;
-    cursor: pointer;
+cursor: pointer;
     border-radius: 50%;
     transition: background-color 0.2s;
 }
