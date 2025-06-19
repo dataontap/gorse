@@ -204,7 +204,24 @@
 
             // Show auth error with optional forgot password section
             function showAuthError(message, showForgotPassword = false) {
-                errorMessage.textContent = message;
+                // Check if it's an invalid credentials error and show funny GIF
+                if (message.includes('INVALID_LOGIN_CREDENTIALS') || message.includes('invalid') || message.includes('credentials')) {
+                    errorMessage.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            <img src="https://media.tenor.com/UhkiYkD4qm8AAAAC/bigfoot-finding-bigfoot.gif" 
+                                 alt="Searching for Bigfoot" 
+                                 style="width: 120px; height: auto; border-radius: 8px; image-rendering: pixelated; filter: sepia(20%) contrast(110%);">
+                            <div style="margin-top: 10px; font-family: 'Courier New', monospace; color: #ff6b6b; font-size: 14px;">
+                                🔍 BIGFOOT DETECTOR: No valid credentials found in the wilderness!
+                            </div>
+                            <div style="font-size: 12px; color: #74c0fc; margin-top: 5px;">
+                                Try again, fellow cryptid hunter! 🦶
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    errorMessage.textContent = message;
+                }
                 authError.style.display = 'block';
                 
                 if (showForgotPassword) {
