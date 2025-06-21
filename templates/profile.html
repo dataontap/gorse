@@ -99,14 +99,9 @@
 
                 <div class="address-section mb-4">
                     <h3 class="mb-3"><i class="fas fa-sync"></i> Subscriptions</h3>
-                    <div class="address-card p-3 mb-3">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="address-content">
-                                <h4>Unlimited Talk and Text</h4>
-                                <p>$60/Year</p>
-                                <p class="text-success">Active until April 1, 2026</p>
-                            </div>
-                            <i class="fas fa-edit edit-icon" onclick="editSubscription(this)"></i>
+                    <div id="subscriptionContainer">
+                        <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
+                            <p>Loading subscription information...</p>
                         </div>
                     </div>
                 </div>
@@ -192,6 +187,7 @@
         // Load Firebase user data from localStorage
         document.addEventListener('DOMContentLoaded', function() {
             loadFirebaseUserData();
+            loadSubscriptionData();
         });
 
         function loadFirebaseUserData() {
@@ -223,6 +219,125 @@
                     }
                 }
             }
+        }
+
+        function loadSubscriptionData() {
+            const firebaseUid = localStorage.getItem('firebaseUid');
+            const userId = localStorage.getItem('userId');
+            
+            if (!firebaseUid && !userId) {
+                displayNoSubscription();
+                return;
+            }
+
+            // Build query parameters
+            let queryParams = new URLSearchParams();
+            if (firebaseUid) {
+                queryParams.append('firebaseUid', firebaseUid);
+            } else if (userId) {
+                queryParams.append('userId', userId);
+            }
+
+            fetch(`/api/subscription-status?${queryParams.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    displaySubscriptionData(data);
+                })
+                .catch(error => {
+                    console.error('Error loading subscription data:', error);
+                    displayNoSubscription();
+                });
+        }
+
+        function displaySubscriptionData(data) {
+            const container = document.getElementById('subscriptionContainer');
+            
+            if (data.status === 'active') {
+                const subscriptionName = getSubscriptionDisplayName(data.subscription_type);
+                const price = getSubscriptionPrice(data.subscription_type);
+                const endDate = new Date(data.end_date).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+
+                container.innerHTML = `
+                    <div class="address-card p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <h4>${subscriptionName}</h4>
+                                <p>${price}</p>
+                                <p class="text-success">Active until ${endDate}</p>
+                            </div>
+                            <i class="fas fa-edit edit-icon" onclick="editSubscription(this)"></i>
+                        </div>
+                    </div>
+                `;
+            } else if (data.status === 'expired') {
+                const subscriptionName = getSubscriptionDisplayName(data.last_subscription_type);
+                const expiredDate = new Date(data.expired_date).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+
+                container.innerHTML = `
+                    <div class="address-card p-3 mb-3" style="border-left: 4px solid #dc3545;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <h4>${subscriptionName}</h4>
+                                <p class="text-danger">Expired on ${expiredDate}</p>
+                                <p><a href="/marketplace" class="btn btn-primary btn-sm">Renew Subscription</a></p>
+                            </div>
+                            <i class="fas fa-edit edit-icon" onclick="editSubscription(this)"></i>
+                        </div>
+                    </div>
+                `;
+            } else {
+                displayNoSubscription();
+            }
+        }
+
+        function displayNoSubscription() {
+            const container = document.getElementById('subscriptionContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="border-left: 4px solid #6c757d;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="address-content">
+                            <h4>No Active Subscription</h4>
+                            <p>You don't have any active subscriptions</p>
+                            <p><a href="/marketplace" class="btn btn-primary btn-sm">Browse Plans</a></p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getSubscriptionDisplayName(subscriptionType) {
+            switch(subscriptionType) {
+                case 'basic_membership':
+                    return 'Basic Membership';
+                case 'full_membership':
+                    return 'Full Membership';
+                default:
+                    return 'Subscription';
+            }
+        }
+
+        function getSubscriptionPrice(subscriptionType) {
+            switch(subscriptionType) {
+                case 'basic_membership':
+                    return '$24/Year';
+                case 'full_membership':
+                    return '$66/Year';
+                default:
+                    return 'Contact Support';
+            }
+        }
+
+        function editSubscription(element) {
+            // Navigate to marketplace for subscription management
+            window.location.href = '/marketplace';
         }
 
         function toggleQRCode(event) {
