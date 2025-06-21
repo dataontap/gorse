@@ -168,7 +168,7 @@ def oxio_test_sample_activation():
             "lineType": "LINE_TYPE_MOBILITY",
             "sim": {
                 "simType": "EMBEDDED",
-                "iccid": "8910650420001501340F"
+                "iccid": os.environ.get('EUICCID1', '8910650420001501340F')
             },
             "endUser": {
                 "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
