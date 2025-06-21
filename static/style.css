@@ -635,7 +635,7 @@ body.light-mode {
 
 .dark-mode .offer-content h3,
 .dark-mode .offer-content p {
-    color: #1a1a1a;
+    color: #000000;
 }
 
 .offer-button {
