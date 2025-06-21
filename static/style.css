@@ -2301,17 +2301,17 @@ cursor: pointer;
 }
 
 .dark-mode .confirmation-drawer h3 {
-    color: #ffffff;
+    color: #333333;
     font-weight: 600;
 }
 
 .dark-mode .detail-row {
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+    color: #333333;
 }
 
 .dark-mode .detail-row span {
-    color: #ffffff;
+    color: #333333;
     font-weight: 500;
 }
 
