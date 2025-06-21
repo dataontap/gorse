@@ -6,6 +6,7 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY || "0x000000000000000000000000000000
 // Using a public RPC endpoint for Sepolia testnet
 const SEPOLIA_URL = process.env.SEPOLIA_URL || "https://ethereum-sepolia-rpc.publicnode.com";
 const ETHEREUM_API_KEY = process.env.ETHEREUM_API_KEY || "";
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || ETHEREUM_API_KEY;
 
 module.exports = {
   solidity: "0.8.20",
@@ -21,6 +22,6 @@ module.exports = {
     }
   },
   etherscan: {
-    apiKey: ETHEREUM_API_KEY
+    apiKey: ETHERSCAN_API_KEY
   }
 };
