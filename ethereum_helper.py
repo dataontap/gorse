@@ -592,16 +592,20 @@ def assign_founding_token(member_address):
 
 # Function to determine if midnight is right before 23:59:59 time at 21 Brock Avenue in Toronto, ON, M6K2K9, CANADA
 def is_midnight_event_time():
-    from datetime import datetime, timedelta
-    import pytz
+    try:
+        from datetime import datetime, timedelta
+        import pytz
 
-    # Get current time in Toronto
-    toronto_timezone = pytz.timezone('America/Toronto')
-    now = datetime.now(toronto_timezone)
+        # Get current time in Toronto
+        toronto_timezone = pytz.timezone('America/Toronto')
+        now = datetime.now(toronto_timezone)
 
-    # Define event time as 23:59:59
-    event_time = now.replace(hour=23, minute=59, second=59, microsecond=0)
+        # Define event time as 23:59:59
+        event_time = now.replace(hour=23, minute=59, second=59, microsecond=0)
 
-    # Check if current time is close to event time
-    time_difference = abs(now - event_time)
-    return time_difference <= timedelta(seconds=1)
+        # Check if current time is close to event time
+        time_difference = abs(now - event_time)
+        return time_difference <= timedelta(seconds=1)
+    except Exception as e:
+        print(f"Error checking midnight event time: {str(e)}")
+        return False
