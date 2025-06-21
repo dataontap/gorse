@@ -709,6 +709,8 @@ function initializeMenu() {
         menuDropdown.style.display = menuDropdown.classList.contains('visible') ? 'block' : 'none';
         if (menuDropdown.classList.contains('visible')) {
             highlightCurrentPage();
+            // Refresh member count when menu is opened
+            updateMembershipCount();
         }
     });
 

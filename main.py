@@ -520,21 +520,9 @@ def get_member_count():
                     if count == 0:
                         count = 1
 
-                    # Get subscription validity for the user
-                    cur.execute("""
-                        SELECT end_date 
-                        FROM subscriptions 
-                        WHERE user_id = %s 
-                        ORDER BY end_date DESC 
-                        LIMIT 1
-                    """, (1,))  # Assuming user_id = 1 for demo
-
-                    subscription_result = cur.fetchone()
-                    subscription_validity = subscription_result[0].isoformat() if subscription_result else None
-
                     return jsonify({
                         'count': count,
-                        'subscription_validity': subscription_validity
+                        'status': 'success'
                     })
 
             # If no database connection, return default count of 1
