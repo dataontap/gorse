@@ -904,12 +904,15 @@ function initializeDarkMode() {
             e.stopPropagation();
             helpSection.style.display = helpSection.style.display === 'none' ? 'block' : 'none';
 
-            // Toggle help timer display
+            // Toggle help timer display and text
             const helpTimer = document.getElementById('helpTimer');
             const helpPhoneIcon = document.getElementById('helpPhoneIcon');
+            const helpText = document.getElementById('helpText');
 
-            if (helpTimer && helpPhoneIcon) {
+            if (helpTimer && helpPhoneIcon && helpText) {
                 if (helpSection.style.display === 'block') {
+                    helpText.textContent = 'Human On The Way';
+                    helpText.style.color = '#ff0000';
                     helpTimer.style.display = 'inline';
                     helpPhoneIcon.style.display = 'inline';
 
@@ -930,6 +933,8 @@ function initializeDarkMode() {
                         }
                     }, 1000);
                 } else {
+                    helpText.textContent = 'Help';
+                    helpText.style.color = '';
                     helpTimer.style.display = 'none';
                     helpPhoneIcon.style.display = 'none';
                 }
