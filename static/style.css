@@ -635,7 +635,7 @@ body.light-mode {
 
 .dark-mode .offer-content h3,
 .dark-mode .offer-content p {
-    color: #ffffff !important;
+    color: #333333 !important;
     text-shadow: none !important;
     font-weight: 600 !important;
 }
