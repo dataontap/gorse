@@ -364,37 +364,46 @@ def get_token_price_from_etherscan():
             'timestamp': current_timestamp.isoformat(),
             'request_time_ms': 0,
             'response_time_ms': 0,
-            'ping_destination': etherscan_url,
+            'ping_destination': etherscan_url if 'etherscan_url' in locals() else 'unknown',
             'roundtrip_ms': 0,
             'error': error_msg,
             'source': 'error'
         }
 
-    # Calculate 10.33% token reward for all purchases
-    token_reward = (purchase_amount_cents / 100) * 0.1033  # 10.33% of purchase in token units
+def reward_data_purchase(user_address, purchase_amount_cents):
+    """Reward 10.33% of purchase amount in DOTM tokens"""
+    try:
+        web3 = get_web3_connection()
+        token_contract = get_token_contract()
 
-    print(f"Rewarding {token_reward} DOTM tokens for purchase of {purchase_amount_cents} cents")
+        # Calculate 10.33% token reward for all purchases
+        token_reward = (purchase_amount_cents / 100) * 0.1033  # 10.33% of purchase in token units
 
-    # Get admin account
-    admin_private_key = os.environ.get('ADMIN_PRIVATE_KEY')
-    admin_account = web3.eth.account.from_key(admin_private_key)
+        print(f"Rewarding {token_reward} DOTM tokens for purchase of {purchase_amount_cents} cents")
 
-    # Build transaction
-    tx = token_contract.functions.rewardDataPurchase(
-        user_address,
-        int(token_reward * (10 ** 18))  # Convert to wei
-    ).build_transaction({
-        'from': admin_account.address,
-        'nonce': web3.eth.get_transaction_count(admin_account.address),
-        'gas': 200000,
-        'gasPrice': web3.eth.gas_price
-    })
+        # Get admin account
+        admin_private_key = os.environ.get('ADMIN_PRIVATE_KEY')
+        admin_account = web3.eth.account.from_key(admin_private_key)
 
-    # Sign and send transaction
-    signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
-    tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        # Build transaction
+        tx = token_contract.functions.rewardDataPurchase(
+            user_address,
+            int(token_reward * (10 ** 18))  # Convert to wei
+        ).build_transaction({
+            'from': admin_account.address,
+            'nonce': web3.eth.get_transaction_count(admin_account.address),
+            'gas': 200000,
+            'gasPrice': web3.eth.gas_price
+        })
 
-    return web3.to_hex(tx_hash)
+        # Sign and send transaction
+        signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+
+        return web3.to_hex(tx_hash)
+    except Exception as e:
+        print(f"Error in reward_data_purchase: {str(e)}")
+        return None
 
 # Award $10.33 CAD worth of DOTM tokens to new member
 def award_new_member_token(member_address):
