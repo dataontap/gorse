@@ -4,6 +4,7 @@ const { ethers } = require("hardhat");
 async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying DOTM Token with the account:", deployer.address);
+  console.log("Account balance:", (await deployer.getBalance()).toString());
 
   const DOTMToken = await ethers.getContractFactory("DOTMToken");
   const token = await DOTMToken.deploy();
@@ -15,7 +16,11 @@ async function main() {
   const tokenAddress = await token.getAddress();
 
   console.log("DOTM Token deployed to:", tokenAddress);
-  console.log("Total supply:", await token.totalSupply());
+  console.log("Max supply:", await token.MAX_SUPPLY());
+  console.log("Current total supply:", await token.totalSupply());
+  console.log("Remaining mintable tokens:", await token.remainingMintableTokens());
+  console.log("New member reward amount:", await token.NEW_MEMBER_REWARD());
+  console.log("Data reward percentage (basis points):", await token.dataRewardPercentage());
 }
 
 main()

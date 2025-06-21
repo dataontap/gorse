@@ -33,7 +33,7 @@ def get_token_balance(address):
         if address == "current_user":
             # Return placeholder data for demo purposes
             return 100.0
-            
+
         token_contract = get_token_contract()
         balance = token_contract.functions.balanceOf(address).call()
         return balance / (10 ** 18)  # Convert from wei to DOTM
@@ -42,7 +42,7 @@ def get_token_balance(address):
         # Return placeholder data for demo purposes
         return 100.0
 
-# Award tokens for data purchase (10% of purchase amount)
+# Award tokens for data purchase (10.33% of purchase amount)
 def award_data_purchase_tokens(user_id, purchase_amount):
     try:
         from main import get_db_connection
@@ -93,8 +93,8 @@ def award_data_purchase_tokens(user_id, purchase_amount):
 
                                 eth_address = result[0]
 
-        # Calculate reward (1% of purchase)
-        reward_amount = float(purchase_amount) * 0.01
+        # Calculate reward (10.33% of purchase)
+        reward_amount = float(purchase_amount) * 0.1033
 
         # Convert to wei (assuming 18 decimals)
         reward_wei = int(reward_amount * (10 ** 18))
@@ -125,7 +125,7 @@ def award_data_purchase_tokens(user_id, purchase_amount):
 def reward_data_purchase(user_address, purchase_amount_cents):
     web3 = get_web3_connection()
     token_contract = get_token_contract()
-    
+
     # Get DOTM Token contract address from environment variables
     TOKEN_CONTRACT_ADDRESS = os.environ.get('TOKEN_ADDRESS', '0x8250951Ff1AE04adB9dCa9233274710dDCb1850a')
 
@@ -142,7 +142,7 @@ def get_token_price_from_etherscan():
 
     # Get contract address from environment or use the deployed address on Sepolia
     TOKEN_CONTRACT_ADDRESS = os.environ.get('TOKEN_ADDRESS', '0x8250951Ff1AE04adB9dCa9233274710dDCb1850a')
-    
+
     start_time = time.time() * 1000  # Start time in milliseconds
     eth_price = 2500  # Default value
     token_price = 1.0  # 1 DOTM = $1 USD base price (Sepolia simulation)
@@ -151,7 +151,7 @@ def get_token_price_from_etherscan():
     source = 'sepolia'  # Changed to show we're connecting to Sepolia
     error_msg = None
     ping_destination = f'sepolia.etherscan.io/address/{TOKEN_CONTRACT_ADDRESS}'
-    
+
     # Real network connection attempt to measure actual latency
     try:
         import socket
@@ -370,8 +370,8 @@ def get_token_price_from_etherscan():
             'source': 'error'
         }
 
-    # Calculate 1% token reward for all purchases
-    token_reward = (purchase_amount_cents / 100) * 0.01  # 1% of purchase in token units
+    # Calculate 10.33% token reward for all purchases
+    token_reward = (purchase_amount_cents / 100) * 0.1033  # 10.33% of purchase in token units
 
     print(f"Rewarding {token_reward} DOTM tokens for purchase of {purchase_amount_cents} cents")
 
@@ -396,9 +396,9 @@ def get_token_price_from_etherscan():
 
     return web3.to_hex(tx_hash)
 
-# Award 1 DOTM token to new member
+# Award $10.33 CAD worth of DOTM tokens to new member
 def award_new_member_token(member_address):
-    """Awards 1 DOTM token to a new member's wallet"""
+    """Awards 10.33 CAD worth of DOTM tokens to a new member's wallet"""
     web3 = get_web3_connection()
     token_contract = get_token_contract()
 
@@ -406,9 +406,9 @@ def award_new_member_token(member_address):
     admin_private_key = os.environ.get('ADMIN_PRIVATE_KEY')
     if not admin_private_key:
         return False, "Admin key not configured"
-        
+
     admin_account = web3.eth.account.from_key(admin_private_key)
-    
+
     try:
         # Record this token assignment for tracking
         from main import get_db_connection
@@ -421,16 +421,16 @@ def award_new_member_token(member_address):
                         (member_address,)
                     )
                     already_assigned = cur.fetchone()[0]
-                    
+
                     if already_assigned:
                         return False, "This address has already received new member token"
-    
+
                     # Check if the token_assignments table exists
                     cur.execute(
                         "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'token_assignments')"
                     )
                     table_exists = cur.fetchone()[0]
-                    
+
                     if not table_exists:
                         # Create the table if it doesn't exist
                         cur.execute("""
@@ -448,11 +448,20 @@ def award_new_member_token(member_address):
     except Exception as e:
         print(f"Database error in award_new_member_token: {str(e)}")
         # Continue with the token minting even if DB operations fail
-    
+
     try:
-        # Build transaction - mint 1 token for new member
-        token_amount = 1 * (10 ** 18)  # 1 token in wei
-        
+        # Build transaction - mint $10.33 CAD worth of DOTM tokens
+        cad_per_dotm = get_token_price_from_etherscan()['price']
+        if cad_per_dotm is None:
+            cad_per_dotm = 1.0
+        token_amount_cad = 10.33  # $10.33 CAD
+
+        # Convert CAD amount to DOTM equivalent
+        dotm_amount = token_amount_cad / cad_per_dotm
+
+        # Convert DOTM amount to wei
+        token_amount_wei = int(dotm_amount * (10 ** 18))
+
         tx = token_contract.functions.awardNewMember(
             member_address
         ).build_transaction({
@@ -465,7 +474,7 @@ def award_new_member_token(member_address):
         # Sign and send transaction
         signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
         tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        
+
         # Record the transaction in database
         try:
             from main import get_db_connection
@@ -474,14 +483,14 @@ def award_new_member_token(member_address):
                     with conn.cursor() as cur:
                         cur.execute(
                             "INSERT INTO token_assignments (wallet_address, token_amount, reason, tx_hash) VALUES (%s, %s, %s, %s)",
-                            (member_address, token_amount, 'new_member', web3.to_hex(tx_hash))
+                            (member_address, token_amount_wei, 'new_member', web3.to_hex(tx_hash))
                         )
                         conn.commit()
         except Exception as db_err:
             print(f"Database error recording new member token assignment: {str(db_err)}")
-        
+
         return True, web3.to_hex(tx_hash)
-    
+
     except Exception as e:
         print(f"Error in award_new_member_token: {str(e)}")
         return False, str(e)
@@ -496,9 +505,9 @@ def assign_founding_token(member_address):
     admin_private_key = os.environ.get('ADMIN_PRIVATE_KEY')
     if not admin_private_key:
         return False, "Admin key not configured"
-        
+
     admin_account = web3.eth.account.from_key(admin_private_key)
-    
+
     try:
         # Record this token assignment for tracking
         from main import get_db_connection
@@ -511,16 +520,16 @@ def assign_founding_token(member_address):
                         (member_address,)
                     )
                     already_assigned = cur.fetchone()[0]
-                    
+
                     if already_assigned:
                         return False, "This address has already received founding tokens"
-    
+
                     # Check if the token_assignments table exists
                     cur.execute(
                         "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'token_assignments')"
                     )
                     table_exists = cur.fetchone()[0]
-                    
+
                     if not table_exists:
                         # Create the table if it doesn't exist
                         cur.execute("""
@@ -537,11 +546,11 @@ def assign_founding_token(member_address):
     except Exception as e:
         print(f"Database error in assign_founding_token: {str(e)}")
         # Continue with the token minting even if DB operations fail
-    
+
     try:
         # Build transaction - mint 100 tokens
         token_amount = 100 * (10 ** 18)  # 100 tokens in wei
-        
+
         tx = token_contract.functions.mint(
             member_address,
             token_amount
@@ -555,7 +564,7 @@ def assign_founding_token(member_address):
         # Sign and send transaction
         signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
         tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        
+
         # Record the transaction in database
         try:
             from main import get_db_connection
@@ -569,9 +578,21 @@ def assign_founding_token(member_address):
                         conn.commit()
         except Exception as db_err:
             print(f"Database error recording token assignment: {str(db_err)}")
-        
+
         return True, web3.to_hex(tx_hash)
-    
-    except Exception as e:
-        print(f"Error in assign_founding_token: {str(e)}")
-        return False, str(e)
+
+# Function to determine if midnight is right before 23:59:59 time at 21 Brock Avenue in Toronto, ON, M6K2K9, CANADA
+def is_midnight_event_time():
+    from datetime import datetime, timedelta
+    import pytz
+
+    # Get current time in Toronto
+    toronto_timezone = pytz.timezone('America/Toronto')
+    now = datetime.now(toronto_timezone)
+
+    # Define event time as 23:59:59
+    event_time = now.replace(hour=23, minute=59, second=59, microsecond=0)
+
+    # Check if current time is close to event time
+    time_difference = abs(now - event_time)
+    return time_difference <= timedelta(seconds=1)
