@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/runner/workspace/contracts/DOTMToken.sol": {
-      "lastModificationDate": 1748889691920,
-      "contentHash": "860424cd803652da0727edc51689e716",
+      "lastModificationDate": 1750489746283,
+      "contentHash": "ab64658586d31ce6adc387df7537cf30",
       "sourceName": "contracts/DOTMToken.sol",
       "solcConfig": {
         "version": "0.8.20",
