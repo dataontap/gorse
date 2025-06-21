@@ -21,6 +21,13 @@ async function main() {
   console.log("Remaining mintable tokens:", await token.remainingMintableTokens());
   console.log("New member reward amount:", await token.NEW_MEMBER_REWARD());
   console.log("Data reward percentage (basis points):", await token.dataRewardPercentage());
+  
+  // Verify contract on Etherscan (optional)
+  console.log("Waiting for block confirmations...");
+  await token.deploymentTransaction().wait(5);
+  
+  console.log("Contract verification can be done with:");
+  console.log(`npx hardhat verify --network mainnet ${tokenAddress}`);
 }
 
 main()
