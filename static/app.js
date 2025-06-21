@@ -275,6 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDataFromSession();
     updateMembershipCount();
     loadSubscriptionStatus();
+    initializeBetaTesterToggle();
 });
 
 // Function to update membership count
@@ -2037,6 +2038,35 @@ window.showNotificationTester = function() {
     }
   }
 };
+
+// Initialize beta tester toggle
+function initializeBetaTesterToggle() {
+    const betaTesterToggle = document.getElementById('betaTesterToggle');
+    const betaTesterStatus = document.getElementById('betaTesterStatus');
+    
+    if (betaTesterToggle && betaTesterStatus) {
+        // Set initial state
+        updateBetaTesterStatus(betaTesterToggle.checked);
+        
+        // Add event listener for toggle changes
+        betaTesterToggle.addEventListener('change', function() {
+            updateBetaTesterStatus(this.checked);
+        });
+    }
+}
+
+function updateBetaTesterStatus(isToggled) {
+    const betaTesterStatus = document.getElementById('betaTesterStatus');
+    if (!betaTesterStatus) return;
+    
+    if (isToggled) {
+        betaTesterStatus.textContent = 'Loading';
+        betaTesterStatus.className = 'loading-dots';
+    } else {
+        betaTesterStatus.textContent = 'Explore new features first';
+        betaTesterStatus.className = '';
+    }
+}
 
 // Firebase logout function
 window.logoutUser = function() {
