@@ -2315,6 +2315,23 @@ cursor: pointer;
     font-weight: 500;
 }
 
+.setting-item {
+    color: #000000;
+    margin: 15px 0;
+}
+
+.setting-title {
+    color: #000000;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.setting-description {
+    color: #666666;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
 .dark-mode .confirmation-drawer h3 {
     color: #000000;
     font-weight: 600;
@@ -2328,6 +2345,18 @@ cursor: pointer;
 .dark-mode .detail-row span {
     color: #000000;
     font-weight: 500;
+}
+
+.dark-mode .setting-item {
+    color: #000000;
+}
+
+.dark-mode .setting-title {
+    color: #000000;
+}
+
+.dark-mode .setting-description {
+    color: #666666;
 }
 
 .dark-mode .drawer-actions .btn {
