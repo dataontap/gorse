@@ -495,11 +495,8 @@ def get_current_user():
 # Update member count endpoint
 @app.route('/api/member-count', methods=['GET'])
 def get_member_count():
-    """Get the total number of members from the users table and current user position"""
+    """Get the total number of members from the users table"""
     try:
-        firebase_uid = request.args.get('firebaseUid')
-        current_user_id = 1  # Default fallback
-        
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
@@ -513,62 +510,39 @@ def get_member_count():
                     table_exists = cur.fetchone()[0]
 
                     if not table_exists:
-                        return jsonify({
-                            'total_count': 1, 
-                            'current_user_id': current_user_id,
-                            'error': 'Users table does not exist'
-                        })
-
-                    # Get current user ID if Firebase UID is provided
-                    if firebase_uid:
-                        cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                        user_result = cur.fetchone()
-                        if user_result:
-                            current_user_id = user_result[0]
+                        return jsonify({'count': 1, 'error': 'Users table does not exist'})
 
                     # Count total number of users
                     cur.execute("SELECT COUNT(*) FROM users")
-                    total_count = cur.fetchone()[0]
+                    count = cur.fetchone()[0]
 
                     # If count is 0, return at least 1 for the current user
-                    if total_count == 0:
-                        total_count = 1
+                    if count == 0:
+                        count = 1
 
-                    # Get subscription validity for the current user
+                    # Get subscription validity for the user
                     cur.execute("""
                         SELECT end_date 
                         FROM subscriptions 
                         WHERE user_id = %s 
                         ORDER BY end_date DESC 
                         LIMIT 1
-                    """, (current_user_id,))
+                    """, (1,))  # Assuming user_id = 1 for demo
 
                     subscription_result = cur.fetchone()
                     subscription_validity = subscription_result[0].isoformat() if subscription_result else None
 
                     return jsonify({
-                        'total_count': total_count,
-                        'current_user_id': current_user_id,
-                        'subscription_validity': subscription_validity,
-                        'display_format': f"#{current_user_id}/{total_count}"
+                        'count': count,
+                        'subscription_validity': subscription_validity
                     })
 
-            # If no database connection, return default values
-            return jsonify({
-                'total_count': 1, 
-                'current_user_id': current_user_id,
-                'display_format': f"#{current_user_id}/1",
-                'error': 'No database connection'
-            })
+            # If no database connection, return default count of 1
+            return jsonify({'count': 1, 'error': 'No database connection'})
     except Exception as e:
         print(f"Error getting member count: {str(e)}")
-        # Return default values if there's an error
-        return jsonify({
-            'total_count': 1, 
-            'current_user_id': 1,
-            'display_format': "#1/1",
-            'error': str(e)
-        })
+        # Return default count if there's an error
+        return jsonify({'count': 1, 'error': str(e)})
 
 
 customer_model = api.model('Customer', {

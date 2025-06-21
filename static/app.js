@@ -279,44 +279,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Function to update membership count
 function updateMembershipCount() {
-    // Get Firebase UID if available
-    let firebaseUid = null;
-    if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
-        firebaseUid = firebase.auth().currentUser.uid;
-    }
-
-    // Get current member ID from localStorage as fallback
-    const storedMemberId = localStorage.getItem('userId') || '1';
+    // Get current member ID from localStorage
+    const currentMemberId = localStorage.getItem('userId') || '1';
     const currentMemberIdElement = document.getElementById('currentMemberId');
-    const totalMembersElement = document.getElementById('totalMembers');
-    
     if (currentMemberIdElement) {
-        currentMemberIdElement.textContent = storedMemberId;
+        currentMemberIdElement.textContent = currentMemberId;
     }
 
-    // Fetch member count from API
+    // Fetch total member count from API
+    const totalMembersElement = document.getElementById('totalMembers');
     if (totalMembersElement) {
         // First show a default value
         totalMembersElement.textContent = 'X';
 
-        // Build API URL with Firebase UID if available
-        let apiUrl = '/api/member-count';
-        if (firebaseUid) {
-            apiUrl += `?firebaseUid=${encodeURIComponent(firebaseUid)}`;
-        }
-
         // Then fetch from API
-        fetch(apiUrl)
+        fetch('/api/member-count')
             .then(response => response.json())
             .then(data => {
-                if (data && data.total_count) {
-                    totalMembersElement.textContent = data.total_count.toString();
-                    
-                    // Update current member ID if provided by API
-                    if (data.current_user_id && currentMemberIdElement) {
-                        currentMemberIdElement.textContent = data.current_user_id.toString();
-                        localStorage.setItem('userId', data.current_user_id.toString());
-                    }
+                if (data && data.count) {
+                    totalMembersElement.textContent = data.count.toString();
                 } else {
                     // Fallback to user cards count if API fails
                     const userCards = document.querySelectorAll('.user-card');
