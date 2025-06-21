@@ -108,7 +108,7 @@ def award_data_purchase_tokens(user_id, purchase_amount):
             eth_address,
             reward_wei
         ).build_transaction({
-            'chainId': 11155111, # Sepolia testnet
+            'chainId': 1, # Mainnet
             'gas': 200000,
             'gasPrice': web3.to_wei('50', 'gwei'),
             'nonce': nonce,
@@ -256,7 +256,7 @@ def get_token_price_from_etherscan():
             source = 'etherscan'
             etherscan_api_key = os.environ.get('ETHERSCAN_API_KEY')
 
-            # Use a real API endpoint in production
+            # Use mainnet Etherscan API endpoint
             etherscan_url = f"https://api.etherscan.io/api?module=stats&action=ethprice&apikey={etherscan_api_key}"
         else:
             # Development mode - simulate API call
