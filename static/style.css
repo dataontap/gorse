@@ -2291,7 +2291,7 @@ cursor: pointer;
 
 .dark-mode .confirmation-drawer {
     background: #1a1a2e;
-    color: white;
+    color: #ffffff;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
     display: none;
 }
@@ -2300,20 +2300,43 @@ cursor: pointer;
     display: block;
 }
 
+.dark-mode .confirmation-drawer h3 {
+    color: #ffffff;
+    font-weight: 600;
+}
+
 .dark-mode .detail-row {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.dark-mode .detail-row span {
+    color: #ffffff;
+    font-weight: 500;
 }
 
 .dark-mode .drawer-actions .btn {
-    background: #333;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #444444;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    font-weight: 500;
+}
+
+.dark-mode .drawer-actions .btn:hover {
+    background: #555555;
+    color: #ffffff;
 }
 
 .dark-mode .drawer-actions .btn-primary {
     background: #0066ff;
+    color: #ffffff;
     border: none;
+    font-weight: 600;
+}
+
+.dark-mode .drawer-actions .btn-primary:hover {
+    background: #0052cc;
+    color: #ffffff;
 }
 
 .purchase-details {
