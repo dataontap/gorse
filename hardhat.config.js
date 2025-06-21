@@ -17,7 +17,7 @@ module.exports = {
       accounts: [PRIVATE_KEY]
     },
     mainnet: {
-      url: `https://eth-mainnet.g.alchemy.com/v2/${ETHEREUM_API_KEY}`,
+      url: `https://mainnet.infura.io/v3/${ETHEREUM_API_KEY}`,
       accounts: [PRIVATE_KEY]
     }
   },
