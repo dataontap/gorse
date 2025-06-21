@@ -965,6 +965,10 @@ body.light-mode {
     transition: background 0.3s;
 }
 
+.profile-dropdown a {
+    padding-left: 15px;
+}
+
 .menu-dropdown a:hover, .profile-dropdown a:hover {
     background: rgba(255, 255, 255, 0.1);
 }
@@ -1074,6 +1078,7 @@ body.light-mode {
     flex-direction: column;
     gap: 8px;
     width: 100%;
+    padding: 15px 0 10px 0;
 }
 
 .profile-header {
@@ -1081,6 +1086,8 @@ body.light-mode {
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    padding-left: 15px;
+    padding-right: 15px;
 }
 
 .account-text {
