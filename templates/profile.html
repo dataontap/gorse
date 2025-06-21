@@ -90,8 +90,8 @@
                 <div class="user-info mb-4">
                     <div class="email-container">
                         <div class="user-info-header">
-                            <span class="user-name">John Doe <span class="founding-shield">Founding Member</span></span>
-                            <span class="user-email">john@example.com</span>
+                            <span class="user-name" id="profileUserName">John Doe <span class="founding-shield">Founding Member</span></span>
+                            <span class="user-email" id="profileUserEmail">john@example.com</span>
                             <span class="user-type user-type-admin">Admin Account</span>
                         </div>
                     </div>
@@ -189,6 +189,42 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="/static/app.js"></script>
     <script>
+        // Load Firebase user data from localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFirebaseUserData();
+        });
+
+        function loadFirebaseUserData() {
+            const userEmail = localStorage.getItem('userEmail');
+            const userId = localStorage.getItem('userId');
+            
+            // Update email if available
+            if (userEmail) {
+                const emailElement = document.getElementById('profileUserEmail');
+                if (emailElement) {
+                    emailElement.textContent = userEmail;
+                }
+            }
+
+            // Try to get display name from Firebase if available
+            if (window.firebaseAuth && window.firebaseAuth.getCurrentUser) {
+                const currentUser = window.firebaseAuth.getCurrentUser();
+                if (currentUser && currentUser.displayName) {
+                    const nameElement = document.getElementById('profileUserName');
+                    if (nameElement) {
+                        nameElement.innerHTML = `${currentUser.displayName} <span class="founding-shield">Founding Member</span>`;
+                    }
+                } else if (userEmail) {
+                    // Fallback: extract name from email
+                    const nameFromEmail = userEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    const nameElement = document.getElementById('profileUserName');
+                    if (nameElement) {
+                        nameElement.innerHTML = `${nameFromEmail} <span class="founding-shield">Founding Member</span>`;
+                    }
+                }
+            }
+        }
+
         function toggleQRCode(event) {
             event.stopPropagation();
             const popup = document.getElementById('qrCodePopup');
