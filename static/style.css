@@ -604,7 +604,7 @@ body.light-mode {
 
 .offer-content {
     text-align: center;
-    padding: 20px;
+    padding: 0;
     background: rgba(128, 128, 128, 0.9);
     border-radius: 15px;
     position: relative;
