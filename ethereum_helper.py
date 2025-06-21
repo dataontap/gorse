@@ -590,3 +590,6 @@ def assign_founding_token(member_address):
 
         return True, web3.to_hex(tx_hash)
 
+    except Exception as e:
+        print(f"Error in assign_founding_token: {str(e)}")
+        return False, str(e)
