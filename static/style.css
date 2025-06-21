@@ -2300,18 +2300,33 @@ cursor: pointer;
     display: block;
 }
 
+.confirmation-drawer h3 {
+    color: #000000;
+    font-weight: 600;
+}
+
+.detail-row {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    color: #000000;
+}
+
+.detail-row span {
+    color: #000000;
+    font-weight: 500;
+}
+
 .dark-mode .confirmation-drawer h3 {
-    color: #333333;
+    color: #000000;
     font-weight: 600;
 }
 
 .dark-mode .detail-row {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    color: #333333;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    color: #000000;
 }
 
 .dark-mode .detail-row span {
-    color: #333333;
+    color: #000000;
     font-weight: 500;
 }
 
