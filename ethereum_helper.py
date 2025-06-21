@@ -582,6 +582,10 @@ def assign_founding_token(member_address):
         return True, web3.to_hex(tx_hash)
 
 # Function to determine if midnight is right before 23:59:59 time at 21 Brock Avenue in Toronto, ON, M6K2K9, CANADA
+except Exception as e:
+        print(f"Error in token ping operation: {str(e)}")
+        return False
+        
 def is_midnight_event_time():
     from datetime import datetime, timedelta
     import pytz
