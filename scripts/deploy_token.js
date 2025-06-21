@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying DOTM Token with the account:", deployer.address);
-  console.log("Account balance:", (await deployer.getBalance()).toString());
+  console.log("Account balance:", (await ethers.provider.getBalance(deployer.address)).toString());
 
   const DOTMToken = await ethers.getContractFactory("DOTMToken");
   const token = await DOTMToken.deploy();
