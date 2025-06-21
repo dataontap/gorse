@@ -1613,6 +1613,25 @@ def record_global_purchase():
 
     if purchase_id:
         print(f"Successfully recorded purchase: {purchase_id} for product: {product_id} with Firebase UID: {firebase_uid}")
+
+        # Award DOTM tokens
+        try:
+            if firebase_uid:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            cur.execute("SELECT eth_address FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                            user_result = cur.fetchone()
+                            if user_result and user_result[0]:
+                                user_eth_address = user_result[0]
+                                success, tx_hash = ethereum_helper.reward_data_purchase(user_eth_address, amount)
+                                if success:
+                                    print(f"Awarded 10.33% DOTM tokens to {user_eth_address} for purchase. TX: {tx_hash}")
+                                else:
+                                    print(f"Failed to award DOTM tokens: {tx_hash}")
+        except Exception as token_err:
+            print(f"Error awarding tokens: {str(token_err)}")
+
         return {'status': 'success', 'purchaseId': purchase_id}
     else:
         print(f"Failed to record purchase for product: {product_id}")
@@ -1620,6 +1639,23 @@ def record_global_purchase():
         # This ensures the UI updates even if the database has issues
         simulated_purchase_id = f"SIM_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
         print(f"Created simulated purchase ID: {simulated_purchase_id}")
+
+        # Try to award DOTM tokens even if database recording failed
+        try:
+            if firebase_uid:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            cur.execute("SELECT eth_address FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                            user_result = cur.fetchone()
+                            if user_result and user_result[0]:
+                                user_eth_address = user_result[0]
+                                success, tx_hash = ethereum_helper.reward_data_purchase(user_eth_address, amount)
+                                if success:
+                                    print(f"Awarded 10.33% DOTM tokens to {user_eth_address} for simulated purchase. TX: {tx_hash}")
+        except Exception as sim_token_err:
+            print(f"Error awarding tokens for simulated purchase: {str(sim_token_err)}")
+
         return {'status': 'success', 'purchaseId': simulated_purchase_id, 'simulated': True}
 
 
@@ -2554,4 +2590,3 @@ def create_subscription_record():
             'status': 'error',
             'message': str(e)
         }), 500
-
