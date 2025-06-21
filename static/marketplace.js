@@ -3,12 +3,12 @@ function toggleMenu(menuIcon) {
     console.log('toggleMenu called with:', menuIcon);
     const menuDropdown = menuIcon.querySelector('.menu-dropdown');
     console.log('menuDropdown found:', menuDropdown);
-    
+
     if (!menuDropdown) {
         console.error('Menu dropdown not found!');
         return;
     }
-    
+
     if (menuDropdown.style.display === 'block') {
         menuDropdown.style.display = 'none';
         console.log('Menu closed');
@@ -16,7 +16,7 @@ function toggleMenu(menuIcon) {
         menuDropdown.style.display = 'block';
         console.log('Menu opened');
     }
-    
+
     console.log('Menu toggled:', menuDropdown.style.display);
 }
 
@@ -24,7 +24,7 @@ function toggleMenu(menuIcon) {
 document.addEventListener('click', function(e) {
     const menuDropdown = document.querySelector('.menu-dropdown');
     const menuIcon = document.querySelector('.menu-icon');
-    
+
     if (menuDropdown && menuIcon && !menuIcon.contains(e.target)) {
         menuDropdown.style.display = 'none';
     }
@@ -252,40 +252,40 @@ function initializeAuctionCountdown() {
         const gavelAnimation = document.createElement('div');
         gavelAnimation.className = 'gavel-animation';
         gavelAnimation.innerHTML = '<i class="fas fa-gavel"></i>';
-        
+
         // Find the current-bid element to place the gavel next to the price
         const auctionCard = button.closest('.auction-card');
         const currentBidElement = auctionCard.querySelector('.current-bid');
         currentBidElement.appendChild(gavelAnimation);
-        
+
         // Create count number element
         const countNumber = document.createElement('div');
         countNumber.className = 'count-number';
         gavelAnimation.appendChild(countNumber);
-        
+
         let countInterval;
         let currentCount = 0;
-        
+
         // Start timer when mouse/touch is down
         const startPress = () => {
             isPressed = true;
             button.classList.add('pressing');
-            
+
             // Show gavel and start counting
             gavelAnimation.classList.add('show');
             currentCount = 0;
-            
+
             // Animate gavel and update count every second
             countInterval = setInterval(() => {
                 if (isPressed) {
                     currentCount++;
                     countNumber.textContent = currentCount;
-                    
+
                     // Pulsate the gavel
                     gavelAnimation.classList.remove('pulsate');
                     void gavelAnimation.offsetWidth; // Force reflow
                     gavelAnimation.classList.add('pulsate');
-                    
+
                     // After 3 counts, complete the bid
                     if (currentCount === 3) {
                         clearInterval(countInterval);
@@ -317,7 +317,7 @@ function initializeAuctionCountdown() {
             // Make the button stay blue
             button.classList.remove('pressing');
             button.classList.add('bid-complete');
-            
+
             // Hide the gavel animation
             const gavelAnimation = button.parentElement.querySelector('.gavel-animation');
             if (gavelAnimation) {
@@ -353,7 +353,7 @@ function initializeAuctionCountdown() {
                 button.classList.remove('bid-complete');
                 button.classList.add('disabled');
                 button.disabled = true;
-                
+
                 // Keep MY TOP BID showing to indicate user is current top bidder
             }, 3000);
         };
@@ -480,7 +480,7 @@ function initializeCartPreview() {
             }
         });
     }
-    
+
     // Make entire cart header still clickable
     const cartHeader = document.querySelector('.cart-header');
     if (cartHeader) {
@@ -489,10 +489,10 @@ function initializeCartPreview() {
             if (e.target.closest('.minimize-cart')) {
                 return;
             }
-            
+
             const cartPreview = document.querySelector('.cart-preview');
             const minimizeBtn = document.querySelector('.minimize-cart');
-            
+
             if (cartPreview.style.bottom === '0px') {
                 cartPreview.style.bottom = '-400px';
                 if (minimizeBtn) {
