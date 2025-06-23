@@ -1022,6 +1022,24 @@ def stripe_webhook():
                         )
                         print(f"Created subscription for user {user_id} (Firebase UID: {firebase_uid}), product {product_id}, valid until {subscription_end_date}")
 
+                        # Award 10.33 DOTM tokens for membership subscriptions
+                        try:
+                            if firebase_uid:
+                                with get_db_connection() as conn:
+                                    if conn:
+                                        with conn.cursor() as cur:
+                                            cur.execute("SELECT eth_address FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                                            user_result = cur.fetchone()
+                                            if user_result and user_result[0]:
+                                                user_eth_address = user_result[0]
+                                                success, result = ethereum_helper.award_new_member_token(user_eth_address)
+                                                if success:
+                                                    print(f"Awarded 10.33 DOTM tokens to {user_eth_address} for membership subscription. TX: {result}")
+                                                else:
+                                                    print(f"Failed to award membership tokens: {result}")
+                        except Exception as token_err:
+                            print(f"Error awarding membership tokens: {str(token_err)}")
+
                     # Award tokens based on product rules
                     try:
                         product_rules = product_rules_helper.get_product_rules(product_id)
