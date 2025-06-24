@@ -1654,8 +1654,7 @@ def record_global_purchase():
                     if conn:
                         with conn.cursor() as cur:
                             cur.execute("SELECT eth_address FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                            user_result =```python
- cur.fetchone()
+                            user_result = cur.fetchone()
                             if user_result and user_result[0]:
                                 user_eth_address = user_result[0]
                                 # Award 10.33% of purchase amount in DOTM tokens
