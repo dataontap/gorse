@@ -1152,10 +1152,25 @@ def payments():
 def marketplace():
     return render_template('marketplace.html')
 
-@app.route('/tokens', methods=['GET'])
+@app.route('/tokens')
 def tokens():
     return render_template('tokens.html')
 
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/privacy-fr')
+def privacy_fr():
+    return render_template('privacy_fr.html')
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+@app.route('/terms-fr')
+def terms_fr():
+    return render_template('terms_fr.html')
 @app.route('/help-admin', methods=['GET'])
 def help_admin():
     return render_template('help_admin.html')
