@@ -516,8 +516,12 @@ function initializeProfileDropdown() {
                 // Start help session
                 currentHelpSession = await startHelpSession();
                 
-                // Start timer
-                helpTimer.style.display = 'inline';
+                // Update help text and start timer
+                const helpText = document.getElementById('helpText');
+                if (helpText) {
+                    helpText.innerHTML = 'Human On The Way<br><span id="helpTimer" style="display: block; font-size: 12px; color: #ff0000; margin-top: 4px;">00:04:20</span>';
+                }
+                
                 helpTimeRemaining = 260; // Reset to 4 minutes and 20 seconds
                 updateHelpTimer();
                 helpTimerInterval = setInterval(updateHelpTimer, 1000);
@@ -529,12 +533,18 @@ function initializeProfileDropdown() {
             } else {
                 // Stop timer
                 clearInterval(helpTimerInterval);
-                helpTimer.style.display = 'none';
+                const helpText = document.getElementById('helpText');
+                if (helpText) {
+                    helpText.innerHTML = 'Help';
+                }
 
                 // Hide phone icon when help is closed
                 if (phoneIcon) {
                     phoneIcon.style.display = 'none';
                 }
+                
+                // Hide agent drawer if visible
+                hideAgentDrawer();
             }
 
 // Handle notification permission
@@ -643,12 +653,13 @@ window.sendTestNotification = function() {
         if (helpTimeRemaining <= 0) {
             // Timer reached zero
             clearInterval(helpTimerInterval);
-            helpTimer.textContent = '00:00:00';
-
-            // Show the help section if it's not already shown
-            if (!helpSection.classList.contains('expanded')) {
-                helpSection.style.display = 'none';
+            const timerElement = document.getElementById('helpTimer');
+            if (timerElement) {
+                timerElement.textContent = '00:00:00';
             }
+
+            // Show agent drawer
+            showAgentDrawer();
 
             // Show phone icon in green when timer is done
             if (phoneIcon) {
@@ -679,7 +690,10 @@ window.sendTestNotification = function() {
             (minutes < 10 ? '0' : '') + minutes + ':' +
             (seconds < 10 ? '0' : '') + seconds;
 
-        helpTimer.textContent = formattedTime;
+        const timerElement = document.getElementById('helpTimer');
+        if (timerElement) {
+            timerElement.textContent = formattedTime;
+        }
     }
 
     window.hideProfileDropdown = function(event) {
@@ -2052,6 +2066,111 @@ function initializeBetaTesterToggle() {
         betaTesterToggle.addEventListener('change', function() {
             updateBetaTesterStatus(this.checked);
         });
+    }
+}
+
+// Agent drawer functions
+function showAgentDrawer() {
+    // Remove existing drawer if present
+    const existingDrawer = document.getElementById('agentDrawer');
+    if (existingDrawer) {
+        existingDrawer.remove();
+    }
+
+    // Create agent drawer
+    const agentDrawer = document.createElement('div');
+    agentDrawer.id = 'agentDrawer';
+    agentDrawer.className = 'agent-drawer';
+    
+    // Sample agent data - in real app this would come from API
+    const agent = {
+        name: 'Sarah Mitchell',
+        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+        title: 'Senior Support Agent',
+        availability: 'Available Now'
+    };
+
+    agentDrawer.innerHTML = `
+        <div class="agent-drawer-content">
+            <div class="agent-header">
+                <button class="close-agent-drawer" onclick="hideAgentDrawer()">&times;</button>
+                <h3>Support Agent Available</h3>
+            </div>
+            <div class="agent-info">
+                <div class="agent-avatar">
+                    <img src="${agent.avatar}" alt="${agent.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZjBmMGYwIi8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iMzciIHI9IjE1IiBmaWxsPSIjY2NjIi8+CjxwYXRoIGQ9Im0yMCA4MGMwLTE2LjU2OSAxMy40MzEtMzAgMzAtMzBzMzAgMTMuNDMxIDMwIDMwIiBmaWxsPSIjY2NjIi8+Cjwvc3ZnPg=='" />
+                </div>
+                <div class="agent-details">
+                    <div class="agent-name">${agent.name}</div>
+                    <div class="agent-title">${agent.title}</div>
+                    <div class="agent-status">${agent.availability}</div>
+                </div>
+            </div>
+            <div class="call-options">
+                <p class="call-message">Accept call from <strong>${agent.name}</strong> now?</p>
+                <div class="call-buttons">
+                    <button class="btn btn-primary accept-call-btn" onclick="acceptCall('${agent.name}')">
+                        <i class="fas fa-phone"></i> Accept Call
+                    </button>
+                    <button class="btn btn-secondary callback-btn" onclick="requestCallback()">
+                        <i class="fas fa-phone-square"></i> Send Callback Link
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(agentDrawer);
+    
+    // Show drawer with animation
+    setTimeout(() => {
+        agentDrawer.classList.add('show');
+    }, 10);
+}
+
+function hideAgentDrawer() {
+    const agentDrawer = document.getElementById('agentDrawer');
+    if (agentDrawer) {
+        agentDrawer.classList.remove('show');
+        setTimeout(() => {
+            agentDrawer.remove();
+        }, 300);
+    }
+}
+
+function acceptCall(agentName) {
+    // Simulate accepting the call
+    const statusMessage = document.createElement('div');
+    statusMessage.className = 'call-status-message';
+    statusMessage.innerHTML = `<i class="fas fa-phone"></i> Connecting to ${agentName}...`;
+    
+    const agentDrawer = document.getElementById('agentDrawer');
+    if (agentDrawer) {
+        const content = agentDrawer.querySelector('.agent-drawer-content');
+        content.appendChild(statusMessage);
+        
+        setTimeout(() => {
+            hideAgentDrawer();
+            // In real app, this would initiate the actual call
+            alert(`Call connected to ${agentName}!`);
+        }, 2000);
+    }
+}
+
+function requestCallback() {
+    // Simulate requesting a callback
+    const statusMessage = document.createElement('div');
+    statusMessage.className = 'call-status-message';
+    statusMessage.innerHTML = `<i class="fas fa-check"></i> Callback link will be sent to your email shortly.`;
+    
+    const agentDrawer = document.getElementById('agentDrawer');
+    if (agentDrawer) {
+        const content = agentDrawer.querySelector('.agent-drawer-content');
+        content.appendChild(statusMessage);
+        
+        setTimeout(() => {
+            hideAgentDrawer();
+        }, 2000);
     }
 }
 

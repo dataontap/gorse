@@ -57,9 +57,9 @@
                 </div>
                 <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 <a href="#" id="helpToggle">
-                    <i class="fas fa-phone-alt"></i> Live Person Callback
-                    <span id="helpTimer" class="help-timer" style="display: none;">00:04:20</span>
-                    <i id="helpPhoneIcon" class="fas fa-phone-alt" style="display: none;"></i>
+                    <i class="fas fa-question-circle"></i>
+                    <span id="helpText">Help</span>
+                    <i id="helpPhoneIcon" class="fas fa-phone" style="display: none; margin-left: 8px;"></i>
                 </a>
                 <div class="help-section" style="display: none;">
                     <div class="help-content">
@@ -193,7 +193,7 @@
         function loadFirebaseUserData() {
             const userEmail = localStorage.getItem('userEmail');
             const userId = localStorage.getItem('userId');
-            
+
             // Update email if available
             if (userEmail) {
                 const emailElement = document.getElementById('profileUserEmail');
@@ -224,7 +224,7 @@
         function loadSubscriptionData() {
             const firebaseUid = localStorage.getItem('firebaseUid');
             const userId = localStorage.getItem('userId');
-            
+
             if (!firebaseUid && !userId) {
                 displayNoSubscription();
                 return;
@@ -251,7 +251,7 @@
 
         function displaySubscriptionData(data) {
             const container = document.getElementById('subscriptionContainer');
-            
+
             if (data.status === 'active') {
                 const subscriptionName = getSubscriptionDisplayName(data.subscription_type);
                 const price = getSubscriptionPrice(data.subscription_type);
@@ -343,12 +343,12 @@
         function toggleQRCode(event) {
             event.stopPropagation();
             const popup = document.getElementById('qrCodePopup');
-            
+
             if (popup.style.display === 'block') {
                 popup.style.display = 'none';
             } else {
                 popup.style.display = 'block';
-                
+
                 // Generate QR code if it doesn't exist yet
                 if (!document.querySelector('#qrcode canvas')) {
                     new QRCode(document.getElementById("qrcode"), {
@@ -362,16 +362,16 @@
                 }
             }
         }
-        
+
         function generateRandomLinkCode() {
             return Math.random().toString(36).substring(2, 12);
         }
-        
+
         // Close QR code popup when clicking outside
         document.addEventListener('click', function(e) {
             const popup = document.getElementById('qrCodePopup');
             const icon = document.querySelector('.qr-code-icon');
-            
+
             if (popup && popup.style.display === 'block' && !popup.contains(e.target) && e.target !== icon) {
                 popup.style.display = 'none';
             }
