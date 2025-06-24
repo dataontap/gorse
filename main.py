@@ -1630,10 +1630,10 @@ def record_global_purchase():
                             user_result = cur.fetchone()
                             if user_result and user_result[0]:
                                 user_eth_address = user_result[0]
-                                # Award 10.33 DOTM tokens for marketplace purchase
-                                success, tx_hash = ethereum_helper.award_new_member_token(user_eth_address)
+                                # Award 10.33% of purchase amount in DOTM tokens
+                                success, tx_hash = ethereum_helper.reward_data_purchase(user_eth_address, amount)
                                 if success:
-                                    print(f"Awarded 10.33 DOTM tokens to {user_eth_address} for marketplace purchase. TX: {tx_hash}")
+                                    print(f"Awarded 10.33% DOTM tokens to {user_eth_address} for marketplace purchase. TX: {tx_hash}")
                                 else:
                                     print(f"Failed to award marketplace purchase tokens: {tx_hash}")
         except Exception as token_err:
@@ -1657,10 +1657,10 @@ def record_global_purchase():
                             user_result = cur.fetchone()
                             if user_result and user_result[0]:
                                 user_eth_address = user_result[0]
-                                # Award 10.33 DOTM tokens for marketplace purchase
-                                success, tx_hash = ethereum_helper.award_new_member_token(user_eth_address)
+                                # Award 10.33% of purchase amount in DOTM tokens
+                                success, tx_hash = ethereum_helper.reward_data_purchase(user_eth_address, amount)
                                 if success:
-                                    print(f"Awarded 10.33 DOTM tokens to {user_eth_address} for simulated marketplace purchase. TX: {tx_hash}")
+                                    print(f"Awarded 10.33% DOTM tokens to {user_eth_address} for simulated marketplace purchase. TX: {tx_hash}")
         except Exception as sim_token_err:
             print(f"Error awarding tokens for simulated purchase: {str(sim_token_err)}")
 
