@@ -2585,6 +2585,10 @@ def privacy():
 def terms():
     return render_template('terms.html')
 
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
     print("\n=== Registered Flask Routes ===")
