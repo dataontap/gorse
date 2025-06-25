@@ -1459,7 +1459,7 @@ function showConfirmationDrawer(dataAmount, price, productId) {
     const priceElement = document.getElementById('confirmPrice');
 
     if (drawer && dataAmountElement && priceElement) {
-        // Show MB for values like 1000, GB for values 10 and above (but not 1000)
+        // Show MB for values like 1000, GB for other values
         if (dataAmount === 1000) {
             dataAmountElement.textContent = `${dataAmount}MB`;
         } else {
