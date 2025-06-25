@@ -265,6 +265,7 @@ function sendComingSoonNotification() {
         body: JSON.stringify({
             title: 'Full Membership',
             body: 'Coming Very Soon',
+            target: 'web',
             data: {
                 action: 'coming_soon',
                 feature: 'full_membership'
@@ -274,6 +275,27 @@ function sendComingSoonNotification() {
     .then(response => response.json())
     .then(data => {
         console.log('Coming Soon notification sent:', data);
+        
+        // Show a browser notification if permission is granted
+        if (Notification.permission === 'granted') {
+            const notification = new Notification('Full Membership', {
+                body: 'Coming Very Soon',
+                icon: '/static/tropical-border.png',
+                requireInteraction: false,
+                tag: 'coming-soon-notification'
+            });
+
+            // Auto-dismiss after 4 seconds
+            setTimeout(() => {
+                notification.close();
+            }, 4000);
+
+            notification.onclick = function() {
+                window.focus();
+                this.close();
+            };
+        }
+        
         // Show a visual feedback to the user
         const button = event.target;
         const originalText = button.textContent;
