@@ -221,8 +221,8 @@ body.light-mode {
 .signup-btn {
     background: linear-gradient(45deg, #6B6BA7, #9797CC);
     border: none;
-    padding: 16px 54px;
-    font-size: 1.2rem;
+    padding: 20px 60px;
+    font-size: 1.4rem;
     margin-bottom: 1.2rem;
     transition: all 0.3s ease;
     color: white;
@@ -230,6 +230,9 @@ body.light-mode {
     letter-spacing: 1px;
     border-radius: 50px;
     box-shadow: 0 4px 15px rgba(107, 107, 167, 0.3);
+    min-height: 60px;
+    width: 90%;
+    max-width: 400px;
 }
 
 .signup-btn:hover {
