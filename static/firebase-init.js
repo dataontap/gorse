@@ -135,14 +135,20 @@ function showNotificationStatus(message) {
     statusElement = document.createElement('div');
     statusElement.id = 'notification-status-floating';
     statusElement.style.position = 'fixed';
-    statusElement.style.bottom = '20px';
-    statusElement.style.right = '20px';
-    statusElement.style.padding = '10px 15px';
-    statusElement.style.backgroundColor = '#f0f8ff';
-    statusElement.style.border = '1px solid #ccc';
-    statusElement.style.borderRadius = '4px';
-    statusElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-    statusElement.style.zIndex = '1000';
+    statusElement.style.top = '20px';
+    statusElement.style.left = '50%';
+    statusElement.style.transform = 'translateX(-50%)';
+    statusElement.style.padding = '12px 20px';
+    statusElement.style.backgroundColor = '#2c3e50';
+    statusElement.style.color = '#ffffff';
+    statusElement.style.border = '2px solid #3498db';
+    statusElement.style.borderRadius = '8px';
+    statusElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+    statusElement.style.zIndex = '10000';
+    statusElement.style.fontSize = '14px';
+    statusElement.style.fontWeight = '500';
+    statusElement.style.maxWidth = '90vw';
+    statusElement.style.textAlign = 'center';
     document.body.appendChild(statusElement);
 
     // Auto remove after 8 seconds
