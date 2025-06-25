@@ -21,51 +21,55 @@ document.addEventListener('DOMContentLoaded', function() {
     if ('serviceWorker' in navigator && firebase.messaging.isSupported()) {
       const messaging = firebase.messaging();
 
-      // Register service worker
+      // Register service worker first
       navigator.serviceWorker.register('/static/firebase-messaging-sw.js')
         .then((registration) => {
+          console.log('Service worker registered successfully');
+          
+          // Set the service worker for messaging BEFORE calling getToken
           messaging.useServiceWorker(registration);
 
-          // First explicitly request notification permission
-          Notification.requestPermission().then((permission) => {
-            console.log('Notification permission status:', permission);
+          // Request notification permission first
+          return Notification.requestPermission();
+        })
+        .then((permission) => {
+          console.log('Notification permission status:', permission);
 
-            if (permission === 'granted') {
-              // Now get the token after permission is granted
-              messaging.getToken()
-                .then((currentToken) => {
+          if (permission === 'granted') {
+            // Now get the token after service worker is set and permission is granted
+            return messaging.getToken();
+          } else {
+            throw new Error('Notification permission denied');
+          }
+        })
+        .then((currentToken) => {
                   if (currentToken) {
-                    console.log('FCM token:', currentToken);
-                    // Send token to server for targeting this device
-                    sendTokenToServer(currentToken);
-                    // Show success message to user
-                    showNotificationStatus('Notifications enabled successfully!');
-                  } else {
-                    console.log('No registration token available. Request permission to generate one.');
-                    showNotificationStatus('Failed to get notification token. Please try again.');
-                  }
-                })
-                .catch((err) => {
-                  console.log('An error occurred while retrieving token. ', err);
-                  console.log('Error details:', JSON.stringify(err));
-                  showNotificationStatus('Error setting up notifications: ' + err.message);
-
-                  // Special handling for common errors
-                  if (err.code === 'messaging/permission-blocked') {
-                    showNotificationStatus('Notification permission blocked. Please reset permissions in your browser settings.');
-                  } else if (err.code === 'installations/request-failed') {
-                    showNotificationStatus('Firebase installation failed. Please verify your Firebase project settings in Firebase Console.');
-                  }
-                });
-            } else {
-              console.log('Permission denied for notifications');
-              showNotificationStatus('Notification permission denied. Please enable notifications in your browser settings and reload the page.');
-            }
-          });
+            console.log('FCM token:', currentToken);
+            // Send token to server for targeting this device
+            sendTokenToServer(currentToken);
+            // Show success message to user
+            showNotificationStatus('Notifications enabled successfully!');
+          } else {
+            console.log('No registration token available. Request permission to generate one.');
+            showNotificationStatus('Failed to get notification token. Please try again.');
+          }
         })
         .catch((err) => {
-          console.log('Service worker registration failed: ', err);
-          showNotificationStatus('Error registering service worker: ' + err.message);
+          console.log('Error in Firebase messaging setup: ', err);
+          console.log('Error details:', JSON.stringify(err));
+          
+          // Special handling for common errors
+          if (err.message === 'Notification permission denied') {
+            showNotificationStatus('Notification permission denied. Please enable notifications in your browser settings and reload the page.');
+          } else if (err.code === 'messaging/permission-blocked') {
+            showNotificationStatus('Notification permission blocked. Please reset permissions in your browser settings.');
+          } else if (err.code === 'installations/request-failed') {
+            showNotificationStatus('Firebase installation failed. Please verify your Firebase project settings in Firebase Console.');
+          } else if (err.code === 'messaging/use-sw-after-get-token') {
+            showNotificationStatus('Service worker setup error. Please refresh the page.');
+          } else {
+            showNotificationStatus('Error setting up notifications: ' + err.message);
+          }
         });
 
       // Handle foreground messages
