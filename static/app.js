@@ -340,7 +340,7 @@ function sendComingSoonNotification(event) {
         if (event && event.target) {
             const button = event.target;
             const originalText = button.textContent;
-            button.textContent = 'Error - Try Again';
+            button.textContent = 'Enrol in Beta';
             setTimeout(() => {
                 button.textContent = originalText;
             }, 2000);
