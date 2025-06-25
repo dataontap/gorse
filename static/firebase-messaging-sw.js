@@ -27,13 +27,20 @@ messaging.onBackgroundMessage((payload) => {
     icon: '/static/tropical-border.png',  // Use an existing image
     badge: '/static/tropical-border.png',
     data: payload.data || {},
-    requireInteraction: true,  // Keep notification until user interacts with it
+    requireInteraction: false,  // Allow auto-dismiss
+    silent: false,
     actions: [
       {
         action: 'view',
         title: 'View'
+      },
+      {
+        action: 'dismiss',
+        title: 'Dismiss'
       }
-    ]
+    ],
+    // Auto-dismiss after 10 seconds if not interacted with
+    tag: 'dismissible-notification'
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
@@ -41,18 +48,37 @@ messaging.onBackgroundMessage((payload) => {
 
 // Handle notification click
 self.addEventListener('notificationclick', event => {
-  console.log('[Service Worker] Notification click received.');
+  console.log('[Service Worker] Notification click received.', event.action);
   
   event.notification.close();
   
-  // Open a new window/tab or focus on existing one
-  event.waitUntil(
-    clients.matchAll({type: 'window', includeUncontrolled: true})
-      .then(clientList => {
-        if (clientList.length > 0) {
-          return clientList[0].focus();
-        }
-        return clients.openWindow('/dashboard');
-      })
-  );
+  if (event.action === 'dismiss') {
+    // Just close the notification, no further action
+    return;
+  }
+  
+  if (event.action === 'view' || !event.action) {
+    // Open a new window/tab or focus on existing one
+    event.waitUntil(
+      clients.matchAll({type: 'window', includeUncontrolled: true})
+        .then(clientList => {
+          if (clientList.length > 0) {
+            return clientList[0].focus();
+          }
+          return clients.openWindow('/dashboard');
+        })
+    );
+  }
+});
+
+// Auto-dismiss notifications after 10 seconds
+self.addEventListener('notificationshow', event => {
+  setTimeout(() => {
+    self.registration.getNotifications({ tag: 'dismissible-notification' })
+      .then(notifications => {
+        notifications.forEach(notification => {
+          notification.close();
+        });
+      });
+  }, 10000); // 10 seconds
 });

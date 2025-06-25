@@ -71,6 +71,33 @@ document.addEventListener('DOMContentLoaded', function() {
       // Handle foreground messages
       messaging.onMessage((payload) => {
         console.log('Message received in foreground: ', payload);
+        
+        // Show a custom dismissible notification for foreground messages
+        if (Notification.permission === 'granted') {
+          const notificationTitle = payload.notification?.title || 'New Notification';
+          const notificationOptions = {
+            body: payload.notification?.body || 'You have a new notification',
+            icon: '/static/tropical-border.png',
+            badge: '/static/tropical-border.png',
+            requireInteraction: false, // Allow auto-dismiss
+            silent: false,
+            tag: 'foreground-notification',
+            data: payload.data || {}
+          };
+
+          const notification = new Notification(notificationTitle, notificationOptions);
+          
+          // Auto-dismiss after 8 seconds
+          setTimeout(() => {
+            notification.close();
+          }, 8000);
+          
+          // Handle click to focus window
+          notification.onclick = function() {
+            window.focus();
+            this.close();
+          };
+        }
 
         // Create and show notification for foreground message
         if (Notification.permission === 'granted') {

@@ -610,8 +610,15 @@ window.sendTestNotification = function() {
             setTimeout(() => {
                 const localNotification = new Notification('Local Test Notification (' + timestamp + ')', {
                     body: 'This is a local browser notification (not via FCM). Sent at ' + timestamp,
-                    icon: '/static/tropical-border.png'
+                    icon: '/static/tropical-border.png',
+                    requireInteraction: false,
+                    tag: 'test-notification'
                 });
+
+                // Auto-dismiss after 6 seconds
+                setTimeout(() => {
+                    localNotification.close();
+                }, 6000);
 
                 localNotification.onclick = function() {
                     window.focus();
