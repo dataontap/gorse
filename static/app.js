@@ -1459,7 +1459,12 @@ function showConfirmationDrawer(dataAmount, price, productId) {
     const priceElement = document.getElementById('confirmPrice');
 
     if (drawer && dataAmountElement && priceElement) {
-        dataAmountElement.textContent = `${dataAmount}GB`;
+        // Show MB for 1000 or less, GB for higher values
+        if (dataAmount >= 1000 && dataAmount < 10000) {
+            dataAmountElement.textContent = `${dataAmount}MB`;
+        } else {
+            dataAmountElement.textContent = `${dataAmount}GB`;
+        }
         priceElement.textContent = `$${price}`;
         drawer.classList.add('show');
         drawer.setAttribute('data-product-id', productId);
