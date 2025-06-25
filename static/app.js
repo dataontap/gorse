@@ -255,7 +255,13 @@ function showCountriesPopup() {
     alert("That's a lot of countries!");
 }
 
-function sendComingSoonNotification() {
+function sendComingSoonNotification(event) {
+    // Prevent form submission or page reload
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
     // Send FCM notification for Coming Soon
     fetch('/api/send-notification', {
         method: 'POST',
@@ -294,18 +300,51 @@ function sendComingSoonNotification() {
                 window.focus();
                 this.close();
             };
+        } else if (Notification.permission === 'default') {
+            // Request permission if not already granted
+            Notification.requestPermission().then(function(permission) {
+                if (permission === 'granted') {
+                    const notification = new Notification('Full Membership', {
+                        body: 'Coming Very Soon',
+                        icon: '/static/tropical-border.png',
+                        requireInteraction: false,
+                        tag: 'coming-soon-notification'
+                    });
+
+                    setTimeout(() => {
+                        notification.close();
+                    }, 4000);
+
+                    notification.onclick = function() {
+                        window.focus();
+                        this.close();
+                    };
+                }
+            });
         }
         
         // Show a visual feedback to the user
-        const button = event.target;
-        const originalText = button.textContent;
-        button.textContent = 'Coming Very Soon';
-        setTimeout(() => {
-            button.textContent = originalText;
-        }, 2000);
+        if (event && event.target) {
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Coming Very Soon';
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 2000);
+        }
     })
     .catch(error => {
         console.error('Error sending notification:', error);
+        
+        // Still show visual feedback even if API call fails
+        if (event && event.target) {
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Error - Try Again';
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 2000);
+        }
     });
 }
 function showCountriesPopup() {
