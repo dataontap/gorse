@@ -207,9 +207,9 @@ body.light-mode {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 30vh;
+    height: 35vh;
     text-align: center;
-    padding: 0;
+    padding: 30px 20px 40px 20px;
     background: transparent;
     display: flex;
     flex-direction: column;
@@ -221,9 +221,9 @@ body.light-mode {
 .signup-btn {
     background: linear-gradient(45deg, #6B6BA7, #9797CC);
     border: none;
-    padding: 16px 54px;
+    padding: 18px 58px;
     font-size: 1.2rem;
-    margin-bottom: 1.2rem;
+    margin-bottom: 20px;
     transition: all 0.3s ease;
     color: white;
     text-transform: uppercase;
