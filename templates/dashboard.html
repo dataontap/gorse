@@ -168,7 +168,7 @@
                             <p>Global Wi-Fi Calling & Satellite eTXT.</p>
                             <p><strong>$66/year</strong></p>
                             <div class="offer-button">
-                                <button class="btn btn-primary" onclick="sendComingSoonNotification(event)" type="button">Subscribe</button>
+                                <button class="btn btn-primary" onclick="showMembershipConfirmation('full_membership', 66)">Subscribe</button>
                             </div>
                         </div>
                     </div>
@@ -181,7 +181,7 @@
                             <p>To include SAT T9-1-1 when available.</p>
                             <p><strong>$24/year</strong></p>
                             <div class="offer-button">
-                                <button class="btn btn-primary" onclick="showConfirmationDrawer(1000, 24, 'basic_membership')">Subscribe</button>
+                                <button class="btn btn-primary" onclick="showMembershipConfirmation('basic_membership', 24)">Subscribe</button>
                             </div>
                         </div>
                     </div>
@@ -375,6 +375,44 @@
                 popup.style.display = 'none';
             }
         });
+
+        function showMembershipConfirmation(membershipType, price) {
+            document.getElementById('confirmDataAmount').style.display = 'none';
+            document.getElementById('confirmPrice').textContent = '$' + price;
+
+            // Show the confirmation drawer
+            document.getElementById('confirmationDrawer').style.display = 'block';
+        }
+
+        function showConfirmationDrawer(dataAmount, price, productCode) {
+            document.getElementById('confirmDataAmount').textContent = dataAmount + 'GB';
+            document.getElementById('confirmPrice').textContent = '$' + price;
+            document.getElementById('confirmDataAmount').style.display = 'block';
+
+            // Show the confirmation drawer
+            document.getElementById('confirmationDrawer').style.display = 'block';
+        }
+
+        function hideConfirmationDrawer() {
+            document.getElementById('confirmationDrawer').style.display = 'none';
+        }
+
+        function confirmPurchase() {
+            // Implement purchase logic here
+            alert('Purchase confirmed!');
+            hideConfirmationDrawer();
+        }
+
+        function sendComingSoonNotification(event) {
+            event.preventDefault();
+            alert('Coming soon!');
+        }
+
+        function setActiveCarouselItem(index) {
+            const carouselButtons = document.querySelectorAll('.carousel-controls button');
+            carouselButtons.forEach(button => button.classList.remove('active'));
+            carouselButtons[index].classList.add('active');
+        }
     </script>
 </body>
 </html>

@@ -281,7 +281,7 @@ function sendComingSoonNotification(event) {
     .then(response => response.json())
     .then(data => {
         console.log('Coming Soon notification sent:', data);
-        
+
         // Show a browser notification if permission is granted
         if (Notification.permission === 'granted') {
             const notification = new Notification('Full Membership', {
@@ -322,7 +322,7 @@ function sendComingSoonNotification(event) {
                 }
             });
         }
-        
+
         // Show a visual feedback to the user
         if (event && event.target) {
             const button = event.target;
@@ -335,7 +335,7 @@ function sendComingSoonNotification(event) {
     })
     .catch(error => {
         console.error('Error sending notification:', error);
-        
+
         // Still show visual feedback even if API call fails
         if (event && event.target) {
             const button = event.target;
@@ -991,7 +991,8 @@ function initializeDarkMode() {
 
     // Initialize settings toggle
     if (settingsToggle) {
-        settingsToggle.addEventListener('click', (e) => {
+        settings```tool_code
+Toggle.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             settingsSubmenu.style.display = settingsSubmenu.style.display === 'none' ? 'block' : 'none';
@@ -1453,7 +1454,7 @@ function formatTimeDifference(timestamp) {
     return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
 }
 
-function showConfirmationDrawer(dataAmount, price, productId) {
+window.showConfirmationDrawer = function(dataAmount, price, productId) {
     const drawer = document.getElementById('confirmationDrawer');
     const dataAmountElement = document.getElementById('confirmDataAmount');
     const priceElement = document.getElementById('confirmPrice');
@@ -1466,14 +1467,36 @@ function showConfirmationDrawer(dataAmount, price, productId) {
             dataAmountElement.textContent = `${dataAmount}GB`;
         }
         priceElement.textContent = `$${price}`;
-        drawer.classList.add('show');
         drawer.setAttribute('data-product-id', productId);
+        drawer.style.display = 'block';
+        drawer.classList.add('show');
+        drawer.style.bottom = '0';
     } else {
         console.error('Confirmation drawer elements not found');
         // Fall back to direct purchase if drawer elements aren't available
         confirmPurchase(productId);
     }
-}
+};
+
+window.showMembershipConfirmation = function(productId, price) {
+    const drawer = document.getElementById('confirmationDrawer');
+    const dataAmountElement = document.getElementById('confirmDataAmount');
+    const priceElement = document.getElementById('confirmPrice');
+
+    if (drawer && dataAmountElement && priceElement) {
+        // For memberships, hide or change the data amount display
+        dataAmountElement.textContent = 'Membership';
+        priceElement.textContent = `$${price}`;
+        drawer.setAttribute('data-product-id', productId);
+        drawer.style.display = 'block';
+        drawer.classList.add('show');
+        drawer.style.bottom = '0';
+    } else {
+        console.error('Confirmation drawer elements not found');
+        // Fall back to direct purchase if drawer elements aren't available
+        confirmPurchase(productId);
+    }
+};
 
 function confirmPurchase(productId) {
     // If called from drawer, get product ID from there
@@ -1492,25 +1515,6 @@ function confirmPurchase(productId) {
 
 window.addGlobalData = function() {
     showConfirmationDrawer(10, 10, 'global_data_10gb');
-};
-
-window.showConfirmationDrawer = function(dataAmount, price, productId) {
-    const drawer = document.getElementById('confirmationDrawer');
-    const dataAmountElement = document.getElementById('confirmDataAmount');
-    const priceElement = document.getElementById('confirmPrice');
-
-    if (drawer && dataAmountElement && priceElement) {
-        dataAmountElement.textContent = `${dataAmount}GB`;
-        priceElement.textContent = `$${price}`;
-        drawer.setAttribute('data-product-id', productId);
-        drawer.style.display = 'block';
-        drawer.classList.add('show');
-        drawer.style.bottom = '0';
-    } else {
-        console.error('Confirmation drawer elements not found');
-        // Fall back to direct purchase if drawer elements aren't available
-        confirmPurchase(productId);
-    }
 };
 
 window.hideConfirmationDrawer = function() {
