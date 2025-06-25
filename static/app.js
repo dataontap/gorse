@@ -254,6 +254,38 @@ const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', '
 function showCountriesPopup() {
     alert("That's a lot of countries!");
 }
+
+function sendComingSoonNotification() {
+    // Send FCM notification for Coming Soon
+    fetch('/api/send-notification', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: 'Full Membership',
+            body: 'Coming Very Soon',
+            data: {
+                action: 'coming_soon',
+                feature: 'full_membership'
+            }
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Coming Soon notification sent:', data);
+        // Show a visual feedback to the user
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = 'Coming Very Soon';
+        setTimeout(() => {
+            button.textContent = originalText;
+        }, 2000);
+    })
+    .catch(error => {
+        console.error('Error sending notification:', error);
+    });
+}
 function showCountriesPopup() {
     alert("That's a lot of countries!");
 }
@@ -515,13 +547,13 @@ function initializeProfileDropdown() {
             if (!isExpanded) {
                 // Start help session
                 currentHelpSession = await startHelpSession();
-                
+
                 // Update help text and start timer
                 const helpText = document.getElementById('helpText');
                 if (helpText) {
                     helpText.innerHTML = 'Human On The Way<br><span id="helpTimer" style="display: block; font-size: 12px; color: #ff0000; margin-top: 4px;">00:04:20</span>';
                 }
-                
+
                 helpTimeRemaining = 260; // Reset to 4 minutes and 20 seconds
                 updateHelpTimer();
                 helpTimerInterval = setInterval(updateHelpTimer, 1000);
@@ -542,7 +574,7 @@ function initializeProfileDropdown() {
                 if (phoneIcon) {
                     phoneIcon.style.display = 'none';
                 }
-                
+
                 // Hide agent drawer if visible
                 hideAgentDrawer();
             }
@@ -1876,8 +1908,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Your JavaScript code here
 
 // Function to send a test notification
-function sendTestNotification() {
-  fetch('/api/send-notification', {
+function sendTestNotification() {  fetch('/api/send-notification', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -2064,11 +2095,11 @@ window.showNotificationTester = function() {
 function initializeBetaTesterToggle() {
     const betaTesterToggle = document.getElementById('betaTesterToggle');
     const betaTesterStatus = document.getElementById('betaTesterStatus');
-    
+
     if (betaTesterToggle && betaTesterStatus) {
         // Set initial state
         updateBetaTesterStatus(betaTesterToggle.checked);
-        
+
         // Add event listener for toggle changes
         betaTesterToggle.addEventListener('change', function() {
             updateBetaTesterStatus(this.checked);
@@ -2088,7 +2119,7 @@ function showAgentDrawer() {
     const agentDrawer = document.createElement('div');
     agentDrawer.id = 'agentDrawer';
     agentDrawer.className = 'agent-drawer';
-    
+
     // Sample agent data - in real app this would come from API
     const agent = {
         name: 'Sarah Mitchell',
@@ -2105,7 +2136,7 @@ function showAgentDrawer() {
             </div>
             <div class="agent-info">
                 <div class="agent-avatar">
-                    <img src="${agent.avatar}" alt="${agent.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZjBmMGYwIi8+CjxjaXJjbGUgY3g9IjUwIiBjeT0iMzciIHI9IjE1IiBmaWxsPSIjY2NjIi8+CjxwYXRoIGQ9Im0yMCA4MGMwLTE2LjU2OSAxMy40MzEtMzAgMzAtMzBzMzAgMTMuNDMxIDMwIDMwIiBmaWxsPSIjY2NjIi8+Cjwvc3ZnPg=='" />
+                    <img src="${agent.avatar}" alt="${agent.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxSZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjZjBmMGYwIi8+PGNpcmNsZSBjeD0iNTAiIGN5PSIzNyIgcj0iMTUiIGZpbGw9IiNjY2MiLz48cGF0aCBkPSJtMjAgODBjMC0xNi41NjkgMTMuNDMxLTMwIDMwLTMwczMwIDEzLjQzMSAzMCAzMCIgZmlsbD0iI2NjYyIvPjwvc3ZnPg=='" />
                 </div>
                 <div class="agent-details">
                     <div class="agent-name">${agent.name}</div>
@@ -2128,7 +2159,7 @@ function showAgentDrawer() {
     `;
 
     document.body.appendChild(agentDrawer);
-    
+
     // Show drawer with animation
     setTimeout(() => {
         agentDrawer.classList.add('show');
@@ -2150,12 +2181,12 @@ function acceptCall(agentName) {
     const statusMessage = document.createElement('div');
     statusMessage.className = 'call-status-message';
     statusMessage.innerHTML = `<i class="fas fa-phone"></i> Connecting to ${agentName}...`;
-    
+
     const agentDrawer = document.getElementById('agentDrawer');
     if (agentDrawer) {
         const content = agentDrawer.querySelector('.agent-drawer-content');
         content.appendChild(statusMessage);
-        
+
         setTimeout(() => {
             hideAgentDrawer();
             // In real app, this would initiate the actual call
@@ -2169,12 +2200,12 @@ function requestCallback() {
     const statusMessage = document.createElement('div');
     statusMessage.className = 'call-status-message';
     statusMessage.innerHTML = `<i class="fas fa-check"></i> Callback link will be sent to your email shortly.`;
-    
+
     const agentDrawer = document.getElementById('agentDrawer');
     if (agentDrawer) {
         const content = agentDrawer.querySelector('.agent-drawer-content');
         content.appendChild(statusMessage);
-        
+
         setTimeout(() => {
             hideAgentDrawer();
         }, 2000);
@@ -2184,7 +2215,7 @@ function requestCallback() {
 function updateBetaTesterStatus(isToggled) {
     const betaTesterStatus = document.getElementById('betaTesterStatus');
     if (!betaTesterStatus) return;
-    
+
     if (isToggled) {
         betaTesterStatus.textContent = 'Loading';
         betaTesterStatus.className = 'loading-dots';
