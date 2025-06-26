@@ -1,4 +1,20 @@
 
+// Menu toggle functionality
+function toggleMenu(element) {
+    const dropdown = element.querySelector('.menu-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('visible');
+    }
+}
+
+// Profile dropdown functionality
+function toggleProfileDropdown() {
+    const dropdown = document.querySelector('.profile-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('visible');
+    }
+}
+
 // Help system functionality
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Help desk script loaded successfully');
