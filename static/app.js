@@ -48,6 +48,28 @@ document.addEventListener('click', function(event) {
     }
 });
 
+// Notification tester functionality
+function showNotificationTester() {
+    // Simple notification tester - you can expand this as needed
+    if (Notification.permission === 'granted') {
+        new Notification('Test Notification', {
+            body: 'This is a test notification from your app.',
+            icon: '/static/favicon.ico'
+        });
+    } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(function(permission) {
+            if (permission === 'granted') {
+                new Notification('Test Notification', {
+                    body: 'This is a test notification from your app.',
+                    icon: '/static/favicon.ico'
+                });
+            }
+        });
+    } else {
+        alert('Notifications are blocked. Please enable them in your browser settings.');
+    }
+}
+
 // Help system functionality
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Help desk script loaded successfully');
