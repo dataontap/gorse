@@ -652,7 +652,7 @@
     border-radius: 12px 12px 0 0;
     box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.1);
     transition: bottom 0.3s ease;
-    z-index: 1000;
+    z-index: 10000;
 }
 
 .cart-preview:hover {
