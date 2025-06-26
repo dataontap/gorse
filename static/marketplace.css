@@ -883,6 +883,57 @@ body.dark-mode .quantity-btn {
     background-color: #555 !important;
 }
 
+/* Back to Top Pill */
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: rgba(0, 102, 255, 0.9);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.back-to-top:hover {
+    background: rgba(0, 102, 255, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 102, 255, 0.4);
+}
+
+.back-to-top i {
+    font-size: 16px;
+}
+
+/* Dark mode back to top */
+.dark-mode .back-to-top {
+    background: rgba(70, 130, 255, 0.9);
+    box-shadow: 0 4px 15px rgba(70, 130, 255, 0.3);
+}
+
+.dark-mode .back-to-top:hover {
+    background: rgba(70, 130, 255, 1);
+    box-shadow: 0 6px 20px rgba(70, 130, 255, 0.4);
+}
+
 /* Responsive Styles */
 @media (max-width: 768px) {
     .device-details {
@@ -918,5 +969,12 @@ body.dark-mode .quantity-btn {
     .cart-preview {
         width: 280px;
         right: 5px;
+    }
+
+    .back-to-top {
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 16px;
+        font-size: 12px;
     }
 }

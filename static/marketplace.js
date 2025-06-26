@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeServiceCarousel();
     initializeAuctionCountdown();
     initializeCartPreview();
+    initializeBackToTop();
 });
 
 function initializeMarketplace() {
@@ -556,6 +557,35 @@ function toggleQRCode(event) {
 
 function generateRandomLinkCode() {
     return Math.random().toString(36).substring(2, 12);
+}
+
+function initializeBackToTop() {
+    // Create back to top button
+    const backToTopButton = document.createElement('button');
+    backToTopButton.className = 'back-to-top';
+    backToTopButton.innerHTML = '<i class="fas fa-arrow-up"></i> Back to Top';
+    document.body.appendChild(backToTopButton);
+
+    // Show/hide button based on scroll position
+    window.addEventListener('scroll', function() {
+        const scrollPosition = window.pageYOffset;
+        const screenHeight = window.innerHeight;
+        const threshold = screenHeight * 2; // 2x screen height
+
+        if (scrollPosition > threshold) {
+            backToTopButton.classList.add('visible');
+        } else {
+            backToTopButton.classList.remove('visible');
+        }
+    });
+
+    // Smooth scroll to top when clicked
+    backToTopButton.addEventListener('click', function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
 }
 
 // Close QR code popup when clicking outside
