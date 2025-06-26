@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
-    <link href="/static/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/help-styles.css">
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -168,7 +169,7 @@
                             <p>Global Wi-Fi Calling & Satellite eTXT.</p>
                             <p><strong>$66/year</strong></p>
                             <div class="offer-button">
-                                <button class="btn btn-primary" onclick="showMembershipConfirmation('full_membership', 66)">Subscribe</button>
+                                <button class="btn btn-secondary" disabled onclick="sendComingSoonNotification()">Subscribe</button>
                             </div>
                         </div>
                     </div>
@@ -181,7 +182,7 @@
                             <p>To include SAT T9-1-1 when available.</p>
                             <p><strong>$24/year</strong></p>
                             <div class="offer-button">
-                                <button class="btn btn-primary" onclick="showMembershipConfirmation('basic_membership', 24)">Subscribe</button>
+                                <button class="btn btn-primary" onclick="showConfirmationDrawer(10, 24, 'basic_membership')">Subscribe</button>
                             </div>
                         </div>
                     </div>
@@ -375,44 +376,6 @@
                 popup.style.display = 'none';
             }
         });
-
-        function showMembershipConfirmation(membershipType, price) {
-            document.getElementById('confirmDataAmount').style.display = 'none';
-            document.getElementById('confirmPrice').textContent = '$' + price;
-
-            // Show the confirmation drawer
-            document.getElementById('confirmationDrawer').style.display = 'block';
-        }
-
-        function showConfirmationDrawer(dataAmount, price, productCode) {
-            document.getElementById('confirmDataAmount').textContent = dataAmount + 'GB';
-            document.getElementById('confirmPrice').textContent = '$' + price;
-            document.getElementById('confirmDataAmount').style.display = 'block';
-
-            // Show the confirmation drawer
-            document.getElementById('confirmationDrawer').style.display = 'block';
-        }
-
-        function hideConfirmationDrawer() {
-            document.getElementById('confirmationDrawer').style.display = 'none';
-        }
-
-        function confirmPurchase() {
-            // Implement purchase logic here
-            alert('Purchase confirmed!');
-            hideConfirmationDrawer();
-        }
-
-        function sendComingSoonNotification(event) {
-            event.preventDefault();
-            alert('Coming soon!');
-        }
-
-        function setActiveCarouselItem(index) {
-            const carouselButtons = document.querySelectorAll('.carousel-controls button');
-            carouselButtons.forEach(button => button.classList.remove('active'));
-            carouselButtons[index].classList.add('active');
-        }
     </script>
 </body>
 </html>

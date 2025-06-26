@@ -255,13 +255,7 @@ function showCountriesPopup() {
     alert("That's a lot of countries!");
 }
 
-function sendComingSoonNotification(event) {
-    // Prevent form submission or page reload
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-
+function sendComingSoonNotification() {
     // Send FCM notification for Coming Soon
     fetch('/api/send-notification', {
         method: 'POST',
@@ -300,51 +294,18 @@ function sendComingSoonNotification(event) {
                 window.focus();
                 this.close();
             };
-        } else if (Notification.permission === 'default') {
-            // Request permission if not already granted
-            Notification.requestPermission().then(function(permission) {
-                if (permission === 'granted') {
-                    const notification = new Notification('Full Membership', {
-                        body: 'Coming Very Soon',
-                        icon: '/static/tropical-border.png',
-                        requireInteraction: false,
-                        tag: 'coming-soon-notification'
-                    });
-
-                    setTimeout(() => {
-                        notification.close();
-                    }, 4000);
-
-                    notification.onclick = function() {
-                        window.focus();
-                        this.close();
-                    };
-                }
-            });
         }
 
         // Show a visual feedback to the user
-        if (event && event.target) {
-            const button = event.target;
-            const originalText = button.textContent;
-            button.textContent = 'Coming Very Soon';
-            setTimeout(() => {
-                button.textContent = originalText;
-            }, 2000);
-        }
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = 'Coming Very Soon';
+        setTimeout(() => {
+            button.textContent = originalText;
+        }, 2000);
     })
     .catch(error => {
         console.error('Error sending notification:', error);
-
-        // Still show visual feedback even if API call fails
-        if (event && event.target) {
-            const button = event.target;
-            const originalText = button.textContent;
-            button.textContent = 'Enrol in Beta';
-            setTimeout(() => {
-                button.textContent = originalText;
-            }, 2000);
-        }
     });
 }
 function showCountriesPopup() {
@@ -624,20 +585,16 @@ function initializeProfileDropdown() {
                     phoneIcon.style.display = 'none';
                 }
             } else {
-                // Stop timer
-                clearInterval(helpTimerInterval);
-                const helpText = document.getElementById('helpText');
-                if (helpText) {
-                    helpText.innerHTML = 'Help';
+                // End help session
+                if (currentHelpSession) {
+                    try {
+                        await endHelpSession();
+                        currentHelpSession = null;
+                        stopHelpTimer();
+                    } catch (error) {
+                        console.error('Failed to end help session:', error);
+                    }
                 }
-
-                // Hide phone icon when help is closed
-                if (phoneIcon) {
-                    phoneIcon.style.display = 'none';
-                }
-
-                // Hide agent drawer if visible
-                hideAgentDrawer();
             }
 
 // Handle notification permission
@@ -793,6 +750,23 @@ window.sendTestNotification = function() {
         const timerElement = document.getElementById('helpTimer');
         if (timerElement) {
             timerElement.textContent = formattedTime;
+        }
+    }
+
+    function startHelpTimer() {
+        if (helpTimerInterval) {
+            clearInterval(helpTimerInterval);
+        }
+
+        helpTimeRemaining = 260; // Reset to 4:20
+        helpTimerInterval = setInterval(updateHelpTimer, 1000);
+        updateHelpTimer(); // Update immediately
+    }
+
+    function stopHelpTimer() {
+        if (helpTimerInterval) {
+            clearInterval(helpTimerInterval);
+            helpTimerInterval = null;
         }
     }
 
@@ -991,8 +965,7 @@ function initializeDarkMode() {
 
     // Initialize settings toggle
     if (settingsToggle) {
-        settings```tool_code
-Toggle.addEventListener('click', (e) => {
+        settingsToggle.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             settingsSubmenu.style.display = settingsSubmenu.style.display === 'none' ? 'block' : 'none';
@@ -1016,7 +989,7 @@ Toggle.addEventListener('click', (e) => {
     }
 
     // Initialize help toggle
-    if (helpToggle && helpSection) {
+    if (helpToggle && helpSection){
         helpToggle.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1454,49 +1427,22 @@ function formatTimeDifference(timestamp) {
     return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
 }
 
-window.showConfirmationDrawer = function(dataAmount, price, productId) {
+function showConfirmationDrawer(dataAmount, price, productId) {
     const drawer = document.getElementById('confirmationDrawer');
     const dataAmountElement = document.getElementById('confirmDataAmount');
     const priceElement = document.getElementById('confirmPrice');
 
     if (drawer && dataAmountElement && priceElement) {
-        // Show MB for values like 1000, GB for other values
-        if (dataAmount === 1000) {
-            dataAmountElement.textContent = `${dataAmount}MB`;
-        } else {
-            dataAmountElement.textContent = `${dataAmount}GB`;
-        }
+        dataAmountElement.textContent = `${dataAmount}GB`;
         priceElement.textContent = `$${price}`;
-        drawer.setAttribute('data-product-id', productId);
-        drawer.style.display = 'block';
         drawer.classList.add('show');
-        drawer.style.bottom = '0';
+        drawer.setAttribute('data-product-id', productId);
     } else {
         console.error('Confirmation drawer elements not found');
         // Fall back to direct purchase if drawer elements aren't available
         confirmPurchase(productId);
     }
-};
-
-window.showMembershipConfirmation = function(productId, price) {
-    const drawer = document.getElementById('confirmationDrawer');
-    const dataAmountElement = document.getElementById('confirmDataAmount');
-    const priceElement = document.getElementById('confirmPrice');
-
-    if (drawer && dataAmountElement && priceElement) {
-        // For memberships, hide or change the data amount display
-        dataAmountElement.textContent = 'Membership';
-        priceElement.textContent = `$${price}`;
-        drawer.setAttribute('data-product-id', productId);
-        drawer.style.display = 'block';
-        drawer.classList.add('show');
-        drawer.style.bottom = '0';
-    } else {
-        console.error('Confirmation drawer elements not found');
-        // Fall back to direct purchase if drawer elements aren't available
-        confirmPurchase(productId);
-    }
-};
+}
 
 function confirmPurchase(productId) {
     // If called from drawer, get product ID from there
@@ -1515,6 +1461,25 @@ function confirmPurchase(productId) {
 
 window.addGlobalData = function() {
     showConfirmationDrawer(10, 10, 'global_data_10gb');
+};
+
+window.showConfirmationDrawer = function(dataAmount, price, productId) {
+    const drawer = document.getElementById('confirmationDrawer');
+    const dataAmountElement = document.getElementById('confirmDataAmount');
+    const priceElement = document.getElementById('confirmPrice');
+
+    if (drawer && dataAmountElement && priceElement) {
+        dataAmountElement.textContent = `${dataAmount}GB`;
+        priceElement.textContent = `$${price}`;
+        drawer.setAttribute('data-product-id', productId);
+        drawer.style.display = 'block';
+        drawer.classList.add('show');
+        drawer.style.bottom = '0';
+    } else {
+        console.error('Confirmation drawer elements not found');
+        // Fall back to direct purchase if drawer elements aren't available
+        confirmPurchase(productId);
+    }
 };
 
 window.hideConfirmationDrawer = function() {
@@ -1945,6 +1910,7 @@ function initializeChart(canvas) {
 }
 
 window.toggleChart = function(element) {
+    ```text
     const card = element.closest('.insights-card');
     const chartDiv = card.querySelector('.usage-chart');
     const canvas = chartDiv.querySelector('canvas');
@@ -2377,3 +2343,29 @@ function toggleQRCode(event) {
                     });
             }
         }
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Load help desk script
+    const helpScript = document.createElement('script');
+    helpScript.src = '/static/help-desk.js';
+    helpScript.onload = function() {
+        console.log('Help desk script loaded successfully');
+
+        // Enhanced help section integration
+        const helpToggle = document.getElementById('helpToggle');
+        if (helpToggle) {
+            helpToggle.addEventListener('click', function() {
+                // Track the interaction
+                setTimeout(() => {
+                    if (typeof helpDesk !== 'undefined' && helpDesk.currentSession) {
+                        helpDesk.trackInteraction('help_toggle');
+                    }
+                }, 100);
+            });
+        }
+    };
+    helpScript.onerror = function() {
+        console.error('Failed to load help desk script');
+    };
+    document.head.appendChild(helpScript);
+});

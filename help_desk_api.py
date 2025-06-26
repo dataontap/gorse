@@ -223,7 +223,7 @@ def start_gemini_live():
         }
         
         # Start live session
-        session_result = await gemini_live.start_live_session(ephemeral_token, user_context)
+        session_result = gemini_live.start_live_session(ephemeral_token, user_context)
         
         if session_result['success']:
             # Log the start of live session
