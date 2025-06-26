@@ -79,30 +79,79 @@ document.addEventListener('DOMContentLoaded', function() {
     var helpSection = document.querySelector('.help-section');
     
     if (helpToggle && helpSection) {
-        var clickCount = 0;
-        var isExpanded = false;
-        
         helpToggle.addEventListener('click', function(e) {
             e.preventDefault();
-            clickCount++;
+            e.stopPropagation();
             
-            // Toggle expanded state
-            isExpanded = !isExpanded;
-            
-            if (isExpanded) {
+            // Toggle help section visibility
+            if (helpSection.style.display === 'none' || helpSection.style.display === '') {
+                helpSection.style.display = 'block';
                 helpSection.classList.add('expanded');
-                helpToggle.innerHTML = '<i class="fas fa-times"></i>';
-                helpToggle.classList.add('active');
             } else {
+                helpSection.style.display = 'none';
                 helpSection.classList.remove('expanded');
-                helpToggle.innerHTML = '<i class="fas fa-question"></i>';
-                helpToggle.classList.remove('active');
             }
             
             // Track interaction if help desk client exists
             if (typeof helpDesk !== 'undefined') {
                 helpDesk.trackInteraction('help_toggle');
             }
+        });
+    }
+    
+    // Initialize settings toggle functionality
+    var settingsToggle = document.getElementById('settingsToggle');
+    var settingsSubmenu = document.querySelector('.settings-submenu');
+    
+    if (settingsToggle && settingsSubmenu) {
+        settingsToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Toggle settings submenu visibility
+            if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
+                settingsSubmenu.style.display = 'block';
+            } else {
+                settingsSubmenu.style.display = 'none';
+            }
+        });
+    }
+    
+    // Initialize dark mode toggle functionality
+    var darkModeToggle = document.getElementById('darkModeToggle');
+    if (darkModeToggle) {
+        // Check if dark mode preference exists, if not set it to true (dark mode default)
+        const darkModePreference = localStorage.getItem('darkMode');
+        const isDarkMode = darkModePreference === null ? true : darkModePreference === 'true';
+        const icon = darkModeToggle.querySelector('i');
+        const textSpan = darkModeToggle.querySelector('span');
+        const body = document.body;
+
+        // Set initial state and localStorage for new users
+        if (isDarkMode) {
+            body.classList.add('dark-mode');
+            if (darkModePreference === null) {
+                localStorage.setItem('darkMode', 'true');
+            }
+            if (icon) icon.classList.replace('fa-moon', 'fa-sun');
+            if (textSpan) textSpan.textContent = 'Light Mode';
+        }
+
+        darkModeToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+
+            if (icon) {
+                icon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', 
+                                     isDark ? 'fa-sun' : 'fa-moon');
+            }
+            if (textSpan) {
+                textSpan.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+            }
+            localStorage.setItem('darkMode', isDark);
         });
     }
     
