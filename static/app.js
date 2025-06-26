@@ -553,7 +553,7 @@ function initializeProfileDropdown() {
     const helpTimer = document.getElementById('helpTimer');
     const phoneIcon = document.getElementById('helpPhoneIcon');
 
-    if (helpToggle && helpSection && helpTimer) {
+    if (helpToggle && helpSection) {
         helpToggle.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -572,20 +572,25 @@ function initializeProfileDropdown() {
                 // Start help session
                 currentHelpSession = await startHelpSession();
 
-                // Update help text and start timer
-                const helpText = document.getElementById('helpText');
-                if (helpText) {
-                    helpText.innerHTML = 'Human On The Way<br><span id="helpTimer" style="display: block; font-size: 12px; color: #ff0000; margin-top: 4px;">00:04:20</span>';
-                }
+                // Update help section content to show human support
+                helpSection.innerHTML = `
+                    <div class="help-content">
+                        <div class="help-status">
+                            <i class="fas fa-phone" id="helpPhoneIcon" style="color: #ff0000; margin-right: 8px;"></i>
+                            <span style="color: #ff0000; font-weight: bold;">Human On The Way</span>
+                        </div>
+                        <div id="helpTimer" style="font-size: 18px; color: #ff0000; margin: 10px 0; font-weight: bold;">00:04:20</div>
+                        <div class="help-description" style="font-size: 12px; color: #666; margin-top: 10px;">
+                            Timer when live help is available.<br>
+                            Cancel anytime.<br>
+                            <em>Powered by mcp.dotmobile.app</em>
+                        </div>
+                    </div>
+                `;
 
                 helpTimeRemaining = 260; // Reset to 4 minutes and 20 seconds
                 updateHelpTimer();
                 helpTimerInterval = setInterval(updateHelpTimer, 1000);
-
-                // Hide phone icon initially
-                if (phoneIcon) {
-                    phoneIcon.style.display = 'none';
-                }
             } else {
                 // End help session
                 if (currentHelpSession) {
@@ -597,6 +602,9 @@ function initializeProfileDropdown() {
                         console.error('Failed to end help session:', error);
                     }
                 }
+
+                // Reset help section content
+                helpSection.innerHTML = '';
             }
 
 // Handle notification permission
@@ -714,15 +722,16 @@ window.sendTestNotification = function() {
             clearInterval(helpTimerInterval);
             const timerElement = document.getElementById('helpTimer');
             if (timerElement) {
-                timerElement.textContent = '00:00:00';
+                timerElement.textContent = 'Available Now!';
+                timerElement.style.color = '#4CAF50';
             }
 
             // Show agent drawer
             showAgentDrawer();
 
-            // Show phone icon in green when timer is done
+            // Update phone icon to green
+            const phoneIcon = document.getElementById('helpPhoneIcon');
             if (phoneIcon) {
-                phoneIcon.style.display = 'inline';
                 phoneIcon.style.color = '#4CAF50'; // Green color
             }
 
@@ -738,14 +747,12 @@ window.sendTestNotification = function() {
         // Decrement the remaining time
         helpTimeRemaining--;
 
-        // Convert to hours, minutes, seconds
-        const hours = Math.floor(helpTimeRemaining / 3600);
-        const minutes = Math.floor((helpTimeRemaining % 3600) / 60);
+        // Convert to minutes and seconds (no hours for 4:20 timer)
+        const minutes = Math.floor(helpTimeRemaining / 60);
         const seconds = helpTimeRemaining % 60;
 
-        // Format time as HH:MM:SS
+        // Format time as MM:SS
         const formattedTime = 
-            (hours < 10 ? '0' : '') + hours + ':' +
             (minutes < 10 ? '0' : '') + minutes + ':' +
             (seconds < 10 ? '0' : '') + seconds;
 

@@ -432,3 +432,25 @@
     padding-bottom: 10px;
     display: block;
 }
+
+.help-content {
+    text-align: center;
+    padding: 15px;
+}
+
+.help-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.help-description {
+    line-height: 1.4;
+}
+
+.help-description em {
+    font-style: italic;
+    color: #999;
+}
