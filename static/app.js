@@ -994,7 +994,16 @@ function initializeDarkMode() {
         helpToggle.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            helpSection.style.display = helpSection.style.display === 'none' ? 'block' : 'none';
+            
+            const isVisible = helpSection.style.display === 'block' || helpSection.classList.contains('expanded');
+            
+            if (isVisible) {
+                helpSection.style.display = 'none';
+                helpSection.classList.remove('expanded');
+            } else {
+                helpSection.style.display = 'block';
+                helpSection.classList.add('expanded');
+            }
 
             // Toggle help timer display and text
             const helpTimer = document.getElementById('helpTimer');
@@ -1002,11 +1011,10 @@ function initializeDarkMode() {
             const helpText = document.getElementById('helpText');
 
             if (helpTimer && helpPhoneIcon && helpText) {
-                if (helpSection.style.display === 'block') {
-                    helpText.textContent = 'Human On The Way';
-                    helpText.style.color = '#ff0000';
-                    helpTimer.style.display = 'inline';
+                if (!isVisible) {
+                    helpText.innerHTML = 'Human On The Way<br><span id="helpTimer" style="display: block; font-size: 12px; color: #ff0000; margin-top: 4px;">00:04:20</span>';
                     helpPhoneIcon.style.display = 'inline';
+                    helpPhoneIcon.style.color = '#ff0000';
 
                     // Start a countdown timer (just for demonstration)
                     let minutes = 4;
@@ -1017,17 +1025,21 @@ function initializeDarkMode() {
                             minutes--;
                             seconds = 59;
                         }
-                        if (minutes < 0) {
-                            clearInterval(timerInterval);
-                            helpTimer.textContent = "Available";
+                        const newTimer = document.getElementById('helpTimer');
+                        if (newTimer) {
+                            if (minutes < 0) {
+                                clearInterval(timerInterval);
+                                newTimer.textContent = "Available";
+                                helpPhoneIcon.style.color = '#4CAF50';
+                            } else {
+                                newTimer.textContent = `00:0${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                            }
                         } else {
-                            helpTimer.textContent = `00:0${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                            clearInterval(timerInterval);
                         }
                     }, 1000);
                 } else {
-                    helpText.textContent = 'Help';
-                    helpText.style.color = '';
-                    helpTimer.style.display = 'none';
+                    helpText.innerHTML = '<span id="helpText">Help</span>';
                     helpPhoneIcon.style.display = 'none';
                 }
             }

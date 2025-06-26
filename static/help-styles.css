@@ -415,3 +415,20 @@
     border-radius: 8px;
     border: 1px solid #e0e0e0;
 }
+
+.help-section {
+    padding-left: 15px;
+    background: rgba(245, 245, 245, 0.5);
+    border-left: 2px solid #eee;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    display: none;
+}
+
+.help-section.expanded {
+    max-height: 300px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    display: block;
+}
