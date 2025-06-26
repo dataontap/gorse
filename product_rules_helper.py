@@ -1,8 +1,10 @@
 
 import os
 from typing import Optional, Dict, Any
-def some_function():
-    from main import get_db_connection
+def get_db_connection():
+    from main import get_db_connection as main_get_db_connection
+    return main_get_db_connection()
+
 def get_product_rules(stripe_product_id: str) -> Optional[Dict[str, Any]]:
     """Retrieve product rules from database by Stripe product ID"""
     try:

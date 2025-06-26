@@ -1929,12 +1929,7 @@ class CreateTestWallet(Resource):
 
 # This duplicate route was removed to fix the conflict
 # The route is already defined earlier in the file
-def get_product_rules_bp():
-    from product_rules_helper import product_rules_bp
-    return product_rules_bp
 import help_desk_api  # This registers the help desk routes
-
-app.register_blueprint(get_product_rules_bp())
 
 @app.route('/update-token-price', methods=['GET'])
 def update_token_price():
