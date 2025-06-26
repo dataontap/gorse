@@ -3,7 +3,14 @@
 function toggleMenu(element) {
     const dropdown = element.querySelector('.menu-dropdown');
     if (dropdown) {
-        dropdown.classList.toggle('visible');
+        // Handle both class-based and display-based toggles
+        if (dropdown.classList.contains('visible') || dropdown.style.display === 'block') {
+            dropdown.classList.remove('visible');
+            dropdown.style.display = 'none';
+        } else {
+            dropdown.classList.add('visible');
+            dropdown.style.display = 'block';
+        }
     }
 }
 
@@ -11,9 +18,35 @@ function toggleMenu(element) {
 function toggleProfileDropdown() {
     const dropdown = document.querySelector('.profile-dropdown');
     if (dropdown) {
-        dropdown.classList.toggle('visible');
+        if (dropdown.classList.contains('visible') || dropdown.style.display === 'block') {
+            dropdown.classList.remove('visible');
+            dropdown.style.display = 'none';
+        } else {
+            dropdown.classList.add('visible');
+            dropdown.style.display = 'block';
+        }
     }
 }
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    const menuIcon = document.querySelector('.menu-icon');
+    const profileSection = document.querySelector('.profile-section');
+    const menuDropdown = document.querySelector('.menu-dropdown');
+    const profileDropdown = document.querySelector('.profile-dropdown');
+    
+    // Close menu dropdown if clicking outside
+    if (menuDropdown && menuIcon && !menuIcon.contains(event.target)) {
+        menuDropdown.classList.remove('visible');
+        menuDropdown.style.display = 'none';
+    }
+    
+    // Close profile dropdown if clicking outside
+    if (profileDropdown && profileSection && !profileSection.contains(event.target)) {
+        profileDropdown.classList.remove('visible');
+        profileDropdown.style.display = 'none';
+    }
+});
 
 // Help system functionality
 document.addEventListener('DOMContentLoaded', function() {
