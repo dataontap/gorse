@@ -818,6 +818,19 @@ body.dark-mode .quantity-btn {
     color: #ffffff;
 }
 
+/* Dark mode button fixes */
+.dark-mode .btn-secondary {
+    background-color: #495057 !important;
+    border-color: #495057 !important;
+    color: #ffffff !important;
+}
+
+.dark-mode .btn-secondary:hover {
+    background-color: #5a6268 !important;
+    border-color: #5a6268 !important;
+    color: #ffffff !important;
+}
+
 .dark-mode .top-bar {
     background-color: #2d2d2d;
     border-bottom: 1px solid #444;
