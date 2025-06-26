@@ -52,15 +52,15 @@ document.addEventListener('click', function(event) {
 function showNotificationTester() {
     // Simple notification tester - you can expand this as needed
     if (Notification.permission === 'granted') {
-        new Notification('Test Notification', {
-            body: 'This is a test notification from your app.',
+        new Notification('🚀 GORSE Network Alert', {
+            body: 'Your global connectivity is active! Ready to stay connected worldwide.',
             icon: '/static/favicon.ico'
         });
     } else if (Notification.permission !== 'denied') {
         Notification.requestPermission().then(function(permission) {
             if (permission === 'granted') {
-                new Notification('Test Notification', {
-                    body: 'This is a test notification from your app.',
+                new Notification('🚀 GORSE Network Alert', {
+                    body: 'Your global connectivity is active! Ready to stay connected worldwide.',
                     icon: '/static/favicon.ico'
                 });
             }
