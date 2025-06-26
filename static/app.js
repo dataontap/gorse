@@ -507,6 +507,8 @@ function initializeCarousel() {
             }
         }
     }
+    // Carousel initialization - removed undefined function call
+    console.log('Carousel initialized');
 }
 
 // Function to set active carousel item
@@ -984,8 +986,7 @@ function initializeDarkMode() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            window.location.href = '/';
-        });
+            window.location.href = '/';        });
     }
 
     // Initialize help toggle
@@ -1905,12 +1906,11 @@ function initializeChart(canvas) {
                     backgroundColor: '#FFC40C'
                 }
             }
-        }
+}
     });
 }
 
 window.toggleChart = function(element) {
-    ```text
     const card = element.closest('.insights-card');
     const chartDiv = card.querySelector('.usage-chart');
     const canvas = chartDiv.querySelector('canvas');
