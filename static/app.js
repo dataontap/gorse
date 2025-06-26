@@ -70,97 +70,40 @@ function showNotificationTester() {
     }
 }
 
-// Settings submenu functionality
-function toggleSettingsSubmenu(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    const submenu = document.querySelector('.settings-submenu');
-    if (submenu) {
-        if (submenu.style.display === 'none' || submenu.style.display === '') {
-            submenu.style.display = 'block';
-        } else {
-            submenu.style.display = 'none';
-        }
-    }
-}
-
-// Help section toggle functionality
-function toggleHelpSection(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    const helpSection = document.querySelector('.help-section');
-    const helpToggle = document.getElementById('helpToggle');
-    
-    if (helpSection && helpToggle) {
-        if (helpSection.style.display === 'none' || helpSection.style.display === '') {
-            helpSection.style.display = 'block';
-            helpToggle.classList.add('active');
-        } else {
-            helpSection.style.display = 'none';
-            helpToggle.classList.remove('active');
-        }
-        
-        // Track interaction if help desk client exists
-        if (typeof helpDesk !== 'undefined') {
-            helpDesk.trackInteraction('help_toggle');
-        }
-    }
-}
-
-// Dark mode toggle functionality
-function toggleDarkMode(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    document.body.classList.toggle('dark-mode');
-    const moonIcon = event.target.querySelector('i') || event.target.closest('a').querySelector('i');
-    const modeText = event.target.querySelector('span') || event.target.closest('a').querySelector('span');
-
-    if (document.body.classList.contains('dark-mode')) {
-        moonIcon.classList.remove('fa-moon');
-        moonIcon.classList.add('fa-sun');
-        modeText.textContent = 'Light Mode';
-        localStorage.setItem('darkMode', 'true');
-    } else {
-        moonIcon.classList.remove('fa-sun');
-        moonIcon.classList.add('fa-moon');
-        modeText.textContent = 'Dark Mode';
-        localStorage.setItem('darkMode', 'false');
-    }
-}
-
 // Help system functionality
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Help desk script loaded successfully');
     
-    // Initialize settings toggle
-    const settingsToggle = document.getElementById('settingsToggle');
-    if (settingsToggle) {
-        settingsToggle.addEventListener('click', toggleSettingsSubmenu);
-    }
+    // Initialize help toggle functionality
+    var helpToggle = document.getElementById('helpToggle');
+    var helpSection = document.querySelector('.help-section');
     
-    // Initialize help toggle
-    const helpToggle = document.getElementById('helpToggle');
-    if (helpToggle) {
-        helpToggle.addEventListener('click', toggleHelpSection);
-    }
-    
-    // Initialize dark mode toggle
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    if (darkModeToggle) {
-        darkModeToggle.addEventListener('click', toggleDarkMode);
+    if (helpToggle && helpSection) {
+        var clickCount = 0;
+        var isExpanded = false;
         
-        // Set initial dark mode state
-        const isDarkMode = localStorage.getItem('darkMode') === 'true';
-        if (isDarkMode) {
-            document.body.classList.add('dark-mode');
-            const moonIcon = darkModeToggle.querySelector('i');
-            const modeText = darkModeToggle.querySelector('span');
-            if (moonIcon && modeText) {
-                moonIcon.classList.remove('fa-moon');
-                moonIcon.classList.add('fa-sun');
-                modeText.textContent = 'Light Mode';
+        helpToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            clickCount++;
+            
+            // Toggle expanded state
+            isExpanded = !isExpanded;
+            
+            if (isExpanded) {
+                helpSection.classList.add('expanded');
+                helpToggle.innerHTML = '<i class="fas fa-times"></i>';
+                helpToggle.classList.add('active');
+            } else {
+                helpSection.classList.remove('expanded');
+                helpToggle.innerHTML = '<i class="fas fa-question"></i>';
+                helpToggle.classList.remove('active');
             }
-        }
+            
+            // Track interaction if help desk client exists
+            if (typeof helpDesk !== 'undefined') {
+                helpDesk.trackInteraction('help_toggle');
+            }
+        });
     }
     
     // Carousel functionality if present

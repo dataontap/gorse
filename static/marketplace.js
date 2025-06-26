@@ -407,11 +407,7 @@ function initializeDarkModeToggle() {
         settingsToggle.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
-                settingsSubmenu.style.display = 'block';
-            } else {
-                settingsSubmenu.style.display = 'none';
-            }
+            settingsSubmenu.style.display = settingsSubmenu.style.display === 'none' ? 'block' : 'none';
         });
     }
 
