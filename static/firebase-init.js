@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const messaging = getMessaging(app);
 
       // Register service worker first
-      navigator.serviceWorker.register('/static/firebase-messaging-sw.js')
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
         .then((registration) => {
           console.log('Service worker registered successfully');
 

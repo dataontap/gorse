@@ -1245,6 +1245,10 @@ def serve_static(path):
 def favicon():
     return send_from_directory('static', 'favicon.ico')
 
+@app.route('/firebase-messaging-sw.js')
+def firebase_service_worker():
+    return send_from_directory('.', 'firebase-messaging-sw.js')
+
 # New API endpoint to record global data purchases
 purchase_model = api.model('Purchase', {
     'productId': fields.String(required=True, description='Product ID')
