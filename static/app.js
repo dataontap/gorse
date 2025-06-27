@@ -360,6 +360,11 @@ function initializeCarousel() {
 function toggleChart(link) {
     const dataUsage = link.closest('.data-usage');
     const chart = dataUsage.querySelector('.usage-chart');
+    
+    // Store current scroll position relative to the link element
+    const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const linkRect = link.getBoundingClientRect();
+    const linkOffsetFromTop = linkRect.top + currentScrollTop;
 
     if (chart.style.display === 'none' || chart.style.display === '') {
         chart.style.display = 'block';
@@ -406,6 +411,11 @@ function toggleChart(link) {
             });
             chart.querySelector('canvas').chart = newChart;
         }
+        
+        // Maintain scroll position after chart expands
+        setTimeout(() => {
+            window.scrollTo(0, linkOffsetFromTop - linkRect.top);
+        }, 10);
     } else {
         chart.style.display = 'none';
         link.textContent = 'See details';
