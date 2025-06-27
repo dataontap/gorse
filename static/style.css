@@ -590,10 +590,7 @@ body.light-mode {
     width: 450px;
     max-width: 90vw;
     height: 320px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: relative;
     padding: 20px;
     border: none;
     transition: none;
@@ -604,6 +601,7 @@ body.light-mode {
     justify-content: center;
     flex-shrink: 0;
     flex-grow: 0;
+    margin: 0 auto;
 }
 
 .offer-content {
@@ -1277,8 +1275,10 @@ body.light-mode {
 }
 
 .carousel {
-    margin-bottom: 30px;
+    margin: 30px auto;
     display: block !important;
+    width: 100%;
+    max-width: 700px;
 }
 
 .carousel-inner {
@@ -1289,6 +1289,7 @@ body.light-mode {
     display: flex;
     align-items: center;
     justify-content: center;
+    margin: 0 auto;
 }
 
 .carousel-item {
