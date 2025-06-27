@@ -48,6 +48,9 @@ class FirebaseUserMigration:
                 if user_data.get('lastSignedInAt'):
                     last_sign_in_timestamp = user_data['lastSignedInAt'] / 1000
                 
+                # Clean and validate provider data
+                cleaned_provider_data = self.clean_provider_data(user_data.get('providerData', []))
+                
                 # Create ImportUserRecord without password data (users will need to reset passwords)
                 user_import = auth.ImportUserRecord(
                     uid=user_data.get('uid'),
@@ -58,7 +61,7 @@ class FirebaseUserMigration:
                     phone_number=user_data.get('phoneNumber'),
                     disabled=user_data.get('disabled', False),
                     custom_claims=user_data.get('customClaims'),
-                    provider_data=user_data.get('providerData', []),
+                    provider_data=cleaned_provider_data,
                     user_metadata=auth.UserMetadata(
                         creation_timestamp=creation_timestamp,
                         last_sign_in_timestamp=last_sign_in_timestamp
@@ -71,6 +74,42 @@ class FirebaseUserMigration:
                 continue
                 
         return import_users
+
+    def clean_provider_data(self, provider_data: List[Dict]) -> List[auth.UserProvider]:
+        """Clean and validate provider data entries"""
+        cleaned_providers = []
+        
+        for provider in provider_data:
+            try:
+                # Skip empty or invalid providers
+                if not provider or not isinstance(provider, dict):
+                    continue
+                
+                provider_id = provider.get('providerId')
+                uid = provider.get('uid')
+                
+                # Skip if missing required fields
+                if not provider_id or not uid:
+                    print(f"Skipping provider with missing providerId or uid: {provider}")
+                    continue
+                
+                # Create UserProvider with cleaned data
+                user_provider = auth.UserProvider(
+                    uid=str(uid),  # Ensure uid is string
+                    email=provider.get('email'),
+                    display_name=provider.get('displayName'),
+                    photo_url=provider.get('photoURL'),
+                    phone_number=provider.get('phoneNumber'),
+                    provider_id=str(provider_id)  # Ensure provider_id is string
+                )
+                
+                cleaned_providers.append(user_provider)
+                
+            except Exception as e:
+                print(f"Error cleaning provider data {provider}: {str(e)}")
+                continue
+        
+        return cleaned_providers
 
     def import_users_batch(self, users: List[auth.ImportUserRecord], batch_number: int) -> Dict[str, Any]:
         """Import a batch of users without password data"""
