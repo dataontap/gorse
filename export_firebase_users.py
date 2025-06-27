@@ -106,9 +106,9 @@ class FirebaseUserExporter:
         # Add metadata timestamps
         if user.user_metadata:
             if user.user_metadata.creation_timestamp:
-                user_data['createdAt'] = int(user.user_metadata.creation_timestamp.timestamp() * 1000)
+                user_data['createdAt'] = int(user.user_metadata.creation_timestamp * 1000)
             if user.user_metadata.last_sign_in_timestamp:
-                user_data['lastSignedInAt'] = int(user.user_metadata.last_sign_in_timestamp.timestamp() * 1000)
+                user_data['lastSignedInAt'] = int(user.user_metadata.last_sign_in_timestamp * 1000)
         
         # Note: Password hashes and salts cannot be exported from Firebase
         # Users will need to reset their passwords after migration
