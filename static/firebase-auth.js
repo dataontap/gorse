@@ -1,4 +1,3 @@
-
 // Firebase Authentication handler using v9+ modular SDK
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
 import { 
@@ -27,25 +26,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    
+
     console.log("Firebase Auth initialized successfully");
-    
+
     // Configure Google auth provider
     const googleProvider = new GoogleAuthProvider();
-    
+
     // Track auth state changes
     onAuthStateChanged(auth, function(user) {
       if (user) {
         // User is signed in
         console.log("User is signed in:", user);
-        
+
         // Store user ID in localStorage for client-side use
         localStorage.setItem('userId', user.uid);
         localStorage.setItem('userEmail', user.email);
-        
+
         // Register user with our backend
         registerUserWithBackend(user);
-        
+
         // Redirect to dashboard if on signup page, but allow login page access
         const currentPath = window.location.pathname;
         if (currentPath === '/' || currentPath === '/signup') {
@@ -55,11 +54,11 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         // User is signed out
         console.log("User is signed out");
-        
+
         // Clear localStorage
         localStorage.removeItem('userId');
         localStorage.removeItem('userEmail');
-        
+
         // Redirect to home if on protected page
         const currentPath = window.location.pathname;
         const publicPages = ['/', '/signup', '/login'];
@@ -68,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
     });
-    
+
     // Register user with our backend API
     function registerUserWithBackend(firebaseUser) {
       // Send Firebase user info to backend
@@ -95,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Error registering user with backend:', error);
       });
     }
-    
+
     // Expose auth functions to global scope
     window.firebaseAuth = {
       signInWithEmailPassword: function(email, password) {
@@ -105,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
             throw error;
           });
       },
-      
+
       signInWithGoogle: function() {
         return signInWithPopup(auth, googleProvider)
           .catch(error => {
@@ -113,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
             throw error;
           });
       },
-      
+
       createUserWithEmailPassword: function(email, password) {
         return createUserWithEmailAndPassword(auth, email, password)
           .catch(error => {
@@ -121,11 +120,11 @@ document.addEventListener('DOMContentLoaded', function() {
             throw error;
           });
       },
-      
+
       signOut: function() {
         return signOut(auth);
       },
-      
+
       getCurrentUser: function() {
         return auth.currentUser;
       }
