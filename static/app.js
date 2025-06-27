@@ -253,28 +253,56 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set initial state and localStorage for new users
         if (isDarkMode) {
             body.classList.add('dark-mode');
+            body.classList.remove('light-mode');
             if (darkModePreference === null) {
                 localStorage.setItem('darkMode', 'true');
             }
-            if (icon) icon.classList.replace('fa-moon', 'fa-sun');
+            if (icon) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            }
             if (textSpan) textSpan.textContent = 'Light Mode';
+        } else {
+            body.classList.remove('dark-mode');
+            body.classList.add('light-mode');
+            if (icon) {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+            if (textSpan) textSpan.textContent = 'Dark Mode';
         }
 
         darkModeToggle.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
 
-            body.classList.toggle('dark-mode');
             const isDark = body.classList.contains('dark-mode');
-
-            if (icon) {
-                icon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', 
-                                     isDark ? 'fa-sun' : 'fa-moon');
+            
+            if (isDark) {
+                // Switch to light mode
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                if (icon) {
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                }
+                if (textSpan) {
+                    textSpan.textContent = 'Dark Mode';
+                }
+                localStorage.setItem('darkMode', 'false');
+            } else {
+                // Switch to dark mode
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                if (icon) {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                }
+                if (textSpan) {
+                    textSpan.textContent = 'Light Mode';
+                }
+                localStorage.setItem('darkMode', 'true');
             }
-            if (textSpan) {
-                textSpan.textContent = isDark ? 'Light Mode' : 'Dark Mode';
-            }
-            localStorage.setItem('darkMode', isDark);
         });
     }
 
