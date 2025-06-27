@@ -48,6 +48,112 @@ document.addEventListener('click', function(event) {
     }
 });
 
+// Help system countdown and callback functionality
+var agentCountdownInterval;
+var callbackCountdownInterval;
+
+function startAgentCountdown() {
+    var agentCountdownEl = document.getElementById('agentCountdown');
+    if (!agentCountdownEl) return;
+    
+    var minutes = 4;
+    var seconds = 20;
+    
+    agentCountdownInterval = setInterval(function() {
+        if (seconds === 0) {
+            if (minutes === 0) {
+                agentCountdownEl.textContent = '0:00';
+                agentCountdownEl.style.color = '#28a745';
+                clearInterval(agentCountdownInterval);
+                return;
+            }
+            minutes--;
+            seconds = 59;
+        } else {
+            seconds--;
+        }
+        
+        var displaySeconds = seconds < 10 ? '0' + seconds : seconds;
+        agentCountdownEl.textContent = minutes + ':' + displaySeconds;
+    }, 1000);
+}
+
+function orderCallback() {
+    var orderCallbackBtn = document.getElementById('orderCallbackBtn');
+    var callbackCountdown = document.getElementById('callbackCountdown');
+    
+    if (orderCallbackBtn && callbackCountdown) {
+        orderCallbackBtn.disabled = true;
+        orderCallbackBtn.textContent = 'Callback ordered';
+        callbackCountdown.style.display = 'block';
+        
+        startCallbackCountdown();
+        
+        // Track interaction if help desk client exists
+        if (typeof helpDesk !== 'undefined') {
+            helpDesk.trackInteraction('callback_ordered');
+        }
+    }
+}
+
+function startCallbackCountdown() {
+    var callCountdownEl = document.getElementById('callCountdown');
+    var answerCallBtn = document.getElementById('answerCallBtn');
+    
+    if (!callCountdownEl || !answerCallBtn) return;
+    
+    var totalSeconds = 30; // 30 seconds for demo
+    
+    callbackCountdownInterval = setInterval(function() {
+        if (totalSeconds <= 0) {
+            callCountdownEl.textContent = '00:00';
+            answerCallBtn.style.display = 'inline-block';
+            clearInterval(callbackCountdownInterval);
+            return;
+        }
+        
+        totalSeconds--;
+        var minutes = Math.floor(totalSeconds / 60);
+        var seconds = totalSeconds % 60;
+        var displayMinutes = minutes < 10 ? '0' + minutes : minutes;
+        var displaySeconds = seconds < 10 ? '0' + seconds : seconds;
+        callCountdownEl.textContent = displayMinutes + ':' + displaySeconds;
+    }, 1000);
+}
+
+function answerSuperAgentCall() {
+    // Simulate connecting to super agent
+    alert('Connecting you to our super agent...\n\nThis is a demo. In production, this would initiate a voice call.');
+    
+    // Reset the help section
+    var callbackCountdown = document.getElementById('callbackCountdown');
+    var orderCallbackBtn = document.getElementById('orderCallbackBtn');
+    var answerCallBtn = document.getElementById('answerCallBtn');
+    
+    if (callbackCountdown) callbackCountdown.style.display = 'none';
+    if (answerCallBtn) answerCallBtn.style.display = 'none';
+    if (orderCallbackBtn) {
+        orderCallbackBtn.disabled = false;
+        orderCallbackBtn.textContent = 'Order callback';
+    }
+    
+    // Track interaction if help desk client exists
+    if (typeof helpDesk !== 'undefined') {
+        helpDesk.trackInteraction('super_agent_call_answered');
+    }
+}
+
+function stopAllCountdowns() {
+    if (agentCountdownInterval) {
+        clearInterval(agentCountdownInterval);
+        agentCountdownInterval = null;
+    }
+    if (callbackCountdownInterval) {
+        clearInterval(callbackCountdownInterval);
+        callbackCountdownInterval = null;
+    }
+}
+
 // Notification tester functionality
 function showNotificationTester() {
     // Simple notification tester - you can expand this as needed
@@ -87,9 +193,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (helpSection.style.display === 'none' || helpSection.style.display === '') {
                 helpSection.style.display = 'block';
                 helpSection.classList.add('expanded');
+                startAgentCountdown();
             } else {
                 helpSection.style.display = 'none';
                 helpSection.classList.remove('expanded');
+                stopAllCountdowns();
             }
             
             // Track interaction if help desk client exists
@@ -98,6 +206,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Initialize callback button
+    var orderCallbackBtn = document.getElementById('orderCallbackBtn');
+    if (orderCallbackBtn) {
+        orderCallbackBtn.addEventListener('click', function() {
+            orderCallback();
+        });
+    }
+    
+    // Initialize answer call button
+    var answerCallBtn = document.getElementById('answerCallBtn');
+    if (answerCallBtn) {
+        answerCallBtn.addEventListener('click', function() {
+            answerSuperAgentCall();
+        });
+    }
+})
     
     // Initialize settings toggle functionality
     var settingsToggle = document.getElementById('settingsToggle');

@@ -59,22 +59,39 @@
                 <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 <a href="#" id="helpToggle">
                     <i class="fas fa-question-circle"></i> <span id="helpText">Help</span>
-                    <i id="helpPhoneIcon" class="fas fa-phone-alt" style="display: none;"></i>
+                    <i id="helpPhoneIcon" class="fas fa-phone" style="display: none; margin-left: 8px;"></i>
                 </a>
                 <div class="help-section" style="display: none;">
                     <div class="help-content">
-                        <p><i class="fas fa-question-circle"></i> Talk to AI instead:</p>
-                        <ul>
-                            <li style="display: flex; align-items: center;">
-                                <span class="online-indicator chatgpt-indicator"></span>
-                                <a href="https://chat.openai.com" class="help-link" target="_blank">ChatGPT</a>
-                            </li>
-                            <li style="display: flex; align-items: center;">
-                                <span class="online-indicator gemini-indicator"></span>
-                                <a href="https://gemini.google.com" class="help-link" target="_blank">Google Gemini</a>
-                            </li>
-                        </ul>
-                        <p class="help-note">LLMs goto mcp.dotmobile.app</p>
+                        <div class="help-option">
+                            <div class="help-option-header">
+                                <i class="fas fa-user-headset"></i>
+                                <span>Human help:</span>
+                            </div>
+                            <div class="super-agent-status">
+                                <span class="agent-availability">Super agent available in <span id="agentCountdown" class="countdown-timer">4:20</span></span>
+                            </div>
+                            <button id="orderCallbackBtn" class="callback-button">Order callback</button>
+                            <div id="callbackCountdown" class="callback-countdown" style="display: none;">
+                                <span>Expect a call from super agent in <span id="callCountdown" class="countdown-timer">00:00</span></span>
+                                <button id="answerCallBtn" class="answer-call-button" style="display: none;">Answer super agent's call</button>
+                            </div>
+                        </div>
+
+                        <div class="help-option">
+                            <div class="help-option-header">
+                                <i class="fas fa-robot"></i>
+                                <span>Use AI help:</span>
+                            </div>
+                            <ul class="ai-links">
+                                <li>
+                                    <a href="https://chat.openai.com" class="help-link" target="_blank">ChatGPT</a>
+                                </li>
+                                <li>
+                                    <a href="https://gemini.google.com" class="help-link" target="_blank">Gemini</a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
