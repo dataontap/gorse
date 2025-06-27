@@ -1,84 +1,62 @@
+// Firebase v9+ modular SDK for service worker
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 
-// Firebase Cloud Messaging Service Worker
-
-importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
-importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
-
-// Initialize the Firebase app in the service worker
-firebase.initializeApp({
+// Firebase configuration
+const firebaseConfig = {
   apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
   authDomain: "gorse-24e76.firebaseapp.com",
   projectId: "gorse-24e76",
-  storageBucket: "gorse-24e76.firebasestorage.app",
+  storageBucket: "gorse-24e76.appspot.com",
   messagingSenderId: "212829848250",
   appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
   measurementId: "G-WHW3XT925P"
-});
+};
 
+// Initialize Firebase in service worker
+firebase.initializeApp(firebaseConfig);
+
+// Retrieve an instance of Firebase Messaging so that it can handle background messages
 const messaging = firebase.messaging();
 
 // Handle background messages
-messaging.onBackgroundMessage((payload) => {
+messaging.onBackgroundMessage(function(payload) {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  
-  const notificationTitle = payload.notification?.title || 'New Notification';
+
+  // Customize notification here
+  const notificationTitle = payload.notification?.title || 'GORSE Network';
   const notificationOptions = {
     body: payload.notification?.body || 'You have a new notification',
-    icon: '/static/tropical-border.png',  // Use an existing image
+    icon: '/static/tropical-border.png',
     badge: '/static/tropical-border.png',
     data: payload.data || {},
-    requireInteraction: false,  // Allow auto-dismiss
-    silent: false,
-    actions: [
-      {
-        action: 'view',
-        title: 'View'
-      },
-      {
-        action: 'dismiss',
-        title: 'Dismiss'
-      }
-    ],
-    // Auto-dismiss after 10 seconds if not interacted with
-    tag: 'dismissible-notification'
+    requireInteraction: false,
+    silent: false
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// Handle notification click
-self.addEventListener('notificationclick', event => {
-  console.log('[Service Worker] Notification click received.', event.action);
-  
-  event.notification.close();
-  
-  if (event.action === 'dismiss') {
-    // Just close the notification, no further action
-    return;
-  }
-  
-  if (event.action === 'view' || !event.action) {
-    // Open a new window/tab or focus on existing one
-    event.waitUntil(
-      clients.matchAll({type: 'window', includeUncontrolled: true})
-        .then(clientList => {
-          if (clientList.length > 0) {
-            return clientList[0].focus();
-          }
-          return clients.openWindow('/dashboard');
-        })
-    );
-  }
-});
+// Handle notification click events
+self.addEventListener('notificationclick', function(event) {
+  console.log('[firebase-messaging-sw.js] Notification click received.');
 
-// Auto-dismiss notifications after 10 seconds
-self.addEventListener('notificationshow', event => {
-  setTimeout(() => {
-    self.registration.getNotifications({ tag: 'dismissible-notification' })
-      .then(notifications => {
-        notifications.forEach(notification => {
-          notification.close();
-        });
-      });
-  }, 10000); // 10 seconds
+  event.notification.close();
+
+  // This looks to see if the current is already open and focuses if it is
+  event.waitUntil(
+    clients.matchAll({
+      type: 'window'
+    }).then(function(clientList) {
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
+        if (client.url === '/' && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
+    })
+  );
 });

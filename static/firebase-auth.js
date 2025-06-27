@@ -1,29 +1,40 @@
 
-// Firebase Authentication handler
+// Firebase Authentication handler using v9+ modular SDK
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signInWithPopup, 
+  GoogleAuthProvider,
+  signOut 
+} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
 document.addEventListener('DOMContentLoaded', function() {
   try {
-    // Check if Firebase is already initialized
-    if (!firebase.apps.length) {
-      // Initialize Firebase if not already done
-      firebase.initializeApp({
-        apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
-        authDomain: "gorse-24e76.firebaseapp.com",
-        projectId: "gorse-24e76",
-        storageBucket: "gorse-24e76.appspot.com",
-        messagingSenderId: "212829848250",
-        appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
-        measurementId: "G-WHW3XT925P"
-      });
-    }
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
+      authDomain: "gorse-24e76.firebaseapp.com",
+      projectId: "gorse-24e76",
+      storageBucket: "gorse-24e76.appspot.com",
+      messagingSenderId: "212829848250",
+      appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
+      measurementId: "G-WHW3XT925P"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     
-    const auth = firebase.auth();
     console.log("Firebase Auth initialized successfully");
     
     // Configure Google auth provider
-    const googleProvider = new firebase.auth.GoogleAuthProvider();
+    const googleProvider = new GoogleAuthProvider();
     
     // Track auth state changes
-    auth.onAuthStateChanged(function(user) {
+    onAuthStateChanged(auth, function(user) {
       if (user) {
         // User is signed in
         console.log("User is signed in:", user);
@@ -88,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Expose auth functions to global scope
     window.firebaseAuth = {
       signInWithEmailPassword: function(email, password) {
-        return auth.signInWithEmailAndPassword(email, password)
+        return signInWithEmailAndPassword(auth, email, password)
           .catch(error => {
             console.error("Auth error:", error);
             throw error;
@@ -96,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
       },
       
       signInWithGoogle: function() {
-        return auth.signInWithPopup(googleProvider)
+        return signInWithPopup(auth, googleProvider)
           .catch(error => {
             console.error("Google sign-in error:", error);
             throw error;
@@ -104,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
       },
       
       createUserWithEmailPassword: function(email, password) {
-        return auth.createUserWithEmailAndPassword(email, password)
+        return createUserWithEmailAndPassword(auth, email, password)
           .catch(error => {
             console.error("User creation error:", error);
             throw error;
@@ -112,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
       },
       
       signOut: function() {
-        return auth.signOut();
+        return signOut(auth);
       },
       
       getCurrentUser: function() {

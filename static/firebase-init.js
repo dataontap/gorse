@@ -1,4 +1,8 @@
-// Initialize Firebase for web
+
+// Firebase v9+ modular SDK initialization
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js';
+
 document.addEventListener('DOMContentLoaded', function() {
   // Firebase configuration
   const firebaseConfig = {
@@ -13,21 +17,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   try {
     // Initialize Firebase
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
+    const app = initializeApp(firebaseConfig);
 
     // Initialize Firebase Cloud Messaging
-    if ('serviceWorker' in navigator && firebase.messaging.isSupported()) {
-      const messaging = firebase.messaging();
+    if ('serviceWorker' in navigator) {
+      const messaging = getMessaging(app);
 
       // Register service worker first
       navigator.serviceWorker.register('/static/firebase-messaging-sw.js')
         .then((registration) => {
           console.log('Service worker registered successfully');
-          
-          // Set the service worker for messaging BEFORE calling getToken
-          messaging.useServiceWorker(registration);
 
           // Request notification permission first
           return Notification.requestPermission();
@@ -36,14 +35,16 @@ document.addEventListener('DOMContentLoaded', function() {
           console.log('Notification permission status:', permission);
 
           if (permission === 'granted') {
-            // Now get the token after service worker is set and permission is granted
-            return messaging.getToken();
+            // Now get the token after permission is granted
+            return getToken(messaging, {
+              vapidKey: 'your-vapid-key' // You'll need to add your VAPID key here
+            });
           } else {
             throw new Error('Notification permission denied');
           }
         })
         .then((currentToken) => {
-                  if (currentToken) {
+          if (currentToken) {
             console.log('FCM token:', currentToken);
             // Send token to server for targeting this device
             sendTokenToServer(currentToken);
@@ -73,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
       // Handle foreground messages
-      messaging.onMessage((payload) => {
+      onMessage(messaging, (payload) => {
         console.log('Message received in foreground: ', payload);
         
         // Show a custom dismissible notification for foreground messages
@@ -83,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
             body: payload.notification?.body || 'You have a new notification',
             icon: '/static/tropical-border.png',
             badge: '/static/tropical-border.png',
-            requireInteraction: false, // Allow auto-dismiss
+            requireInteraction: false,
             silent: false,
             tag: 'foreground-notification',
             data: payload.data || {}
@@ -103,30 +104,8 @@ document.addEventListener('DOMContentLoaded', function() {
           };
         }
 
-        // Create and show notification for foreground message
-        if (Notification.permission === 'granted') {
-          // Try to use the notification from the payload if available
-          const notificationTitle = payload.notification?.title || 'New Notification';
-          const notificationOptions = {
-            body: payload.notification?.body || 'You have a new notification',
-            icon: '/static/tropical-border.png', // Use an existing image
-            data: payload.data,
-            requireInteraction: true // Keep notification until user interacts with it
-          };
-
-          // Create and show the notification
-          const notification = new Notification(notificationTitle, notificationOptions);
-
-          // Handle notification click
-          notification.onclick = function() {
-            console.log('Notification clicked');
-            window.focus();
-            notification.close();
-          };
-
-          // Also show an in-app notification
-          showInAppNotification(notificationTitle, notificationOptions.body);
-        }
+        // Also show an in-app notification
+        showInAppNotification(notificationTitle, notificationOptions.body);
       });
     } else {
       console.log('Firebase messaging not supported in this browser');
