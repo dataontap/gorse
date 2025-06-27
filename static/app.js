@@ -1,4 +1,3 @@
-
 // Menu toggle functionality
 function toggleMenu(element) {
     const dropdown = element.querySelector('.menu-dropdown');
@@ -39,13 +38,13 @@ document.addEventListener('click', function(event) {
     const profileSection = document.querySelector('.profile-section');
     const menuDropdown = document.querySelector('.menu-dropdown');
     const profileDropdown = document.querySelector('.profile-dropdown');
-    
+
     // Close menu dropdown if clicking outside
     if (menuDropdown && menuIcon && !menuIcon.contains(event.target)) {
         menuDropdown.classList.remove('visible');
         menuDropdown.style.display = 'none';
     }
-    
+
     // Close profile dropdown if clicking outside
     if (profileDropdown && profileSection && !profileSection.contains(event.target)) {
         profileDropdown.classList.remove('visible');
@@ -58,78 +57,12 @@ var agentCountdownInterval;
 var callbackCountdownInterval;
 
 function startAgentCountdown() {
-    var countdownElement = document.querySelector('.countdown-timer');
-    if (countdownElement) {
-        var minutes = 4;
-        var seconds = 20;
-        
-        agentCountdownInterval = setInterval(function() {
-            if (seconds > 0) {
-                seconds--;
-            } else if (minutes > 0) {
-                minutes--;
-                seconds = 59;
-            } else {
-                clearInterval(agentCountdownInterval);
-                countdownElement.textContent = 'Agent available now!';
-                return;
-            }
-            
-            var timeStr = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-            countdownElement.textContent = timeStr;
-        }, 1000);
-    }
-}
-
-function stopAllCountdowns() {
-    if (agentCountdownInterval) {
-        clearInterval(agentCountdownInterval);
-    }
-    if (callbackCountdownInterval) {
-        clearInterval(callbackCountdownInterval);
-    }
-}
-
-function orderCallback() {
-    var callbackBtn = document.getElementById('orderCallbackBtn');
-    if (callbackBtn) {
-        callbackBtn.disabled = true;
-        callbackBtn.textContent = 'Callback Ordered';
-        
-        // Show countdown
-        var countdownDiv = document.querySelector('.callback-countdown');
-        if (!countdownDiv) {
-            countdownDiv = document.createElement('div');
-            countdownDiv.className = 'callback-countdown';
-            callbackBtn.parentNode.appendChild(countdownDiv);
-        }
-        
-        var countdownTime = 300; // 5 minutes
-        callbackCountdownInterval = setInterval(function() {
-            if (countdownTime > 0) {
-                var minutes = Math.floor(countdownTime / 60);
-                var seconds = countdownTime % 60;
-                countdownDiv.innerHTML = 'Expect callback in: ' + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-                countdownTime--;
-            } else {
-                clearInterval(callbackCountdownInterval);
-                countdownDiv.innerHTML = '<button id="answerCallBtn" class="answer-call-button">Answer Super Agent\'s Call</button>';
-            }
-        }, 1000);
-    }
-}
-
-function answerCall() {
-    alert('Connecting you with our super agent...');
-}
-
-function startAgentCountdown() {
     var agentCountdownEl = document.getElementById('agentCountdown');
     if (!agentCountdownEl) return;
-    
+
     var minutes = 4;
     var seconds = 20;
-    
+
     agentCountdownInterval = setInterval(function() {
         if (seconds === 0) {
             if (minutes === 0) {
@@ -143,7 +76,7 @@ function startAgentCountdown() {
         } else {
             seconds--;
         }
-        
+
         var displaySeconds = seconds < 10 ? '0' + seconds : seconds;
         agentCountdownEl.textContent = minutes + ':' + displaySeconds;
     }, 1000);
@@ -152,14 +85,14 @@ function startAgentCountdown() {
 function orderCallback() {
     var orderCallbackBtn = document.getElementById('orderCallbackBtn');
     var callbackCountdown = document.getElementById('callbackCountdown');
-    
+
     if (orderCallbackBtn && callbackCountdown) {
         orderCallbackBtn.disabled = true;
         orderCallbackBtn.textContent = 'Callback ordered';
         callbackCountdown.style.display = 'block';
-        
+
         startCallbackCountdown();
-        
+
         // Track interaction if help desk client exists
         if (typeof helpDesk !== 'undefined') {
             helpDesk.trackInteraction('callback_ordered');
@@ -170,11 +103,11 @@ function orderCallback() {
 function startCallbackCountdown() {
     var callCountdownEl = document.getElementById('callCountdown');
     var answerCallBtn = document.getElementById('answerCallBtn');
-    
+
     if (!callCountdownEl || !answerCallBtn) return;
-    
+
     var totalSeconds = 30; // 30 seconds for demo
-    
+
     callbackCountdownInterval = setInterval(function() {
         if (totalSeconds <= 0) {
             callCountdownEl.textContent = '00:00';
@@ -182,7 +115,7 @@ function startCallbackCountdown() {
             clearInterval(callbackCountdownInterval);
             return;
         }
-        
+
         totalSeconds--;
         var minutes = Math.floor(totalSeconds / 60);
         var seconds = totalSeconds % 60;
@@ -195,19 +128,19 @@ function startCallbackCountdown() {
 function answerSuperAgentCall() {
     // Simulate connecting to super agent
     alert('Connecting you to our super agent...\n\nThis is a demo. In production, this would initiate a voice call.');
-    
+
     // Reset the help section
     var callbackCountdown = document.getElementById('callbackCountdown');
     var orderCallbackBtn = document.getElementById('orderCallbackBtn');
     var answerCallBtn = document.getElementById('answerCallBtn');
-    
+
     if (callbackCountdown) callbackCountdown.style.display = 'none';
     if (answerCallBtn) answerCallBtn.style.display = 'none';
     if (orderCallbackBtn) {
         orderCallbackBtn.disabled = false;
         orderCallbackBtn.textContent = 'Order callback';
     }
-    
+
     // Track interaction if help desk client exists
     if (typeof helpDesk !== 'undefined') {
         helpDesk.trackInteraction('super_agent_call_answered');
@@ -250,13 +183,13 @@ function showNotificationTester() {
 // Help system functionality
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Help desk script loaded successfully');
-    
+
     // Initialize help toggle functionality using event delegation
     document.addEventListener('click', function(e) {
         if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             var helpSection = document.querySelector('.help-section');
             if (helpSection) {
                 // Toggle help section visibility
@@ -269,41 +202,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     helpSection.style.display = 'block';
                     startAgentCountdown();
                 }
-                
+
                 // Track interaction if help desk client exists
                 if (typeof helpDesk !== 'undefined') {
                     helpDesk.trackInteraction('help_toggle');
                 }
             }
         }
-        
+
         // Handle callback button
         if (e.target.id === 'orderCallbackBtn') {
             orderCallback();
         }
-        
+
         // Handle answer call button
         if (e.target.id === 'answerCallBtn') {
-            answerCall();
+            answerSuperAgentCall();
         }
     });
-});Btn');
-    if (answerCallBtn) {
-        answerCallBtn.addEventListener('click', function() {
-            answerSuperAgentCall();
-        });
-    }
-})
-    
+
     // Initialize settings toggle functionality
     var settingsToggle = document.getElementById('settingsToggle');
     var settingsSubmenu = document.querySelector('.settings-submenu');
-    
+
     if (settingsToggle && settingsSubmenu) {
         settingsToggle.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             // Toggle settings submenu visibility
             if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
                 settingsSubmenu.style.display = 'block';
@@ -312,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     // Initialize dark mode toggle functionality
     var darkModeToggle = document.getElementById('darkModeToggle');
     if (darkModeToggle) {
@@ -336,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
         darkModeToggle.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             body.classList.toggle('dark-mode');
             const isDark = body.classList.contains('dark-mode');
 
@@ -350,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('darkMode', isDark);
         });
     }
-    
+
     // Carousel functionality if present
     initializeCarousel();
 });
@@ -358,24 +284,24 @@ document.addEventListener('DOMContentLoaded', function() {
 // Carousel initialization
 function initializeCarousel() {
     console.log('Carousel initialized');
-    
+
     var carouselItems = document.querySelectorAll('.carousel-item');
     var carouselControls = document.querySelectorAll('.carousel-controls button');
     var currentSlide = 0;
-    
+
     if (carouselItems.length === 0) return;
-    
+
     // Set initial active item
     carouselItems[0].classList.add('active');
     if (carouselControls[0]) carouselControls[0].classList.add('active');
-    
+
     // Add control event listeners
     carouselControls.forEach(function(control, index) {
         control.addEventListener('click', function() {
             showSlide(index);
         });
     });
-    
+
     function showSlide(index) {
         // Remove active class from all items and controls
         carouselItems.forEach(function(item) {
@@ -384,16 +310,16 @@ function initializeCarousel() {
         carouselControls.forEach(function(control) {
             control.classList.remove('active');
         });
-        
+
         // Add active class to current item and control
         carouselItems[index].classList.add('active');
         if (carouselControls[index]) {
             carouselControls[index].classList.add('active');
         }
-        
+
         currentSlide = index;
     }
-    
+
     // Auto-advance carousel every 5 seconds
     setInterval(function() {
         var nextSlide = (currentSlide + 1) % carouselItems.length;
