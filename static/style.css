@@ -1275,10 +1275,14 @@ body.light-mode {
 }
 
 .carousel {
-    margin: 30px auto;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     display: block !important;
     width: 100%;
     max-width: 700px;
+    z-index: 1000;
 }
 
 .carousel-inner {
@@ -1289,7 +1293,6 @@ body.light-mode {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto;
 }
 
 .carousel-item {
