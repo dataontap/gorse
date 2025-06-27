@@ -1281,6 +1281,8 @@ body.light-mode {
     width: 100%;
     max-width: 700px;
     z-index: 1000;
+    left: 0;
+    right: 0;
 }
 
 .carousel-inner {
