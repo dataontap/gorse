@@ -99,7 +99,6 @@ class FirebaseUserMigration:
                     email=provider.get('email'),
                     display_name=provider.get('displayName'),
                     photo_url=provider.get('photoURL'),
-                    phone_number=provider.get('phoneNumber'),
                     provider_id=str(provider_id)  # Ensure provider_id is string
                 )
                 
@@ -107,6 +106,7 @@ class FirebaseUserMigration:
                 
             except Exception as e:
                 print(f"Error cleaning provider data {provider}: {str(e)}")
+                print(f"Provider keys: {list(provider.keys()) if provider else 'None'}")
                 continue
         
         return cleaned_providers
