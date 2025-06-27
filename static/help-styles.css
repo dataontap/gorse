@@ -435,6 +435,138 @@
     opacity: 1;
 }
 
+/* Redesigned help content styles */
+.help-content-redesigned {
+    padding: 15px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.human-help-section, .ai-help-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.help-option-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 12px;
+}
+
+.help-option-header i {
+    font-size: 18px;
+    color: #007bff;
+}
+
+.help-option-content {
+    padding-left: 26px;
+}
+
+.agent-status {
+    margin-bottom: 12px;
+}
+
+.agent-availability {
+    font-size: 14px;
+    color: #666;
+}
+
+.countdown-timer {
+    color: #28a745 !important;
+    font-weight: bold !important;
+}
+
+.callback-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.callback-btn:hover {
+    background: #0056b3;
+}
+
+.callback-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.ai-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ai-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: background 0.3s;
+}
+
+.chatgpt-link {
+    color: #10a37f;
+    background: rgba(16, 163, 127, 0.1);
+}
+
+.chatgpt-link:hover {
+    background: rgba(16, 163, 127, 0.2);
+    color: #0d8c6b;
+}
+
+.gemini-link {
+    color: #4285f4;
+    background: rgba(66, 133, 244, 0.1);
+}
+
+.gemini-link:hover {
+    background: rgba(66, 133, 244, 0.2);
+    color: #3367d6;
+}
+
+.ai-link i {
+    font-size: 16px;
+}
+
+.callback-countdown {
+    margin-top: 10px;
+    padding: 8px;
+    background: #e3f2fd;
+    border-radius: 5px;
+    font-size: 13px;
+    color: #1976d2;
+}
+
+.answer-call-button {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+.answer-call-button:hover {
+    background: #218838;
+}
+
 .help-content {
     text-align: center;
     padding: 15px;
