@@ -39,7 +39,16 @@ class FirebaseUserMigration:
         
         for user_data in source_users:
             try:
-                # Create ImportUserRecord with the provided hash configuration
+                # Convert timestamps from milliseconds to seconds if they exist
+                creation_timestamp = None
+                last_sign_in_timestamp = None
+                
+                if user_data.get('createdAt'):
+                    creation_timestamp = user_data['createdAt'] / 1000
+                if user_data.get('lastSignedInAt'):
+                    last_sign_in_timestamp = user_data['lastSignedInAt'] / 1000
+                
+                # Create ImportUserRecord without password data (users will need to reset passwords)
                 user_import = auth.ImportUserRecord(
                     uid=user_data.get('uid'),
                     email=user_data.get('email'),
@@ -48,14 +57,12 @@ class FirebaseUserMigration:
                     photo_url=user_data.get('photoURL'),
                     phone_number=user_data.get('phoneNumber'),
                     disabled=user_data.get('disabled', False),
-                    password_hash=user_data.get('passwordHash'),  # Base64 encoded hash
-                    password_salt=user_data.get('salt'),  # Base64 encoded salt
                     custom_claims=user_data.get('customClaims'),
                     provider_data=user_data.get('providerData', []),
                     user_metadata=auth.UserMetadata(
-                        creation_timestamp=user_data.get('createdAt'),
-                        last_sign_in_timestamp=user_data.get('lastSignedInAt')
-                    )
+                        creation_timestamp=creation_timestamp,
+                        last_sign_in_timestamp=last_sign_in_timestamp
+                    ) if creation_timestamp or last_sign_in_timestamp else None
                 )
                 import_users.append(user_import)
                 
@@ -66,18 +73,10 @@ class FirebaseUserMigration:
         return import_users
 
     def import_users_batch(self, users: List[auth.ImportUserRecord], batch_number: int) -> Dict[str, Any]:
-        """Import a batch of users with hash configuration"""
+        """Import a batch of users without password data"""
         try:
-            # Define the hash configuration from your source project
-            hash_config = auth.UserImportHash.scrypt(
-                key=b'HbIMGQzY6gIY3oivOPq5vecHrXQlMbvzsNrapuOKw9wkQVQV8uc76O/58ByskDnSdXF3obhmQ3c8D0XHfgVKaA==',  # base64_signer_key
-                salt_separator=b'Bw==',  # base64_salt_separator
-                rounds=8,
-                memory_cost=14
-            )
-
-            # Import the users
-            result = auth.import_users(users, hash_algo=hash_config)
+            # Import the users without hash configuration (users will need to reset passwords)
+            result = auth.import_users(users)
             
             print(f"Batch {batch_number} - Successfully imported {result.success_count} users")
             if result.failure_count > 0:

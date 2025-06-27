@@ -21,7 +21,7 @@ def run_single_batch(batch_number: int, file_path: str = None):
         print(f"Loading from: {file_path}")
         
         # Load and migrate users from the specific batch file
-        results = migrator.migrate_users_from_files(file_path.replace(str(batch_number), "{}"), 1)
+        results = migrator.migrate_users_from_single_file(file_path)
         
         if results:
             result = results[0]
