@@ -1,0 +1,29 @@
+
+{
+  "users": [
+    {
+      "uid": "user123",
+      "email": "user@example.com",
+      "emailVerified": true,
+      "displayName": "John Doe",
+      "photoURL": "https://example.com/photo.jpg",
+      "phoneNumber": "+1234567890",
+      "disabled": false,
+      "passwordHash": "base64_encoded_scrypt_hash_here",
+      "salt": "base64_encoded_salt_here",
+      "customClaims": {
+        "admin": false,
+        "role": "user"
+      },
+      "providerData": [
+        {
+          "uid": "user@example.com",
+          "email": "user@example.com",
+          "providerId": "password"
+        }
+      ],
+      "createdAt": 1640995200000,
+      "lastSignedInAt": 1640995200000
+    }
+  ]
+}
