@@ -1,18 +1,9 @@
 // Firebase Authentication handler using v9+ modular SDK
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-import { 
-  getAuth, 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signInWithPopup, 
-  GoogleAuthProvider,
-  signOut 
-} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+// Remove import statements as we're using the Firebase SDK via script tags
 
 document.addEventListener('DOMContentLoaded', function() {
   try {
-    // Firebase configuration
+    // Firebase configuration - using global Firebase object
     const firebaseConfig = {
       apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
       authDomain: "gorse-24e76.firebaseapp.com",
@@ -23,17 +14,17 @@ document.addEventListener('DOMContentLoaded', function() {
       measurementId: "G-WHW3XT925P"
     };
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+    // Initialize Firebase using global Firebase object
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
 
     console.log("Firebase Auth initialized successfully");
 
     // Configure Google auth provider
-    const googleProvider = new GoogleAuthProvider();
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
 
     // Track auth state changes
-    onAuthStateChanged(auth, function(user) {
+    firebase.auth().onAuthStateChanged(function(user) {
       if (user) {
         // User is signed in
         console.log("User is signed in:", user);
@@ -98,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Expose auth functions to global scope
     window.firebaseAuth = {
       signInWithEmailPassword: function(email, password) {
-        return signInWithEmailAndPassword(auth, email, password)
+        return firebase.auth().signInWithEmailAndPassword(email, password)
           .catch(error => {
             console.error("Auth error:", error);
             throw error;
@@ -106,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
       },
 
       signInWithGoogle: function() {
-        return signInWithPopup(auth, googleProvider)
+        return firebase.auth().signInWithPopup(googleProvider)
           .catch(error => {
             console.error("Google sign-in error:", error);
             throw error;
@@ -114,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
       },
 
       createUserWithEmailPassword: function(email, password) {
-        return createUserWithEmailAndPassword(auth, email, password)
+        return firebase.auth().createUserWithEmailAndPassword(email, password)
           .catch(error => {
             console.error("User creation error:", error);
             throw error;
@@ -122,11 +113,11 @@ document.addEventListener('DOMContentLoaded', function() {
       },
 
       signOut: function() {
-        return signOut(auth);
+        return firebase.auth().signOut();
       },
 
       getCurrentUser: function() {
-        return auth.currentUser;
+        return firebase.auth().currentUser;
       }
     };
   } catch (error) {
