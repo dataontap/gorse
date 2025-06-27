@@ -28,6 +28,11 @@ function toggleProfileDropdown() {
     }
 }
 
+function setActiveCarouselItem(index) {
+    // Placeholder function to prevent console errors
+    console.log('Carousel item', index, 'selected');
+}
+
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(event) {
     const menuIcon = document.querySelector('.menu-icon');
@@ -51,6 +56,72 @@ document.addEventListener('click', function(event) {
 // Help system countdown and callback functionality
 var agentCountdownInterval;
 var callbackCountdownInterval;
+
+function startAgentCountdown() {
+    var countdownElement = document.querySelector('.countdown-timer');
+    if (countdownElement) {
+        var minutes = 4;
+        var seconds = 20;
+        
+        agentCountdownInterval = setInterval(function() {
+            if (seconds > 0) {
+                seconds--;
+            } else if (minutes > 0) {
+                minutes--;
+                seconds = 59;
+            } else {
+                clearInterval(agentCountdownInterval);
+                countdownElement.textContent = 'Agent available now!';
+                return;
+            }
+            
+            var timeStr = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+            countdownElement.textContent = timeStr;
+        }, 1000);
+    }
+}
+
+function stopAllCountdowns() {
+    if (agentCountdownInterval) {
+        clearInterval(agentCountdownInterval);
+    }
+    if (callbackCountdownInterval) {
+        clearInterval(callbackCountdownInterval);
+    }
+}
+
+function orderCallback() {
+    var callbackBtn = document.getElementById('orderCallbackBtn');
+    if (callbackBtn) {
+        callbackBtn.disabled = true;
+        callbackBtn.textContent = 'Callback Ordered';
+        
+        // Show countdown
+        var countdownDiv = document.querySelector('.callback-countdown');
+        if (!countdownDiv) {
+            countdownDiv = document.createElement('div');
+            countdownDiv.className = 'callback-countdown';
+            callbackBtn.parentNode.appendChild(countdownDiv);
+        }
+        
+        var countdownTime = 300; // 5 minutes
+        callbackCountdownInterval = setInterval(function() {
+            if (countdownTime > 0) {
+                var minutes = Math.floor(countdownTime / 60);
+                var seconds = countdownTime % 60;
+                countdownDiv.innerHTML = 'Expect callback in: ' + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+                countdownTime--;
+            } else {
+                clearInterval(callbackCountdownInterval);
+                countdownDiv.innerHTML = '<button id="answerCallBtn" class="answer-call-button">Answer Super Agent\'s Call</button>';
+            }
+        }, 1000);
+    }
+}
+
+function answerCall() {
+    alert('Connecting you with our super agent...');
+}
 
 function startAgentCountdown() {
     var agentCountdownEl = document.getElementById('agentCountdown');
@@ -180,43 +251,43 @@ function showNotificationTester() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Help desk script loaded successfully');
     
-    // Initialize help toggle functionality
-    var helpToggle = document.getElementById('helpToggle');
-    var helpSection = document.querySelector('.help-section');
-    
-    if (helpToggle && helpSection) {
-        helpToggle.addEventListener('click', function(e) {
+    // Initialize help toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
             e.preventDefault();
             e.stopPropagation();
             
-            // Toggle help section visibility
-            if (helpSection.style.display === 'none' || helpSection.style.display === '') {
-                helpSection.style.display = 'block';
-                helpSection.classList.add('expanded');
-                startAgentCountdown();
-            } else {
-                helpSection.style.display = 'none';
-                helpSection.classList.remove('expanded');
-                stopAllCountdowns();
+            var helpSection = document.querySelector('.help-section');
+            if (helpSection) {
+                // Toggle help section visibility
+                if (helpSection.classList.contains('expanded')) {
+                    helpSection.classList.remove('expanded');
+                    helpSection.style.display = 'none';
+                    stopAllCountdowns();
+                } else {
+                    helpSection.classList.add('expanded');
+                    helpSection.style.display = 'block';
+                    startAgentCountdown();
+                }
+                
+                // Track interaction if help desk client exists
+                if (typeof helpDesk !== 'undefined') {
+                    helpDesk.trackInteraction('help_toggle');
+                }
             }
-            
-            // Track interaction if help desk client exists
-            if (typeof helpDesk !== 'undefined') {
-                helpDesk.trackInteraction('help_toggle');
-            }
-        });
-    }
-    
-    // Initialize callback button
-    var orderCallbackBtn = document.getElementById('orderCallbackBtn');
-    if (orderCallbackBtn) {
-        orderCallbackBtn.addEventListener('click', function() {
+        }
+        
+        // Handle callback button
+        if (e.target.id === 'orderCallbackBtn') {
             orderCallback();
-        });
-    }
-    
-    // Initialize answer call button
-    var answerCallBtn = document.getElementById('answerCallBtn');
+        }
+        
+        // Handle answer call button
+        if (e.target.id === 'answerCallBtn') {
+            answerCall();
+        }
+    });
+});Btn');
     if (answerCallBtn) {
         answerCallBtn.addEventListener('click', function() {
             answerSuperAgentCall();
