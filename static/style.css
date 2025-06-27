@@ -588,10 +588,10 @@ body.light-mode {
     background: transparent;
     border-radius: 15px;
     width: 100%;
-    max-width: 450px;
-    height: 320px;
+    max-width: 400px;
+    height: 100%;
     position: relative;
-    padding: 20px;
+    padding: 0;
     border: none;
     transition: none;
     will-change: auto;
@@ -606,19 +606,21 @@ body.light-mode {
 
 .offer-content {
     text-align: center;
-    padding: 20px;
+    padding: 40px 20px;
     background: transparent !important;
     border-radius: 15px;
     position: relative;
     z-index: 3;
     width: 100%;
-    height: 100%;
+    height: auto;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 15px;
+    gap: 20px;
+    margin: 0 auto;
+    max-width: 350px;
 }
 
 .offer-content h3,
@@ -1294,7 +1296,7 @@ body.light-mode {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 20px;
+    padding: 0;
     box-sizing: border-box;
 }
 
@@ -1302,13 +1304,15 @@ body.light-mode {
     display: none;
     position: absolute;
     top: 0;
-    left: 20px;
-    right: 20px;
-    width: calc(100% - 40px);
+    left: 0;
+    right: 0;
+    width: 100%;
     height: 100%;
     transition: transform 0.3s ease-in-out;
     align-items: center;
     justify-content: center;
+    padding: 0 20px;
+    box-sizing: border-box;
 }
 
 .carousel-item.active {
