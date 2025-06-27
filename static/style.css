@@ -542,18 +542,15 @@ body.light-mode {
 }
 
 .carousel-item {
-    transition: none;
+    display: none;
     position: absolute;
-    left: 0;
     top: 0;
+    left: 0;
     width: 100%;
-    display: flex;
-    flex-direction: column;
+    height: 100%;
+    transition: transform 0.3s ease-in-out;
     align-items: center;
-    opacity: 0;
-    visibility: hidden;
-    padding: 20px;
-    background: transparent;
+    justify-content: center;
 }
 
 .offer-content h3 {
@@ -591,10 +588,13 @@ body.light-mode {
     background: transparent;
     border-radius: 15px;
     width: 450px;
+    max-width: 90vw;
     height: 320px;
-    position: relative;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     padding: 20px;
-    margin: 0 auto;
     border: none;
     transition: none;
     will-change: auto;
@@ -1038,6 +1038,7 @@ body.light-mode {
 }
 
 .help-content {
+```python
     padding: 5px 0;
 }
 
@@ -2148,8 +2149,7 @@ body.light-mode {
     bottom: 60px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(102, 102, 102, 0.8);
-    padding: 8px 16px;
+    background: rgba(102, 102, 102, 0.8);padding: 8px 16px;
     border-radius: 20px;
     display: none;
     z-index: 1000;
@@ -2939,18 +2939,18 @@ input:checked + .toggle-slider:before {
         flex-direction: column;
         align-items: center;
     }
-    
+
     .accept-call-btn,
     .callback-btn {
         width: 100%;
         max-width: 280px;
     }
-    
+
     .agent-info {
         flex-direction: column;
         text-align: center;
     }
-    
+
     .agent-avatar {
         width: 100px;
         height: 100px;
