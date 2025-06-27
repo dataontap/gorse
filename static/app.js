@@ -1,3 +1,4 @@
+
 // Menu toggle functionality
 function toggleMenu(element) {
     const dropdown = element.querySelector('.menu-dropdown');
@@ -27,136 +28,25 @@ function toggleProfileDropdown() {
     }
 }
 
-function setActiveCarouselItem(index) {
-    // Placeholder function to prevent console errors
-    console.log('Carousel item', index, 'selected');
-}
-
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(event) {
     const menuIcon = document.querySelector('.menu-icon');
     const profileSection = document.querySelector('.profile-section');
     const menuDropdown = document.querySelector('.menu-dropdown');
     const profileDropdown = document.querySelector('.profile-dropdown');
-
+    
     // Close menu dropdown if clicking outside
     if (menuDropdown && menuIcon && !menuIcon.contains(event.target)) {
         menuDropdown.classList.remove('visible');
         menuDropdown.style.display = 'none';
     }
-
+    
     // Close profile dropdown if clicking outside
     if (profileDropdown && profileSection && !profileSection.contains(event.target)) {
         profileDropdown.classList.remove('visible');
         profileDropdown.style.display = 'none';
     }
 });
-
-// Help system countdown and callback functionality
-var agentCountdownInterval;
-var callbackCountdownInterval;
-
-function startAgentCountdown() {
-    var agentCountdownEl = document.getElementById('agentCountdown');
-    if (!agentCountdownEl) return;
-
-    var minutes = 4;
-    var seconds = 20;
-
-    agentCountdownInterval = setInterval(function() {
-        if (seconds === 0) {
-            if (minutes === 0) {
-                agentCountdownEl.textContent = '0:00';
-                agentCountdownEl.style.color = '#28a745';
-                clearInterval(agentCountdownInterval);
-                return;
-            }
-            minutes--;
-            seconds = 59;
-        } else {
-            seconds--;
-        }
-
-        var displaySeconds = seconds < 10 ? '0' + seconds : seconds;
-        agentCountdownEl.textContent = minutes + ':' + displaySeconds;
-    }, 1000);
-}
-
-function orderCallback() {
-    var orderCallbackBtn = document.getElementById('orderCallbackBtn');
-    var callbackCountdown = document.getElementById('callbackCountdown');
-
-    if (orderCallbackBtn && callbackCountdown) {
-        orderCallbackBtn.disabled = true;
-        orderCallbackBtn.textContent = 'Callback ordered';
-        callbackCountdown.style.display = 'block';
-
-        startCallbackCountdown();
-
-        // Track interaction if help desk client exists
-        if (typeof helpDesk !== 'undefined') {
-            helpDesk.trackInteraction('callback_ordered');
-        }
-    }
-}
-
-function startCallbackCountdown() {
-    var callCountdownEl = document.getElementById('callCountdown');
-    var answerCallBtn = document.getElementById('answerCallBtn');
-
-    if (!callCountdownEl || !answerCallBtn) return;
-
-    var totalSeconds = 30; // 30 seconds for demo
-
-    callbackCountdownInterval = setInterval(function() {
-        if (totalSeconds <= 0) {
-            callCountdownEl.textContent = '00:00';
-            answerCallBtn.style.display = 'inline-block';
-            clearInterval(callbackCountdownInterval);
-            return;
-        }
-
-        totalSeconds--;
-        var minutes = Math.floor(totalSeconds / 60);
-        var seconds = totalSeconds % 60;
-        var displayMinutes = minutes < 10 ? '0' + minutes : minutes;
-        var displaySeconds = seconds < 10 ? '0' + seconds : seconds;
-        callCountdownEl.textContent = displayMinutes + ':' + displaySeconds;
-    }, 1000);
-}
-
-function answerSuperAgentCall() {
-    // Simulate connecting to super agent
-    alert('Connecting you to our super agent...\n\nThis is a demo. In production, this would initiate a voice call.');
-
-    // Reset the help section
-    var callbackCountdown = document.getElementById('callbackCountdown');
-    var orderCallbackBtn = document.getElementById('orderCallbackBtn');
-    var answerCallBtn = document.getElementById('answerCallBtn');
-
-    if (callbackCountdown) callbackCountdown.style.display = 'none';
-    if (answerCallBtn) answerCallBtn.style.display = 'none';
-    if (orderCallbackBtn) {
-        orderCallbackBtn.disabled = false;
-        orderCallbackBtn.textContent = 'Order callback';
-    }
-
-    // Track interaction if help desk client exists
-    if (typeof helpDesk !== 'undefined') {
-        helpDesk.trackInteraction('super_agent_call_answered');
-    }
-}
-
-function stopAllCountdowns() {
-    if (agentCountdownInterval) {
-        clearInterval(agentCountdownInterval);
-        agentCountdownInterval = null;
-    }
-    if (callbackCountdownInterval) {
-        clearInterval(callbackCountdownInterval);
-        callbackCountdownInterval = null;
-    }
-}
 
 // Notification tester functionality
 function showNotificationTester() {
@@ -183,53 +73,41 @@ function showNotificationTester() {
 // Help system functionality
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Help desk script loaded successfully');
-
-    // Initialize help toggle functionality using event delegation
-    document.addEventListener('click', function(e) {
-        if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
+    
+    // Initialize help toggle functionality
+    var helpToggle = document.getElementById('helpToggle');
+    var helpSection = document.querySelector('.help-section');
+    
+    if (helpToggle && helpSection) {
+        helpToggle.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-
-            var helpSection = document.querySelector('.help-section');
-            if (helpSection) {
-                // Toggle help section visibility
-                if (helpSection.classList.contains('expanded')) {
-                    helpSection.classList.remove('expanded');
-                    helpSection.style.display = 'none';
-                    stopAllCountdowns();
-                } else {
-                    helpSection.classList.add('expanded');
-                    helpSection.style.display = 'block';
-                    startAgentCountdown();
-                }
-
-                // Track interaction if help desk client exists
-                if (typeof helpDesk !== 'undefined') {
-                    helpDesk.trackInteraction('help_toggle');
-                }
+            
+            // Toggle help section visibility
+            if (helpSection.style.display === 'none' || helpSection.style.display === '') {
+                helpSection.style.display = 'block';
+                helpSection.classList.add('expanded');
+            } else {
+                helpSection.style.display = 'none';
+                helpSection.classList.remove('expanded');
             }
-        }
-
-        // Handle callback button
-        if (e.target.id === 'orderCallbackBtn') {
-            orderCallback();
-        }
-
-        // Handle answer call button
-        if (e.target.id === 'answerCallBtn') {
-            answerSuperAgentCall();
-        }
-    });
-
+            
+            // Track interaction if help desk client exists
+            if (typeof helpDesk !== 'undefined') {
+                helpDesk.trackInteraction('help_toggle');
+            }
+        });
+    }
+    
     // Initialize settings toggle functionality
     var settingsToggle = document.getElementById('settingsToggle');
     var settingsSubmenu = document.querySelector('.settings-submenu');
-
+    
     if (settingsToggle && settingsSubmenu) {
         settingsToggle.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-
+            
             // Toggle settings submenu visibility
             if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
                 settingsSubmenu.style.display = 'block';
@@ -238,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
+    
     // Initialize dark mode toggle functionality
     var darkModeToggle = document.getElementById('darkModeToggle');
     if (darkModeToggle) {
@@ -262,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
         darkModeToggle.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-
+            
             body.classList.toggle('dark-mode');
             const isDark = body.classList.contains('dark-mode');
 
@@ -276,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('darkMode', isDark);
         });
     }
-
+    
     // Carousel functionality if present
     initializeCarousel();
 });
@@ -284,24 +162,24 @@ document.addEventListener('DOMContentLoaded', function() {
 // Carousel initialization
 function initializeCarousel() {
     console.log('Carousel initialized');
-
+    
     var carouselItems = document.querySelectorAll('.carousel-item');
     var carouselControls = document.querySelectorAll('.carousel-controls button');
     var currentSlide = 0;
-
+    
     if (carouselItems.length === 0) return;
-
+    
     // Set initial active item
     carouselItems[0].classList.add('active');
     if (carouselControls[0]) carouselControls[0].classList.add('active');
-
+    
     // Add control event listeners
     carouselControls.forEach(function(control, index) {
         control.addEventListener('click', function() {
             showSlide(index);
         });
     });
-
+    
     function showSlide(index) {
         // Remove active class from all items and controls
         carouselItems.forEach(function(item) {
@@ -310,16 +188,16 @@ function initializeCarousel() {
         carouselControls.forEach(function(control) {
             control.classList.remove('active');
         });
-
+        
         // Add active class to current item and control
         carouselItems[index].classList.add('active');
         if (carouselControls[index]) {
             carouselControls[index].classList.add('active');
         }
-
+        
         currentSlide = index;
     }
-
+    
     // Auto-advance carousel every 5 seconds
     setInterval(function() {
         var nextSlide = (currentSlide + 1) % carouselItems.length;

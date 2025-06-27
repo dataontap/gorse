@@ -418,7 +418,7 @@
 
 .help-section {
     padding-left: 15px;
-    background: rgba(245, 245, 245, 0.95);
+    background: rgba(245, 245, 245, 0.5);
     border-left: 2px solid #eee;
     max-height: 0;
     overflow: hidden;
@@ -428,131 +428,16 @@
 }
 
 .help-section.expanded {
-    max-height: 600px;
-    padding-top: 15px;
-    padding-bottom: 15px;
+    max-height: 500px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     display: block;
     opacity: 1;
 }
 
 .help-content {
-    padding: 10px;
-}
-
-.help-option {
-    margin-bottom: 20px;
+    text-align: center;
     padding: 15px;
-    background: white;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
-}
-
-.help-option-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 12px;
-    font-weight: bold;
-    color: #333;
-}
-
-.help-option-header i {
-    margin-right: 8px;
-    font-size: 16px;
-}
-
-.super-agent-status {
-    margin-bottom: 12px;
-}
-
-.agent-availability {
-    font-size: 14px;
-    color: #666;
-}
-
-.countdown-timer {
-    color: #28a745;
-    font-weight: bold;
-}
-
-.callback-button {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    transition: background 0.3s ease;
-}
-
-.callback-button:hover {
-    background: #0056b3;
-}
-
-.callback-button:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
-}
-
-.callback-countdown {
-    margin-top: 15px;
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 6px;
-    border-left: 4px solid #28a745;
-}
-
-.answer-call-button {
-    background: #28a745;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    margin-top: 10px;
-    animation: pulse-green 2s infinite;
-}
-
-@keyframes pulse-green {
-    0% {
-        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
-    }
-}
-
-.ai-links {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.ai-links li {
-    margin-bottom: 8px;
-}
-
-.ai-links .help-link {
-    display: block;
-    padding: 10px 15px;
-    background: #f8f9fa;
-    color: #007bff;
-    text-decoration: none;
-    border-radius: 6px;
-    border: 1px solid #e0e0e0;
-    transition: all 0.3s ease;
-}
-
-.ai-links .help-link:hover {
-    background: #e9ecef;
-    border-color: #007bff;
-    text-decoration: none;
 }
 
 .help-status {

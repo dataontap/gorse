@@ -41,42 +41,27 @@
                     <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
                 </div>
                 <a href="#" id="helpToggle">
-                    <i class="fas fa-question-circle"></i> <span id="helpText">Help</span>
-                    <i id="helpPhoneIcon" class="fas fa-phone" style="display: none; margin-left: 8px;"></i>
+                    <i class="fas fa-phone-alt"></i> Live Person Callback
+                    <span id="helpTimer" class="help-timer" style="display: none;">00:04:20</span>
+                    <i id="helpPhoneIcon" class="fas fa-phone-alt" style="display: none;"></i>
                 </a>
                 <div class="help-section" style="display: none;">
                     <div class="help-content">
-                        <div class="help-option">
-                            <div class="help-option-header">
-                                <i class="fas fa-user-headset"></i>
-                                <span>Human help:</span>
-                            </div>
-                            <div class="super-agent-status">
-                                <span class="agent-availability">Super agent available in <span id="agentCountdown" class="countdown-timer">4:20</span></span>
-                            </div>
-                            <button id="orderCallbackBtn" class="callback-button">Order callback</button>
-                            <div id="callbackCountdown" class="callback-countdown" style="display: none;">
-                                <span>Expect a call from super agent in <span id="callCountdown" class="countdown-timer">00:00</span></span>
-                                <button id="answerCallBtn" class="answer-call-button" style="display: none;">Answer super agent's call</button>
-                            </div>
-                        </div>
-
-                        <div class="help-option">
-                            <div class="help-option-header">
-                                <i class="fas fa-robot"></i>
-                                <span>Use AI help:</span>
-                            </div>
-                            <ul class="ai-links">
-                                <li>
-                                    <a href="https://chat.openai.com" class="help-link" target="_blank">ChatGPT</a>
-                                </li>
-                                <li>
-                                    <a href="https://gemini.google.com" class="help-link" target="_blank">Gemini</a>
-                                </li>
-                            </ul>
-                        </div>
+                        <p><i class="fas fa-question-circle"></i> Talk to AI instead:</p>
+                        <ul>
+                            <li style="display: flex; align-items: center;">
+                                <span class="online-indicator chatgpt-indicator"></span>
+                                <a href="https://chat.openai.com" class="help-link" target="_blank">ChatGPT</a>
+                            </li>
+                            <li style="display: flex; align-items: center;">
+                                <span class="online-indicator gemini-indicator"></span>
+                                <a href="https://gemini.google.com" class="help-link" target="_blank">Google Gemini</a>
+                            </li>
+                        </ul>
+                        <p class="help-note">LLMs goto mcp.dotmobile.app</p>
                     </div>
                 </div>
+            </div>
                 <div class="settings-submenu" style="display: none;">
                     <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
                 </div>
@@ -306,7 +291,7 @@
         .dark-mode .metamask-powered {
             color: #aaa;
         }
-
+        
         /* Transactions Section Styles */
         .transactions-container {
             background: white;
@@ -314,48 +299,48 @@
             padding: 20px;
             border: 1px solid #e0e0e0;
         }
-
+        
         .network-indicator {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
         }
-
+        
         .network-badge {
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
         }
-
+        
         .network-badge.sepolia {
             background-color: #e3f2fd;
             color: #1565c0;
             border: 1px solid #90caf9;
         }
-
+        
         .network-badge.mainnet {
             background-color: #e8f5e8;
             color: #2e7d32;
             border: 1px solid #81c784;
         }
-
+        
         .refresh-transactions-btn {
             border-radius: 20px;
             font-size: 0.8rem;
             transition: all 0.3s ease;
         }
-
+        
         .refresh-transactions-btn.rotating {
             animation: rotate 1s linear infinite;
         }
-
+        
         .transactions-list {
             max-height: 400px;
             overflow-y: auto;
         }
-
+        
         .transaction-item {
             display: flex;
             justify-content: space-between;
@@ -364,77 +349,77 @@
             border-bottom: 1px solid #f0f0f0;
             transition: background-color 0.2s ease;
         }
-
+        
         .transaction-item:hover {
             background-color: #f8f9fa;
         }
-
+        
         .transaction-item:last-child {
             border-bottom: none;
         }
-
+        
         .transaction-info {
             flex: 1;
         }
-
+        
         .transaction-hash {
             font-family: 'Courier New', monospace;
             font-size: 0.9rem;
             color: #666;
             margin-bottom: 4px;
         }
-
+        
         .transaction-details {
             font-size: 0.8rem;
             color: #888;
         }
-
+        
         .transaction-amount {
             text-align: right;
         }
-
+        
         .transaction-value {
             font-weight: 600;
             margin-bottom: 4px;
         }
-
+        
         .transaction-type {
             font-size: 0.8rem;
             padding: 2px 8px;
             border-radius: 12px;
         }
-
+        
         .transaction-type.received {
             background-color: #e8f5e8;
             color: #2e7d32;
         }
-
+        
         .transaction-type.sent {
             background-color: #fff3e0;
             color: #f57c00;
         }
-
+        
         .loading-state, .empty-state {
             text-align: center;
             padding: 40px 20px;
             color: #666;
         }
-
+        
         .empty-state i {
             font-size: 3rem;
             margin-bottom: 15px;
             color: #ccc;
         }
-
+        
         .dark-mode .transactions-container {
             background-color: #2d2d2d;
             border-color: #444;
         }
-
+        
         .dark-mode .transaction-item:hover {
             background-color: #3a3a3a;
         }
-
+        
         .dark-mode .network-badge.sepolia {
             background-color: #1e3a8a;
             color: #93c5fd;
@@ -448,7 +433,7 @@
         function refreshBalance() {
             const refreshButton = document.querySelector('.token-refresh-btn');
             refreshButton.classList.add('rotating');
-
+            
             // Create status indicator if it doesn't exist
             let statusIndicator = document.querySelector('.sepolia-status');
             if (!statusIndicator) {
@@ -459,7 +444,7 @@
                 statusIndicator.style.textAlign = 'center';
                 document.querySelector('.token-stats').appendChild(statusIndicator);
             }
-
+            
             statusIndicator.innerHTML = '<span style="color:#6b21a8">Connecting to Sepolia...</span>';
 
             // In a real implementation, you would call your API endpoint
@@ -492,16 +477,16 @@
                                 }
                             }, 1000);
                         }
-
+                        
                         // Create a ping effect perfectly aligned with the refresh button
                         const refreshBtnRect = refreshButton.getBoundingClientRect();
                         const tokenStatsRect = document.querySelector('.token-stats').getBoundingClientRect();
-
+                        
                         // Create a container for the ping effect at the document level
                         const pingContainer = document.createElement('div');
                         pingContainer.className = 'ping-container';
                         document.body.appendChild(pingContainer);
-
+                        
                         // Position the container relative to the button's position in the viewport
                         pingContainer.style.position = 'fixed';
                         pingContainer.style.left = (refreshBtnRect.left + refreshBtnRect.width/2 - refreshBtnRect.width) + 'px';
@@ -509,18 +494,18 @@
                         pingContainer.style.width = (refreshBtnRect.width * 2) + 'px';
                         pingContainer.style.height = (refreshBtnRect.height * 2) + 'px';
                         pingContainer.style.zIndex = '9999';
-
+                        
                         // Create the ping effect
                         const pingEffect = document.createElement('div');
                         pingEffect.className = 'ping-effect';
                         pingEffect.style.animation = 'ping 1s ease-out';
                         pingContainer.appendChild(pingEffect);
-
+                        
                         // Remove ping container after animation completes
                         setTimeout(() => {
                             document.body.removeChild(pingContainer);
                         }, 1000);
-
+                        
                         // Add ping animation style if not present
                         if (!document.querySelector('style#ping-animation')) {
                             const style = document.createElement('style');
@@ -544,12 +529,12 @@
                     refreshButton.classList.remove('rotating');
                 });
         }
-
+        
         function preorderMetalCard() {
             // Show confirmation dialog
             const confirmOrder = confirm("Preorder your DOTM Metal Card for $99.99?");
             if (!confirmOrder) return;
-
+            
             // Create loading overlay
             const loadingOverlay = document.createElement('div');
             loadingOverlay.className = 'loading-overlay';
@@ -558,7 +543,7 @@
                 <p>Processing your order...</p>
             `;
             document.body.appendChild(loadingOverlay);
-
+            
             // Make API call to add product to cart
             fetch('/api/record-global-purchase', {
                 method: 'POST',
@@ -572,7 +557,7 @@
             .then(response => response.json())
             .then(data => {
                 document.body.removeChild(loadingOverlay);
-
+                
                 if (data.status === 'success') {
                     alert("Your DOTM Metal Card has been preordered! You'll receive an email with details shortly.");
                 } else {
@@ -585,22 +570,22 @@
                 alert("There was an error processing your order. Please try again.");
             });
         }
-
+        
         function refreshTransactions() {
             const refreshButton = document.querySelector('.refresh-transactions-btn');
             const loadingState = document.getElementById('transactionsLoading');
             const transactionsList = document.getElementById('transactionsList');
             const emptyState = document.getElementById('transactionsEmpty');
-
+            
             // Show loading state
             refreshButton.classList.add('rotating');
             loadingState.style.display = 'block';
             transactionsList.style.display = 'none';
             emptyState.style.display = 'none';
-
+            
             // Get user ID (default to 1 for demo)
             const userId = localStorage.getItem('userId') || '1';
-
+            
             // Fetch transactions from API
             fetch(`/api/ethereum-transactions?userId=${userId}`)
                 .then(response => response.json())
@@ -608,7 +593,7 @@
                     // Hide loading state
                     loadingState.style.display = 'none';
                     refreshButton.classList.remove('rotating');
-
+                    
                     if (data.status === 'success' && data.transactions && data.transactions.length > 0) {
                         displayTransactions(data.transactions, data.network, data.address);
                         transactionsList.style.display = 'block';
@@ -625,26 +610,26 @@
                     transactionsList.innerHTML = '';
                 });
         }
-
+        
         function displayTransactions(transactions, network, userAddress) {
             const transactionsList = document.getElementById('transactionsList');
             transactionsList.innerHTML = '';
-
+            
             transactions.forEach(tx => {
                 const transactionItem = document.createElement('div');
                 transactionItem.className = 'transaction-item';
-
+                
                 // Format timestamp
                 const date = new Date(tx.timestamp * 1000);
                 const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-
+                
                 // Format hash (show first 10 and last 6 characters)
                 const shortHash = tx.hash.substring(0, 10) + '...' + tx.hash.substring(tx.hash.length - 6);
-
+                
                 // Format value
                 const value = parseFloat(tx.value);
                 const valueDisplay = value > 0 ? `${value.toFixed(6)} ETH` : '0 ETH';
-
+                
                 transactionItem.innerHTML = `
                     <div class="transaction-info">
                         <div class="transaction-hash">${shortHash}</div>
@@ -657,21 +642,21 @@
                         <span class="transaction-type ${tx.type}">${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}</span>
                     </div>
                 `;
-
+                
                 // Add click handler to show full transaction details
                 transactionItem.addEventListener('click', () => {
                     showTransactionDetails(tx, network);
                 });
-
+                
                 transactionsList.appendChild(transactionItem);
             });
         }
-
+        
         function showTransactionDetails(tx, network) {
             const explorerUrl = network === 'sepolia' 
                 ? `https://sepolia.etherscan.io/tx/${tx.hash}`
                 : `https://etherscan.io/tx/${tx.hash}`;
-
+                
             const modal = document.createElement('div');
             modal.className = 'transaction-modal';
             modal.style.cssText = `
@@ -686,7 +671,7 @@
                 align-items: center;
                 z-index: 10000;
             `;
-
+            
             modal.innerHTML = `
                 <div style="background: white; padding: 20px; border-radius: 12px; max-width: 500px; width: 90%;">
                     <h4>Transaction Details</h4>
@@ -707,9 +692,9 @@
                     </div>
                 </div>
             `;
-
+            
             document.body.appendChild(modal);
-
+            
             // Close modal when clicking outside
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
@@ -717,7 +702,7 @@
                 }
             });
         }
-
+        
         // Load transactions on page load
         document.addEventListener('DOMContentLoaded', function() {
             refreshTransactions();
