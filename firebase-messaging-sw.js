@@ -1,7 +1,7 @@
 
-// Firebase v9+ modular SDK for service worker
-importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+// Firebase service worker for background messaging
+self.importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+self.importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 
 // Firebase configuration
 const firebaseConfig = {

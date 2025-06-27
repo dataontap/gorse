@@ -1,9 +1,5 @@
 
-// Firebase v9+ modular SDK initialization
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js';
-
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   // Firebase configuration
   const firebaseConfig = {
     apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
@@ -16,64 +12,50 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   try {
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-
-    // Initialize Firebase Cloud Messaging
-    if ('serviceWorker' in navigator) {
+    // Initialize Firebase Cloud Messaging only if supported
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      // Dynamically import Firebase modules
+      const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
+      const { getMessaging, getToken, onMessage } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js');
+      
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
 
-      // Register service worker first
-      navigator.serviceWorker.register('/firebase-messaging-sw.js')
-        .then((registration) => {
-          console.log('Service worker registered successfully');
+      // Register service worker and wait for it to be ready
+      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+        scope: '/'
+      });
+      
+      console.log('Service worker registered successfully');
+      
+      // Wait for service worker to be ready
+      await navigator.serviceWorker.ready;
+      
+      // Request notification permission
+      const permission = await Notification.requestPermission();
+      console.log('Notification permission status:', permission);
 
-          // Request notification permission first
-          return Notification.requestPermission();
-        })
-        .then((permission) => {
-          console.log('Notification permission status:', permission);
-
-          if (permission === 'granted') {
-            // Now get the token after permission is granted
-            return getToken(messaging, {
-              vapidKey: 'your-vapid-key' // You'll need to add your VAPID key here
-            });
-          } else {
-            throw new Error('Notification permission denied');
-          }
-        })
-        .then((currentToken) => {
-          if (currentToken) {
-            console.log('FCM token:', currentToken);
-            // Send token to server for targeting this device
-            sendTokenToServer(currentToken);
-            // Show success message to user
-            showNotificationStatus('Notifications enabled successfully!');
-          } else {
-            console.log('No registration token available. Request permission to generate one.');
-            showNotificationStatus('Failed to get notification token. Please try again.');
-          }
-        })
-        .catch((err) => {
-          console.log('Error in Firebase messaging setup: ', err);
-          console.log('Error details:', JSON.stringify(err));
-          
-          // Special handling for common errors
-          if (err.message === 'Notification permission denied') {
-            showNotificationStatus('Notification permission denied. Please enable notifications in your browser settings and reload the page.');
-          } else if (err.code === 'messaging/permission-blocked') {
-            showNotificationStatus('Notification permission blocked. Please reset permissions in your browser settings.');
-          } else if (err.code === 'installations/request-failed') {
-            showNotificationStatus('Firebase installation failed. Please verify your Firebase project settings in Firebase Console.');
-          } else if (err.code === 'messaging/use-sw-after-get-token') {
-            showNotificationStatus('Service worker setup error. Please refresh the page.');
-          } else {
-            showNotificationStatus('Error setting up notifications: ' + err.message);
-          }
+      if (permission === 'granted') {
+        // Get FCM token with service worker registration
+        const currentToken = await getToken(messaging, {
+          serviceWorkerRegistration: registration
         });
-
-      // Handle foreground messages
+        
+        if (currentToken) {
+          console.log('FCM token:', currentToken);
+          // Send token to server for targeting this device
+          sendTokenToServer(currentToken);
+          // Show success message to user
+          showNotificationStatus('Notifications enabled successfully!');
+        } else {
+          console.log('No registration token available. Request permission to generate one.');
+          showNotificationStatus('Failed to get notification token. Please try again.');
+        }
+      } else {
+        throw new Error('Notification permission denied');
+      }
+        // Handle foreground messages
       onMessage(messaging, (payload) => {
         console.log('Message received in foreground: ', payload);
         
@@ -105,12 +87,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Also show an in-app notification
-        showInAppNotification(notificationTitle, notificationOptions.body);
+        const title = payload.notification?.title || 'New Notification';
+        const body = payload.notification?.body || 'You have a new notification';
+        showInAppNotification(title, body);
       });
+      
     } else {
       console.log('Firebase messaging not supported in this browser');
       showNotificationStatus('Push notifications are not supported in this browser.');
     }
+  } catch (err) {
+    console.log('Error in Firebase messaging setup: ', err);
+    console.log('Error details:', JSON.stringify(err));
+    
+    // Special handling for common errors
+    if (err.message === 'Notification permission denied') {
+      showNotificationStatus('Notification permission denied. Please enable notifications in your browser settings and reload the page.');
+    } else if (err.code === 'messaging/permission-blocked') {
+      showNotificationStatus('Notification permission blocked. Please reset permissions in your browser settings.');
+    } else if (err.code === 'installations/request-failed') {
+      showNotificationStatus('Firebase installation failed. Please verify your Firebase project settings in Firebase Console.');
+    } else if (err.code === 'messaging/use-sw-after-get-token') {
+      showNotificationStatus('Service worker setup error. Please refresh the page.');
+    } else if (err.message && err.message.includes('no active Service Worker')) {
+      showNotificationStatus('Service worker registration failed. Please refresh the page and try again.');
+    } else {
+      showNotificationStatus('Error setting up notifications: ' + err.message);
+    }
+  }
   } catch (error) {
     console.error('Firebase initialization error:', error);
     showNotificationStatus('Firebase initialization failed: ' + error.message);
