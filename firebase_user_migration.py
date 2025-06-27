@@ -111,13 +111,54 @@ class FirebaseUserMigration:
         
         return cleaned_providers
 
+    def check_existing_users(self, users: List[auth.ImportUserRecord]) -> List[auth.ImportUserRecord]:
+        """Check for existing users and filter out duplicates"""
+        filtered_users = []
+        existing_count = 0
+        
+        for user in users:
+            try:
+                # Try to get the user by UID to check if they already exist
+                existing_user = auth.get_user(user.uid)
+                print(f"User {user.uid} already exists, skipping import")
+                existing_count += 1
+            except auth.UserNotFoundError:
+                # User doesn't exist, safe to import
+                filtered_users.append(user)
+            except Exception as e:
+                print(f"Error checking user {user.uid}: {str(e)}")
+                # If we can't check, skip to be safe
+                continue
+        
+        if existing_count > 0:
+            print(f"Skipped {existing_count} existing users, importing {len(filtered_users)} new users")
+        
+        return filtered_users
+
     def import_users_batch(self, users: List[auth.ImportUserRecord], batch_number: int) -> Dict[str, Any]:
-        """Import a batch of users without password data"""
+        """Import a batch of users without password data, checking for duplicates first"""
         try:
-            # Import the users without hash configuration (users will need to reset passwords)
-            result = auth.import_users(users)
+            # Filter out existing users
+            users_to_import = self.check_existing_users(users)
+            
+            if not users_to_import:
+                print(f"Batch {batch_number} - No new users to import (all already exist)")
+                return {
+                    'batch_number': batch_number,
+                    'success_count': 0,
+                    'failure_count': 0,
+                    'skipped_count': len(users),
+                    'errors': []
+                }
+            
+            # Import the filtered users without hash configuration (users will need to reset passwords)
+            result = auth.import_users(users_to_import)
+            
+            skipped_count = len(users) - len(users_to_import)
             
             print(f"Batch {batch_number} - Successfully imported {result.success_count} users")
+            if skipped_count > 0:
+                print(f"Batch {batch_number} - Skipped {skipped_count} existing users")
             if result.failure_count > 0:
                 print(f"Batch {batch_number} - Failed to import {result.failure_count} users")
                 for error in result.errors:
@@ -127,6 +168,7 @@ class FirebaseUserMigration:
                 'batch_number': batch_number,
                 'success_count': result.success_count,
                 'failure_count': result.failure_count,
+                'skipped_count': skipped_count,
                 'errors': [{'index': e.index, 'reason': e.reason} for e in result.errors]
             }
             
@@ -136,6 +178,7 @@ class FirebaseUserMigration:
                 'batch_number': batch_number,
                 'success_count': 0,
                 'failure_count': len(users),
+                'skipped_count': 0,
                 'error': str(e)
             }
 
@@ -207,10 +250,14 @@ class FirebaseUserMigration:
                 print(f"Error processing batch {batch_num}: {str(e)}")
                 continue
         
+        # Calculate totals including skipped users
+        total_skipped = sum(result.get('skipped_count', 0) for result in results)
+        
         # Print summary
         print(f"\n=== Migration Summary ===")
         print(f"Total users successfully imported: {total_imported}")
         print(f"Total users failed: {total_failed}")
+        print(f"Total users skipped (already exist): {total_skipped}")
         print(f"Batches processed: {len(results)}")
         
         return results
@@ -257,10 +304,14 @@ class FirebaseUserMigration:
                     print("Waiting 2 seconds before next batch...")
                     time.sleep(2)
             
+            # Calculate totals including skipped users
+            total_skipped = sum(result.get('skipped_count', 0) for result in results)
+            
             # Print summary
             print(f"\n=== Migration Summary ===")
             print(f"Total users successfully imported: {total_imported}")
             print(f"Total users failed: {total_failed}")
+            print(f"Total users skipped (already exist): {total_skipped}")
             print(f"Batches processed: {len(results)}")
             
             return results
