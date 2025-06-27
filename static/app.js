@@ -356,6 +356,62 @@ function initializeCarousel() {
     }, 5000);
 }
 
+// Chart toggle functionality for dashboard
+function toggleChart(link) {
+    const dataUsage = link.closest('.data-usage');
+    const chart = dataUsage.querySelector('.usage-chart');
+
+    if (chart.style.display === 'none' || chart.style.display === '') {
+        chart.style.display = 'block';
+        link.textContent = 'Hide details';
+
+        // Initialize chart if needed
+        if (!chart.querySelector('canvas').chart) {
+            const ctx = chart.querySelector('canvas').getContext('2d');
+            const newChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Usage Trend',
+                        data: [12, 19, 15, 25, 22, 18, 30],
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+            chart.querySelector('canvas').chart = newChart;
+        }
+    } else {
+        chart.style.display = 'none';
+        link.textContent = 'See details';
+    }
+}
+
 // Global help functions for compatibility
 function startHelpSession() {
     if (typeof helpDesk !== 'undefined') {
