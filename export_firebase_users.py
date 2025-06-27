@@ -12,11 +12,22 @@ from firebase_admin import credentials, auth
 from typing import List, Dict, Any
 
 class FirebaseUserExporter:
-    def __init__(self, source_credentials_path: str):
+    def __init__(self, source_credentials_path: str = None):
         """Initialize Firebase Admin SDK for the SOURCE project"""
         try:
-            # Initialize with source project credentials
-            cred = credentials.Certificate(source_credentials_path)
+            # Check if OLD_FB_CREDENTIALS environment variable is set
+            if os.environ.get('OLD_FB_CREDENTIALS'):
+                # Initialize with credentials from environment variable
+                cred_json = json.loads(os.environ.get('OLD_FB_CREDENTIALS'))
+                cred = credentials.Certificate(cred_json)
+                print("Using OLD_FB_CREDENTIALS from environment variable")
+            elif source_credentials_path and os.path.exists(source_credentials_path):
+                # Initialize with source project credentials file
+                cred = credentials.Certificate(source_credentials_path)
+                print(f"Using credentials file: {source_credentials_path}")
+            else:
+                raise Exception("No valid credentials found. Set OLD_FB_CREDENTIALS environment variable or provide a valid credentials file path.")
+            
             self.app = firebase_admin.initialize_app(cred, name='source_project')
             print("Firebase Admin SDK initialized for source project")
         except Exception as e:
@@ -122,12 +133,18 @@ def main():
     print("Firebase User Exporter")
     print("======================")
     
-    # You need to provide the path to your SOURCE Firebase project credentials
-    source_creds = input("Enter path to source Firebase credentials JSON file: ").strip()
+    source_creds = None
     
-    if not os.path.exists(source_creds):
-        print(f"Error: Credentials file not found: {source_creds}")
-        return
+    # Check if OLD_FB_CREDENTIALS environment variable is set
+    if not os.environ.get('OLD_FB_CREDENTIALS'):
+        # You need to provide the path to your SOURCE Firebase project credentials
+        source_creds = input("Enter path to source Firebase credentials JSON file (or set OLD_FB_CREDENTIALS env var): ").strip()
+        
+        if source_creds and not os.path.exists(source_creds):
+            print(f"Error: Credentials file not found: {source_creds}")
+            return
+    else:
+        print("Using OLD_FB_CREDENTIALS from environment variable")
     
     batch_size = int(input("Enter batch size (default 1000): ").strip() or "1000")
     
