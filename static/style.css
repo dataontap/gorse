@@ -594,7 +594,7 @@ body.light-mode {
     height: 320px;
     position: relative;
     padding: 20px;
-    margin: 20px auto;
+    margin: 0 auto;
     border: none;
     transition: none;
     will-change: auto;
@@ -1284,17 +1284,26 @@ body.light-mode {
     position: relative;
     overflow: hidden;
     width: 100%;
+    height: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .carousel-item {
     display: none;
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
+    height: 100%;
     transition: transform 0.3s ease-in-out;
+    align-items: center;
+    justify-content: center;
 }
 
 .carousel-item.active {
-    display: block;
+    display: flex;
 }
 
 .carousel-controls {
@@ -1321,21 +1330,6 @@ body.light-mode {
 
 .carousel-controls button:hover {
     border-color: #007bff;
-}
-
-.carousel-item {
-    background: transparent;
-    border-radius: 16px;
-    padding: 0;
-    margin: 0;
-    text-align: center;
-    width: 450px;
-    height: 360px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    flex-grow: 0;
 }
 
 .carousel-item .btn-primary {
