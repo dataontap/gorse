@@ -68,6 +68,82 @@
             }
         }
 
+        .subscription-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            word-wrap: break-word;
+            text-align: left;
+        }
+
+        .subscription-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 2.2em;
+            font-weight: bold;
+            white-space: normal;
+            word-wrap: break-word;
+            line-height: 1.2;
+        }
+
+        .subscription-card p {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+            opacity: 0.9;
+            line-height: 1.5;
+            white-space: normal;
+            word-wrap: break-word;
+            max-width: 100%;
+        }
+
+        .subscribe-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            margin-top: 15px;
+            white-space: nowrap;
+            overflow: visible;
+            text-overflow: clip;
+            min-width: fit-content;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 10px;
+            }
+
+            .subscription-card {
+                padding: 20px;
+                margin: 10px 0;
+            }
+
+            .subscription-card h3 {
+                font-size: 1.8em;
+            }
+
+            .subscription-card p {
+                font-size: 1em;
+            }
+        }
+
     </style>
 </head>
 <body class="landing-page">
