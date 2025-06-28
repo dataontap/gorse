@@ -598,9 +598,10 @@ body.light-mode {
     border-radius: 15px;
     width: 100%;
     max-width: 400px;
-    height: 100%;
+    min-height: 400px;
+    height: auto;
     position: relative;
-    padding: 0;
+    padding: 20px;
     border: none;
     transition: none;
     will-change: auto;
@@ -640,15 +641,16 @@ body.light-mode {
 }
 
 .offer-content h3 {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     font-weight: 600;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+    line-height: 1.2;
 }
 
 .offer-content p {
-    font-size: 1rem;
-    line-height: 1.4;
-    margin-bottom: 10px;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    margin-bottom: 12px;
 }
 
 /* Default dark mode text */
@@ -1304,11 +1306,12 @@ body.light-mode {
     position: relative;
     overflow: hidden;
     width: 100%;
-    height: 380px;
+    min-height: 450px;
+    height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
+    padding: 20px 0;
     box-sizing: border-box;
 }
 
