@@ -598,10 +598,10 @@ body.light-mode {
     border-radius: 15px;
     width: 100%;
     max-width: 400px;
-    min-height: 400px;
+    min-height: 450px;
     height: auto;
     position: relative;
-    padding: 20px;
+    padding: 30px 20px;
     border: none;
     transition: none;
     will-change: auto;
@@ -612,6 +612,7 @@ body.light-mode {
     flex-shrink: 0;
     flex-grow: 0;
     margin: 0 auto;
+    overflow: visible;
 }
 
 .offer-content {
@@ -641,16 +642,22 @@ body.light-mode {
 }
 
 .offer-content h3 {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: 600;
     margin-bottom: 15px;
-    line-height: 1.2;
+    line-height: 1.3;
+    word-wrap: break-word;
+    white-space: normal;
+    overflow: visible;
 }
 
 .offer-content p {
-    font-size: 1.1rem;
-    line-height: 1.5;
+    font-size: 1rem;
+    line-height: 1.4;
     margin-bottom: 12px;
+    word-wrap: break-word;
+    white-space: normal;
+    overflow: visible;
 }
 
 /* Default dark mode text */
@@ -1304,14 +1311,14 @@ body.light-mode {
 
 .carousel-inner {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     width: 100%;
-    min-height: 450px;
+    min-height: 500px;
     height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px 0;
+    padding: 30px 20px;
     box-sizing: border-box;
 }
 
