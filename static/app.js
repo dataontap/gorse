@@ -147,6 +147,78 @@ function answerCall() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Help desk script loaded successfully');
 
+    // Add email verification functionality
+    function setupEmailVerification() {
+        // Check if user needs email verification
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user && !user.emailVerified && user.email) {
+                // Show email verification prompt
+                showEmailVerificationPrompt(user);
+            }
+        });
+    }
+
+    function showEmailVerificationPrompt(user) {
+        const verificationDiv = document.createElement('div');
+        verificationDiv.id = 'email-verification-prompt';
+        verificationDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff9800;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            z-index: 10000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        `;
+        verificationDiv.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span>Please verify your email address</span>
+                <button onclick="sendVerificationEmail()" style="background: white; color: #ff9800; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+                    Send Verification
+                </button>
+                <button onclick="closeVerificationPrompt()" style="background: transparent; color: white; border: 1px solid white; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+                    ×
+                </button>
+            </div>
+        `;
+        document.body.appendChild(verificationDiv);
+
+        // Auto-remove after 10 seconds
+        setTimeout(() => {
+            if (document.getElementById('email-verification-prompt')) {
+                document.body.removeChild(verificationDiv);
+            }
+        }, 10000);
+    }
+
+    // Global functions for email verification
+    window.sendVerificationEmail = function() {
+        if (window.firebaseAuth && window.firebaseAuth.sendEmailVerification) {
+            window.firebaseAuth.sendEmailVerification()
+                .then(() => {
+                    alert('Verification email sent! Please check your inbox.');
+                    closeVerificationPrompt();
+                })
+                .catch((error) => {
+                    console.error('Error sending verification email:', error);
+                    alert('Error sending verification email: ' + error.message);
+                });
+        }
+    };
+
+    window.closeVerificationPrompt = function() {
+        const prompt = document.getElementById('email-verification-prompt');
+        if (prompt) {
+            document.body.removeChild(prompt);
+        }
+    };
+
+    // Initialize email verification setup
+    setupEmailVerification();
+
     // Initialize add user functionality
     const addUserBtn = document.getElementById('addUserBtn');
     if (addUserBtn) {

@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.firebaseAuth = {
       signInWithEmailPassword: function(email, password) {
         return firebase.auth().signInWithEmailAndPassword(email, password)
-          .catch(error => {
+          .catch(function(error) {
             console.error("Auth error:", error);
             throw error;
           });
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       signInWithGoogle: function() {
         return firebase.auth().signInWithPopup(googleProvider)
-          .catch(error => {
+          .catch(function(error) {
             console.error("Google sign-in error:", error);
             throw error;
           });
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       createUserWithEmailPassword: function(email, password) {
         return firebase.auth().createUserWithEmailAndPassword(email, password)
-          .catch(error => {
+          .catch(function(error) {
             console.error("User creation error:", error);
             throw error;
           });
@@ -118,6 +118,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
       getCurrentUser: function() {
         return firebase.auth().currentUser;
+      },
+
+      sendPasswordResetEmail: function(email) {
+        return firebase.auth().sendPasswordResetEmail(email)
+          .catch(function(error) {
+            console.error("Password reset error:", error);
+            throw error;
+          });
+      },
+
+      sendEmailVerification: function() {
+        var user = firebase.auth().currentUser;
+        if (user) {
+          return user.sendEmailVerification()
+            .catch(function(error) {
+              console.error("Email verification error:", error);
+              throw error;
+            });
+        }
+        return Promise.reject(new Error("No user signed in"));
       }
     };
   } catch (error) {
