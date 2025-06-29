@@ -372,8 +372,13 @@
             <a href="#" class="add-user-link" id="addUserBtn">
                 <i class="fas fa-plus-circle"></i> Add +
             </a>
+                        <button class="btn btn-secondary ms-2" id="testEmailBtn" onclick="testEmailSystem()">Test Email System</button>
+                    </div>
+                </div>
+            </div>
         </div>
-        
+    </div>
+
         <!-- Email Test Button (for debugging) -->
         <div style="text-align: center; margin: 10px 0;">
             <button onclick="testEmailSystem()" class="btn btn-sm btn-outline-secondary">
@@ -430,12 +435,12 @@
                         console.log('User data balance:', data);
                         var dataDisplay = document.getElementById('dataDisplay');
                         var globalStatus = document.getElementById('globalStatus');
-                        
+
                         if (dataDisplay && data.dataBalance !== undefined) {
                             dataDisplay.innerHTML = '<i class="fas fa-database"></i>' + Math.round(data.dataBalance) + '<span>GB</span>';
                             dataDisplay.style.display = 'block';
                         }
-                        
+
                         if (globalStatus) {
                             globalStatus.style.display = 'block';
                         }
@@ -445,12 +450,12 @@
                         // Show default values
                         var dataDisplay = document.getElementById('dataDisplay');
                         var globalStatus = document.getElementById('globalStatus');
-                        
+
                         if (dataDisplay) {
                             dataDisplay.innerHTML = '<i class="fas fa-database"></i>0<span>GB</span>';
                             dataDisplay.style.display = 'block';
                         }
-                        
+
                         if (globalStatus) {
                             globalStatus.style.display = 'block';
                         }
@@ -466,7 +471,7 @@
                     if (userCountElement && data.count) {
                         userCountElement.textContent = data.count;
                     }
-                    
+
                     // Update QR code member count
                     var qrMemberCount = document.getElementById('qrMemberCount');
                     if (qrMemberCount && data.count) {
@@ -488,7 +493,7 @@
                         var subscriptionStatus = document.getElementById('subscriptionStatus');
                         var subscriptionType = document.getElementById('subscriptionType');
                         var subscriptionValidity = document.getElementById('subscriptionValidity');
-                        
+
                         if (subscriptionStatus && data.status === 'active') {
                             subscriptionStatus.style.display = 'block';
                             if (subscriptionType) {

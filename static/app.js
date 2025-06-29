@@ -399,31 +399,6 @@ function sendUserInvite(email) {
     });
 }
 
-function testEmailSystem() {
-    fetch('/api/test-email', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email: 'aa@dotmobile.app'
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Email test result:', data);
-        if (data.status === 'success') {
-            alert('Test email sent successfully to aa@dotmobile.app!');
-        } else {
-            alert(`Email test failed: ${data.message}`);
-        }
-    })
-    .catch(error => {
-        console.error('Error testing email:', error);
-        alert('Error testing email system.');
-    });
-}
-
 function toggleProfileDropdown() {
     const dropdown = document.querySelector('.profile-dropdown');
     if (dropdown) {
@@ -637,4 +612,43 @@ function trackHelpInteraction(type, data) {
     if (typeof helpDesk !== 'undefined') {
         return helpDesk.trackInteraction(type, data);
     }
+}
+
+// Add any additional dashboard-specific JavaScript here
+
+// Test email system function
+function testEmailSystem() {
+    const testEmailBtn = document.getElementById('testEmailBtn');
+    if (testEmailBtn) {
+        testEmailBtn.disabled = true;
+        testEmailBtn.textContent = 'Sending...';
+    }
+
+    fetch('/api/test-email', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            email: 'aa@dotmobile.app'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(`Test email sent successfully to ${data.email}`);
+        } else {
+            alert(`Email test failed: ${data.message}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error testing email:', error);
+        alert('Error testing email system');
+    })
+    .finally(() => {
+        if (testEmailBtn) {
+            testEmailBtn.disabled = false;
+            testEmailBtn.textContent = 'Test Email System';
+        }
+    });
 }
