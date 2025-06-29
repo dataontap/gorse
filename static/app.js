@@ -356,6 +356,67 @@ function initializeCarousel() {
     }, 5000);
 }
 
+// Dashboard functions for offer cards and user data
+function showConfirmationDrawer(dataAmount, price, productId) {
+    console.log('Showing confirmation drawer for:', productId, dataAmount, price);
+    var drawer = document.getElementById('confirmationDrawer');
+    if (drawer) {
+        document.getElementById('confirmDataAmount').textContent = dataAmount + 'GB';
+        document.getElementById('confirmPrice').textContent = '$' + price;
+        drawer.style.display = 'block';
+        drawer.dataset.productId = productId;
+    }
+}
+
+function hideConfirmationDrawer() {
+    var drawer = document.getElementById('confirmationDrawer');
+    if (drawer) {
+        drawer.style.display = 'none';
+    }
+}
+
+function confirmPurchase() {
+    var drawer = document.getElementById('confirmationDrawer');
+    if (drawer && drawer.dataset.productId) {
+        var productId = drawer.dataset.productId;
+        console.log('Confirming purchase for:', productId);
+        
+        // Get Firebase UID if available
+        var firebaseUid = localStorage.getItem('userId') || null;
+        
+        // Make API call to record purchase
+        fetch('/api/record-global-purchase', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productId: productId,
+                firebaseUid: firebaseUid
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Purchase recorded:', data);
+            hideConfirmationDrawer();
+            
+            // Show success message
+            alert('Purchase successful! Your data will be available shortly.');
+            
+            // Refresh the page to update data balance
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Error recording purchase:', error);
+            alert('Error processing purchase. Please try again.');
+        });
+    }
+}
+
+function sendComingSoonNotification() {
+    alert('This feature is coming soon! Thank you for your interest.');
+}
+
 // Chart toggle functionality for dashboard
 function toggleChart(link) {
     const dataUsage = link.closest('.data-usage');

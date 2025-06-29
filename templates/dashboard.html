@@ -407,6 +407,98 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="/static/app.js"></script>
     <script>
+        // Load user data and display data balance
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserDataBalance();
+            loadMemberCount();
+            loadSubscriptionStatus();
+        });
+
+        function loadUserDataBalance() {
+            var firebaseUid = localStorage.getItem('userId');
+            if (firebaseUid) {
+                fetch('/api/user/data-balance?firebaseUid=' + firebaseUid)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('User data balance:', data);
+                        var dataDisplay = document.getElementById('dataDisplay');
+                        var globalStatus = document.getElementById('globalStatus');
+                        
+                        if (dataDisplay && data.dataBalance !== undefined) {
+                            dataDisplay.innerHTML = '<i class="fas fa-database"></i>' + Math.round(data.dataBalance) + '<span>GB</span>';
+                            dataDisplay.style.display = 'block';
+                        }
+                        
+                        if (globalStatus) {
+                            globalStatus.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading data balance:', error);
+                        // Show default values
+                        var dataDisplay = document.getElementById('dataDisplay');
+                        var globalStatus = document.getElementById('globalStatus');
+                        
+                        if (dataDisplay) {
+                            dataDisplay.innerHTML = '<i class="fas fa-database"></i>0<span>GB</span>';
+                            dataDisplay.style.display = 'block';
+                        }
+                        
+                        if (globalStatus) {
+                            globalStatus.style.display = 'block';
+                        }
+                    });
+            }
+        }
+
+        function loadMemberCount() {
+            fetch('/api/member-count')
+                .then(response => response.json())
+                .then(data => {
+                    var userCountElement = document.querySelector('.user-count');
+                    if (userCountElement && data.count) {
+                        userCountElement.textContent = data.count;
+                    }
+                    
+                    // Update QR code member count
+                    var qrMemberCount = document.getElementById('qrMemberCount');
+                    if (qrMemberCount && data.count) {
+                        qrMemberCount.textContent = '#' + data.count + '/∞';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading member count:', error);
+                });
+        }
+
+        function loadSubscriptionStatus() {
+            var firebaseUid = localStorage.getItem('userId');
+            if (firebaseUid) {
+                fetch('/api/subscription-status?firebaseUid=' + firebaseUid)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Subscription status:', data);
+                        var subscriptionStatus = document.getElementById('subscriptionStatus');
+                        var subscriptionType = document.getElementById('subscriptionType');
+                        var subscriptionValidity = document.getElementById('subscriptionValidity');
+                        
+                        if (subscriptionStatus && data.status === 'active') {
+                            subscriptionStatus.style.display = 'block';
+                            if (subscriptionType) {
+                                subscriptionType.textContent = data.subscription_type.replace('_', ' ').toUpperCase();
+                            }
+                            if (subscriptionValidity && data.end_date) {
+                                var endDate = new Date(data.end_date);
+                                subscriptionValidity.textContent = 'Valid until ' + endDate.toLocaleDateString();
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading subscription status:', error);
+                    });
+            }
+        }
+
         function toggleQRCode(event) {
             event.stopPropagation();
             const popup = document.getElementById('qrCodePopup');
