@@ -600,7 +600,10 @@ body.light-mode {
     max-width: 400px;
     min-height: 450px;
     height: auto;
-    position: relative;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     padding: 30px 20px;
     border: none;
     transition: none;
@@ -611,7 +614,6 @@ body.light-mode {
     justify-content: center;
     flex-shrink: 0;
     flex-grow: 0;
-    margin: 0 auto;
     overflow: visible;
 }
 
@@ -1318,7 +1320,7 @@ body.light-mode {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 30px 20px;
+    padding: 20px 0;
     box-sizing: border-box;
 }
 
@@ -1331,8 +1333,6 @@ body.light-mode {
     width: 100%;
     height: 100%;
     transition: transform 0.3s ease-in-out;
-    align-items: center;
-    justify-content: center;
     padding: 0;
     box-sizing: border-box;
 }
