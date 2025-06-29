@@ -2593,6 +2593,120 @@ def terms():
 def about():
     return render_template('about.html')
 
+@app.route('/api/test-email', methods=['POST'])
+def test_email_endpoint():
+    """Test email sending functionality"""
+    try:
+        data = request.get_json() or {}
+        to_email = data.get('email', 'aa@dotmobile.app')
+        
+        # Import email service
+        from email_service import send_test_email
+        
+        success = send_test_email(to_email)
+        
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': f'Test email sent successfully to {to_email}',
+                'email': to_email
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to send test email. Check SMTP configuration.',
+                'email': to_email
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/send-user-invite', methods=['POST'])
+def send_user_invite():
+    """Send an email invitation to a new user"""
+    try:
+        data = request.get_json()
+        if not data or not data.get('email'):
+            return jsonify({'error': 'Email address is required'}), 400
+            
+        email = data.get('email')
+        firebase_uid = data.get('firebaseUid')
+        
+        # Import email service
+        from email_service import send_email
+        
+        subject = "Welcome to GORSE - Your Global Connectivity Solution"
+        body = f"""
+        Welcome to GORSE!
+        
+        You've been invited to join our global connectivity platform.
+        
+        To get started:
+        1. Visit: https://gorse.dotmobile.app
+        2. Sign up with this email address: {email}
+        3. Complete your profile setup
+        
+        GORSE provides global data connectivity and eSIM services.
+        
+        Need help? Contact support at support@dotmobile.app
+        
+        Best regards,
+        The GORSE Team
+        """
+        
+        html_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #667eea;">Welcome to GORSE!</h2>
+                    <p>You've been invited to join our global connectivity platform.</p>
+                    
+                    <h3>To get started:</h3>
+                    <ol>
+                        <li>Visit: <a href="https://gorse.dotmobile.app" style="color: #667eea;">https://gorse.dotmobile.app</a></li>
+                        <li>Sign up with this email address: <strong>{email}</strong></li>
+                        <li>Complete your profile setup</li>
+                    </ol>
+                    
+                    <p>GORSE provides global data connectivity and eSIM services.</p>
+                    
+                    <p>Need help? Contact support at <a href="mailto:support@dotmobile.app">support@dotmobile.app</a></p>
+                    
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                    <p style="color: #666; font-size: 14px;">
+                        Best regards,<br>
+                        <strong>The GORSE Team</strong>
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+        
+        success = send_email(email, subject, body, html_body)
+        
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': f'Invitation sent successfully to {email}',
+                'email': email
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to send invitation email. Check SMTP configuration.',
+                'email': email
+            }), 500
+            
+    except Exception as e:
+        print(f"Error sending user invite: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
     print("\n=== Registered Flask Routes ===")

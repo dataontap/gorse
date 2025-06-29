@@ -171,19 +171,19 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             showConfirmationDrawer(10, 10, 'global_data_10gb');
         }
-        
+
         // Handle subscribe buttons
         if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
             e.preventDefault();
             showConfirmationDrawer(10, 24, 'basic_membership');
         }
-        
+
         // Handle drawer cancel/confirm buttons
         if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
             e.preventDefault();
             hideConfirmationDrawer();
         }
-        
+
         if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
             e.preventDefault();
             confirmPurchase();
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
 
             const isDark = body.classList.contains('dark-mode');
-            
+
             if (isDark) {
                 // Switch to light mode
                 body.classList.remove('dark-mode');
@@ -352,6 +352,90 @@ document.addEventListener('DOMContentLoaded', function() {
     // Carousel functionality if present
     initializeCarousel();
 });
+
+    // Add User button functionality
+    const addUserBtn = document.getElementById('addUserBtn');
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            showAddUserModal();
+        });
+    }
+});
+
+function showAddUserModal() {
+    const email = prompt('Enter email address to invite:');
+    if (email && email.includes('@')) {
+        sendUserInvite(email);
+    } else if (email) {
+        alert('Please enter a valid email address');
+    }
+}
+
+function sendUserInvite(email) {
+    const firebaseUid = localStorage.getItem('userId');
+
+    fetch('/api/send-user-invite', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: email,
+            firebaseUid: firebaseUid
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(`Invitation sent successfully to ${email}!`);
+        } else {
+            alert(`Failed to send invitation: ${data.message}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error sending invitation:', error);
+        alert('Error sending invitation. Please try again.');
+    });
+}
+
+function testEmailSystem() {
+    fetch('/api/test-email', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: 'aa@dotmobile.app'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Email test result:', data);
+        if (data.status === 'success') {
+            alert('Test email sent successfully to aa@dotmobile.app!');
+        } else {
+            alert(`Email test failed: ${data.message}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error testing email:', error);
+        alert('Error testing email system.');
+    });
+}
+
+function toggleProfileDropdown() {
+    const dropdown = document.querySelector('.profile-dropdown');
+    if (dropdown) {
+        if (dropdown.classList.contains('visible') || dropdown.style.display === 'block') {
+            dropdown.classList.remove('visible');
+            dropdown.style.display = 'none';
+        } else {
+            dropdown.classList.add('visible');
+            dropdown.style.display = 'block';
+        }
+    }
+}
 
 // Carousel initialization
 function initializeCarousel() {
@@ -406,14 +490,14 @@ function showConfirmationDrawer(dataAmount, price, productId) {
     if (drawer) {
         var dataAmountElement = document.getElementById('confirmDataAmount');
         var priceElement = document.getElementById('confirmPrice');
-        
+
         if (dataAmountElement) {
             dataAmountElement.textContent = dataAmount + 'GB';
         }
         if (priceElement) {
             priceElement.textContent = '$' + price;
         }
-        
+
         drawer.classList.add('show');
         drawer.style.display = 'block';
         drawer.dataset.productId = productId;
@@ -433,10 +517,10 @@ function confirmPurchase() {
     if (drawer && drawer.dataset.productId) {
         var productId = drawer.dataset.productId;
         console.log('Confirming purchase for:', productId);
-        
+
         // Get Firebase UID if available
         var firebaseUid = localStorage.getItem('userId') || null;
-        
+
         // Make API call to record purchase
         fetch('/api/record-global-purchase', {
             method: 'POST',
@@ -452,10 +536,10 @@ function confirmPurchase() {
         .then(data => {
             console.log('Purchase recorded:', data);
             hideConfirmationDrawer();
-            
+
             // Show success message
             alert('Purchase successful! Your data will be available shortly.');
-            
+
             // Refresh the page to update data balance
             window.location.reload();
         })
@@ -474,7 +558,7 @@ function sendComingSoonNotification() {
 function toggleChart(link) {
     const dataUsage = link.closest('.data-usage');
     const chart = dataUsage.querySelector('.usage-chart');
-    
+
     // Store current scroll position relative to the link element
     const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const linkRect = link.getBoundingClientRect();
@@ -525,7 +609,7 @@ function toggleChart(link) {
             });
             chart.querySelector('canvas').chart = newChart;
         }
-        
+
         // Maintain scroll position after chart expands
         setTimeout(() => {
             window.scrollTo(0, linkOffsetFromTop - linkRect.top);
