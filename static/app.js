@@ -147,6 +147,49 @@ function answerCall() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Help desk script loaded successfully');
 
+    // Initialize add user functionality
+    const addUserBtn = document.getElementById('addUserBtn');
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Simple implementation - you can expand this
+            const email = prompt('Enter email address for new user:');
+            if (email && email.includes('@')) {
+                alert('User invitation sent to: ' + email);
+                // Here you would normally make an API call to invite the user
+                console.log('Inviting user:', email);
+            } else if (email) {
+                alert('Please enter a valid email address.');
+            }
+        });
+    }
+
+    // Add event delegation for confirmation drawer buttons
+    document.addEventListener('click', function(e) {
+        // Handle buy buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 10, 'global_data_10gb');
+        }
+        
+        // Handle subscribe buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 24, 'basic_membership');
+        }
+        
+        // Handle drawer cancel/confirm buttons
+        if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            hideConfirmationDrawer();
+        }
+        
+        if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            confirmPurchase();
+        }
+    });
+
     // Initialize help toggle functionality using event delegation
     document.addEventListener('click', function(e) {
         if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
@@ -361,8 +404,17 @@ function showConfirmationDrawer(dataAmount, price, productId) {
     console.log('Showing confirmation drawer for:', productId, dataAmount, price);
     var drawer = document.getElementById('confirmationDrawer');
     if (drawer) {
-        document.getElementById('confirmDataAmount').textContent = dataAmount + 'GB';
-        document.getElementById('confirmPrice').textContent = '$' + price;
+        var dataAmountElement = document.getElementById('confirmDataAmount');
+        var priceElement = document.getElementById('confirmPrice');
+        
+        if (dataAmountElement) {
+            dataAmountElement.textContent = dataAmount + 'GB';
+        }
+        if (priceElement) {
+            priceElement.textContent = '$' + price;
+        }
+        
+        drawer.classList.add('show');
         drawer.style.display = 'block';
         drawer.dataset.productId = productId;
     }
@@ -371,6 +423,7 @@ function showConfirmationDrawer(dataAmount, price, productId) {
 function hideConfirmationDrawer() {
     var drawer = document.getElementById('confirmationDrawer');
     if (drawer) {
+        drawer.classList.remove('show');
         drawer.style.display = 'none';
     }
 }
