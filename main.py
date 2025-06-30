@@ -2524,6 +2524,260 @@ def get_user_stripe_id(user_id):
             'message': str(e)
         }), 500
 
+@app.route('/api/send-invitation', methods=['POST'])
+def send_invitation():
+    """Send an invitation to a new user"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        message = data.get('message', '')
+        is_demo_user = data.get('isDemoUser', False)
+        firebase_uid = data.get('firebaseUid')
+
+        if not email:
+            return jsonify({'success': False, 'message': 'Email is required'}), 400
+
+        # Validate email format
+        import re
+        email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+        if not re.match(email_regex, email):
+            return jsonify({'success': False, 'message': 'Invalid email format'}), 400
+
+        # Generate invitation token
+        import secrets
+        invitation_token = secrets.token_urlsafe(32)
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Create invites table if it doesn't exist
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS invites (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER,
+                            email VARCHAR(255) NOT NULL,
+                            invitation_status VARCHAR(50) NOT NULL DEFAULT 'invite_sent',
+                            invited_by_user_id INTEGER,
+                            invited_by_firebase_uid VARCHAR(128),
+                            invitation_token VARCHAR(255),
+                            personal_message TEXT,
+                            is_demo_user BOOLEAN DEFAULT FALSE,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP + INTERVAL '7 days',
+                            accepted_at TIMESTAMP,
+                            rejected_at TIMESTAMP,
+                            cancelled_at TIMESTAMP
+                        )
+                    """)
+
+                    # Get inviting user ID if Firebase UID provided
+                    inviting_user_id = None
+                    if firebase_uid:
+                        cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                        user_result = cur.fetchone()
+                        if user_result:
+                            inviting_user_id = user_result[0]
+
+                    # Check if there's already a pending invitation for this email
+                    cur.execute("""
+                        SELECT id, invitation_status FROM invites 
+                        WHERE email = %s AND invitation_status IN ('invite_sent', 're_invited')
+                        ORDER BY created_at DESC LIMIT 1
+                    """, (email,))
+                    
+                    existing_invite = cur.fetchone()
+                    if existing_invite:
+                        # Update existing invitation as re-invited
+                        cur.execute("""
+                            UPDATE invites 
+                            SET invitation_status = 're_invited', 
+                                updated_at = CURRENT_TIMESTAMP,
+                                expires_at = CURRENT_TIMESTAMP + INTERVAL '7 days',
+                                invitation_token = %s,
+                                personal_message = %s
+                            WHERE id = %s
+                            RETURNING id
+                        """, (invitation_token, message, existing_invite[0]))
+                        invite_id = cur.fetchone()[0]
+                        action_taken = 're_invited'
+                    else:
+                        # Create new invitation
+                        cur.execute("""
+                            INSERT INTO invites 
+                            (email, invitation_token, invited_by_user_id, invited_by_firebase_uid, 
+                             personal_message, is_demo_user, invitation_status)
+                            VALUES (%s, %s, %s, %s, %s, %s, 'invite_sent')
+                            RETURNING id
+                        """, (email, invitation_token, inviting_user_id, firebase_uid, message, is_demo_user))
+                        invite_id = cur.fetchone()[0]
+                        action_taken = 'invite_sent'
+
+                    conn.commit()
+
+                    # For demo users, immediately create the user account
+                    if is_demo_user:
+                        try:
+                            # Create demo user with random display name
+                            demo_names = ['Demo User', 'Test User', 'Sample User', 'Trial User', 'Beta Tester']
+                            display_name = demo_names[hash(email) % len(demo_names)]
+                            
+                            # Create Ethereum wallet for demo user
+                            from web3 import Web3
+                            web3 = Web3()
+                            demo_account = web3.eth.account.create()
+
+                            cur.execute("""
+                                INSERT INTO users 
+                                (email, display_name, eth_address, firebase_uid) 
+                                VALUES (%s, %s, %s, %s) 
+                                RETURNING id
+                            """, (email, display_name, demo_account.address, f"demo_{invite_id}_{secrets.token_hex(8)}"))
+                            
+                            demo_user_id = cur.fetchone()[0]
+                            
+                            # Update invitation with user ID and mark as accepted
+                            cur.execute("""
+                                UPDATE invites 
+                                SET user_id = %s, 
+                                    invitation_status = 'invite_accepted',
+                                    accepted_at = CURRENT_TIMESTAMP,
+                                    updated_at = CURRENT_TIMESTAMP
+                                WHERE id = %s
+                            """, (demo_user_id, invite_id))
+                            
+                            conn.commit()
+                            
+                            print(f"Created demo user {demo_user_id} for invitation {invite_id}")
+                            
+                        except Exception as demo_err:
+                            print(f"Error creating demo user: {str(demo_err)}")
+                            # Don't fail the invitation if demo user creation fails
+
+                    return jsonify({
+                        'success': True,
+                        'message': f'Invitation {action_taken} successfully',
+                        'invite_id': invite_id,
+                        'email': email,
+                        'action': action_taken
+                    })
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error sending invitation: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/invites', methods=['GET'])
+def get_invites():
+    """Get invitations for a user"""
+    try:
+        firebase_uid = request.args.get('firebaseUid')
+        limit = int(request.args.get('limit', 20))
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get invites sent by this user (not cancelled)
+                    if firebase_uid:
+                        cur.execute("""
+                            SELECT id, email, invitation_status, personal_message, is_demo_user,
+                                   created_at, updated_at, expires_at, accepted_at, rejected_at
+                            FROM invites 
+                            WHERE invited_by_firebase_uid = %s 
+                            AND invitation_status != 'invite_cancelled'
+                            ORDER BY created_at DESC 
+                            LIMIT %s
+                        """, (firebase_uid, limit))
+                    else:
+                        # If no Firebase UID, get recent invites
+                        cur.execute("""
+                            SELECT id, email, invitation_status, personal_message, is_demo_user,
+                                   created_at, updated_at, expires_at, accepted_at, rejected_at
+                            FROM invites 
+                            WHERE invitation_status != 'invite_cancelled'
+                            ORDER BY created_at DESC 
+                            LIMIT %s
+                        """, (limit,))
+
+                    invites = cur.fetchall()
+                    
+                    invite_list = []
+                    for invite in invites:
+                        invite_list.append({
+                            'id': invite[0],
+                            'email': invite[1],
+                            'invitation_status': invite[2],
+                            'personal_message': invite[3],
+                            'is_demo_user': invite[4],
+                            'created_at': invite[5].isoformat() if invite[5] else None,
+                            'updated_at': invite[6].isoformat() if invite[6] else None,
+                            'expires_at': invite[7].isoformat() if invite[7] else None,
+                            'accepted_at': invite[8].isoformat() if invite[8] else None,
+                            'rejected_at': invite[9].isoformat() if invite[9] else None
+                        })
+
+                    return jsonify({
+                        'success': True,
+                        'invites': invite_list,
+                        'count': len(invite_list)
+                    })
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error getting invites: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/invites/<int:invite_id>/cancel', methods=['POST'])
+def cancel_invitation(invite_id):
+    """Cancel an invitation"""
+    try:
+        firebase_uid = request.json.get('firebaseUid') if request.json else None
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check if the user has permission to cancel this invitation
+                    if firebase_uid:
+                        cur.execute("""
+                            SELECT id FROM invites 
+                            WHERE id = %s AND invited_by_firebase_uid = %s
+                            AND invitation_status IN ('invite_sent', 're_invited')
+                        """, (invite_id, firebase_uid))
+                    else:
+                        cur.execute("""
+                            SELECT id FROM invites 
+                            WHERE id = %s AND invitation_status IN ('invite_sent', 're_invited')
+                        """, (invite_id,))
+
+                    if not cur.fetchone():
+                        return jsonify({'success': False, 'message': 'Invitation not found or cannot be cancelled'}), 404
+
+                    # Cancel the invitation
+                    cur.execute("""
+                        UPDATE invites 
+                        SET invitation_status = 'invite_cancelled',
+                            cancelled_at = CURRENT_TIMESTAMP,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = %s
+                        RETURNING email
+                    """, (invite_id,))
+                    
+                    result = cur.fetchone()
+                    conn.commit()
+
+                    return jsonify({
+                        'success': True,
+                        'message': f'Invitation to {result[0]} cancelled successfully'
+                    })
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error cancelling invitation: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/admin/create-subscription', methods=['POST'])
 def create_subscription_record():
     """Manually create a subscription record for a user"""
@@ -2592,120 +2846,6 @@ def terms():
 @app.route('/about')
 def about():
     return render_template('about.html')
-
-@app.route('/api/test-email', methods=['POST'])
-def test_email_endpoint():
-    """Test email sending functionality"""
-    try:
-        data = request.get_json() or {}
-        to_email = data.get('email', 'aa@dotmobile.app')
-        
-        # Import email service
-        from email_service import send_test_email
-        
-        success = send_test_email(to_email)
-        
-        if success:
-            return jsonify({
-                'status': 'success',
-                'message': f'Test email sent successfully to {to_email}',
-                'email': to_email
-            })
-        else:
-            return jsonify({
-                'status': 'error',
-                'message': 'Failed to send test email. Check SMTP configuration.',
-                'email': to_email
-            }), 500
-            
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
-
-@app.route('/api/send-user-invite', methods=['POST'])
-def send_user_invite():
-    """Send an email invitation to a new user"""
-    try:
-        data = request.get_json()
-        if not data or not data.get('email'):
-            return jsonify({'error': 'Email address is required'}), 400
-            
-        email = data.get('email')
-        firebase_uid = data.get('firebaseUid')
-        
-        # Import email service
-        from email_service import send_email
-        
-        subject = "Welcome to GORSE - Your Global Connectivity Solution"
-        body = f"""
-        Welcome to GORSE!
-        
-        You've been invited to join our global connectivity platform.
-        
-        To get started:
-        1. Visit: https://gorse.dotmobile.app
-        2. Sign up with this email address: {email}
-        3. Complete your profile setup
-        
-        GORSE provides global data connectivity and eSIM services.
-        
-        Need help? Contact support at support@dotmobile.app
-        
-        Best regards,
-        The GORSE Team
-        """
-        
-        html_body = f"""
-        <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #667eea;">Welcome to GORSE!</h2>
-                    <p>You've been invited to join our global connectivity platform.</p>
-                    
-                    <h3>To get started:</h3>
-                    <ol>
-                        <li>Visit: <a href="https://gorse.dotmobile.app" style="color: #667eea;">https://gorse.dotmobile.app</a></li>
-                        <li>Sign up with this email address: <strong>{email}</strong></li>
-                        <li>Complete your profile setup</li>
-                    </ol>
-                    
-                    <p>GORSE provides global data connectivity and eSIM services.</p>
-                    
-                    <p>Need help? Contact support at <a href="mailto:support@dotmobile.app">support@dotmobile.app</a></p>
-                    
-                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-                    <p style="color: #666; font-size: 14px;">
-                        Best regards,<br>
-                        <strong>The GORSE Team</strong>
-                    </p>
-                </div>
-            </body>
-        </html>
-        """
-        
-        success = send_email(email, subject, body, html_body)
-        
-        if success:
-            return jsonify({
-                'status': 'success',
-                'message': f'Invitation sent successfully to {email}',
-                'email': email
-            })
-        else:
-            return jsonify({
-                'status': 'error',
-                'message': 'Failed to send invitation email. Check SMTP configuration.',
-                'email': email
-            }), 500
-            
-    except Exception as e:
-        print(f"Error sending user invite: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
 
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
