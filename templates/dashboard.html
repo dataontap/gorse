@@ -474,7 +474,7 @@
         }
 
         function formatNumber(num) {
-            return num.toFixed(3);
+            return Math.floor(num).toString();
         }
 
         function updateDataDisplay() {
@@ -487,14 +487,11 @@
                 var days = Math.floor(totalMB / 500);
                 dataDisplay.innerHTML = '<span class="main-number">' + days + '</span><span class="unit">days</span>';
             } else {
-                // Show data in MB with XXX.yyy format
+                // Show data in MB as whole number (170000MB)
                 var totalMB = dataBalanceValue * 1000; // Convert GB to MB
-                var formattedNumber = formatNumber(totalMB);
-                var parts = formattedNumber.split('.');
-                var mainNumber = parts[0];
-                var decimalPart = parts[1] || '000';
+                var mainNumber = Math.floor(totalMB).toString();
                 
-                dataDisplay.innerHTML = '<span class="main-number">' + mainNumber + '</span><span class="decimal-part">.' + decimalPart + '</span><span class="unit">MB</span>';
+                dataDisplay.innerHTML = '<span class="main-number">' + mainNumber + '</span><span class="unit">MB</span>';
             }
         }
 
@@ -506,7 +503,7 @@
             alternatingInterval = setInterval(function() {
                 isShowingDays = !isShowingDays;
                 updateDataDisplay();
-            }, 5000);
+            }, 10000);
         }
 
         function loadMemberCount() {
