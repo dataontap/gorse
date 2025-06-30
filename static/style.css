@@ -1656,6 +1656,14 @@ body.light-mode {
     text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
 }
 
+.light-mode .status {
+    color: #006400;
+}
+
+.light-mode .status i {
+    color: #006400;
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -1853,12 +1861,13 @@ body.light-mode {
 
 .status {
     font-size: 16px;
-    color: #666666;
+    color: #006400;
     margin-top: 5px;
 }
 
 .status i {
     margin-right: 5px;
+    color: #006400;
 }
 
 .data-amount.pulse {

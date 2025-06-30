@@ -426,6 +426,10 @@
             loadSubscriptionStatus();
         });
 
+        var dataBalanceValue = 0;
+        var isShowingDays = false;
+        var alternatingInterval;
+
         function loadUserDataBalance() {
             var firebaseUid = localStorage.getItem('userId');
             if (firebaseUid) {
@@ -437,8 +441,12 @@
                         var globalStatus = document.getElementById('globalStatus');
 
                         if (dataDisplay && data.dataBalance !== undefined) {
-                            dataDisplay.innerHTML = '<i class="fas fa-database"></i>' + Math.round(data.dataBalance) + '<span>GB</span>';
+                            dataBalanceValue = data.dataBalance;
+                            updateDataDisplay();
                             dataDisplay.style.display = 'block';
+                            
+                            // Start alternating display
+                            startAlternatingDisplay();
                         }
 
                         if (globalStatus) {
@@ -452,8 +460,10 @@
                         var globalStatus = document.getElementById('globalStatus');
 
                         if (dataDisplay) {
-                            dataDisplay.innerHTML = '<i class="fas fa-database"></i>0<span>GB</span>';
+                            dataBalanceValue = 0;
+                            updateDataDisplay();
                             dataDisplay.style.display = 'block';
+                            startAlternatingDisplay();
                         }
 
                         if (globalStatus) {
@@ -461,6 +471,37 @@
                         }
                     });
             }
+        }
+
+        function formatNumber(num) {
+            return num.toFixed(3);
+        }
+
+        function updateDataDisplay() {
+            var dataDisplay = document.getElementById('dataDisplay');
+            if (!dataDisplay) return;
+
+            if (isShowingDays) {
+                // Calculate days based on 500MB per day
+                var totalMB = dataBalanceValue * 1000; // Convert GB to MB
+                var days = Math.floor(totalMB / 500);
+                dataDisplay.innerHTML = formatNumber(days) + '<span>days</span>';
+            } else {
+                // Show data in MB
+                var totalMB = dataBalanceValue * 1000; // Convert GB to MB
+                dataDisplay.innerHTML = formatNumber(totalMB) + '<span>MB</span>';
+            }
+        }
+
+        function startAlternatingDisplay() {
+            if (alternatingInterval) {
+                clearInterval(alternatingInterval);
+            }
+            
+            alternatingInterval = setInterval(function() {
+                isShowingDays = !isShowingDays;
+                updateDataDisplay();
+            }, 5000);
         }
 
         function loadMemberCount() {
