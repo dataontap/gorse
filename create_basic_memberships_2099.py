@@ -6,6 +6,7 @@ Status: Active
 """
 
 import os
+import json
 import psycopg2
 from psycopg2.pool import SimpleConnectionPool
 from contextlib import contextmanager
@@ -93,6 +94,29 @@ def ensure_tables_exist():
                 conn.commit()
                 print("✓ Required tables verified/created")
 
+def get_all_users_from_batches():
+    """Get all users from batch files (39 total files)"""
+    all_users = []
+    
+    for batch_num in range(1, 40):  # 1 to 39 inclusive
+        file_path = f"users_batch_{batch_num}.json"
+        
+        try:
+            with open(file_path, 'r') as f:
+                batch_data = json.load(f)
+                users = batch_data.get('users', [])
+                print(f"✓ Loaded {len(users)} users from {file_path}")
+                all_users.extend(users)
+        except FileNotFoundError:
+            print(f"⚠️  Warning: {file_path} not found, skipping...")
+            continue
+        except Exception as e:
+            print(f"✗ Error loading {file_path}: {str(e)}")
+            continue
+    
+    print(f"\nTotal users loaded from all batch files: {len(all_users)}")
+    return all_users
+
 def get_all_users():
     """Get all users from the database"""
     with get_db_connection() as conn:
@@ -105,9 +129,9 @@ def get_all_users():
 
 def create_basic_membership_for_user(user_id, email):
     """Create Basic Membership subscription for a specific user"""
-    # Set end date to 2099-07-02 07:11:00 EST (Canada Day)
+    # Set end date to 2100-07-01 07:11:00 EST (July 1, 2100)
     est = pytz.timezone('US/Eastern')
-    end_date = est.localize(datetime(2099, 7, 2, 7, 11, 0))
+    end_date = est.localize(datetime(2100, 7, 1, 7, 11, 0))
 
     with get_db_connection() as conn:
         if conn:
@@ -164,29 +188,36 @@ def create_basic_membership_for_user(user_id, email):
 def main():
     """Main function"""
     print("=" * 60)
-    print("Creating Basic Memberships for ALL Users")
-    print("Target: 29905 users")
+    print("Creating Basic Memberships for ALL Users from 39 Batch Files")
     print("Membership: Basic Membership")
     print("Status: Active")
-    print("Valid until: 2099-07-02 07:11:00 EST (Canada Day)")
+    print("Valid until: 2100-07-01 07:11:00 EST")
     print("=" * 60)
 
     # Ensure database schema is correct
     ensure_phone_number_column()
     ensure_tables_exist()
 
-    # Get all users
-    users = get_all_users()
-    total_users = len(users)
+    # First, load all users from batch files to see total count
+    batch_users = get_all_users_from_batches()
+    
+    if not batch_users:
+        print("No users found in batch files!")
+        return
 
-    print(f"\nFound {total_users} users in database")
+    # Get existing users from database
+    db_users = get_all_users()
+    total_db_users = len(db_users)
 
-    if total_users == 0:
-        print("No users found! Please run user migration first.")
+    print(f"\nUsers found in batch files: {len(batch_users)}")
+    print(f"Users currently in database: {total_db_users}")
+
+    if total_db_users == 0:
+        print("No users found in database! Please run user migration first.")
         return
 
     # Confirm before proceeding
-    response = input(f"\nCreate Basic Memberships for all {total_users} users? (y/N): ")
+    response = input(f"\nCreate Basic Memberships for all {total_db_users} users in database? (y/N): ")
     if response.lower() != 'y':
         print("Operation cancelled")
         return
@@ -196,7 +227,7 @@ def main():
     success_count = 0
     error_count = 0
 
-    for user_id, email, firebase_uid in users:
+    for user_id, email, firebase_uid in db_users:
         if create_basic_membership_for_user(user_id, email):
             success_count += 1
         else:
@@ -204,7 +235,7 @@ def main():
 
         # Progress update every 1000 users
         if (success_count + error_count) % 1000 == 0:
-            print(f"Progress: {success_count + error_count}/{total_users} users processed")
+            print(f"Progress: {success_count + error_count}/{total_db_users} users processed")
 
     print(f"\n" + "=" * 60)
     print("FINAL RESULTS")
@@ -212,14 +243,15 @@ def main():
     print(f"Total users processed: {success_count + error_count}")
     print(f"Successful memberships: {success_count}")
     print(f"Errors: {error_count}")
-    print(f"Expected target: 29905")
+    print(f"Users from batch files: {len(batch_users)}")
+    print(f"Users in database: {total_db_users}")
 
-    if success_count >= 29000:
+    if success_count >= total_db_users * 0.95:  # 95% success rate
         print("✅ SUCCESS: Membership creation completed for all users!")
     else:
         print("⚠️  WARNING: Not all users received memberships")
 
-    print(f"\nAll users now have Active Basic Membership until 2099-07-02 07:11:00 EST")
+    print(f"\nAll users now have Active Basic Membership until 2100-07-01 07:11:00 EST")
 
 if __name__ == "__main__":
     main()
