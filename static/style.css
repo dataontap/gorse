@@ -3365,6 +3365,31 @@ input:checked + .toggle-slider:before {
     color: var(--text-secondary);
 }
 
+.cancel-invite-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: 8px;
+    transition: all 0.2s ease;
+}
+
+.cancel-invite-btn:hover {
+    background: #c82333;
+    transform: scale(1.1);
+}
+
+.cancel-invite-btn i {
+    font-size: 10px;
+}
+
 /* Help desk styles */
 .help-section {
     position: fixed;

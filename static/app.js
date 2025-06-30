@@ -752,12 +752,51 @@ function displayInvitesList(invites) {
                     <div class="invite-item">
                         <span class="invite-email">${invite.email}</span>
                         <span class="invite-status status-${invite.invitation_status.replace('_', '-')}">${invite.invitation_status.replace('_', ' ')}</span>
+                        ${(invite.invitation_status === 'invite_sent' || invite.invitation_status === 're_invited') ? 
+                            `<button class="cancel-invite-btn" onclick="cancelInvitation(${invite.id})" title="Cancel invitation">
+                                <i class="fas fa-times"></i>
+                            </button>` : ''}
                         <span class="invite-date">${new Date(invite.created_at).toLocaleDateString()}</span>
                     </div>
                 `).join('')}
             </div>
         `;
     }
+}
+
+function cancelInvitation(inviteId) {
+    if (!confirm('Are you sure you want to cancel this invitation?')) {
+        return;
+    }
+    
+    const firebaseUid = localStorage.getItem('userId') || null;
+    
+    fetch(`/api/invites/${inviteId}/cancel`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            firebaseUid: firebaseUid
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Invitation cancelled successfully!');
+            
+            // Refresh invites list
+            if (typeof refreshInvitesList === 'function') {
+                refreshInvitesList();
+            }
+        } else {
+            alert('Error: ' + (data.message || 'Failed to cancel invitation'));
+        }
+    })
+    .catch(error => {
+        console.error('Error cancelling invitation:', error);
+        alert('Error cancelling invitation. Please try again.');
+    });
 }
 
 // Global help functions for compatibility
