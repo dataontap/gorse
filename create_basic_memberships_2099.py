@@ -42,6 +42,15 @@ def create_basic_membership_for_all_users():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
+                    # First, get the total count of users
+                    cur.execute("SELECT COUNT(*) FROM users")
+                    total_count = cur.fetchone()[0]
+                    print(f"Total users in database: {total_count}")
+                    
+                    if total_count != 29905:
+                        print(f"WARNING: Expected 29,905 users but found {total_count}")
+                        print("You may need to run the user migration scripts first")
+                    
                     # Get all users from the database
                     cur.execute("""
                         SELECT id, email, firebase_uid, stripe_customer_id, display_name
@@ -54,7 +63,7 @@ def create_basic_membership_for_all_users():
                         print("No users found in the database")
                         return
                     
-                    print(f"Found {len(users)} users to process")
+                    print(f"Found {len(users)} users to process for Basic Membership creation")
                     
                     success_count = 0
                     error_count = 0
