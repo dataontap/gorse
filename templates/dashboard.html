@@ -378,7 +378,9 @@
         <!-- Beta Tester Toggle -->
         <div class="beta-tester-card">
             <h3>🧪 Beta Tester Program</h3>
-            <p>This third DOT release named GORSE is still in ALFA. We offer global connectivity to our members as a registered Canadian Full MVNO with Network code 302 100. Opt-in for early access to BETA expected soon.</p>
+            <p>Gorse Demo Mode
+
+This is dotmobile V3 'gorse release' demo. We are not quite ready to start the service publicly in Canada using national networks due to Full MVNO access unavailability (read more here) (link to About). But you can opt in right here with risk of things still being in Alfa and we will send you a free eSIM to use globally. Founding members do not pay for any membership fees for life or the year 2099. They also get 100.33 DOTM ERC-20 ETH token. Every 10000MB purchase gets you 1.33DOTM. Same goes for store and anything DOT earns from Stripe registered Payment method with DOT. Every DOTM is valid $1 at dotmobile ecosystem. Only 10,333,333 DOTM will be minted or so our first blockchain contract says (link to Etherscan) and your brand new ETH wallet provided by Infura and MetaMask (links to both companies).</p>
             <div class="toggle-container">
                 <label class="toggle-switch">
                     <input type="checkbox" id="betaTesterToggle">
@@ -446,7 +448,7 @@
                             dataBalanceValue = data.dataBalance;
                             updateDataDisplay();
                             dataDisplay.style.display = 'block';
-                            
+
                             // Start alternating display
                             startAlternatingDisplay();
                         }
@@ -490,7 +492,7 @@
                 dataDisplay.innerHTML = '<span class="main-number">' + days + '</span><span class="unit">days</span>';
             } else {
                 var totalMB = dataBalanceValue * 1000; // Convert GB to MB
-                
+
                 if (totalMB <= 1000) {
                     // Show as XXXXMB for 1000MB or less
                     var mainNumber = Math.floor(totalMB).toString();
@@ -500,7 +502,7 @@
                     var gb = totalMB / 1000;
                     var wholeGB = Math.floor(gb);
                     var decimalPart = Math.floor((gb - wholeGB) * 1000).toString().padStart(3, '0');
-                    
+
                     dataDisplay.innerHTML = '<span class="main-number">' + wholeGB + '</span><span class="decimal-part">.' + decimalPart + '</span><span class="unit">GB</span>';
                 }
             }
@@ -510,7 +512,7 @@
             if (alternatingInterval) {
                 clearInterval(alternatingInterval);
             }
-            
+
             alternatingInterval = setInterval(function() {
                 isShowingDays = !isShowingDays;
                 updateDataDisplay();
