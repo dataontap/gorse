@@ -1870,6 +1870,23 @@ body.light-mode {
     color: #006400;
 }
 
+/* Dark green for Global status in both light and dark modes */
+.light-mode .status {
+    color: #006400;
+}
+
+.light-mode .status i {
+    color: #006400;
+}
+
+.dark-mode .status {
+    color: #006400;
+}
+
+.dark-mode .status i {
+    color: #006400;
+}
+
 .data-amount.pulse {
     animation: pulse-animation 1s;
 }
