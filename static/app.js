@@ -162,25 +162,25 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
             hideAddUserPopup();
         }
-        
+
         // Handle invite anyone button
         if (e.target.id === 'inviteAnyoneBtn') {
             e.preventDefault();
             showInviteForm();
         }
-        
+
         // Handle demo user button
         if (e.target.id === 'demoUserBtn') {
             e.preventDefault();
             createDemoUser();
         }
-        
+
         // Handle send invitation button
         if (e.target.id === 'sendInvitationBtn') {
             e.preventDefault();
             sendInvitation();
         }
-        
+
         // Handle cancel invitation button
         if (e.target.id === 'cancelInviteBtn') {
             e.preventDefault();
@@ -195,19 +195,19 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             showConfirmationDrawer(10, 10, 'global_data_10gb');
         }
-        
+
         // Handle subscribe buttons
         if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
             e.preventDefault();
             showConfirmationDrawer(10, 24, 'basic_membership');
         }
-        
+
         // Handle drawer cancel/confirm buttons
         if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
             e.preventDefault();
             hideConfirmationDrawer();
         }
-        
+
         if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
             e.preventDefault();
             confirmPurchase();
@@ -351,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
 
             const isDark = body.classList.contains('dark-mode');
-            
+
             if (isDark) {
                 // Switch to light mode
                 body.classList.remove('dark-mode');
@@ -437,14 +437,14 @@ function showConfirmationDrawer(dataAmount, price, productId) {
     if (drawer) {
         var dataAmountElement = document.getElementById('confirmDataAmount');
         var priceElement = document.getElementById('confirmPrice');
-        
+
         if (dataAmountElement) {
             dataAmountElement.textContent = dataAmount + 'GB';
         }
         if (priceElement) {
             priceElement.textContent = '$' + price;
         }
-        
+
         drawer.classList.add('show');
         drawer.style.display = 'block';
         drawer.dataset.productId = productId;
@@ -464,10 +464,10 @@ function confirmPurchase() {
     if (drawer && drawer.dataset.productId) {
         var productId = drawer.dataset.productId;
         console.log('Confirming purchase for:', productId);
-        
+
         // Get Firebase UID if available
         var firebaseUid = localStorage.getItem('userId') || null;
-        
+
         // Make API call to record purchase
         fetch('/api/record-global-purchase', {
             method: 'POST',
@@ -483,10 +483,10 @@ function confirmPurchase() {
         .then(data => {
             console.log('Purchase recorded:', data);
             hideConfirmationDrawer();
-            
+
             // Show success message
             alert('Purchase successful! Your data will be available shortly.');
-            
+
             // Refresh the page to update data balance
             window.location.reload();
         })
@@ -505,7 +505,7 @@ function sendComingSoonNotification() {
 function toggleChart(link) {
     const dataUsage = link.closest('.data-usage');
     const chart = dataUsage.querySelector('.usage-chart');
-    
+
     // Store current scroll position relative to the link element
     const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const linkRect = link.getBoundingClientRect();
@@ -556,7 +556,7 @@ function toggleChart(link) {
             });
             chart.querySelector('canvas').chart = newChart;
         }
-        
+
         // Maintain scroll position after chart expands
         setTimeout(() => {
             window.scrollTo(0, linkOffsetFromTop - linkRect.top);
@@ -617,7 +617,7 @@ function showAddUserPopup() {
     `;
 
     document.body.appendChild(popup);
-    
+
     // Add animation
     setTimeout(() => {
         popup.classList.add('show');
@@ -637,11 +637,11 @@ function hideAddUserPopup() {
 function showInviteForm() {
     const options = document.querySelector('.invitation-options');
     const form = document.getElementById('inviteForm');
-    
+
     if (options && form) {
         options.style.display = 'none';
         form.style.display = 'block';
-        
+
         // Focus on email input
         const emailInput = document.getElementById('inviteEmail');
         if (emailInput) {
@@ -659,9 +659,9 @@ function createDemoUser() {
         'beta.tester4@example.com',
         'trial.user5@example.com'
     ];
-    
+
     const randomEmail = demoEmails[Math.floor(Math.random() * demoEmails.length)] + '.' + Date.now();
-    
+
     // Send invitation for demo user
     sendInvitationToAPI(randomEmail, 'Auto-generated demo user invitation', true);
 }
@@ -669,28 +669,28 @@ function createDemoUser() {
 function sendInvitation() {
     const emailInput = document.getElementById('inviteEmail');
     const messageInput = document.getElementById('inviteMessage');
-    
+
     if (!emailInput || !emailInput.value.trim()) {
         alert('Please enter a valid email address.');
         return;
     }
-    
+
     const email = emailInput.value.trim();
     const message = messageInput ? messageInput.value.trim() : '';
-    
+
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         alert('Please enter a valid email address.');
         return;
     }
-    
+
     sendInvitationToAPI(email, message, false);
 }
 
 function sendInvitationToAPI(email, message, isDemoUser) {
     const firebaseUid = localStorage.getItem('userId') || null;
-    
+
     fetch('/api/send-invitation', {
         method: 'POST',
         headers: {
@@ -708,7 +708,7 @@ function sendInvitationToAPI(email, message, isDemoUser) {
         if (data.success) {
             alert(isDemoUser ? 'Demo user created successfully!' : 'Invitation sent successfully!');
             hideAddUserPopup();
-            
+
             // Refresh invites list if on dashboard
             if (typeof refreshInvitesList === 'function') {
                 refreshInvitesList();
@@ -725,7 +725,7 @@ function sendInvitationToAPI(email, message, isDemoUser) {
 
 function refreshInvitesList() {
     const firebaseUid = localStorage.getItem('userId') || null;
-    
+
     fetch(`/api/invites?firebaseUid=${firebaseUid}`)
     .then(response => response.json())
     .then(data => {
@@ -741,7 +741,7 @@ function refreshInvitesList() {
 function displayInvitesList(invites) {
     // This function will be called to display invites in the dashboard
     console.log('Invites to display:', invites);
-    
+
     // You can implement the UI display logic here
     const invitesContainer = document.getElementById('invitesContainer');
     if (invitesContainer && invites.length > 0) {
@@ -768,9 +768,9 @@ function cancelInvitation(inviteId) {
     if (!confirm('Are you sure you want to cancel this invitation?')) {
         return;
     }
-    
+
     const firebaseUid = localStorage.getItem('userId') || null;
-    
+
     fetch(`/api/invites/${inviteId}/cancel`, {
         method: 'POST',
         headers: {
@@ -784,7 +784,7 @@ function cancelInvitation(inviteId) {
     .then(data => {
         if (data.success) {
             alert('Invitation cancelled successfully!');
-            
+
             // Refresh invites list
             if (typeof refreshInvitesList === 'function') {
                 refreshInvitesList();

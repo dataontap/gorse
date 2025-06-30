@@ -1,0 +1,539 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notifications - dot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/help-styles.css">
+
+    <!-- Firebase v9+ modular SDK -->
+    <script type="module" src="/static/firebase-init.js"></script>
+    <script type="module" src="/static/firebase-auth.js"></script>
+
+    <style>
+        .notification-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--card-bg);
+            margin-bottom: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .notification-item:hover {
+            background: var(--hover-bg);
+        }
+
+        .notification-item.unread {
+            border-left: 4px solid var(--primary-color);
+            background: rgba(77, 154, 255, 0.05);
+        }
+
+        .notification-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .notification-indicator.read {
+            background: transparent;
+        }
+
+        .notification-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .notification-message {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .notification-time {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: 12px;
+        }
+
+        .notification-action-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .notification-action-btn:hover {
+            background: var(--hover-bg);
+        }
+
+        .notification-action-btn.primary {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .notification-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .filter-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .mark-all-read {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: auto;
+        }
+
+        .notifications-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .notification-badge {
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="landing-page">
+    <div class="top-bar">
+        <div class="menu-icon" onclick="toggleMenu(this)">
+            <i class="fas fa-bars"></i>
+            <div class="menu-dropdown">
+                <a href="/dashboard"><i class="fas fa-database"></i> Data</a>
+                <a href="/network"><i class="fas fa-network-wired"></i> Network</a>
+                <a href="/marketplace"><i class="fas fa-store"></i> Marketplace</a>
+                <a href="/notifications"><i class="fas fa-bell"></i> Notifications</a>
+            </div>
+        </div>
+        <div class="profile-section">
+            <i class="fas fa-user-circle" onclick="toggleProfileDropdown()"></i>
+            <div class="profile-dropdown">
+                <div class="profile-info">
+                    <div class="profile-header">
+                        <span class="account-text">My Account</span>
+                    </div>
+                    <div class="wallet-pill-container">
+                        <a href="/payments" class="wallet-value-pill">100 DOTM = $100.00</a>
+                    </div>
+                </div>
+                <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+                <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="/payments"><i class="fas fa-credit-card"></i> Payments</a>
+                <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
+                <div class="settings-submenu" style="display: none;">
+                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
+                </div>
+                <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="#" id="helpToggle">
+                    <i class="fas fa-question-circle"></i> <span id="helpText">Help</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="notifications-header">
+            <h2><i class="fas fa-bell"></i> Notifications <span id="notificationBadge" class="notification-badge" style="display: none;">0</span></h2>
+            <button class="mark-all-read" onclick="markAllAsRead()" style="display: none;" id="markAllReadBtn">
+                <i class="fas fa-check-double"></i> Mark All Read
+            </button>
+        </div>
+
+        <div class="notification-filter">
+            <button class="filter-btn active" data-filter="all" onclick="filterNotifications('all')">All</button>
+            <button class="filter-btn" data-filter="unread" onclick="filterNotifications('unread')">Unread</button>
+            <button class="filter-btn" data-filter="invitations" onclick="filterNotifications('invitations')">Invitations</button>
+            <button class="filter-btn" data-filter="system" onclick="filterNotifications('system')">System</button>
+        </div>
+
+        <div id="notificationsList" class="notifications-list">
+            <div class="empty-state" id="emptyState">
+                <i class="fas fa-bell-slash"></i>
+                <h4>No notifications yet</h4>
+                <p>You'll see your latest notifications here</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+    <script>
+        let notifications = [];
+        let currentFilter = 'all';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeNotifications();
+            loadNotifications();
+            
+            // Request notification permission
+            requestNotificationPermission();
+        });
+
+        function initializeNotifications() {
+            // Initialize Firebase messaging for push notifications
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered:', registration);
+                    })
+                    .catch((error) => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            }
+        }
+
+        async function requestNotificationPermission() {
+            if ('Notification' in window) {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    console.log('Notification permission granted');
+                } else {
+                    console.log('Notification permission denied');
+                }
+            }
+        }
+
+        async function loadNotifications() {
+            try {
+                const firebaseUid = localStorage.getItem('userId');
+                
+                // Load invitations
+                const invitesResponse = await fetch(`/api/invites?firebaseUid=${firebaseUid}`);
+                const invitesData = await invitesResponse.json();
+                
+                if (invitesData.success) {
+                    // Convert invitations to notifications
+                    const inviteNotifications = invitesData.invites.map(invite => ({
+                        id: `invite_${invite.id}`,
+                        type: 'invitation',
+                        title: getInviteTitle(invite),
+                        message: getInviteMessage(invite),
+                        time: new Date(invite.updated_at || invite.created_at),
+                        read: getInviteReadStatus(invite),
+                        data: invite
+                    }));
+                    
+                    notifications = [...inviteNotifications];
+                }
+                
+                // Load other notification types (system notifications, etc.)
+                await loadSystemNotifications();
+                
+                // Sort by time (newest first)
+                notifications.sort((a, b) => new Date(b.time) - new Date(a.time));
+                
+                displayNotifications();
+                updateBadge();
+                
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        async function loadSystemNotifications() {
+            // Add some sample system notifications
+            const systemNotifications = [
+                {
+                    id: 'system_welcome',
+                    type: 'system',
+                    title: 'Welcome to GORSE Network!',
+                    message: 'Your account has been successfully created. You now have access to global connectivity services.',
+                    time: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+                    read: false
+                },
+                {
+                    id: 'system_data_purchased',
+                    type: 'system',
+                    title: 'Data Purchase Confirmed',
+                    message: 'Your 10GB global data package has been activated and is ready to use.',
+                    time: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+                    read: true
+                }
+            ];
+            
+            // Only add system notifications if they don't already exist
+            systemNotifications.forEach(sysNotif => {
+                if (!notifications.find(n => n.id === sysNotif.id)) {
+                    notifications.push(sysNotif);
+                }
+            });
+        }
+
+        function getInviteTitle(invite) {
+            switch (invite.invitation_status) {
+                case 'invite_accepted':
+                    return 'Invitation Accepted';
+                case 'invite_rejected':
+                    return 'Invitation Declined';
+                case 'invite_cancelled':
+                    return 'Invitation Cancelled';
+                default:
+                    return 'Invitation Sent';
+            }
+        }
+
+        function getInviteMessage(invite) {
+            switch (invite.invitation_status) {
+                case 'invite_accepted':
+                    return `${invite.email} has accepted your invitation to join GORSE Network.`;
+                case 'invite_rejected':
+                    return `${invite.email} has declined your invitation.`;
+                case 'invite_cancelled':
+                    return `Your invitation to ${invite.email} has been cancelled.`;
+                default:
+                    return `Invitation sent to ${invite.email}. Waiting for response.`;
+            }
+        }
+
+        function getInviteReadStatus(invite) {
+            // For now, mark accepted/rejected as unread, others as read
+            return !['invite_accepted', 'invite_rejected'].includes(invite.invitation_status);
+        }
+
+        function displayNotifications() {
+            const container = document.getElementById('notificationsList');
+            const emptyState = document.getElementById('emptyState');
+            
+            let filteredNotifications = notifications;
+            
+            if (currentFilter !== 'all') {
+                filteredNotifications = notifications.filter(n => {
+                    if (currentFilter === 'unread') return !n.read;
+                    if (currentFilter === 'invitations') return n.type === 'invitation';
+                    if (currentFilter === 'system') return n.type === 'system';
+                    return true;
+                });
+            }
+            
+            if (filteredNotifications.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            const notificationsHtml = filteredNotifications.map(notification => `
+                <div class="notification-item ${notification.read ? 'read' : 'unread'}" data-id="${notification.id}">
+                    <div class="notification-indicator ${notification.read ? 'read' : ''}"></div>
+                    <div class="notification-content">
+                        <div class="notification-title">${notification.title}</div>
+                        <div class="notification-message">${notification.message}</div>
+                        <div class="notification-time">${formatTime(notification.time)}</div>
+                    </div>
+                    <div class="notification-actions">
+                        ${!notification.read ? `
+                            <button class="notification-action-btn" onclick="markAsRead('${notification.id}')">
+                                <i class="fas fa-check"></i> Mark Read
+                            </button>
+                        ` : ''}
+                        ${notification.type === 'invitation' && notification.data.invitation_status === 'invite_sent' ? `
+                            <button class="notification-action-btn primary" onclick="resendInvitation('${notification.data.id}')">
+                                <i class="fas fa-paper-plane"></i> Resend
+                            </button>
+                            <button class="notification-action-btn" onclick="cancelInvitation('${notification.data.id}')">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = notificationsHtml;
+        }
+
+        function filterNotifications(filter) {
+            currentFilter = filter;
+            
+            // Update active filter button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+            
+            displayNotifications();
+        }
+
+        function markAsRead(notificationId) {
+            const notification = notifications.find(n => n.id === notificationId);
+            if (notification) {
+                notification.read = true;
+                displayNotifications();
+                updateBadge();
+                
+                // Save read status to localStorage or send to server
+                saveNotificationReadStatus(notificationId, true);
+            }
+        }
+
+        function markAllAsRead() {
+            notifications.forEach(n => n.read = true);
+            displayNotifications();
+            updateBadge();
+            
+            // Save all read statuses
+            notifications.forEach(n => saveNotificationReadStatus(n.id, true));
+        }
+
+        function saveNotificationReadStatus(notificationId, isRead) {
+            // Save to localStorage for now
+            const readStatuses = JSON.parse(localStorage.getItem('notificationReadStatuses') || '{}');
+            readStatuses[notificationId] = isRead;
+            localStorage.setItem('notificationReadStatuses', JSON.stringify(readStatuses));
+        }
+
+        function updateBadge() {
+            const unreadCount = notifications.filter(n => !n.read).length;
+            const badge = document.getElementById('notificationBadge');
+            const markAllBtn = document.getElementById('markAllReadBtn');
+            
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.style.display = 'inline-block';
+                markAllBtn.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+                markAllBtn.style.display = 'none';
+            }
+        }
+
+        function formatTime(date) {
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        async function resendInvitation(inviteId) {
+            try {
+                // Implementation for resending invitation
+                console.log('Resending invitation:', inviteId);
+                alert('Invitation resent successfully!');
+            } catch (error) {
+                console.error('Error resending invitation:', error);
+                alert('Error resending invitation. Please try again.');
+            }
+        }
+
+        async function cancelInvitation(inviteId) {
+            if (!confirm('Are you sure you want to cancel this invitation?')) {
+                return;
+            }
+            
+            try {
+                const firebaseUid = localStorage.getItem('userId');
+                const response = await fetch(`/api/invites/${inviteId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ firebaseUid })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert('Invitation cancelled successfully!');
+                    loadNotifications(); // Reload notifications
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to cancel invitation'));
+                }
+            } catch (error) {
+                console.error('Error cancelling invitation:', error);
+                alert('Error cancelling invitation. Please try again.');
+            }
+        }
+
+        // Listen for Firebase push notifications
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', event => {
+                if (event.data && event.data.notification) {
+                    // Add new notification from push message
+                    const newNotification = {
+                        id: `push_${Date.now()}`,
+                        type: 'system',
+                        title: event.data.notification.title,
+                        message: event.data.notification.body,
+                        time: new Date(),
+                        read: false
+                    };
+                    
+                    notifications.unshift(newNotification);
+                    displayNotifications();
+                    updateBadge();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

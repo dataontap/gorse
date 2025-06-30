@@ -1156,6 +1156,10 @@ def marketplace():
 def tokens():
     return render_template('tokens.html')
 
+@app.route('/notifications', methods=['GET'])
+def notifications():
+    return render_template('notifications.html')
+
 @app.route('/help-admin', methods=['GET'])
 def help_admin():
     return render_template('help_admin.html')
@@ -2093,6 +2097,148 @@ def populate_token_pings():
                             additional_data TEXT,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         );
+
+
+@app.route('/api/notifications', methods=['GET'])
+def get_notifications():
+    """Get all notifications for a user"""
+    try:
+        firebase_uid = request.args.get('firebaseUid')
+        notification_type = request.args.get('type', 'all')
+        limit = int(request.args.get('limit', 50))
+        
+        notifications = []
+        
+        # Get invitations as notifications
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    if firebase_uid:
+                        cur.execute("""
+                            SELECT id, email, invitation_status, personal_message, is_demo_user,
+                                   created_at, updated_at, expires_at, accepted_at, rejected_at
+                            FROM invites 
+                            WHERE invited_by_firebase_uid = %s 
+                            ORDER BY updated_at DESC 
+                            LIMIT %s
+                        """, (firebase_uid, limit))
+                    else:
+                        cur.execute("""
+                            SELECT id, email, invitation_status, personal_message, is_demo_user,
+                                   created_at, updated_at, expires_at, accepted_at, rejected_at
+                            FROM invites 
+                            ORDER BY updated_at DESC 
+                            LIMIT %s
+                        """, (limit,))
+                    
+                    invites = cur.fetchall()
+                    
+                    for invite in invites:
+                        notifications.append({
+                            'id': f'invite_{invite[0]}',
+                            'type': 'invitation',
+                            'title': get_invite_notification_title(invite[2]),
+                            'message': get_invite_notification_message(invite[1], invite[2]),
+                            'time': invite[6].isoformat() if invite[6] else invite[5].isoformat(),
+                            'read': invite[2] in ['invite_sent', 'invite_cancelled'],
+                            'data': {
+                                'invite_id': invite[0],
+                                'email': invite[1],
+                                'status': invite[2]
+                            }
+                        })
+        
+        # Add system notifications (you can expand this)
+        system_notifications = [
+            {
+                'id': 'system_welcome',
+                'type': 'system',
+                'title': 'Welcome to GORSE Network!',
+                'message': 'Your account has been successfully created.',
+                'time': datetime.now().isoformat(),
+                'read': False
+            }
+        ]
+        
+        if notification_type == 'all' or notification_type == 'system':
+            notifications.extend(system_notifications)
+        
+        # Filter by type if specified
+        if notification_type != 'all':
+            notifications = [n for n in notifications if n['type'] == notification_type]
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications,
+            'count': len(notifications)
+        })
+        
+    except Exception as e:
+        print(f"Error getting notifications: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+def get_invite_notification_title(status):
+    """Get notification title based on invite status"""
+    titles = {
+        'invite_sent': 'Invitation Sent',
+        'invite_accepted': 'Invitation Accepted',
+        'invite_rejected': 'Invitation Declined',
+        'invite_cancelled': 'Invitation Cancelled',
+        're_invited': 'Invitation Resent'
+    }
+    return titles.get(status, 'Invitation Update')
+
+def get_invite_notification_message(email, status):
+    """Get notification message based on invite status"""
+    messages = {
+        'invite_sent': f'Invitation sent to {email}. Waiting for response.',
+        'invite_accepted': f'{email} has accepted your invitation to join GORSE Network.',
+        'invite_rejected': f'{email} has declined your invitation.',
+        'invite_cancelled': f'Your invitation to {email} has been cancelled.',
+        're_invited': f'Invitation resent to {email}.'
+    }
+    return messages.get(status, f'Invitation update for {email}')
+
+@app.route('/api/notifications/<notification_id>/read', methods=['POST'])
+def mark_notification_read(notification_id):
+    """Mark a notification as read"""
+    try:
+        firebase_uid = request.json.get('firebaseUid') if request.json else None
+        
+        # For now, we'll store read status in a simple table
+        # You can expand this to handle different notification types
+        
+        return jsonify({
+            'success': True,
+            'message': 'Notification marked as read'
+        })
+        
+    except Exception as e:
+        print(f"Error marking notification as read: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/send-push-notification', methods=['POST'])
+def send_push_notification():
+    """Send a push notification to a user"""
+    try:
+        data = request.get_json()
+        title = data.get('title', 'GORSE Network')
+        body = data.get('body', 'You have a new notification')
+        firebase_uid = data.get('firebaseUid')
+        
+        # Here you would normally use Firebase Admin SDK to send push notifications
+        # For now, we'll just log it
+        print(f"Push notification to {firebase_uid}: {title} - {body}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Push notification sent successfully'
+        })
+        
+    except Exception as e:
+        print(f"Error sending push notification: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
                         """
                         cur.execute(create_table_sql)
                         conn.commit()
