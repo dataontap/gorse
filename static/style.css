@@ -2201,11 +2201,37 @@ body.light-mode {
 .sort-select {
     padding: 8px 12px;
     border-radius: 4px;
-    border: 1px solid #ddd;
-    background: rgba(240, 240, 240, 0.9);
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
     font-size: 14px;
     min-width: 150px;
-    color: #333;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.sort-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(77, 154, 255, 0.1);
+}
+
+/* Dark mode specific improvements for select elements */
+.dark-mode select,
+.dark-mode .sort-select {
+    background: rgba(60, 60, 60, 0.9);
+    color: #ffffff;
+    border-color: #555;
+}
+
+.dark-mode select:focus,
+.dark-mode .sort-select:focus {
+    border-color: #4d9aff;
+    background: rgba(70, 70, 70, 0.95);
+}
+
+.dark-mode option {
+    background: #2a2a2a;
+    color: #ffffff;
 }
 
 .sort-icons {
@@ -2754,6 +2780,14 @@ cursor: pointer;
 .beta-tester-card h3 {
     margin: 0 0 10px 0;
     font-size: 1.4em;
+    color: #ffffff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.beta-tester-card p {
+    color: #ffffff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    line-height: 1.5;
 }
 
 .toggle-container {
@@ -3112,6 +3146,30 @@ input:checked + .toggle-slider:before {
     }
 }
 
+/* CSS Variables for theming */
+:root {
+    --card-bg: rgba(255, 255, 255, 0.95);
+    --border-color: #e0e0e0;
+    --text-primary: #333;
+    --text-secondary: #666;
+    --hover-bg: #f5f5f5;
+    --primary-color: #0066ff;
+    --primary-hover: #0052cc;
+    --input-bg: #ffffff;
+}
+
+/* Dark mode variables */
+.dark-mode {
+    --card-bg: rgba(40, 40, 40, 0.95);
+    --border-color: #555;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --hover-bg: rgba(60, 60, 60, 0.8);
+    --primary-color: #4d9aff;
+    --primary-hover: #66a3ff;
+    --input-bg: rgba(60, 60, 60, 0.9);
+}
+
 /* Add User Popup Styles */
 .popup-overlay {
     position: fixed;
@@ -3142,6 +3200,7 @@ input:checked + .toggle-slider:before {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     transform: scale(0.9);
     transition: transform 0.3s ease;
+    backdrop-filter: blur(10px);
 }
 
 .popup-overlay.show .popup-content {
@@ -3159,6 +3218,7 @@ input:checked + .toggle-slider:before {
 .popup-header h3 {
     margin: 0;
     color: var(--text-primary);
+    font-weight: 600;
 }
 
 .popup-close {
@@ -3179,6 +3239,7 @@ input:checked + .toggle-slider:before {
 
 .popup-close:hover {
     background-color: var(--hover-bg);
+    color: var(--text-primary);
 }
 
 .popup-body {
@@ -3244,6 +3305,7 @@ input:checked + .toggle-slider:before {
 .invite-form h4 {
     margin: 0 0 20px 0;
     color: var(--text-primary);
+    font-weight: 600;
 }
 
 .form-group {
@@ -3258,7 +3320,8 @@ input:checked + .toggle-slider:before {
 }
 
 .form-group input,
-.form-group textarea {
+.form-group textarea,
+.form-group select {
     width: 100%;
     padding: 12px;
     border: 2px solid var(--border-color);
@@ -3267,12 +3330,15 @@ input:checked + .toggle-slider:before {
     color: var(--text-primary);
     font-size: 14px;
     transition: border-color 0.3s ease;
+    box-sizing: border-box;
 }
 
 .form-group input:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
     outline: none;
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(77, 154, 255, 0.1);
 }
 
 .form-actions {
