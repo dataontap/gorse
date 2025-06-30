@@ -1298,15 +1298,24 @@ body.light-mode {
     z-index: 2;
 }
 
+.offers-content-box {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 30px 20px;
+    margin: 40px auto;
+    max-width: 800px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
 .carousel {
     position: relative;
-    margin: 40px auto 0;
     display: block !important;
     width: 100%;
     max-width: 700px;
     z-index: 1000;
-    left: 50%;
-    transform: translateX(-50%);
+    margin: 0 auto;
 }
 
 .carousel-inner {
