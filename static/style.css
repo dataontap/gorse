@@ -636,6 +636,14 @@ body.light-mode {
 
 .offer-content h3,
 .offer-content p {
+    width: 100%;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.offer-content h3,
+.offer-content p {
     position: relative;
     z-index: 4;
     margin-bottom: 15px;
