@@ -2682,7 +2682,8 @@ def get_invites():
                     if firebase_uid:
                         cur.execute("""
                             SELECT id, email, invitation_status, personal_message, is_demo_user,
-                                   created_at, updated_at, expires_at, accepted_at, rejected_at
+                                   created_at, updated_at, expires_at, accepted_at, rejected_at,
+                                   invited_by_firebase_uid
                             FROM invites 
                             WHERE invited_by_firebase_uid = %s 
                             AND invitation_status != 'invite_cancelled'
@@ -2693,7 +2694,8 @@ def get_invites():
                         # If no Firebase UID, get recent invites
                         cur.execute("""
                             SELECT id, email, invitation_status, personal_message, is_demo_user,
-                                   created_at, updated_at, expires_at, accepted_at, rejected_at
+                                   created_at, updated_at, expires_at, accepted_at, rejected_at,
+                                   invited_by_firebase_uid
                             FROM invites 
                             WHERE invitation_status != 'invite_cancelled'
                             ORDER BY created_at DESC 
@@ -2714,7 +2716,8 @@ def get_invites():
                             'updated_at': invite[6].isoformat() if invite[6] else None,
                             'expires_at': invite[7].isoformat() if invite[7] else None,
                             'accepted_at': invite[8].isoformat() if invite[8] else None,
-                            'rejected_at': invite[9].isoformat() if invite[9] else None
+                            'rejected_at': invite[9].isoformat() if invite[9] else None,
+                            'firebase_uid': invite[10] if len(invite) > 10 else None
                         })
 
                     return jsonify({
@@ -2846,6 +2849,81 @@ def terms():
 @app.route('/about')
 def about():
     return render_template('about.html')
+
+@app.route('/message-admin')
+def message_admin():
+    return render_template('message_admin.html')
+
+@app.route('/api/update-personal-message', methods=['POST'])
+def update_personal_message():
+    """Update or create a personal message for a specific Firebase UID"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebase_uid')
+        email = data.get('email', 'Unknown Email')
+        personal_message = data.get('personal_message', '')
+
+        if not firebase_uid:
+            return jsonify({'success': False, 'message': 'Firebase UID is required'}), 400
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check if an invite already exists for this Firebase UID
+                    cur.execute("""
+                        SELECT id, email FROM invites 
+                        WHERE invited_by_firebase_uid = %s OR email = %s
+                        ORDER BY created_at DESC 
+                        LIMIT 1
+                    """, (firebase_uid, email))
+                    
+                    existing_invite = cur.fetchone()
+                    
+                    if existing_invite:
+                        # Update existing invite
+                        cur.execute("""
+                            UPDATE invites 
+                            SET personal_message = %s, 
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE id = %s
+                            RETURNING id
+                        """, (personal_message, existing_invite[0]))
+                        updated_id = cur.fetchone()[0]
+                        action = 'updated'
+                    else:
+                        # Create new invite record with the custom message
+                        import secrets
+                        invitation_token = secrets.token_urlsafe(32)
+                        
+                        # Try to get user ID by Firebase UID
+                        cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                        user_result = cur.fetchone()
+                        user_id = user_result[0] if user_result else None
+                        
+                        cur.execute("""
+                            INSERT INTO invites 
+                            (user_id, email, invitation_token, invited_by_firebase_uid, 
+                             personal_message, invitation_status)
+                            VALUES (%s, %s, %s, %s, %s, 'draft')
+                            RETURNING id
+                        """, (user_id, email, invitation_token, firebase_uid, personal_message))
+                        updated_id = cur.fetchone()[0]
+                        action = 'created'
+
+                    conn.commit()
+
+                    return jsonify({
+                        'success': True,
+                        'message': f'Personal message {action} successfully',
+                        'invite_id': updated_id,
+                        'firebase_uid': firebase_uid
+                    })
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error updating personal message: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
