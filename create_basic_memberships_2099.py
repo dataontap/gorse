@@ -155,6 +155,10 @@ def verify_created_memberships():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
+                    # Count total users
+                    cur.execute("SELECT COUNT(*) FROM users")
+                    total_users = cur.fetchone()[0]
+                    
                     # Count active Basic Memberships
                     cur.execute("""
                         SELECT COUNT(*) 
@@ -171,9 +175,17 @@ def verify_created_memberships():
                     """)
                     purchase_count = cur.fetchone()[0]
                     
+                    # Check for any non-active subscriptions
+                    cur.execute("""
+                        SELECT COUNT(*) 
+                        FROM subscriptions 
+                        WHERE subscription_type = 'basic_membership' AND status != 'active'
+                    """)
+                    inactive_count = cur.fetchone()[0]
+                    
                     # Get sample of created subscriptions
                     cur.execute("""
-                        SELECT u.email, s.end_date, s.created_at
+                        SELECT u.email, s.end_date, s.created_at, s.status
                         FROM subscriptions s
                         JOIN users u ON s.user_id = u.id
                         WHERE s.subscription_type = 'basic_membership' AND s.status = 'active'
@@ -182,16 +194,24 @@ def verify_created_memberships():
                     """)
                     samples = cur.fetchall()
                     
+                    print(f"Total users in database: {total_users}")
                     print(f"Active Basic Memberships: {active_count}")
                     print(f"Basic Membership purchases: {purchase_count}")
+                    print(f"Inactive Basic Memberships: {inactive_count}")
+                    
+                    if active_count == total_users:
+                        print("✅ SUCCESS: All users have Active Basic Memberships!")
+                    else:
+                        print(f"⚠ WARNING: {total_users - active_count} users missing Active subscriptions")
                     
                     if samples:
-                        print("\nSample subscriptions:")
+                        print("\nSample Active subscriptions:")
                         for sample in samples:
                             email = sample[0]
                             end_date = sample[1]
                             created_at = sample[2]
-                            print(f"  {email}: Valid until {end_date} (created: {created_at})")
+                            status = sample[3]
+                            print(f"  {email}: Status={status}, Valid until {end_date}")
                     
     except Exception as e:
         print(f"Error in verification: {str(e)}")
@@ -205,8 +225,34 @@ def main():
     print("2. Create active subscriptions valid until Canada Day 2099")
     print("3. Deactivate any existing active subscriptions")
     
+    # First, check if we have the expected number of users
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT COUNT(*) FROM users")
+                    current_count = cur.fetchone()[0]
+                    
+                    print(f"\nCurrent users in database: {current_count}")
+                    
+                    if current_count < 29905:
+                        print(f"⚠ WARNING: Expected 29,905 users but found only {current_count}")
+                        print("You should run the user migration first:")
+                        print("python verify_and_migrate_all_users.py")
+                        response = input("Continue anyway with current users? (y/N): ")
+                        if response.lower() != 'y':
+                            print("Operation cancelled. Please run user migration first.")
+                            return
+                    elif current_count == 29905:
+                        print("✅ Perfect! Found exactly 29,905 users")
+                    else:
+                        print(f"✅ Found {current_count} users (more than expected)")
+    except Exception as e:
+        print(f"Error checking user count: {str(e)}")
+        return
+    
     # Confirm before proceeding
-    response = input("\nProceed with creating Basic Memberships for all users? (y/N): ")
+    response = input(f"\nProceed with creating Active Basic Memberships for all {current_count} users? (y/N): ")
     if response.lower() != 'y':
         print("Operation cancelled")
         return
@@ -217,7 +263,8 @@ def main():
     # Verify results
     verify_created_memberships()
     
-    print("\nBasic Membership creation completed!")
+    print("\n🎉 Basic Membership creation completed!")
+    print("All users now have Active Basic Memberships valid until Canada Day 2099!")
 
 if __name__ == "__main__":
     main()
