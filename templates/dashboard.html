@@ -487,11 +487,20 @@
                 var days = Math.floor(totalMB / 500);
                 dataDisplay.innerHTML = '<span class="main-number">' + days + '</span><span class="unit">days</span>';
             } else {
-                // Show data in MB as whole number (170000MB)
                 var totalMB = dataBalanceValue * 1000; // Convert GB to MB
-                var mainNumber = Math.floor(totalMB).toString();
                 
-                dataDisplay.innerHTML = '<span class="main-number">' + mainNumber + '</span><span class="unit">MB</span>';
+                if (totalMB <= 1000) {
+                    // Show as XXXXMB for 1000MB or less
+                    var mainNumber = Math.floor(totalMB).toString();
+                    dataDisplay.innerHTML = '<span class="main-number">' + mainNumber + '</span><span class="unit">MB</span>';
+                } else {
+                    // Show as X.XXXGB for amounts greater than 1000MB
+                    var gb = totalMB / 1000;
+                    var wholeGB = Math.floor(gb);
+                    var decimalPart = Math.floor((gb - wholeGB) * 1000).toString().padStart(3, '0');
+                    
+                    dataDisplay.innerHTML = '<span class="main-number">' + wholeGB + '</span><span class="decimal-part">.' + decimalPart + '</span><span class="unit">GB</span>';
+                }
             }
         }
 
