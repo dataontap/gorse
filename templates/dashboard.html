@@ -485,11 +485,16 @@
                 // Calculate days based on 500MB per day
                 var totalMB = dataBalanceValue * 1000; // Convert GB to MB
                 var days = Math.floor(totalMB / 500);
-                dataDisplay.innerHTML = days + '<span>days</span>';
+                dataDisplay.innerHTML = '<span class="main-number">' + days + '</span><span class="unit">days</span>';
             } else {
-                // Show data in MB with XXX.xxx format
+                // Show data in MB with XXX.yyy format
                 var totalMB = dataBalanceValue * 1000; // Convert GB to MB
-                dataDisplay.innerHTML = formatNumber(totalMB) + '<span>MB</span>';
+                var formattedNumber = formatNumber(totalMB);
+                var parts = formattedNumber.split('.');
+                var mainNumber = parts[0];
+                var decimalPart = parts[1] || '000';
+                
+                dataDisplay.innerHTML = '<span class="main-number">' + mainNumber + '</span><span class="decimal-part">.' + decimalPart + '</span><span class="unit">MB</span>';
             }
         }
 

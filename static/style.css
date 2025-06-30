@@ -1625,14 +1625,23 @@ body.light-mode {
     display: flex;
     justify-content: center;
     align-items: baseline;
-    gap: 8px;
+    gap: 2px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     position: relative;
     z-index: 11;
 }
 
-.data-amount span {
+.data-amount .main-number {
+    font-size: 56px;
+}
+
+.data-amount .decimal-part {
+    font-size: 18px;
+}
+
+.data-amount .unit {
     font-size: 42px;
+    margin-left: 6px;
 }
 
 .refresh-icon {
