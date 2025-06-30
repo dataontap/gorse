@@ -32,29 +32,42 @@ except Exception as e:
     print(f"Error initializing database connection pool: {str(e)}")
     exit(1)
 
-def ensure_phone_number_column():
-    """Ensure phone_number column exists in users table"""
+def ensure_missing_columns():
+    """Ensure all required columns exist in users table"""
     with get_db_connection() as conn:
         if conn:
             with conn.cursor() as cur:
                 try:
-                    # Check if phone_number column exists
+                    # Check which columns exist
                     cur.execute("""
                         SELECT column_name 
                         FROM information_schema.columns 
-                        WHERE table_name='users' AND column_name='phone_number'
+                        WHERE table_name='users'
                     """)
-
-                    if not cur.fetchone():
-                        print("Adding missing phone_number column to users table...")
-                        cur.execute("ALTER TABLE users ADD COLUMN phone_number VARCHAR(20)")
-                        conn.commit()
-                        print("✓ phone_number column added")
-                    else:
-                        print("✓ phone_number column already exists")
+                    existing_columns = [row[0] for row in cur.fetchall()]
+                    
+                    # Define required columns with their types
+                    required_columns = {
+                        'phone_number': 'VARCHAR(20)',
+                        'email_verified': 'BOOLEAN DEFAULT FALSE',
+                        'disabled': 'BOOLEAN DEFAULT FALSE',
+                        'display_name': 'VARCHAR(255)',
+                        'photo_url': 'VARCHAR(500)'
+                    }
+                    
+                    # Add missing columns
+                    for column_name, column_type in required_columns.items():
+                        if column_name not in existing_columns:
+                            print(f"Adding missing {column_name} column to users table...")
+                            cur.execute(f"ALTER TABLE users ADD COLUMN {column_name} {column_type}")
+                            print(f"✓ {column_name} column added")
+                        else:
+                            print(f"✓ {column_name} column already exists")
+                    
+                    conn.commit()
 
                 except Exception as e:
-                    print(f"Error checking/adding phone_number column: {str(e)}")
+                    print(f"Error checking/adding missing columns: {str(e)}")
                     conn.rollback()
 
 def ensure_tables_exist():
@@ -302,7 +315,7 @@ def main():
     print("=" * 60)
 
     # Ensure database schema is correct
-    ensure_phone_number_column()
+    ensure_missing_columns()
     ensure_tables_exist()
 
     # First, load all users from batch files to see total count
