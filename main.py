@@ -834,7 +834,8 @@ class DeliveryResource(Resource):
                 return {'message': str(e), 'status': 'error'}, 500
 
         except Exception as e:
-            return {'message': str(e), 'status': 'error'}, 500
+            return {'message': str(e), 'status': 'error'}, ```
+500
 
 imei_model = api.model('IMEI', {
     'imei1': fields.String(required=True, description='Primary IMEI number'),
@@ -2105,9 +2106,9 @@ def get_notifications():
         firebase_uid = request.args.get('firebaseUid')
         notification_type = request.args.get('type', 'all')
         limit = int(request.args.get('limit', 50))
-        
+
         notifications = []
-        
+
         # Get invitations as notifications
         with get_db_connection() as conn:
             if conn:
@@ -2129,9 +2130,9 @@ def get_notifications():
                             ORDER BY updated_at DESC 
                             LIMIT %s
                         """, (limit,))
-                    
+
                     invites = cur.fetchall()
-                    
+
                     for invite in invites:
                         notifications.append({
                             'id': f'invite_{invite[0]}',
@@ -2146,7 +2147,7 @@ def get_notifications():
                                 'status': invite[2]
                             }
                         })
-        
+
         # Add system notifications (you can expand this)
         system_notifications = [
             {
@@ -2158,26 +2159,26 @@ def get_notifications():
                 'read': False
             }
         ]
-        
+
         if notification_type == 'all' or notification_type == 'system':
             notifications.extend(system_notifications)
-        
+
         # Filter by type if specified
         if notification_type != 'all':
             notifications = [n for n in notifications if n['type'] == notification_type]
-        
+
         return jsonify({
             'success': True,
             'notifications': notifications,
             'count': len(notifications)
         })
-        
+
     except Exception as e:
         print(f"Error getting notifications: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
-        
+
         notifications = []
-        
+
         # Get invitations as notifications
         with get_db_connection() as conn:
             if conn:
@@ -2199,9 +2200,9 @@ def get_notifications():
                             ORDER BY updated_at DESC 
                             LIMIT %s
                         """, (limit,))
-                    
+
                     invites = cur.fetchall()
-                    
+
                     for invite in invites:
                         notifications.append({
                             'id': f'invite_{invite[0]}',
@@ -2216,7 +2217,7 @@ def get_notifications():
                                 'status': invite[2]
                             }
                         })
-        
+
         # Add system notifications (you can expand this)
         system_notifications = [
             {
@@ -2228,20 +2229,20 @@ def get_notifications():
                 'read': False
             }
         ]
-        
+
         if notification_type == 'all' or notification_type == 'system':
             notifications.extend(system_notifications)
-        
+
         # Filter by type if specified
         if notification_type != 'all':
             notifications = [n for n in notifications if n['type'] == notification_type]
-        
+
         return jsonify({
             'success': True,
             'notifications': notifications,
             'count': len(notifications)
         })
-        
+
     except Exception as e:
         print(f"Error getting notifications: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -2273,15 +2274,15 @@ def mark_notification_read(notification_id):
     """Mark a notification as read"""
     try:
         firebase_uid = request.json.get('firebaseUid') if request.json else None
-        
+
         # For now, we'll store read status in a simple table
         # You can expand this to handle different notification types
-        
+
         return jsonify({
             'success': True,
             'message': 'Notification marked as read'
         })
-        
+
     except Exception as e:
         print(f"Error marking notification as read: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -2294,16 +2295,16 @@ def send_push_notification():
         title = data.get('title', 'GORSE Network')
         body = data.get('body', 'You have a new notification')
         firebase_uid = data.get('firebaseUid')
-        
+
         # Here you would normally use Firebase Admin SDK to send push notifications
         # For now, we'll just log it
         print(f"Push notification to {firebase_uid}: {title} - {body}")
-        
+
         return jsonify({
             'success': True,
             'message': 'Push notification sent successfully'
         })
-        
+
     except Exception as e:
         print(f"Error sending push notification: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -2800,7 +2801,7 @@ def send_invitation():
                         WHERE email = %s AND invitation_status IN ('invite_sent', 're_invited')
                         ORDER BY created_at DESC LIMIT 1
                     """, (email,))
-                    
+
                     existing_invite = cur.fetchone()
                     if existing_invite:
                         # Update existing invitation as re-invited
@@ -2836,7 +2837,7 @@ def send_invitation():
                             # Create demo user with random display name
                             demo_names = ['Demo User', 'Test User', 'Sample User', 'Trial User', 'Beta Tester']
                             display_name = demo_names[hash(email) % len(demo_names)]
-                            
+
                             # Create Ethereum wallet for demo user
                             from web3 import Web3
                             web3 = Web3()
@@ -2848,9 +2849,9 @@ def send_invitation():
                                 VALUES (%s, %s, %s, %s) 
                                 RETURNING id
                             """, (email, display_name, demo_account.address, f"demo_{invite_id}_{secrets.token_hex(8)}"))
-                            
+
                             demo_user_id = cur.fetchone()[0]
-                            
+
                             # Update invitation with user ID and mark as accepted
                             cur.execute("""
                                 UPDATE invites 
@@ -2860,11 +2861,11 @@ def send_invitation():
                                     updated_at = CURRENT_TIMESTAMP
                                 WHERE id = %s
                             """, (demo_user_id, invite_id))
-                            
+
                             conn.commit()
-                            
+
                             print(f"Created demo user {demo_user_id} for invitation {invite_id}")
-                            
+
                         except Exception as demo_err:
                             print(f"Error creating demo user: {str(demo_err)}")
                             # Don't fail the invitation if demo user creation fails
@@ -2918,7 +2919,7 @@ def get_invites():
                         """, (limit,))
 
                     invites = cur.fetchall()
-                    
+
                     invite_list = []
                     for invite in invites:
                         invite_list.append({
@@ -2981,7 +2982,7 @@ def cancel_invitation(invite_id):
                         WHERE id = %s
                         RETURNING email
                     """, (invite_id,))
-                    
+
                     result = cur.fetchone()
                     conn.commit()
 
@@ -3091,9 +3092,9 @@ def update_personal_message():
                         ORDER BY created_at DESC 
                         LIMIT 1
                     """, (firebase_uid, email))
-                    
+
                     existing_invite = cur.fetchone()
-                    
+
                     if existing_invite:
                         # Update existing invite
                         cur.execute("""
@@ -3109,12 +3110,12 @@ def update_personal_message():
                         # Create new invite record with the custom message
                         import secrets
                         invitation_token = secrets.token_urlsafe(32)
-                        
+
                         # Try to get user ID by Firebase UID
                         cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
                         user_result = cur.fetchone()
                         user_id = user_result[0] if user_result else None
-                        
+
                         cur.execute("""
                             INSERT INTO invites 
                             (user_id, email, invitation_token, invited_by_firebase_uid, 
