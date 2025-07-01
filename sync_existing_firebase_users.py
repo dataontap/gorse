@@ -47,7 +47,7 @@ def get_existing_firebase_uids_in_db():
     conn = get_database_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT firebase_uid FROM users WHERE firebase_uid IS NOT NULL")
+            cur.execute("SELECT FirebaseID FROM users WHERE FirebaseID IS NOT NULL")
             return {row[0] for row in cur.fetchall()}
     finally:
         conn.close()
@@ -70,36 +70,24 @@ def sync_firebase_user_to_db(firebase_user, cursor):
     """Sync a single Firebase user to the database"""
     try:
         # Check if user already exists in database
-        cursor.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_user.uid,))
+        cursor.execute("SELECT UserID FROM users WHERE FirebaseID = %s", (firebase_user.uid,))
         existing = cursor.fetchone()
         
         if existing:
             print(f"User {firebase_user.uid} already exists in database, skipping")
             return False
         
-        # Insert new user
+        # Insert new user using the correct schema from create_table.sql
         cursor.execute("""
             INSERT INTO users (
-                firebase_uid, 
-                email, 
-                display_name, 
-                email_verified, 
-                phone_number, 
-                photo_url,
-                disabled,
-                created_at,
-                updated_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
+                EmailID, 
+                FirebaseID,
+                DateCreated
+            ) VALUES (%s, %s, %s)
+            RETURNING UserID
         """, (
+            firebase_user.email or 'unknown@example.com',
             firebase_user.uid,
-            firebase_user.email,
-            firebase_user.display_name,
-            firebase_user.email_verified,
-            firebase_user.phone_number,
-            firebase_user.photo_url,
-            firebase_user.disabled,
-            datetime.now(),
             datetime.now()
         ))
         
@@ -139,13 +127,15 @@ def sync_missing_users():
         return
     
     # Sync users in batches
-    conn = get_database_connection()
     synced_count = 0
     failed_count = 0
     
-    try:
-        with conn.cursor() as cursor:
-            for i, uid in enumerate(uids_to_sync):
+    for i, uid in enumerate(uids_to_sync):
+        # Use individual connections for better error isolation
+        conn = None
+        try:
+            conn = get_database_connection()
+            with conn.cursor() as cursor:
                 try:
                     # Get user from Firebase
                     firebase_user = auth.get_user(uid)
@@ -153,31 +143,32 @@ def sync_missing_users():
                     # Sync to database
                     if sync_firebase_user_to_db(firebase_user, cursor):
                         synced_count += 1
+                        conn.commit()
                     else:
                         failed_count += 1
+                        conn.rollback()
                     
-                    # Commit every 10 users
-                    if (i + 1) % 10 == 0:
-                        conn.commit()
-                        print(f"Progress: {i + 1}/{len(uids_to_sync)} users processed")
-                    
-                    # Rate limiting
-                    if (i + 1) % 100 == 0:
-                        print("Pausing for rate limiting...")
-                        time.sleep(1)
-                        
                 except auth.UserNotFoundError:
                     print(f"✗ User {uid} not found in Firebase")
                     failed_count += 1
+                    conn.rollback()
                 except Exception as e:
                     print(f"✗ Error processing user {uid}: {str(e)}")
                     failed_count += 1
-            
-            # Final commit
-            conn.commit()
-            
-    finally:
-        conn.close()
+                    conn.rollback()
+                    
+        except Exception as e:
+            print(f"✗ Database connection error for user {uid}: {str(e)}")
+            failed_count += 1
+        finally:
+            if conn:
+                conn.close()
+        
+        # Progress update every 100 users
+        if (i + 1) % 100 == 0:
+            print(f"Progress: {i + 1}/{len(uids_to_sync)} users processed")
+            print("Pausing for rate limiting...")
+            time.sleep(1)
     
     print(f"\n=== Sync Summary ===")
     print(f"Total UIDs to sync: {len(uids_to_sync)}")
