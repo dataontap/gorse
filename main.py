@@ -1027,7 +1027,7 @@ def stripe_webhook():
                             if firebase_uid:
                                 with get_db_connection() as conn:
                                     if conn:
-                          ņ              with conn.cursor() as cur:
+                                        with conn.cursor() as cur:
                                             cur.execute("SELECT eth_address FROM users WHERE firebase_uid = %s", (firebase_uid,))
                                             user_result = cur.fetchone()
                                             if user_result and user_result[0]:
