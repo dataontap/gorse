@@ -1,5 +1,5 @@
 // Global menu toggle functionality
-window.toggleMenu = function(element) {
+function toggleMenu(element) {
     const dropdown = element.querySelector('.menu-dropdown');
     if (dropdown) {
         // Handle both class-based and display-based toggles
@@ -11,10 +11,10 @@ window.toggleMenu = function(element) {
             dropdown.style.display = 'block';
         }
     }
-};
+}
 
 // Global profile dropdown functionality
-window.toggleProfileDropdown = function() {
+function toggleProfileDropdown() {
     const dropdown = document.querySelector('.profile-dropdown');
     if (dropdown) {
         if (dropdown.classList.contains('visible') || dropdown.style.display === 'block') {
@@ -25,7 +25,11 @@ window.toggleProfileDropdown = function() {
             dropdown.style.display = 'block';
         }
     }
-};
+}
+
+// Make functions globally accessible
+window.toggleMenu = toggleMenu;
+window.toggleProfileDropdown = toggleProfileDropdown;
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(event) {
@@ -70,9 +74,30 @@ function showNotificationTester() {
 }
 
 function setActiveCarouselItem(index) {
-    // Placeholder function to prevent console errors
-    console.log('Carousel item', index, 'selected');
+    var carouselItems = document.querySelectorAll('.carousel-item');
+    var carouselControls = document.querySelectorAll('.carousel-controls button');
+    
+    if (carouselItems.length === 0) return;
+    
+    // Remove active class from all items and controls
+    carouselItems.forEach(function(item) {
+        item.classList.remove('active');
+    });
+    carouselControls.forEach(function(control) {
+        control.classList.remove('active');
+    });
+
+    // Add active class to current item and control
+    if (carouselItems[index]) {
+        carouselItems[index].classList.add('active');
+    }
+    if (carouselControls[index]) {
+        carouselControls[index].classList.add('active');
+    }
 }
+
+// Make globally accessible
+window.setActiveCarouselItem = setActiveCarouselItem;
 
 // Help system countdown and callback functionality
 var agentCountdownInterval;
@@ -372,7 +397,7 @@ function initializeCarousel() {
 }
 
 // Global dashboard functions for offer cards and user data
-window.showConfirmationDrawer = function(dataAmount, price, productId) {
+function showConfirmationDrawer(dataAmount, price, productId) {
     console.log('Showing confirmation drawer for:', productId, dataAmount, price);
     var drawer = document.getElementById('confirmationDrawer');
     if (drawer) {
@@ -390,17 +415,17 @@ window.showConfirmationDrawer = function(dataAmount, price, productId) {
         drawer.style.display = 'block';
         drawer.dataset.productId = productId;
     }
-};
+}
 
-window.hideConfirmationDrawer = function() {
+function hideConfirmationDrawer() {
     var drawer = document.getElementById('confirmationDrawer');
     if (drawer) {
         drawer.classList.remove('show');
         drawer.style.display = 'none';
     }
-};
+}
 
-window.confirmPurchase = function() {
+function confirmPurchase() {
     var drawer = document.getElementById('confirmationDrawer');
     if (drawer && drawer.dataset.productId) {
         var productId = drawer.dataset.productId;
@@ -436,11 +461,19 @@ window.confirmPurchase = function() {
             alert('Error processing purchase. Please try again.');
         });
     }
-};
+}
+
+// Make confirmation drawer functions globally accessible
+window.showConfirmationDrawer = showConfirmationDrawer;
+window.hideConfirmationDrawer = hideConfirmationDrawer;
+window.confirmPurchase = confirmPurchase;
 
 function sendComingSoonNotification() {
     alert('This feature is coming soon! Thank you for your interest.');
 }
+
+// Make globally accessible
+window.sendComingSoonNotification = sendComingSoonNotification;
 
 // Chart toggle functionality for dashboard
 function toggleChart(link) {
