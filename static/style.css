@@ -480,9 +480,11 @@ body.light-mode {
 .subscription-status {
     margin-top: 10px;
     padding: 8px 12px;
-    background-color: #f8f9fa;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
     border-radius: 8px;
     border-left: 4px solid #28a745;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .subscription-info {
@@ -498,7 +500,7 @@ body.light-mode {
 }
 
 .subscription-validity {
-    color: #6c757d;
+    color: rgba(255, 255, 255, 0.7);
     font-size: 0.8rem;
 }
 
@@ -516,6 +518,16 @@ body.light-mode {
 
 .subscription-status.full .subscription-type {
     color: #28a745;
+}
+
+/* Light mode overrides */
+.light-mode .subscription-status {
+    background-color: rgba(248, 249, 250, 0.9);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.light-mode .subscription-validity {
+    color: #6c757d;
 }
 
 @media (min-width: 768px) {
