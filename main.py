@@ -493,9 +493,13 @@ def get_current_user():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
+                    # Get user data including founder status
                     cur.execute(
-                        """SELECT id, email, display_name, photo_url, imei, stripe_customer_id 
-                        FROM users WHERE firebase_uid = %s""",
+                        """SELECT u.id, u.email, u.display_name, u.photo_url, u.imei, u.stripe_customer_id,
+                                  COALESCE(f.founder, 'N') as founder_status
+                        FROM users u
+                        LEFT JOIN founders f ON u.firebase_uid = f.firebase_uid
+                        WHERE u.firebase_uid = %s""",
                         (firebase_uid,)
                     )
                     user = cur.fetchone()
@@ -508,7 +512,8 @@ def get_current_user():
                             'displayName': user[2],
                             'photoURL': user[3],
                             'imei': user[4],
-                            'stripeCustomerId': user[5]
+                            'stripeCustomerId': user[5],
+                            'founderStatus': user[6]
                         })
 
                     return jsonify({'error': 'User not found'}), 404
@@ -516,6 +521,43 @@ def get_current_user():
         return jsonify({'error': 'Database connection error'}), 500
     except Exception as e:
         print(f"Error getting current user: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/founder-status', methods=['GET'])
+def get_founder_status():
+    """Get founder status for a specific user"""
+    firebase_uid = request.args.get('firebaseUid')
+    if not firebase_uid:
+        return jsonify({'error': 'Firebase UID is required'}), 400
+
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """SELECT f.founder, f.created_at as founder_since
+                        FROM founders f
+                        WHERE f.firebase_uid = %s""",
+                        (firebase_uid,)
+                    )
+                    result = cur.fetchone()
+
+                    if result:
+                        return jsonify({
+                            'status': 'success',
+                            'isFounder': result[0] == 'Y',
+                            'founderSince': result[1].isoformat() if result[1] else None
+                        })
+                    else:
+                        return jsonify({
+                            'status': 'success',
+                            'isFounder': False,
+                            'founderSince': None
+                        })
+
+        return jsonify({'error': 'Database connection error'}), 500
+    except Exception as e:
+        print(f"Error getting founder status: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # Update member count endpoint

@@ -1,3 +1,7 @@
+The code is updated to display a founding member badge in the profile section based on data fetched from the `/api/founder-status` endpoint.
+```
+
+```replit_final_file
 // Menu toggle functionality
 function toggleMenu(element) {
     const dropdown = element.querySelector('.menu-dropdown');
@@ -841,24 +845,24 @@ function generateRandomUserData(email) {
         a = ((a << 5) - a) + b.charCodeAt(0);
         return a & a;
     }, 0);
-    
+
     const abs = Math.abs(hash);
-    
+
     // Generate random name
     const firstNames = ['Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Avery', 'Quinn', 'Sage', 'River'];
     const lastNames = ['Smith', 'Johnson', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore', 'Taylor', 'Anderson', 'Thomas'];
-    
+
     const firstName = firstNames[abs % firstNames.length];
     const lastName = lastNames[(abs * 7) % lastNames.length];
-    
+
     // Generate random but realistic data
     const dataUsage = 15 + (abs % 70); // 15-85%
     const screenTime = 2 + (abs % 10); // 2-12 hours
     const cost = 25 + (abs % 50); // $25-75
-    
+
     const locations = ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton', 'Winnipeg', 'Quebec', 'Hamilton', 'London'];
     const location = locations[abs % locations.length];
-    
+
     return {
         name: `${firstName} ${lastName}`,
         dataUsage,
@@ -1011,3 +1015,40 @@ function updateBetaStatus(status, message) {
             break;
     }
 }
+
+// Update profile page content
+        const profileContent = document.querySelector('.profile-content');
+        if (profileContent && currentUser) {
+            const displayName = currentUser.displayName || 'User';
+            const email = currentUser.email || 'No email';
+
+            // Check founder status and create appropriate badge
+            let memberBadge = '';
+            try {
+                const founderResponse = await fetch(`/api/founder-status?firebaseUid=${currentUser.uid}`);
+                const founderData = await founderResponse.json();
+
+                if (founderData.status === 'success' && founderData.isFounder) {
+                    memberBadge = '<div class="badge founding-member-badge">⭐ Founding Member</div>';
+                } else {
+                    memberBadge = '<div class="badge member-badge">👤 Member</div>';
+                }
+            } catch (error) {
+                console.log('Error checking founder status:', error);
+                memberBadge = '<div class="badge member-badge">👤 Member</div>';
+            }
+
+            profileContent.innerHTML = `
+                <div class="profile-card">
+                    <div class="profile-header">
+                        <h2>👤 Profile</h2>
+                        <button class="close-btn" onclick="closePage()">&times;</button>
+                    </div>
+
+                    <div class="profile-info">
+                        <h3>${displayName}</h3>
+                        <p class="email">${email}</p>
+                        ${memberBadge}
+                        <div class="badge admin-badge">Admin Account</div>
+                    </div>`;
+`
