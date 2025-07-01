@@ -2176,6 +2176,76 @@ def get_notifications():
     except Exception as e:
         print(f"Error getting notifications: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
+        
+        notifications = []
+        
+        # Get invitations as notifications
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    if firebase_uid:
+                        cur.execute("""
+                            SELECT id, email, invitation_status, personal_message, is_demo_user,
+                                   created_at, updated_at, expires_at, accepted_at, rejected_at
+                            FROM invites 
+                            WHERE invited_by_firebase_uid = %s 
+                            ORDER BY updated_at DESC 
+                            LIMIT %s
+                        """, (firebase_uid, limit))
+                    else:
+                        cur.execute("""
+                            SELECT id, email, invitation_status, personal_message, is_demo_user,
+                                   created_at, updated_at, expires_at, accepted_at, rejected_at
+                            FROM invites 
+                            ORDER BY updated_at DESC 
+                            LIMIT %s
+                        """, (limit,))
+                    
+                    invites = cur.fetchall()
+                    
+                    for invite in invites:
+                        notifications.append({
+                            'id': f'invite_{invite[0]}',
+                            'type': 'invitation',
+                            'title': get_invite_notification_title(invite[2]),
+                            'message': get_invite_notification_message(invite[1], invite[2]),
+                            'time': invite[6].isoformat() if invite[6] else invite[5].isoformat(),
+                            'read': invite[2] in ['invite_sent', 'invite_cancelled'],
+                            'data': {
+                                'invite_id': invite[0],
+                                'email': invite[1],
+                                'status': invite[2]
+                            }
+                        })
+        
+        # Add system notifications (you can expand this)
+        system_notifications = [
+            {
+                'id': 'system_welcome',
+                'type': 'system',
+                'title': 'Welcome to GORSE Network!',
+                'message': 'Your account has been successfully created.',
+                'time': datetime.now().isoformat(),
+                'read': False
+            }
+        ]
+        
+        if notification_type == 'all' or notification_type == 'system':
+            notifications.extend(system_notifications)
+        
+        # Filter by type if specified
+        if notification_type != 'all':
+            notifications = [n for n in notifications if n['type'] == notification_type]
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications,
+            'count': len(notifications)
+        })
+        
+    except Exception as e:
+        print(f"Error getting notifications: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 def get_invite_notification_title(status):
     """Get notification title based on invite status"""
