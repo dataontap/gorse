@@ -47,7 +47,7 @@ def get_existing_firebase_uids_in_db():
     conn = get_database_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT FirebaseID FROM users WHERE FirebaseID IS NOT NULL")
+            cur.execute("SELECT firebase_uid FROM users WHERE firebase_uid IS NOT NULL")
             return {row[0] for row in cur.fetchall()}
     finally:
         conn.close()
@@ -70,21 +70,21 @@ def sync_firebase_user_to_db(firebase_user, cursor):
     """Sync a single Firebase user to the database"""
     try:
         # Check if user already exists in database
-        cursor.execute("SELECT UserID FROM users WHERE FirebaseID = %s", (firebase_user.uid,))
+        cursor.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_user.uid,))
         existing = cursor.fetchone()
         
         if existing:
             print(f"User {firebase_user.uid} already exists in database, skipping")
             return False
         
-        # Insert new user using the correct schema from create_table.sql
+        # Insert new user using the correct schema from the actual database
         cursor.execute("""
             INSERT INTO users (
-                EmailID, 
-                FirebaseID,
-                DateCreated
+                email, 
+                firebase_uid,
+                created_at
             ) VALUES (%s, %s, %s)
-            RETURNING UserID
+            RETURNING id
         """, (
             firebase_user.email or 'unknown@example.com',
             firebase_user.uid,
