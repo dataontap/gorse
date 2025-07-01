@@ -92,7 +92,7 @@ try:
                     print("Product rules table created successfully")
                 else:
                     print("Product rules table already exists")
-                    
+
                 # Check if beta_testers table exists
                 cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'beta_testers')")
                 beta_testers_exists = cur.fetchone()[0]
@@ -979,166 +979,7 @@ class IMEIResource(Resource):
         except Exception as e:
             return {'message': f'Internal Server Error: {str(e)}', 'status': 'error'}, 500
 
-@app.route('/webhook', methods=['GET', 'POST'])
-def stripe_webhook():
-    if request.method == 'GET':
-        # For polling payment status
-        return {'status': 'pending'}, 200
-
-    # Handle POST webhook from Stripe
-    payload = request.get_data()
-    sig_header = request.headers.get('Stripe-Signature')
-
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, os.environ.get('STRIPE_WEBHOOK_SECRET')
-        )
-    except ValueError as e:
-        return {'error': str(e)}, 400
-    except stripe.error.SignatureVerificationError as e:
-        return {'error': str(e)}, 400
-
-    if event.type == 'invoice.paid':
-        invoice = event.data.object
-        print(f"Invoice paid: {invoice.id}")
-        customer_id = invoice.customer
-        customer = stripe.Customer.retrieve(customer_id)
-
-        # Record the purchase
-        for line in invoice.lines.data:
-            price_id = line.price.id
-            product_id = line.price.product
-            amount = line.amount
-
-            transaction_id = f"INV_{invoice.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            record_purchase(
-                stripe_id=invoice.id,
-                product_id=product_id,
-                price_id=price_id,
-                amount=amount,
-                user_id=None,  # We'll need to lookup the user ID from the customer ID
-                transaction_id=transaction_id
-            )
-
-        print(f"Processing payment for customer {customer.email}")
-        return {'status': 'paid', 'redirect': '/dashboard'}, 200
-
-    elif event.type == 'checkout.session.completed':
-        session = event.data.object
-        print(f"Checkout completed: {session.id}")
-
-        try:
-            # For both one-time payments and subscriptions, record the purchase
-            line_items = stripe.checkout.Session.list_line_items(session.id)
-
-            print(f"Processing {len(line_items.data)} line items for session {session.id}")
-
-            for item in line_items.data:
-                try:
-                    # Get the price object to access product details
-                    price = stripe.Price.retrieve(item.price.id)
-                    price_id = price.id
-                    product_id = price.product
-                    amount = item.amount_total
-
-                    # Get user ID and Firebase UID from Stripe customer and session metadata
-                    customer_id = session.customer
-                    user_id = None
-                    firebase_uid = None
-
-                    # Extract Firebase UID from session metadata
-                    if hasattr(session, 'metadata') and session.metadata:
-                        firebase_uid = session.metadata.get('firebase_uid')
-
-                    if customer_id:
-                        try:
-                            with get_db_connection() as conn:
-                                if conn:
-                                    with conn.cursor() as cur:
-                                        # Try to get both user ID and Firebase UID from customer
-                                        cur.execute("SELECT id, firebase_uid FROM users WHERE stripe_customer_id = %s", (customer_id,))
-                                        user_result = cur.fetchone()
-                                        if user_result:
-                                            user_id = user_result[0]
-                                            if not firebase_uid and user_result[1]:
-                                                firebase_uid = user_result[1]
-                                            print(f"Found user {user_id} with Firebase UID {firebase_uid} for Stripe customer {customer_id}")
-                        except Exception as e:
-                            print(f"Error looking up user by customer ID: {str(e)}")
-
-                    transaction_id = f"SESS_{session.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                    stripe_transaction_id = session.id  # Use session ID as Stripe transaction ID
-
-                    purchase_id = record_purchase(
-                        stripe_id=session.id,
-                        product_id=product_id,
-                        price_id=price_id,
-                        amount=amount,
-                        user_id=user_id,
-                        transaction_id=transaction_id,
-                        firebase_uid=firebase_uid,
-                        stripe_transaction_id=stripe_transaction_id
-                    )
-
-                    # Create subscription for membership products
-                    if product_id in ['basic_membership', 'full_membership']:
-                        subscription_end_date = create_subscription(
-                            user_id=user_id,
-                            subscription_type=product_id,
-                            stripe_subscription_id=session.subscription if hasattr(session, 'subscription') else None,
-                            firebase_uid=firebase_uid
-                        )
-                        print(f"Created subscription for user {user_id} (Firebase UID: {firebase_uid}), product {product_id}, valid until {subscription_end_date}")
-
-                        # Award 10.33 DOTM tokens for membership subscriptions
-                        try:
-                            if firebase_uid:
-                                with get_db_connection() as conn:
-                                    if conn:
-                                        with conn.cursor() as cur:
-                                            cur.execute("SELECT eth_address FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                                            user_result = cur.fetchone()
-                                            if user_result and user_result[0]:
-                                                user_eth_address = user_result[0]
-                                                success, result = ethereum_helper.award_new_member_token(user_eth_address)
-                                                if success:
-                                                    print(f"Awarded 10.33 DOTM tokens to {user_eth_address} for membership subscription. TX: {result}")
-                                                else:
-                                                    print(f"Failed to award membership tokens: {result}")
-                        except Exception as token_err:
-                            print(f"Error awarding membership tokens: {str(token_err)}")
-
-                    # Award tokens based on product rules
-                    try:
-                        product_rules = product_rules_helper.get_product_rules(product_id)
-                        if product_rules:
-                            reward_percentage = product_rules['token_reward_percentage'] / 100.0  # Convert to decimal
-                            token_reward = amount * reward_percentage / 100  # amount is in cents
-
-                            # Get user's wallet address and award tokens
-                            # For now, use a default wallet for demo
-                            print(f"Would award {token_reward} tokens for product {product_id} based on {product_rules['token_reward_percentage']}% rule")
-                        else:
-                            print(f"No product rules found for {product_id}")
-                    except Exception as token_err:
-                        print(f"Error awarding tokens based on product rules: {str(token_err)}")
-
-                    print(f"Recorded purchase {purchase_id} for product {product_id}, price {price_id}, amount {amount} with Stripe transaction {stripe_transaction_id}")
-                except Exception as e:
-                    print(f"Error processing line item: {str(e)}")
-                    continue
-        except Exception as e:
-            print(f"Error processing checkout session: {str(e)}")
-
-        return {'status': 'paid', 'redirect': '/dashboard'}, 200
-
-    elif event.type == 'invoice.payment_failed':
-        invoice = event.data.object
-        print(f"Invoice payment failed: {invoice.id}")
-        return {'status': 'failed'}, 200
-
-    return {'status': 'pending'}, 200
-
+# The webhook route is already defined earlier in the file, so this duplicate is removed
 
 @app.route('/', methods=['GET'])
 def home():
@@ -2003,8 +1844,6 @@ class CreateTestWallet(Resource):
             print(f"Error creating test wallet: {str(e)}")
             return {'error': str(e)}, 500
 
-# This duplicate route was removed to fix the conflict
-# The route is already defined earlier in the file
 import help_desk_api  # This registers the help desk routes
 
 @app.route('/update-token-price', methods=['GET'])
@@ -2769,7 +2608,8 @@ def get_user_stripe_id(user_id):
                     cur.execute("""
                         SELECT id, email, firebase_uid, stripe_customer_id, display_name
                         FROM users 
-                        WHERE id = %s
+                        WHERE```python
+ id = %s
                     """, (user_id,))
 
                     user = cur.fetchone()
