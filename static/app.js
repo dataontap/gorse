@@ -1,4 +1,3 @@
-
 // Menu toggle functionality
 function toggleMenu(element) {
     const dropdown = element.querySelector('.menu-dropdown');
@@ -222,78 +221,12 @@ document.addEventListener('DOMContentLoaded', function() {
         checkBetaStatus(); // Check current status on page load
     }
 
-    // Initialize help toggle functionality using event delegation
+    // Handle help toggle functionality using event delegation
     document.addEventListener('click', function(e) {
         if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
             e.preventDefault();
             e.stopPropagation();
-
-            var helpSection = document.querySelector('.help-section');
-            if (helpSection) {
-                // Toggle help section visibility
-                if (helpSection.classList.contains('expanded')) {
-                    helpSection.classList.remove('expanded');
-                    helpSection.style.display = 'none';
-                    stopAllCountdowns();
-                } else {
-                    helpSection.classList.add('expanded');
-                    helpSection.style.display = 'block';
-
-                    // Create redesigned help content
-                    helpSection.innerHTML = `
-                        <div class="help-content-redesigned">
-                            <div class="human-help-section">
-                                <div class="help-option-header">
-                                    <i class="fas fa-user"></i>
-                                    <span>Human help:</span>
-                                </div>
-                                <div class="help-option-content">
-                                    <div class="agent-status">
-                                        <span class="agent-availability">Super agent available in <span class="countdown-timer" style="color: #28a745; font-weight: bold;">4:20</span></span>
-                                    </div>
-                                    <button id="orderCallbackBtn" class="callback-btn">Order callback</button>
-                                </div>
-                            </div>
-
-                            <div class="ai-help-section">
-                                <div class="help-option-header">
-                                    <i class="fas fa-robot"></i>
-                                    <span>Use AI help:</span>
-                                </div>
-                                <div class="help-option-content">
-                                    <div class="ai-links">
-                                        <a href="https://chat.openai.com" target="_blank" class="ai-link chatgpt-link">
-                                            <i class="fas fa-comments"></i>
-                                            ChatGPT
-                                        </a>
-                                        <a href="https://gemini.google.com" target="_blank" class="ai-link gemini-link">
-                                            <i class="fas fa-star"></i>
-                                            Gemini
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-
-                    startAgentCountdown();
-                }
-
-                // Track interaction if help desk client exists
-                if (typeof helpDesk !== 'undefined') {
-                    helpDesk.trackInteraction('help_toggle');
-                }
-            }
-        }
-
-        // Handle callback button
-        if (e.target.id === 'orderCallbackBtn') {
-            orderCallback();
-        }
-
-        // Handle answer call button
-        if (e.target.id === 'answerCallBtn') {
-            answerCall();
+            showHelpModal();
         }
     });
 
@@ -1012,3 +945,127 @@ function updateBetaStatus(status, message) {
             break;
     }
 }
+
+// Function to show the help modal
+function showHelpModal() {
+    // Create the modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'helpModalOverlay';
+    modalOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        z-index: 10000; /* High z-index to appear on top */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    `;
+
+    // Create the modal content
+    const modalContent = document.createElement('div');
+    modalContent.id = 'helpModalContent';
+    modalContent.style.cssText = `
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        width: 80%;
+        max-width: 600px;
+    `;
+
+    // Create the close button
+    const closeButton = document.createElement('button');
+    closeButton.id = 'closeHelpModal';
+    closeButton.textContent = 'Close';
+    closeButton.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        background-color: #f00;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+    `;
+    closeButton.addEventListener('click', hideHelpModal);
+
+    // Create the help content
+    const helpContent = document.createElement('div');
+    helpContent.className = 'help-content-redesigned';
+    helpContent.innerHTML = `
+        <div class="human-help-section">
+            <div class="help-option-header">
+                <i class="fas fa-user"></i>
+                <span>Human help:</span>
+            </div>
+            <div class="help-option-content">
+                <div class="agent-status">
+                    <span class="agent-availability">Super agent available in <span class="countdown-timer" style="color: #28a745; font-weight: bold;">4:20</span></span>
+                </div>
+                <button id="orderCallbackBtn" class="callback-btn">Order callback</button>
+            </div>
+            <button id="chatWithAgentBtn" class="chat-btn">Chat with Agent</button>
+        </div>
+
+        <div class="ai-help-section">
+            <div class="help-option-header">
+                <i class="fas fa-robot"></i>
+                <span>Use AI help:</span>
+            </div>
+            <div class="help-option-content">
+                <div class="ai-links">
+                    <a href="https://chat.openai.com" target="_blank" class="ai-link chatgpt-link">
+                        <i class="fas fa-comments"></i>
+                        ChatGPT
+                    </a>
+                    <a href="https://gemini.google.com" target="_blank" class="ai-link gemini-link">
+                        <i class="fas fa-star"></i>
+                        Gemini
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Append elements to the modal
+    modalContent.appendChild(closeButton);
+    modalContent.appendChild(helpContent);
+    modalOverlay.appendChild(modalContent);
+
+    // Append the modal to the body
+    document.body.appendChild(modalOverlay);
+    startAgentCountdown();
+
+    // Add event listener for the order callback button (event delegation)
+    modalOverlay.addEventListener('click', function(e) {
+        if (e.target.id === 'orderCallbackBtn') {
+            orderCallback();
+        }
+        if (e.target.id === 'chatWithAgentBtn') {
+            startChat();
+        }
+    });
+
+    // Track interaction
+    if (typeof helpDesk !== 'undefined') {
+        helpDesk.trackInteraction('help_toggle');
+    }
+}
+
+// Function to hide the help modal
+function hideHelpModal() {
+    const modalOverlay = document.getElementById('helpModalOverlay');
+    if (modalOverlay) {
+        modalOverlay.remove();
+        stopAllCountdowns();
+    }
+}
+
+function startChat() {
+    alert('Starting chat with agent...');
+}
+</script>
