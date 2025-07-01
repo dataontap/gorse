@@ -43,3 +43,21 @@ ADD COLUMN IF NOT EXISTS oxio_plan_id VARCHAR(100);
 
 -- Create index on status
 CREATE INDEX IF NOT EXISTS idx_beta_testers_status ON beta_testers(status);
+CREATE TABLE IF NOT EXISTS beta_testers (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    firebase_uid VARCHAR(128) NOT NULL,
+    stripe_customer_id VARCHAR(100),
+    action VARCHAR(50) DEFAULT 'enrollment_request',
+    status VARCHAR(50) DEFAULT 'not_enrolled',
+    stripe_session_id VARCHAR(255),
+    stripe_payment_intent_id VARCHAR(255),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_beta_testers_user_id ON beta_testers(user_id);
+CREATE INDEX IF NOT EXISTS idx_beta_testers_firebase_uid ON beta_testers(firebase_uid);
+CREATE INDEX IF NOT EXISTS idx_beta_testers_status ON beta_testers(status);

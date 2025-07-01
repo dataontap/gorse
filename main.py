@@ -117,6 +117,18 @@ try:
                     print("beta_testers table created successfully")
                 else:
                     print("beta_testers table already exists")
+                    # Check if status column exists and add it if missing
+                    cur.execute("""
+                        SELECT column_name FROM information_schema.columns 
+                        WHERE table_name = 'beta_testers' AND column_name = 'status'
+                    """)
+                    status_column_exists = cur.fetchone()
+                    
+                    if not status_column_exists:
+                        print("Adding missing status column to beta_testers table...")
+                        cur.execute("ALTER TABLE beta_testers ADD COLUMN status VARCHAR(50) DEFAULT 'not_enrolled'")
+                        conn.commit()
+                        print("Status column added successfully")
 
                 conn.commit()
         else:
