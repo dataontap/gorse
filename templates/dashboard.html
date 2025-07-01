@@ -547,7 +547,11 @@ This is dotmobile V3 'gorse release' demo. We are not quite ready to start the s
                         if (subscriptionStatus && data.status === 'active') {
                             subscriptionStatus.style.display = 'block';
                             if (subscriptionType) {
-                                subscriptionType.textContent = data.subscription_type.replace('_', ' ').toUpperCase();
+                                if (data.subscription_type === 'basic_membership') {
+                                    subscriptionType.textContent = 'Member';
+                                } else {
+                                    subscriptionType.textContent = data.subscription_type.replace('_', ' ').toUpperCase();
+                                }
                             }
                             if (subscriptionValidity && data.end_date) {
                                 var endDate = new Date(data.end_date);
