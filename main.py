@@ -687,12 +687,17 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                                     print(f"Found user {user_id} for Firebase UID {firebase_uid}")
                                 else:
                                     print(f"No user found for Firebase UID {firebase_uid}")
-                                    # Don't fail the purchase, just log it
+                                    # Return None if no user found and no user_id provided
+                                    if not user_id:
+                                        print("Cannot record purchase: No valid user found")
+                                        return None
 
-                            # Use default user_id if still not found
+                            # Require valid user_id - don't default to 1
                             if not user_id:
-                                user_id = 1
-                                print(f"Using default user_id: {user_id}")
+                                print("Cannot record purchase: No user_id provided and no Firebase UID found")
+                                return None
+
+                            print(f"Using user_id: {user_id}")
 
                             # Now insert the purchase record with all tracking information
                             cur.execute(
@@ -1685,7 +1690,6 @@ class CheckMemberships(Resource):
 
 # Token related endpoints
 token_ns = api.namespace('token', description='DOTM Token operations')
-
 @token_ns.route('/price')
 class TokenPrice(Resource):
     def get(self):
@@ -2601,15 +2605,14 @@ class UpdateEthAddress(Resource):
 @app.route('/api/user/stripe-id/<int:user_id>', methods=['GET'])
 def get_user_stripe_id(user_id):
     """Get Stripe customer ID for a specific user"""
-    try:
+    try:```python
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("""
                         SELECT id, email, firebase_uid, stripe_customer_id, display_name
                         FROM users 
-                        WHERE```python
- id = %s
+                        WHERE id = %s
                     """, (user_id,))
 
                     user = cur.fetchone()
@@ -2693,7 +2696,7 @@ def send_invitation():
                         cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
                         user_result = cur.fetchone()
                         if user_result:
-                            inviting_user_id = user_id[0]
+                            inviting_user_id = user_result[0]
 
                     # Check if there's already a pending invitation for this email
                     cur.execute("""
