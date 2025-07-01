@@ -2605,7 +2605,7 @@ class UpdateEthAddress(Resource):
 @app.route('/api/user/stripe-id/<int:user_id>', methods=['GET'])
 def get_user_stripe_id(user_id):
     """Get Stripe customer ID for a specific user"""
-    try:```python
+    try:
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
