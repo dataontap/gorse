@@ -1,7 +1,4 @@
-The code is updated to display a founding member badge in the profile section based on data fetched from the `/api/founder-status` endpoint.
-```
 
-```replit_final_file
 // Menu toggle functionality
 function toggleMenu(element) {
     const dropdown = element.querySelector('.menu-dropdown');
@@ -1015,40 +1012,3 @@ function updateBetaStatus(status, message) {
             break;
     }
 }
-
-// Update profile page content
-        const profileContent = document.querySelector('.profile-content');
-        if (profileContent && currentUser) {
-            const displayName = currentUser.displayName || 'User';
-            const email = currentUser.email || 'No email';
-
-            // Check founder status and create appropriate badge
-            let memberBadge = '';
-            try {
-                const founderResponse = await fetch(`/api/founder-status?firebaseUid=${currentUser.uid}`);
-                const founderData = await founderResponse.json();
-
-                if (founderData.status === 'success' && founderData.isFounder) {
-                    memberBadge = '<div class="badge founding-member-badge">⭐ Founding Member</div>';
-                } else {
-                    memberBadge = '<div class="badge member-badge">👤 Member</div>';
-                }
-            } catch (error) {
-                console.log('Error checking founder status:', error);
-                memberBadge = '<div class="badge member-badge">👤 Member</div>';
-            }
-
-            profileContent.innerHTML = `
-                <div class="profile-card">
-                    <div class="profile-header">
-                        <h2>👤 Profile</h2>
-                        <button class="close-btn" onclick="closePage()">&times;</button>
-                    </div>
-
-                    <div class="profile-info">
-                        <h3>${displayName}</h3>
-                        <p class="email">${email}</p>
-                        ${memberBadge}
-                        <div class="badge admin-badge">Admin Account</div>
-                    </div>`;
-`
