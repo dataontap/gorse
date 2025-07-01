@@ -1,5 +1,5 @@
-// Menu toggle functionality
-function toggleMenu(element) {
+// Global menu toggle functionality
+window.toggleMenu = function(element) {
     const dropdown = element.querySelector('.menu-dropdown');
     if (dropdown) {
         // Handle both class-based and display-based toggles
@@ -11,10 +11,10 @@ function toggleMenu(element) {
             dropdown.style.display = 'block';
         }
     }
-}
+};
 
-// Profile dropdown functionality
-function toggleProfileDropdown() {
+// Global profile dropdown functionality
+window.toggleProfileDropdown = function() {
     const dropdown = document.querySelector('.profile-dropdown');
     if (dropdown) {
         if (dropdown.classList.contains('visible') || dropdown.style.display === 'block') {
@@ -25,7 +25,7 @@ function toggleProfileDropdown() {
             dropdown.style.display = 'block';
         }
     }
-}
+};
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(event) {
@@ -371,8 +371,8 @@ function initializeCarousel() {
     }, 5000);
 }
 
-// Dashboard functions for offer cards and user data
-function showConfirmationDrawer(dataAmount, price, productId) {
+// Global dashboard functions for offer cards and user data
+window.showConfirmationDrawer = function(dataAmount, price, productId) {
     console.log('Showing confirmation drawer for:', productId, dataAmount, price);
     var drawer = document.getElementById('confirmationDrawer');
     if (drawer) {
@@ -390,17 +390,17 @@ function showConfirmationDrawer(dataAmount, price, productId) {
         drawer.style.display = 'block';
         drawer.dataset.productId = productId;
     }
-}
+};
 
-function hideConfirmationDrawer() {
+window.hideConfirmationDrawer = function() {
     var drawer = document.getElementById('confirmationDrawer');
     if (drawer) {
         drawer.classList.remove('show');
         drawer.style.display = 'none';
     }
-}
+};
 
-function confirmPurchase() {
+window.confirmPurchase = function() {
     var drawer = document.getElementById('confirmationDrawer');
     if (drawer && drawer.dataset.productId) {
         var productId = drawer.dataset.productId;
@@ -423,7 +423,7 @@ function confirmPurchase() {
         .then(response => response.json())
         .then(data => {
             console.log('Purchase recorded:', data);
-            hideConfirmationDrawer();
+            window.hideConfirmationDrawer();
 
             // Show success message
             alert('Purchase successful! Your data will be available shortly.');
@@ -436,7 +436,7 @@ function confirmPurchase() {
             alert('Error processing purchase. Please try again.');
         });
     }
-}
+};
 
 function sendComingSoonNotification() {
     alert('This feature is coming soon! Thank you for your interest.');
