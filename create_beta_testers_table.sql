@@ -34,3 +34,12 @@ SELECT DISTINCT ON (user_id)
     firebase_app_distribution_group
 FROM beta_testers 
 ORDER BY user_id, timestamp DESC;
+-- Drop existing table if we need to add new columns
+ALTER TABLE beta_testers 
+ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'enrolled',
+ADD COLUMN IF NOT EXISTS stripe_session_id VARCHAR(100),
+ADD COLUMN IF NOT EXISTS stripe_payment_intent_id VARCHAR(100),
+ADD COLUMN IF NOT EXISTS oxio_plan_id VARCHAR(100);
+
+-- Create index on status
+CREATE INDEX IF NOT EXISTS idx_beta_testers_status ON beta_testers(status);

@@ -1,24 +1,24 @@
-
 import os
 import requests
 import json
 from typing import Dict, Any, Optional
+import time
 
 class OXIOService:
     def __init__(self):
         self.api_key = os.environ.get('OXIO_API_KEY')
         self.auth_token = os.environ.get('OXIO_AUTH_TOKEN')
         self.base_url = "https://api-staging.brandvno.com"
-        
+
         # Debug information
         print(f"OXIO Service initialized:")
         print(f"  Base URL: {self.base_url}")
         print(f"  API Key configured: {bool(self.api_key)} (length: {len(self.api_key) if self.api_key else 0})")
         print(f"  Auth Token configured: {bool(self.auth_token)} (length: {len(self.auth_token) if self.auth_token else 0})")
-        
+
         if not self.api_key or not self.auth_token:
             raise ValueError("OXIO_API_KEY and OXIO_AUTH_TOKEN must be set in secrets")
-        
+
         # Show Base64 credentials immediately for debugging
         import base64
         credentials = f"{self.api_key}:{self.auth_token}"
@@ -26,45 +26,45 @@ class OXIOService:
         print(f"DEBUG - OXIO Base64 Credentials: {encoded_credentials}")
         print(f"DEBUG - Expected Base64: Z29yc2VvX0FZZ0thNlZja2Nac01wQkRLd2l6MjA1STp1NzBKaTNUcXBuZGM4elRBUDk2S1RrSjNEWVIwOXBGTw==")
         print(f"DEBUG - Credentials match: {encoded_credentials == 'Z29yc2VvX0FZZ0thNlZja2Nac01wQkRLd2l6MjA1STp1NzBKaTNUcXBuZGM4elRBUDk2S1RrSjNEWVIwOXBGTw=='}")
-    
+
     def get_headers(self) -> Dict[str, str]:
         """Get standard headers for OXIO API requests"""
         import base64
-        
+
         # Create Basic Auth credentials: username = API_KEY, password = AUTH_TOKEN
         credentials = f"{self.api_key}:{self.auth_token}"
         encoded_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
-        
+
         # Debug output to show the exact Base64 encoding
         print(f"DEBUG - Raw credentials format: {self.api_key[:10]}...:{self.auth_token[:10]}...")
         print(f"DEBUG - Base64 encoded credentials: {encoded_credentials}")
         print(f"DEBUG - Full Authorization header: Basic {encoded_credentials}")
-        
+
         return {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'Authorization': f'Basic {encoded_credentials}',
             'User-Agent': 'DOTM-Platform/1.0'
         }
-    
+
     def activate_line(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
         Activate a line using OXIO API
-        
+
         Args:
             payload: Line activation payload
-            
+
         Returns:
             API response as dictionary
         """
         try:
             url = f"{self.base_url}/v3/lines/line"
             headers = self.get_headers()
-            
+
             print(f"OXIO API Request URL: {url}")
             print(f"OXIO API Request Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
             print(f"OXIO API Request Payload: {json.dumps(payload, indent=2)}")
-            
+
             # Validate payload structure before sending
             required_fields = ['lineType', 'sim', 'endUser', 'countryCode']
             missing_fields = [field for field in required_fields if field not in payload]
@@ -76,10 +76,10 @@ class OXIOService:
                     'required_fields': required_fields,
                     'payload_received': payload
                 }
-            
+
             # Additional payload validation
             validation_errors = []
-            
+
             # Validate sim structure
             if 'sim' in payload:
                 sim = payload['sim']
@@ -90,7 +90,7 @@ class OXIOService:
                         validation_errors.append("'sim.simType' is required")
                     if 'iccid' not in sim:
                         validation_errors.append("'sim.iccid' is required")
-            
+
             # Validate endUser structure
             if 'endUser' in payload:
                 endUser = payload['endUser']
@@ -99,7 +99,7 @@ class OXIOService:
                 else:
                     if 'brandId' not in endUser:
                         validation_errors.append("'endUser.brandId' is required")
-            
+
             if validation_errors:
                 return {
                     'success': False,
@@ -108,24 +108,24 @@ class OXIOService:
                     'validation_errors': validation_errors,
                     'payload_received': payload
                 }
-            
+
             response = requests.post(
                 url,
                 headers=headers,
                 json=payload,
                 timeout=30
             )
-            
+
             print(f"OXIO API Response Status: {response.status_code}")
             print(f"OXIO API Response Headers: {dict(response.headers)}")
-            
+
             # Get response text first
             response_text = response.text
             print(f"Raw response body: {response_text}")
-            
+
             # Check if response is JSON
             content_type = response.headers.get('content-type', '').lower()
-            
+
             if 'application/json' in content_type:
                 try:
                     response_data = response.json() if response.content else {}
@@ -146,7 +146,7 @@ class OXIOService:
                     'content_type': content_type, 
                     'raw_response': response_text[:1000]
                 }
-            
+
             if response.status_code >= 200 and response.status_code < 300:
                 return {
                     'success': True,
@@ -165,7 +165,7 @@ class OXIOService:
                     'request_payload': payload,
                     'response_headers': dict(response.headers)
                 }
-                
+
                 # Add specific error details if available
                 if isinstance(response_data, dict):
                     if 'error' in response_data:
@@ -174,9 +174,9 @@ class OXIOService:
                         error_details['oxio_details'] = response_data['details']
                     if 'validation_errors' in response_data:
                         error_details['validation_errors'] = response_data['validation_errors']
-                
+
                 return error_details
-                
+
         except requests.exceptions.Timeout:
             return {
                 'success': False,
@@ -212,27 +212,148 @@ class OXIOService:
                 'message': f'Unexpected error: {str(e)}',
                 'request_payload': payload
             }
-    
+
+    def create_custom_plan(self, user_email, plan_name, duration_seconds, data_limit_kb):
+        """Create a custom plan for beta users"""
+        if not self.api_key:
+            print("OXIO API key not configured - simulating plan creation")
+            return {
+                'success': True,
+                'plan_id': f'sim_demo_plan_{int(time.time())}',
+                'profile_id': f'profile_{int(time.time())}',
+                'message': 'Demo plan created (simulated)',
+                'duration_seconds': duration_seconds,
+                'data_limit_kb': data_limit_kb
+            }
+
+        try:
+            headers = {
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json'
+            }
+
+            payload = {
+                'email': user_email,
+                'plan_name': plan_name,
+                'duration_seconds': duration_seconds,
+                'data_limit_kb': data_limit_kb,
+                'auto_activate': True,
+                'region': 'global'
+            }
+
+            url = f"{self.base_url}/v3/plans/custom"
+
+            response = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=30
+            )
+
+            print(f"OXIO API Response Status: {response.status_code}")
+            print(f"OXIO API Response Headers: {dict(response.headers)}")
+
+            # Get response text first
+            response_text = response.text
+            print(f"Raw response body: {response_text}")
+
+            # Check if response is JSON
+            content_type = response.headers.get('content-type', '').lower()
+
+            if 'application/json' in content_type:
+                try:
+                    response_data = response.json() if response.content else {}
+                    print(f"OXIO API Response Body (parsed): {json.dumps(response_data, indent=2)}")
+                except json.JSONDecodeError as json_err:
+                    print(f"Failed to parse JSON response: {str(json_err)}")
+                    print(f"Raw response (first 1000 chars): {response_text[:1000]}...")
+                    response_data = {
+                        'error': 'Invalid JSON response',
+                        'json_error': str(json_err),
+                        'raw_response': response_text[:1000]
+                    }
+            else:
+                print(f"Non-JSON response received (Content-Type: {content_type})")
+                print(f"Response body (first 1000 chars): {response_text[:1000]}...")
+                response_data = {
+                    'error': 'Non-JSON response',
+                    'content_type': content_type,
+                    'raw_response': response_text[:1000]
+                }
+
+            if response.status_code in [200, 201]:
+                result = response_data
+                return {
+                    'success': True,
+                    'plan_id': result.get('plan_id'),
+                    'profile_id': result.get('profile_id'),
+                    'message': 'Custom plan created successfully',
+                    'response': result
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': f'OXIO API error: {response.status_code}',
+                    'details': response_data,
+                    'raw_response': response_text
+                }
+
+        except requests.exceptions.Timeout:
+            return {
+                'success': False,
+                'error': 'Request timeout',
+                'message': 'OXIO API request timed out after 30 seconds',
+                'request_payload': payload
+            }
+        except requests.exceptions.ConnectionError as conn_err:
+            return {
+                'success': False,
+                'error': 'Connection error',
+                'message': f'Could not connect to OXIO API: {str(conn_err)}',
+                'request_payload': payload
+            }
+        except requests.exceptions.RequestException as req_err:
+            return {
+                'success': False,
+                'error': 'Request error',
+                'message': f'Request failed: {str(req_err)}',
+                'request_payload': payload
+            }
+        except json.JSONDecodeError as json_err:
+            return {
+                'success': False,
+                'error': 'Invalid JSON response',
+                'message': f'OXIO API returned invalid JSON: {str(json_err)}',
+                'request_payload': payload
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': 'Unexpected error',
+                'message': f'Unexpected error: {str(e)}',
+                'request_payload': payload
+            }
+
     def test_plans_endpoint(self) -> Dict[str, Any]:
         """Test the plans endpoint for health check"""
         try:
             # Use the v3 endpoint for health check
             test_url = f"{self.base_url}/v3"
             headers = self.get_headers()
-            
+
             print(f"Testing OXIO plans endpoint: {test_url}")
             auth_masked = f'Basic ...{headers["Authorization"][-8:]}' if 'Authorization' in headers else 'None'
             headers_masked = dict(headers, **{'Authorization': auth_masked})
             print(f"Headers (Basic Auth masked): {headers_masked}")
-            
+
             response = requests.get(test_url, headers=headers, timeout=10)
             print(f"Plans endpoint response status: {response.status_code}")
             print(f"Plans endpoint content-type: {response.headers.get('content-type', 'Unknown')}")
-            
+
             # Log response for debugging
             response_text = response.text[:500]
             print(f"Response preview: {response_text}...")
-            
+
             if response.status_code == 200:
                 try:
                     response_data = response.json()
@@ -262,7 +383,7 @@ class OXIOService:
                     'response_preview': response_text,
                     'content_type': response.headers.get('content-type', 'Unknown')
                 }
-                
+
         except requests.exceptions.ConnectionError:
             return {
                 'success': False,
@@ -293,24 +414,24 @@ class OXIOService:
                     'api_key_configured': bool(self.api_key),
                     'auth_token_configured': bool(self.auth_token)
                 }
-            
+
             # Use the specific SIM endpoint for authentication test
             test_url = f"{self.base_url}/v3/sims/8910650420001501340F"
             headers = self.get_headers()
-            
+
             print(f"Testing OXIO SIM endpoint: {test_url}")
             auth_masked = f'Basic ...{headers["Authorization"][-8:]}' if 'Authorization' in headers else 'None'
             headers_masked = dict(headers, **{'Authorization': auth_masked})
             print(f"Headers (Basic Auth masked): {headers_masked}")
-            
+
             response = requests.get(test_url, headers=headers, timeout=10)
             print(f"SIM endpoint response status: {response.status_code}")
             print(f"SIM endpoint content-type: {response.headers.get('content-type', 'Unknown')}")
-            
+
             # Log response for debugging
             response_text = response.text[:500]
             print(f"Response preview: {response_text}...")
-            
+
             if response.status_code == 200:
                 try:
                     response_data = response.json()
@@ -341,7 +462,7 @@ class OXIOService:
                     'response_preview': response_text,
                     'content_type': response.headers.get('content-type', 'Unknown')
                 }
-                
+
         except requests.exceptions.ConnectionError:
             return {
                 'success': False,

@@ -386,20 +386,13 @@
         </div>
         <!-- Beta Tester Toggle -->
         <div class="beta-tester-card">
-            <h3>🧪 Beta Tester Program</h3>
-            <p>Gorse Demo Mode
-
-This is dotmobile V3 'gorse release' demo. We are not quite ready to start the service publicly in Canada using national networks due to Full MVNO access unavailability (read more here) (link to About). But you can opt in right here with risk of things still being in Alfa and we will send you a free eSIM to use globally. Founding members do not pay for any membership fees for life or the year 2099. They also get 100.33 DOTM ERC-20 ETH token. Every 10000MB purchase gets you 1.33DOTM. Same goes for store and anything DOT earns from Stripe registered Payment method with DOT. Every DOTM is valid $1 at dotmobile ecosystem. Only 10,333,333 DOTM will be minted or so our first blockchain contract says (link to Etherscan) and your brand new ETH wallet provided by Infura and MetaMask (links to both companies).</p>
-            <div class="toggle-container">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="betaTesterToggle">
-                    <span class="toggle-slider"></span>
-                </label>
-                <span id="betaTesterStatus">Loading...</span>
-            </div>
-            <div id="betaTesterInfo" style="display: none;">
-                <p><small>Connected to GitHub: <span id="githubUser">Not connected</span></small></p>
-                <button id="connectGitHub" class="secondary-button">Connect GitHub</button>
+            <h3>🧪 Gorse Demo Mode</h3>
+            <p>This is dotmobile V3 (gorse release) demo in Alfa. We are not quite ready to start the connectivity service publicly in Canada using national networks due to Full MVNO access unavailability (<a href="/about" style="color: #fff; text-decoration: underline;">read more here</a>). Opt in right here for Beta and we will send you an eSIM to use globally when ready for just a $1. You will get equivalent in data (1000MB) to use right away. Every $10 spent gets you 1.33 DOTM. Yearly memberships for Canadian users only.</p>
+            <div class="beta-action-container">
+                <button id="betaEnrollBtn" class="beta-enroll-btn">Request BETA access ($1 eSIM)</button>
+                <div id="betaStatus" class="beta-status" style="display: none;">
+                    <span id="betaStatusText">Loading...</span>
+                </div>
             </div>
         </div>
 

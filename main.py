@@ -28,6 +28,7 @@ except Exception as e:
         yield None
 from datetime import datetime
 import stripe
+import json
 
 # Initialize Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
@@ -91,6 +92,31 @@ try:
                     print("Product rules table created successfully")
                 else:
                     print("Product rules table already exists")
+                    
+                # Check if beta_testers table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'beta_testers')")
+                beta_testers_exists = cur.fetchone()[0]
+
+                if not beta_testers_exists:
+                    print("Creating beta_testers table...")
+                    create_beta_testers_sql = """
+                        CREATE TABLE beta_testers (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL,
+                            firebase_uid VARCHAR(128) NOT NULL,
+                            stripe_customer_id VARCHAR(100),
+                            action VARCHAR(50),
+                            status VARCHAR(50),
+                            stripe_session_id VARCHAR(255),
+                            stripe_payment_intent_id VARCHAR(255),
+                            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                    """
+                    cur.execute(create_beta_testers_sql)
+                    conn.commit()
+                    print("beta_testers table created successfully")
+                else:
+                    print("beta_testers table already exists")
 
                 conn.commit()
         else:
@@ -806,7 +832,7 @@ class DeliveryResource(Resource):
                     customer=customer.id,
                     collection_method='send_invoice',
                     days_until_due=1,  # Due in 1 day
-                    auto_advance=False,  # Don't finalize yet
+                    auto_advance=False,  #Don't finalize yet
                     description='eSIM Activation Service'
                 )
 
@@ -2234,89 +2260,293 @@ create_token_pings_table()
 
 @app.route('/api/ethereum-transactions', methods=['GET'])
 def get_ethereum_transactions():
-    """Get the last 10 Ethereum transactions for the current user"""
+    user_id = request.args.get('userId')
+    if not user_id:
+        return jsonify({'error': 'User ID required'}), 400
+
     try:
-        user_id = request.args.get('userId', '1')
-
-        # Get user's Ethereum address from database
         with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    cur.execute("SELECT eth_address FROM users WHERE id = %s", (user_id,))
-                    result = cur.fetchone()
+            with conn.cursor() as cur:
+                # Get user's ETH address
+                cur.execute("SELECT eth_address FROM users WHERE id = %s", (user_id,))
+                result = cur.fetchone()
 
-                    if not result or not result[0]:
-                        return jsonify({
-                            'status': 'error',
-                            'message': 'No Ethereum address found for user',
-                            'transactions': []
-                        })
+                if not result or not result[0]:
+                    return jsonify({'transactions': []})
 
-                    eth_address = result[0]
+                eth_address = result[0]
 
-        # Fetch transactions from Sepolia using Web3
-        from ethereum_helper import get_web3_connection
-        web3 = get_web3_connection()
+                # Get transactions from blockchain (placeholder)
+                transactions = [
+                    {
+                        'hash': '0x1234...abcd',
+                        'amount': '1.33',
+                        'type': 'DOTM Token Purchase',
+                        'date': '2024-06-15',
+                        'status': 'confirmed'
+                    }
+                ]
 
-        # Get latest block number
-        latest_block = web3.eth.get_block('latest')
-        latest_block_number = latest_block['number']
-
-        transactions = []
-        blocks_to_check = 1000  # Check last 1000 blocks
-
-        # Search through recent blocks for transactions involving this address
-        for block_num in range(max(0, latest_block_number - blocks_to_check), latest_block_number + 1):
-            try:
-                block = web3.eth.get_block(block_num, full_transactions=True)
-
-                for tx in block['transactions']:
-                    if (tx['to'] and tx['to'].lower() == eth_address.lower()) or \
-                       (tx['from'] and tx['from'].lower() == eth_address.lower()):
-
-                        # Convert values for display
-                        value_eth = web3.from_wei(tx['value'], 'ether')
-                        gas_price_gwei = web3.from_wei(tx['gasPrice'], 'gwei') if tx['gasPrice'] else 0
-
-                        transactions.append({
-                            'hash': tx['hash'].hex(),
-                            'block_number': tx['blockNumber'],
-                            'from': tx['from'],
-                            'to': tx['to'],
-                            'value': str(value_eth),
-                            'gas': tx['gas'],
-                            'gas_price': str(gas_price_gwei),
-                            'timestamp': block['timestamp'],
-                            'type': 'received' if (tx['to'] and tx['to'].lower() == eth_address.lower()) else 'sent'
-                        })
-
-                        if len(transactions) >= 10:
-                            break
-
-                if len(transactions) >= 10:
-                    break
-
-            except Exception as block_err:
-                print(f"Error fetching block {block_num}: {str(block_err)}")
-                continue
-
-        # Sort by block number (most recent first)
-        transactions.sort(key=lambda x: x['block_number'], reverse=True)
-
-        return jsonify({
-            'status': 'success',
-            'address': eth_address,
-            'network': 'sepolia',
-            'transactions': transactions[:10]
-        })
+                return jsonify({'transactions': transactions})
 
     except Exception as e:
         print(f"Error fetching Ethereum transactions: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': str(e),
-            'transactions': []
-        })
+        return jsonify({'transactions': []})
+
+@app.route('/api/beta-enrollment', methods=['POST'])
+def beta_enrollment():
+    data = request.get_json()
+    firebase_uid = data.get('firebaseUid')
+
+    if not firebase_uid:
+        return jsonify({'success': False, 'message': 'Firebase UID required'}), 400
+
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Get user details
+                cur.execute("SELECT id, stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                user_result = cur.fetchone()
+
+                if not user_result:
+                    return jsonify({'success': False, 'message': 'User not found'}), 404
+
+                user_id, stripe_customer_id = user_result
+
+                # Check if already enrolled in beta
+                cur.execute("""
+                    SELECT status FROM beta_testers 
+                    WHERE user_id = %s 
+                    ORDER BY timestamp DESC LIMIT 1
+                """, (user_id,))
+
+                existing_status = cur.fetchone()
+                if existing_status and existing_status[0] in ['payment_pending', 'esim_ready', 'enrolled']:
+                    return jsonify({
+                        'success': True, 
+                        'status': existing_status[0],
+                        'message': 'Already enrolled in beta program'
+                    })
+
+                # Create Stripe checkout session for $1 eSIM
+                stripe_session = stripe.checkout.Session.create(
+                    customer=stripe_customer_id,
+                    payment_method_types=['card'],
+                    line_items=[{
+                        'price_data': {
+                            'currency': 'usd',
+                            'product_data': {
+                                'name': 'Beta eSIM Access',
+                                'description': 'Global eSIM for beta testing with 1000MB data'
+                            },
+                            'unit_amount': 100,  # $1.00
+                        },
+                        'quantity': 1,
+                    }],
+                    mode='payment',
+                    success_url=f"{request.host_url}dashboard?beta_success=true",
+                    cancel_url=f"{request.host_url}dashboard?beta_cancelled=true",
+                    metadata={
+                        'user_id': str(user_id),
+                        'firebase_uid': firebase_uid,
+                        'product_type': 'beta_esim'
+                    }
+                )
+
+                # Record beta enrollment attempt
+                cur.execute("""
+                    INSERT INTO beta_testers (user_id, firebase_uid, stripe_customer_id, action, status, stripe_session_id)
+                    VALUES (%s, %s, %s, 'ON', 'payment_pending', %s)
+                """, (user_id, firebase_uid, stripe_customer_id, stripe_session.id))
+
+                conn.commit()
+
+                return jsonify({
+                    'success': True,
+                    'status': 'payment_pending',
+                    'checkout_url': stripe_session.url,
+                    'message': 'Redirecting to payment...'
+                })
+
+    except Exception as e:
+        print(f"Error in beta enrollment: {str(e)}")
+        return jsonify({'success': False, 'message': 'Internal server error'}), 500
+
+@app.route('/api/beta-status')
+def get_beta_status():
+    firebase_uid = request.args.get('firebaseUid')
+
+    if not firebase_uid:
+        return jsonify({'success': False, 'message': 'Firebase UID required'}), 400
+
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Get user details
+                cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                user_result = cur.fetchone()
+
+                if not user_result:
+                    return jsonify({'success': False, 'message': 'User not found'}), 404
+
+                user_id = user_result[0]
+
+                # Get latest beta status
+                cur.execute("""
+                    SELECT status, timestamp FROM beta_testers 
+                    WHERE user_id = %s 
+                    ORDER BY timestamp DESC LIMIT 1
+                """, (user_id,))
+
+                status_result = cur.fetchone()
+
+                if not status_result:
+                    return jsonify({
+                        'success': True,
+                        'status': 'not_enrolled',
+                        'message': 'Not enrolled in beta program'
+                    })
+
+                status, timestamp = status_result
+
+                return jsonify({
+                    'success': True,
+                    'status': status,
+                    'message': f'Beta status: {status}',
+                    'timestamp': timestamp.isoformat() if timestamp else None
+                })
+
+    except Exception as e:
+        print(f"Error getting beta status: {str(e)}")
+        return jsonify({'success': False, 'message': 'Internal server error'}), 500
+
+def get_db_connection():
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        raise Exception("DATABASE_URL environment variable not set")
+    return psycopg2.connect(database_url)
+
+def handle_beta_esim_payment(session):
+    """Handle successful beta eSIM payment"""
+    try:
+        user_id = session['metadata']['user_id']
+        firebase_uid = session['metadata']['firebase_uid']
+
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Update beta tester status
+                cur.execute("""
+                    UPDATE beta_testers 
+                    SET status = 'esim_ready', stripe_payment_intent_id = %s
+                    WHERE user_id = %s AND status = 'payment_pending'
+                """, (session['payment_intent'], user_id))
+
+                # Add 1000MB of data to user's balance
+                cur.execute("""
+                    INSERT INTO purchases (user_id, stripe_payment_intent_id, amount_cents, data_amount_mb, product_id, status)
+                    VALUES (%s, %s, 100, 1000, 'beta_esim_data', 'completed')
+                """, (user_id, session['payment_intent']))
+
+                # Create OXIO plan for 10 days
+                from oxio_service import OxioService
+                oxio = OxioService()
+
+                # Get user email for OXIO plan
+                cur.execute("SELECT email FROM users WHERE id = %s", (user_id,))
+                user_email = cur.fetchone()[0]
+
+                # Create 10-day plan with 1000MB (1024000 KB)
+                plan_result = oxio.create_custom_plan(
+                    user_email=user_email,
+                    plan_name="OXIO_10day_demo_plan",
+                    duration_seconds=10 * 24 * 60 * 60,  # 10 days in seconds
+                    data_limit_kb=1024000  # 1000MB in KB
+                )
+
+                if plan_result.get('success'):
+                    print(f"Created OXIO plan for user {user_id}: {plan_result}")
+
+                    # Send eSIM email
+                    from email_service import EmailService
+                    email_service = EmailService()
+
+                    email_service.send_esim_ready_email(
+                        to_email=user_email,
+                        plan_details=plan_result
+                    )
+                else:
+                    print(f"Failed to create OXIO plan: {plan_result}")
+
+                conn.commit()
+                print(f"Beta eSIM payment processed for user {user_id}")
+
+    except Exception as e:
+        print(f"Error handling beta eSIM payment: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+@app.route('/webhook', methods=['GET', 'POST'])
+def stripe_webhook():
+    if request.method == 'GET':
+        # For polling payment status
+        return {'status': 'pending'}, 200
+
+    # Handle POST webhook from Stripe
+    payload = request.get_data()
+    sig_header = request.headers.get('Stripe-Signature')
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, os.environ.get('STRIPE_WEBHOOK_SECRET')
+        )
+    except ValueError as e:
+        return {'error': str(e)}, 400
+    except stripe.error.SignatureVerificationError as e:
+        return {'error': str(e)}, 400
+
+    if event.type == 'invoice.paid':
+        invoice = event.data.object
+        print(f"Invoice paid: {invoice.id}")
+        customer_id = invoice.customer
+        customer = stripe.Customer.retrieve(customer_id)
+
+        # Record the purchase
+        for line in invoice.lines.data:
+            price_id = line.price.id
+            product_id = line.price.product
+            amount = line.amount
+
+            transaction_id = f"INV_{invoice.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            record_purchase(
+                stripe_id=invoice.id,
+                product_id=product_id,
+                price_id=price_id,
+                amount=amount,
+                user_id=None,  # We'll need to lookup the user ID from the customer ID
+                transaction_id=transaction_id
+            )
+
+        print(f"Processing payment for customer {customer.email}")
+        return {'status': 'paid', 'redirect': '/dashboard'}, 200
+
+    elif event.type == 'payment_intent.succeeded':
+        payment_intent = event.data.object
+        print(f"Payment succeeded: {payment_intent.id}")
+
+        # Handle successful payment
+        # You can add logic here to fulfill the order
+
+    elif event.type == 'checkout.session.completed':
+        session = event.data.object
+
+        # Check if this is a beta eSIM payment
+        if session.get('metadata', {}).get('product_type') == 'beta_esim':
+            handle_beta_esim_payment(session)
+
+    else:
+        print(f"Unhandled event type: {event.type}")
+
+    return {'status': 'success'}, 200
 
 @app.route('/token-price-pings', methods=['GET'])
 def token_price_pings():

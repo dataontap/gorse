@@ -214,6 +214,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Initialize beta enrollment functionality
+    const betaEnrollBtn = document.getElementById('betaEnrollBtn');
+    if (betaEnrollBtn) {
+        betaEnrollBtn.addEventListener('click', handleBetaEnrollment);
+        checkBetaStatus(); // Check current status on page load
+    }
+
     // Initialize help toggle functionality using event delegation
     document.addEventListener('click', function(e) {
         if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
@@ -912,5 +919,95 @@ function endHelpSession() {
 function trackHelpInteraction(type, data) {
     if (typeof helpDesk !== 'undefined') {
         return helpDesk.trackInteraction(type, data);
+    }
+}
+
+// Beta enrollment functions
+function handleBetaEnrollment() {
+    const firebaseUid = localStorage.getItem('userId');
+    if (!firebaseUid) {
+        alert('Please sign in to enroll in the beta program.');
+        return;
+    }
+
+    const betaEnrollBtn = document.getElementById('betaEnrollBtn');
+    betaEnrollBtn.disabled = true;
+    betaEnrollBtn.textContent = 'Processing...';
+
+    fetch('/api/beta-enrollment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            firebaseUid: firebaseUid
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.checkout_url) {
+                // Redirect to Stripe checkout
+                window.location.href = data.checkout_url;
+            } else {
+                updateBetaStatus(data.status, data.message);
+            }
+        } else {
+            alert('Error enrolling in beta: ' + (data.message || 'Unknown error'));
+            betaEnrollBtn.disabled = false;
+            betaEnrollBtn.textContent = 'Request BETA access ($1 eSIM)';
+        }
+    })
+    .catch(error => {
+        console.error('Error enrolling in beta:', error);
+        alert('Error enrolling in beta. Please try again.');
+        betaEnrollBtn.disabled = false;
+        betaEnrollBtn.textContent = 'Request BETA access ($1 eSIM)';
+    });
+}
+
+function checkBetaStatus() {
+    const firebaseUid = localStorage.getItem('userId');
+    if (!firebaseUid) return;
+
+    fetch(`/api/beta-status?firebaseUid=${firebaseUid}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateBetaStatus(data.status, data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error checking beta status:', error);
+    });
+}
+
+function updateBetaStatus(status, message) {
+    const betaEnrollBtn = document.getElementById('betaEnrollBtn');
+    const betaStatus = document.getElementById('betaStatus');
+    const betaStatusText = document.getElementById('betaStatusText');
+
+    switch(status) {
+        case 'not_enrolled':
+            betaEnrollBtn.style.display = 'block';
+            betaEnrollBtn.disabled = false;
+            betaEnrollBtn.textContent = 'Request BETA access ($1 eSIM)';
+            betaStatus.style.display = 'none';
+            break;
+        case 'payment_pending':
+            betaEnrollBtn.style.display = 'none';
+            betaStatus.style.display = 'block';
+            betaStatusText.textContent = 'Check for eSIM invite in your email.';
+            break;
+        case 'esim_ready':
+            betaEnrollBtn.style.display = 'none';
+            betaStatus.style.display = 'block';
+            betaStatusText.textContent = 'Your eSIM is ready to download';
+            break;
+        case 'enrolled':
+            betaEnrollBtn.style.display = 'none';
+            betaStatus.style.display = 'block';
+            betaStatusText.textContent = message || 'Beta enrollment complete';
+            break;
     }
 }
