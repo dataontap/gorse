@@ -739,29 +739,126 @@ function refreshInvitesList() {
 }
 
 function displayInvitesList(invites) {
-    // This function will be called to display invites in the dashboard
     console.log('Invites to display:', invites);
 
-    // You can implement the UI display logic here
-    const invitesContainer = document.getElementById('invitesContainer');
-    if (invitesContainer && invites.length > 0) {
-        invitesContainer.innerHTML = `
-            <h4>Recent Invitations</h4>
-            <div class="invites-list">
-                ${invites.map(invite => `
-                    <div class="invite-item">
-                        <span class="invite-email">${invite.email}</span>
-                        <span class="invite-status status-${invite.invitation_status.replace('_', '-')}">${invite.invitation_status.replace('_', ' ')}</span>
-                        ${(invite.invitation_status === 'invite_sent' || invite.invitation_status === 're_invited') ? 
-                            `<button class="cancel-invite-btn" onclick="cancelInvitation(${invite.id})" title="Cancel invitation">
-                                <i class="fas fa-times"></i>
-                            </button>` : ''}
-                        <span class="invite-date">${new Date(invite.created_at).toLocaleDateString()}</span>
-                    </div>
-                `).join('')}
-            </div>
-        `;
+    const recentInvitationsSection = document.getElementById('recentInvitationsSection');
+    const invitationsList = document.getElementById('invitationsList');
+    const acceptedUsersContainer = document.getElementById('acceptedUsersContainer');
+
+    if (!invites || invites.length === 0) {
+        if (recentInvitationsSection) {
+            recentInvitationsSection.style.display = 'none';
+        }
+        return;
     }
+
+    // Show the section
+    if (recentInvitationsSection) {
+        recentInvitationsSection.style.display = 'block';
+    }
+
+    // Filter invites by status
+    const pendingInvites = invites.filter(invite => 
+        invite.invitation_status === 'invite_sent' || invite.invitation_status === 're_invited'
+    );
+    const acceptedInvites = invites.filter(invite => 
+        invite.invitation_status === 'invite_accepted'
+    );
+
+    // Display pending invitations
+    if (invitationsList && pendingInvites.length > 0) {
+        invitationsList.innerHTML = pendingInvites.map(invite => `
+            <div class="invitation-item">
+                <div class="invitation-info">
+                    <div class="invitation-email">${invite.email}</div>
+                    <div class="invitation-date">Sent ${new Date(invite.created_at).toLocaleDateString()}</div>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <span class="invitation-status status-${invite.invitation_status.replace('_', '-')}">
+                        ${invite.invitation_status.replace('_', ' ')}
+                    </span>
+                    <button class="cancel-invite-btn" onclick="cancelInvitation(${invite.id})" title="Cancel invitation">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } else if (invitationsList) {
+        invitationsList.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">No pending invitations</div>';
+    }
+
+    // Display accepted invitations as user cards
+    if (acceptedUsersContainer && acceptedInvites.length > 0) {
+        acceptedUsersContainer.innerHTML = acceptedInvites.map(invite => {
+            const userData = generateRandomUserData(invite.email);
+            return `
+                <div class="accepted-user-card">
+                    <div class="accepted-user-header">
+                        <div class="accepted-user-info">
+                            <div class="accepted-user-name">${userData.name}</div>
+                            <div class="accepted-user-email">${invite.email}</div>
+                        </div>
+                        <div class="invitation-status status-invite-accepted">
+                            Joined ${new Date(invite.accepted_at).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <div class="accepted-user-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${userData.dataUsage}%</div>
+                            <div class="stat-label">Data Used</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${userData.screenTime}h</div>
+                            <div class="stat-label">Screen Time</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">$${userData.cost}</div>
+                            <div class="stat-label">Monthly Cost</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${userData.location}</div>
+                            <div class="stat-label">Location</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } else if (acceptedUsersContainer) {
+        acceptedUsersContainer.innerHTML = '';
+    }
+}
+
+function generateRandomUserData(email) {
+    // Generate consistent random data based on email
+    const hash = email.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+    }, 0);
+    
+    const abs = Math.abs(hash);
+    
+    // Generate random name
+    const firstNames = ['Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Avery', 'Quinn', 'Sage', 'River'];
+    const lastNames = ['Smith', 'Johnson', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore', 'Taylor', 'Anderson', 'Thomas'];
+    
+    const firstName = firstNames[abs % firstNames.length];
+    const lastName = lastNames[(abs * 7) % lastNames.length];
+    
+    // Generate random but realistic data
+    const dataUsage = 15 + (abs % 70); // 15-85%
+    const screenTime = 2 + (abs % 10); // 2-12 hours
+    const cost = 25 + (abs % 50); // $25-75
+    
+    const locations = ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton', 'Winnipeg', 'Quebec', 'Hamilton', 'London'];
+    const location = locations[abs % locations.length];
+    
+    return {
+        name: `${firstName} ${lastName}`,
+        dataUsage,
+        screenTime,
+        cost,
+        location
+    };
 }
 
 function cancelInvitation(inviteId) {

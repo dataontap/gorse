@@ -3440,6 +3440,163 @@ input:checked + .toggle-slider:before {
     font-size: 10px;
 }
 
+/* Recent Invitations Section */
+.recent-invitations-section {
+    margin: 20px auto;
+    max-width: 600px;
+    padding: 0 20px;
+}
+
+.recent-invitations-section .section-title {
+    font-size: 20px;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.recent-invitations-section .section-title i {
+    margin-right: 10px;
+    color: var(--primary-color);
+}
+
+.invitations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.invitation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.invitation-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.invitation-info {
+    flex: 1;
+}
+
+.invitation-email {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.invitation-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.invitation-status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: capitalize;
+    margin-right: 10px;
+}
+
+.status-invite-sent {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.status-invite-accepted {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.status-invite-rejected {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.status-invite-cancelled {
+    background: #f5f5f5;
+    color: #757575;
+}
+
+/* Accepted Users Container */
+.accepted-users-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.accepted-user-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.accepted-user-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.accepted-user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.accepted-user-info {
+    flex: 1;
+}
+
+.accepted-user-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.accepted-user-email {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.accepted-user-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 10px;
+    background: var(--hover-bg);
+    border-radius: 8px;
+}
+
+.stat-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
 /* Help desk styles */
 .help-section {
     position: fixed;
