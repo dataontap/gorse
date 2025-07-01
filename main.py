@@ -2188,15 +2188,26 @@ def beta_enrollment():
 
     try:
         with get_db_connection() as conn:
+            if not conn:
+                return jsonify({'success': False, 'message': 'Database connection error'}), 500
+                
             with conn.cursor() as cur:
                 # Get user details
-                cur.execute("SELECT id, stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                cur.execute("SELECT id, stripe_customer_id, email FROM users WHERE firebase_uid = %s", (firebase_uid,))
                 user_result = cur.fetchone()
 
                 if not user_result:
                     return jsonify({'success': False, 'message': 'User not found'}), 404
 
-                user_id, stripe_customer_id = user_result
+                user_id, stripe_customer_id, user_email = user_result
+
+                # Check if Stripe is configured
+                if not stripe.api_key:
+                    return jsonify({'success': False, 'message': 'Payment system not configured'}), 500
+
+                # Check if user has Stripe customer ID
+                if not stripe_customer_id:
+                    return jsonify({'success': False, 'message': 'User payment profile not found'}), 400
 
                 # Check if already enrolled in beta
                 cur.execute("""
@@ -2214,29 +2225,33 @@ def beta_enrollment():
                     })
 
                 # Create Stripe checkout session for $1 eSIM
-                stripe_session = stripe.checkout.Session.create(
-                    customer=stripe_customer_id,
-                    payment_method_types=['card'],
-                    line_items=[{
-                        'price_data': {
-                            'currency': 'usd',
-                            'product_data': {
-                                'name': 'Beta eSIM Access',
-                                'description': 'Global eSIM for beta testing with 1000MB data'
+                try:
+                    stripe_session = stripe.checkout.Session.create(
+                        customer=stripe_customer_id,
+                        payment_method_types=['card'],
+                        line_items=[{
+                            'price_data': {
+                                'currency': 'usd',
+                                'product_data': {
+                                    'name': 'Beta eSIM Access',
+                                    'description': 'Global eSIM for beta testing with 1000MB data'
+                                },
+                                'unit_amount': 100,  # $1.00
                             },
-                            'unit_amount': 100,  # $1.00
-                        },
-                        'quantity': 1,
-                    }],
-                    mode='payment',
-                    success_url=f"{request.host_url}dashboard?beta_success=true",
-                    cancel_url=f"{request.host_url}dashboard?beta_cancelled=true",
-                    metadata={
-                        'user_id': str(user_id),
-                        'firebase_uid': firebase_uid,
-                        'product_type': 'beta_esim'
-                    }
-                )
+                            'quantity': 1,
+                        }],
+                        mode='payment',
+                        success_url=f"{request.url_root}dashboard?beta_success=true",
+                        cancel_url=f"{request.url_root}dashboard?beta_cancelled=true",
+                        metadata={
+                            'user_id': str(user_id),
+                            'firebase_uid': firebase_uid,
+                            'product_type': 'beta_esim'
+                        }
+                    )
+                except stripe.error.StripeError as stripe_err:
+                    print(f"Stripe error in beta enrollment: {str(stripe_err)}")
+                    return jsonify({'success': False, 'message': f'Payment setup error: {str(stripe_err)}'}), 500
 
                 # Record beta enrollment attempt
                 cur.execute("""
@@ -2255,7 +2270,9 @@ def beta_enrollment():
 
     except Exception as e:
         print(f"Error in beta enrollment: {str(e)}")
-        return jsonify({'success': False, 'message': 'Internal server error'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Internal server error: {str(e)}'}), 500
 
 @app.route('/api/beta-status')
 def get_beta_status():
