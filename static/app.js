@@ -279,6 +279,16 @@ function answerCall() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('App.js loaded successfully');
 
+    // Add logout functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
+            e.preventDefault();
+            if (window.firebaseAuth && window.firebaseAuth.signOut) {
+                window.firebaseAuth.signOut();
+            }
+        }
+    });
+
     // Initialize theme based on localStorage or default to dark
     const savedTheme = localStorage.getItem('darkMode');
     const isDarkMode = savedTheme === null ? true : savedTheme === 'true';

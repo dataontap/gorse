@@ -36,12 +36,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Register user with our backend
         registerUserWithBackend(user);
 
-        // Redirect to dashboard if on signup page, but allow login page access
+        // Only auto-redirect if user is on home or signup page
+        // Don't auto-redirect from login page to allow manual logout
         const currentPath = window.location.pathname;
         if (currentPath === '/' || currentPath === '/signup') {
           window.location.href = '/dashboard';
         }
-        // Note: Login page (/login) is allowed for signed-in users
+        // Login page is allowed for signed-in users (no auto-redirect)
       } else {
         // User is signed out
         console.log("User is signed out");
@@ -50,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.removeItem('userId');
         localStorage.removeItem('userEmail');
 
-        // Redirect to home if on protected page
+        // Only redirect to home if on protected pages, not from login page
         const currentPath = window.location.pathname;
         const publicPages = ['/', '/signup', '/login'];
         if (!publicPages.includes(currentPath)) {
@@ -113,7 +114,22 @@ document.addEventListener('DOMContentLoaded', function() {
       },
 
       signOut: function() {
-        return firebase.auth().signOut();
+        return firebase.auth().signOut()
+          .then(() => {
+            // Clear all local storage
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('databaseUserId');
+            console.log('User signed out successfully');
+            
+            // Redirect to login page after logout
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+          })
+          .catch((error) => {
+            console.error('Error during sign out:', error);
+          });
       },
 
       getCurrentUser: function() {
