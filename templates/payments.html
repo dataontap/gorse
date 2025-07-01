@@ -89,6 +89,35 @@
                             </button>
                             <span class="wallet-value">$100.00 USD</span>
                         </div>
+                        <!-- Founding Member Info Section -->
+                        <div class="founding-member-info mt-3">
+                            <button class="btn btn-sm btn-outline-primary founding-member-toggle" onclick="toggleFoundingMemberInfo()">
+                                <i class="fas fa-crown"></i> Founding Member Benefits
+                                <i class="fas fa-chevron-down toggle-arrow"></i>
+                            </button>
+                            <div id="foundingMemberDetails" class="founding-member-details" style="display: none;">
+                                <div class="founding-member-content">
+                                    <p><strong>Congratulations! As a Founding Member:</strong></p>
+                                    <ul>
+                                        <li>✅ <strong>No membership fees for life</strong> (until Canada Day 2099)</li>
+                                        <li>✅ <strong>100.33 DOTM tokens</strong> (vs 10.33 for new members)</li>
+                                        <li>💰 <strong>Earn 1.33 DOTM</strong> for every 10,000MB purchase</li>
+                                        <li>🛍️ <strong>Earn DOTM</strong> on all store purchases via Stripe</li>
+                                        <li>💵 <strong>Each DOTM = $1</strong> in the dotmobile ecosystem</li>
+                                    </ul>
+                                    <div class="blockchain-info">
+                                        <p><small>
+                                            📊 Only <strong>10,333,333 DOTM</strong> will ever be minted according to our 
+                                            <a href="/about" class="blockchain-link">blockchain contract</a>
+                                        </small></p>
+                                        <p><small>
+                                            🔐 Your ETH wallet is powered by <strong>Infura and MetaMask</strong> - 
+                                            <a href="/about" class="blockchain-link">learn more</a>
+                                        </small></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="wallet-actions">
                         <button class="btn btn-outline-primary btn-sm wallet-btn">
@@ -425,6 +454,113 @@
             color: #93c5fd;
             border-color: #3b82f6;
         }
+        
+        /* Founding Member Info Styles */
+        .founding-member-info {
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 15px;
+        }
+        
+        .founding-member-toggle {
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e9d27e;
+            background: rgba(255, 255, 255, 0.1);
+            color: #333;
+            transition: all 0.3s ease;
+        }
+        
+        .founding-member-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .toggle-arrow {
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle-arrow.rotated {
+            transform: rotate(180deg);
+        }
+        
+        .founding-member-details {
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e9d27e;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .founding-member-content ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 15px;
+        }
+        
+        .founding-member-content li {
+            margin-bottom: 8px;
+            padding: 5px 0;
+        }
+        
+        .blockchain-info {
+            border-top: 1px solid #e9d27e;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        
+        .blockchain-link {
+            color: #6b21a8;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .blockchain-link:hover {
+            color: #581c87;
+            text-decoration: underline;
+        }
+        
+        .dark-mode .founding-member-details {
+            background: rgba(45, 45, 45, 0.9);
+            color: #e0e0e0;
+            border-color: #7d5d51;
+        }
+        
+        .dark-mode .founding-member-toggle {
+            background: rgba(45, 45, 45, 0.3);
+            color: #e0e0e0;
+            border-color: #7d5d51;
+        }
+        
+        .dark-mode .founding-member-toggle:hover {
+            background: rgba(45, 45, 45, 0.5);
+        }
+        
+        .dark-mode .blockchain-info {
+            border-color: #7d5d51;
+        }
+        
+        .dark-mode .blockchain-link {
+            color: #a78bfa;
+        }
+        
+        .dark-mode .blockchain-link:hover {
+            color: #c4b5fd;
+        }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -703,9 +839,66 @@
             });
         }
         
+        // Toggle founding member information
+        function toggleFoundingMemberInfo() {
+            const details = document.getElementById('foundingMemberDetails');
+            const arrow = document.querySelector('.toggle-arrow');
+            
+            if (details.style.display === 'none' || details.style.display === '') {
+                details.style.display = 'block';
+                arrow.classList.add('rotated');
+            } else {
+                details.style.display = 'none';
+                arrow.classList.remove('rotated');
+            }
+        }
+        
+        // Check if user is founding member and show appropriate content
+        function checkFoundingMemberStatus() {
+            // This would typically check user's status from backend
+            // For now, we'll check if the user has the founding member badge
+            const userInfo = localStorage.getItem('userInfo');
+            const isFoundingMember = true; // Default to true for demo, would check actual status
+            
+            if (!isFoundingMember) {
+                // Update content for regular members
+                const foundingContent = document.querySelector('.founding-member-content');
+                if (foundingContent) {
+                    foundingContent.innerHTML = `
+                        <p><strong>DOTM Token Rewards:</strong></p>
+                        <ul>
+                            <li>💰 <strong>Earn 1.33 DOTM</strong> for every 10,000MB purchase</li>
+                            <li>🛍️ <strong>Earn DOTM</strong> on all store purchases via Stripe</li>
+                            <li>💵 <strong>Each DOTM = $1</strong> in the dotmobile ecosystem</li>
+                        </ul>
+                        <div class="blockchain-info">
+                            <p><small>
+                                📊 Only <strong>10,333,333 DOTM</strong> will ever be minted according to our 
+                                <a href="/about" class="blockchain-link">blockchain contract</a>
+                            </small></p>
+                            <p><small>
+                                🔐 Your ETH wallet is powered by <strong>Infura and MetaMask</strong> - 
+                                <a href="/about" class="blockchain-link">learn more</a>
+                            </small></p>
+                        </div>
+                    `;
+                    
+                    // Update button text for regular members
+                    const toggleBtn = document.querySelector('.founding-member-toggle');
+                    if (toggleBtn) {
+                        toggleBtn.innerHTML = `
+                            <i class="fas fa-coins"></i> Token Rewards
+                            <i class="fas fa-chevron-down toggle-arrow"></i>
+                        `;
+                    }
+                }
+            }
+        }
+        
         // Load transactions on page load
         document.addEventListener('DOMContentLoaded', function() {
             refreshTransactions();
+            checkFoundingMemberStatus();
         });
     </script>
 </body>
