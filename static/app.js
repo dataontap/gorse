@@ -751,38 +751,17 @@ function displayInvitesList(invites) {
         invite.invitation_status === 'invite_accepted'
     );
 
-    // Display pending invitations
-    if (invitationsList && pendingInvites.length > 0) {
-        invitationsList.innerHTML = pendingInvites.map(invite => `
-            <div class="invitation-item">
-                <div class="invitation-info">
-                    <div class="invitation-email">${invite.email}</div>
-                    <div class="invitation-date">Sent ${new Date(invite.created_at).toLocaleDateString()}</div>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <span class="invitation-status status-${invite.invitation_status.replace('_', '-')}">
-                        ${invite.invitation_status.replace('_', ' ')}
-                    </span>
-                    <button class="cancel-invite-btn" onclick="cancelInvitation(${invite.id})" title="Cancel invitation">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    } else if (invitationsList) {
-        invitationsList.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">No pending invitations</div>';
-    }
-
-    // Display accepted invitations as user cards
+    // Display accepted invitations as user cards first (above recent invitations)
     if (acceptedUsersContainer && acceptedInvites.length > 0) {
         acceptedUsersContainer.innerHTML = acceptedInvites.map(invite => {
             const userData = generateRandomUserData(invite.email);
+            const truncatedEmail = invite.email.length > 16 ? invite.email.substring(0, 16) + '...' : invite.email;
             return `
                 <div class="accepted-user-card">
                     <div class="accepted-user-header">
                         <div class="accepted-user-info">
                             <div class="accepted-user-name">${userData.name}</div>
-                            <div class="accepted-user-email">${invite.email}</div>
+                            <div class="accepted-user-email">${truncatedEmail}</div>
                         </div>
                         <div class="invitation-status status-invite-accepted">
                             Joined ${new Date(invite.accepted_at).toLocaleDateString()}
@@ -811,6 +790,28 @@ function displayInvitesList(invites) {
         }).join('');
     } else if (acceptedUsersContainer) {
         acceptedUsersContainer.innerHTML = '';
+    }
+
+    // Display pending invitations
+    if (invitationsList && pendingInvites.length > 0) {
+        invitationsList.innerHTML = pendingInvites.map(invite => `
+            <div class="invitation-item">
+                <div class="invitation-info">
+                    <div class="invitation-email">${invite.email}</div>
+                    <div class="invitation-date">Sent ${new Date(invite.created_at).toLocaleDateString()}</div>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <span class="invitation-status status-${invite.invitation_status.replace('_', '-')}">
+                        ${invite.invitation_status.replace('_', ' ')}
+                    </span>
+                    <button class="cancel-invite-btn" onclick="cancelInvitation(${invite.id})" title="Cancel invitation">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } else if (invitationsList) {
+        invitationsList.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">No pending invitations</div>';
     }
 }
 
