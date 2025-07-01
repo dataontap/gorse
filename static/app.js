@@ -1,3 +1,13 @@
+
+// Ensure functions are available immediately
+window.toggleMenu = toggleMenu;
+window.toggleProfileDropdown = toggleProfileDropdown;
+window.showConfirmationDrawer = showConfirmationDrawer;
+window.hideConfirmationDrawer = hideConfirmationDrawer;
+window.confirmPurchase = confirmPurchase;
+window.sendComingSoonNotification = sendComingSoonNotification;
+window.setActiveCarouselItem = setActiveCarouselItem;
+
 // Global menu toggle functionality
 function toggleMenu(element) {
     const dropdown = element.querySelector('.menu-dropdown');
@@ -27,9 +37,99 @@ function toggleProfileDropdown() {
     }
 }
 
-// Make functions globally accessible
-window.toggleMenu = toggleMenu;
-window.toggleProfileDropdown = toggleProfileDropdown;
+// Global dashboard functions for offer cards and user data
+function showConfirmationDrawer(dataAmount, price, productId) {
+    console.log('Showing confirmation drawer for:', productId, dataAmount, price);
+    var drawer = document.getElementById('confirmationDrawer');
+    if (drawer) {
+        var dataAmountElement = document.getElementById('confirmDataAmount');
+        var priceElement = document.getElementById('confirmPrice');
+
+        if (dataAmountElement) {
+            dataAmountElement.textContent = dataAmount + 'GB';
+        }
+        if (priceElement) {
+            priceElement.textContent = '$' + price;
+        }
+
+        drawer.classList.add('show');
+        drawer.style.display = 'block';
+        drawer.dataset.productId = productId;
+    }
+}
+
+function hideConfirmationDrawer() {
+    var drawer = document.getElementById('confirmationDrawer');
+    if (drawer) {
+        drawer.classList.remove('show');
+        drawer.style.display = 'none';
+    }
+}
+
+function confirmPurchase() {
+    var drawer = document.getElementById('confirmationDrawer');
+    if (drawer && drawer.dataset.productId) {
+        var productId = drawer.dataset.productId;
+        console.log('Confirming purchase for:', productId);
+
+        // Get Firebase UID if available
+        var firebaseUid = localStorage.getItem('userId') || null;
+
+        // Make API call to record purchase
+        fetch('/api/record-global-purchase', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productId: productId,
+                firebaseUid: firebaseUid
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Purchase recorded:', data);
+            hideConfirmationDrawer();
+
+            // Show success message
+            alert('Purchase successful! Your data will be available shortly.');
+
+            // Refresh the page to update data balance
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Error recording purchase:', error);
+            alert('Error processing purchase. Please try again.');
+        });
+    }
+}
+
+function sendComingSoonNotification() {
+    alert('This feature is coming soon! Thank you for your interest.');
+}
+
+function setActiveCarouselItem(index) {
+    var carouselItems = document.querySelectorAll('.carousel-item');
+    var carouselControls = document.querySelectorAll('.carousel-controls button');
+    
+    if (carouselItems.length === 0) return;
+    
+    // Remove active class from all items and controls
+    carouselItems.forEach(function(item) {
+        item.classList.remove('active');
+    });
+    carouselControls.forEach(function(control) {
+        control.classList.remove('active');
+    });
+
+    // Add active class to current item and control
+    if (carouselItems[index]) {
+        carouselItems[index].classList.add('active');
+    }
+    if (carouselControls[index]) {
+        carouselControls[index].classList.add('active');
+    }
+}
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(event) {
@@ -72,32 +172,6 @@ function showNotificationTester() {
         alert('Notifications are blocked. Please enable them in your browser settings.');
     }
 }
-
-function setActiveCarouselItem(index) {
-    var carouselItems = document.querySelectorAll('.carousel-item');
-    var carouselControls = document.querySelectorAll('.carousel-controls button');
-    
-    if (carouselItems.length === 0) return;
-    
-    // Remove active class from all items and controls
-    carouselItems.forEach(function(item) {
-        item.classList.remove('active');
-    });
-    carouselControls.forEach(function(control) {
-        control.classList.remove('active');
-    });
-
-    // Add active class to current item and control
-    if (carouselItems[index]) {
-        carouselItems[index].classList.add('active');
-    }
-    if (carouselControls[index]) {
-        carouselControls[index].classList.add('active');
-    }
-}
-
-// Make globally accessible
-window.setActiveCarouselItem = setActiveCarouselItem;
 
 // Help system countdown and callback functionality
 var agentCountdownInterval;
@@ -395,85 +469,6 @@ function initializeCarousel() {
         showSlide(nextSlide);
     }, 5000);
 }
-
-// Global dashboard functions for offer cards and user data
-function showConfirmationDrawer(dataAmount, price, productId) {
-    console.log('Showing confirmation drawer for:', productId, dataAmount, price);
-    var drawer = document.getElementById('confirmationDrawer');
-    if (drawer) {
-        var dataAmountElement = document.getElementById('confirmDataAmount');
-        var priceElement = document.getElementById('confirmPrice');
-
-        if (dataAmountElement) {
-            dataAmountElement.textContent = dataAmount + 'GB';
-        }
-        if (priceElement) {
-            priceElement.textContent = '$' + price;
-        }
-
-        drawer.classList.add('show');
-        drawer.style.display = 'block';
-        drawer.dataset.productId = productId;
-    }
-}
-
-function hideConfirmationDrawer() {
-    var drawer = document.getElementById('confirmationDrawer');
-    if (drawer) {
-        drawer.classList.remove('show');
-        drawer.style.display = 'none';
-    }
-}
-
-function confirmPurchase() {
-    var drawer = document.getElementById('confirmationDrawer');
-    if (drawer && drawer.dataset.productId) {
-        var productId = drawer.dataset.productId;
-        console.log('Confirming purchase for:', productId);
-
-        // Get Firebase UID if available
-        var firebaseUid = localStorage.getItem('userId') || null;
-
-        // Make API call to record purchase
-        fetch('/api/record-global-purchase', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                productId: productId,
-                firebaseUid: firebaseUid
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Purchase recorded:', data);
-            window.hideConfirmationDrawer();
-
-            // Show success message
-            alert('Purchase successful! Your data will be available shortly.');
-
-            // Refresh the page to update data balance
-            window.location.reload();
-        })
-        .catch(error => {
-            console.error('Error recording purchase:', error);
-            alert('Error processing purchase. Please try again.');
-        });
-    }
-}
-
-// Make confirmation drawer functions globally accessible
-window.showConfirmationDrawer = showConfirmationDrawer;
-window.hideConfirmationDrawer = hideConfirmationDrawer;
-window.confirmPurchase = confirmPurchase;
-
-function sendComingSoonNotification() {
-    alert('This feature is coming soon! Thank you for your interest.');
-}
-
-// Make globally accessible
-window.sendComingSoonNotification = sendComingSoonNotification;
 
 // Chart toggle functionality for dashboard
 function toggleChart(link) {
@@ -1101,4 +1096,3 @@ function hideHelpModal() {
 function startChat() {
     alert('Starting chat with agent...');
 }
-</script>
