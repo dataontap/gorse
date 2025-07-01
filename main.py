@@ -2101,7 +2101,6 @@ def populate_token_pings():
 
 @app.route('/api/notifications', methods=['GET'])
 def get_notifications():
-    """Get all notifications for a user"""
     try:
         firebase_uid = request.args.get('firebaseUid')
         notification_type = request.args.get('type', 'all')
