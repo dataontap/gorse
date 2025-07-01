@@ -1,3 +1,5 @@
+// Global variables
+let currentTheme = 'dark'; // Default to dark mode
 
 // Ensure functions are available immediately
 window.toggleMenu = toggleMenu;
@@ -7,6 +9,7 @@ window.hideConfirmationDrawer = hideConfirmationDrawer;
 window.confirmPurchase = confirmPurchase;
 window.sendComingSoonNotification = sendComingSoonNotification;
 window.setActiveCarouselItem = setActiveCarouselItem;
+window.toggleTheme = toggleTheme;
 
 // Global menu toggle functionality
 function toggleMenu(element) {
@@ -34,6 +37,35 @@ function toggleProfileDropdown() {
             dropdown.classList.add('visible');
             dropdown.style.display = 'block';
         }
+    }
+}
+
+// Theme toggle function
+function toggleTheme(isDarkMode) {
+    const body = document.body;
+    const darkToggle = document.getElementById('darkModeToggle');
+    const lightToggle = document.getElementById('lightModeToggle');
+
+    if (isDarkMode) {
+        // Switch to dark mode
+        body.classList.remove('light-mode');
+        body.classList.add('dark-mode');
+        currentTheme = 'dark';
+        localStorage.setItem('darkMode', 'true');
+
+        // Update toggle states
+        if (darkToggle) darkToggle.classList.add('active');
+        if (lightToggle) lightToggle.classList.remove('active');
+    } else {
+        // Switch to light mode
+        body.classList.remove('dark-mode');
+        body.classList.add('light-mode');
+        currentTheme = 'light';
+        localStorage.setItem('darkMode', 'false');
+
+        // Update toggle states
+        if (darkToggle) darkToggle.classList.remove('active');
+        if (lightToggle) lightToggle.classList.add('active');
     }
 }
 
@@ -111,9 +143,9 @@ function sendComingSoonNotification() {
 function setActiveCarouselItem(index) {
     var carouselItems = document.querySelectorAll('.carousel-item');
     var carouselControls = document.querySelectorAll('.carousel-controls button');
-    
+
     if (carouselItems.length === 0) return;
-    
+
     // Remove active class from all items and controls
     carouselItems.forEach(function(item) {
         item.classList.remove('active');
@@ -212,6 +244,7 @@ function stopAllCountdowns() {
 
 function orderCallback() {
     var callbackBtn = document.getElementById('orderCallbackBtn');
+	alert('Callback ordered! We will call you back shortly.');
     if (callbackBtn) {
         callbackBtn.disabled = true;
         callbackBtn.textContent = 'Callback Ordered';
@@ -244,7 +277,28 @@ function answerCall() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Help desk script loaded successfully');
+    console.log('App.js loaded successfully');
+
+    // Initialize theme based on localStorage or default to dark
+    const savedTheme = localStorage.getItem('darkMode');
+    const isDarkMode = savedTheme === null ? true : savedTheme === 'true';
+    toggleTheme(isDarkMode);
+
+    // Add event listeners for theme toggles
+    const darkToggle = document.getElementById('darkModeToggle');
+    const lightToggle = document.getElementById('lightModeToggle');
+
+    if (darkToggle) {
+        darkToggle.addEventListener('click', function() {
+            toggleTheme(true);
+        });
+    }
+
+    if (lightToggle) {
+        lightToggle.addEventListener('click', function() {
+            toggleTheme(false);
+        });
+    }
 
     // Initialize add user functionality with popup
     const addUserBtn = document.getElementById('addUserBtn');
@@ -354,75 +408,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
 
-    // Initialize dark mode toggle functionality
-    var darkModeToggle = document.getElementById('darkModeToggle');
-    if (darkModeToggle) {
-        // Check if dark mode preference exists, if not set it to true (dark mode default)
-        const darkModePreference = localStorage.getItem('darkMode');
-        const isDarkMode = darkModePreference === null ? true : darkModePreference === 'true';
-        const icon = darkModeToggle.querySelector('i');
-        const textSpan = darkModeToggle.querySelector('span');
-        const body = document.body;
-
-        // Set initial state and localStorage for new users
-        if (isDarkMode) {
-            body.classList.add('dark-mode');
-            body.classList.remove('light-mode');
-            if (darkModePreference === null) {
-                localStorage.setItem('darkMode', 'true');
-            }
-            if (icon) {
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
-            }
-            if (textSpan) textSpan.textContent = 'Light Mode';
-        } else {
-            body.classList.remove('dark-mode');
-            body.classList.add('light-mode');
-            if (icon) {
-                icon.classList.remove('fa-sun');
-                icon.classList.add('fa-moon');
-            }
-            if (textSpan) textSpan.textContent = 'Dark Mode';
-        }
-
-        darkModeToggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const isDark = body.classList.contains('dark-mode');
-
-            if (isDark) {
-                // Switch to light mode
-                body.classList.remove('dark-mode');
-                body.classList.add('light-mode');
-                if (icon) {
-                    icon.classList.remove('fa-sun');
-                    icon.classList.add('fa-moon');
-                }
-                if (textSpan) {
-                    textSpan.textContent = 'Dark Mode';
-                }
-                localStorage.setItem('darkMode', 'false');
-            } else {
-                // Switch to dark mode
-                body.classList.remove('light-mode');
-                body.classList.add('dark-mode');
-                if (icon) {
-                    icon.classList.remove('fa-moon');
-                    icon.classList.add('fa-sun');
-                }
-                if (textSpan) {
-                    textSpan.textContent = 'Light Mode';
-                }
-                localStorage.setItem('darkMode', 'true');
-            }
-        });
-    }
-
-    // Carousel functionality if present
+    // Initialize carousel functionality
     initializeCarousel();
 });
+
+// Global help functions for compatibility
+function startHelpSession() {
+    if (typeof helpDesk !== 'undefined') {
+        return helpDesk.startHelpSession();
+    }
+}
+
+function endHelpSession() {
+    if (typeof helpDesk !== 'undefined') {
+        return helpDesk.endHelpSession();
+    }
+}
+
+function trackHelpInteraction(type, data) {
+    if (typeof helpDesk !== 'undefined') {
+        return helpDesk.trackInteraction(type, data);
+    }
+}
 
 // Carousel initialization
 function initializeCarousel() {
@@ -985,8 +992,8 @@ function showHelpModal() {
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-        z-index: 10000; /* High z-index to appear on top */
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -1066,7 +1073,6 @@ function showHelpModal() {
 
     // Append the modal to the body
     document.body.appendChild(modalOverlay);
-    startAgentCountdown();
 
     // Add event listener for the order callback button (event delegation)
     modalOverlay.addEventListener('click', function(e) {
@@ -1077,11 +1083,6 @@ function showHelpModal() {
             startChat();
         }
     });
-
-    // Track interaction
-    if (typeof helpDesk !== 'undefined') {
-        helpDesk.trackInteraction('help_toggle');
-    }
 }
 
 // Function to hide the help modal
@@ -1089,7 +1090,7 @@ function hideHelpModal() {
     const modalOverlay = document.getElementById('helpModalOverlay');
     if (modalOverlay) {
         modalOverlay.remove();
-        stopAllCountdowns();
+		stopAllCountdowns();
     }
 }
 
