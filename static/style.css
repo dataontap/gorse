@@ -1017,8 +1017,72 @@ body.light-mode {
     color: #333 !important;
 }
 .dot-indicator {
-    background: #666666;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FFF371 0%, #FFE066 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+    margin: 20px auto;
+}
+
+.dot-content {
+    text-align: center;
+    color: #333;
+}
+
+.data-amount {
+    font-size: 4rem;
+    font-weight: 700;
+    color: #333;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 2px;
+    margin-bottom: 10px;
+}
+
+.main-number {
+    font-size: 4rem;
+    font-weight: 700;
+}
+
+.decimal-part {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.unit {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+.status {
+    font-size: 16px;
+    color: #333;
+    margin-top: 5px;
+    font-weight: 600;
+}
+
+.status i {
+    margin-right: 5px;
+    color: #333;
+}
+
+.refresh-icon {
+    font-size: 2rem;
+    margin-right: 10px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .dashboard-content {
@@ -1058,8 +1122,8 @@ body.light-mode {
 
 /* Light mode overrides */
 .light-mode .dot-indicator {
-    background: #FFF371 !important;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #FFF371 0%, #FFE066 100%);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
 .light-mode .dashboard-content {
