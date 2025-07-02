@@ -478,10 +478,6 @@ function showInviteForm() {
         <div class="invite-form">
             <h4>Send Invitation</h4>
             <div class="form-group">
-                <label for="inviteName">Name (Suggested)</label>
-                <input type="text" id="inviteName" placeholder="Enter person's name (optional)">
-            </div>
-            <div class="form-group">
                 <label for="inviteEmail">Email Address</label>
                 <input type="email" id="inviteEmail" placeholder="Enter email address" required>
             </div>
@@ -503,7 +499,6 @@ function showInviteForm() {
 
 function sendInvitation() {
     const email = document.getElementById('inviteEmail')?.value;
-    const nickname = document.getElementById('inviteName')?.value || '';
     const message = document.getElementById('inviteMessage')?.value || '';
     
     if (!email) {
@@ -527,7 +522,6 @@ function sendInvitation() {
         },
         body: JSON.stringify({
             email: email,
-            nickname: nickname,
             message: message,
             firebaseUid: firebaseUid,
             isDemoUser: false
@@ -562,13 +556,6 @@ function createDemoUser() {
     const demoEmail = `demo${timestamp}@example.com`;
     const firebaseUid = localStorage.getItem('userId');
     
-    // Generate random demo name
-    const firstNames = ['Alex', 'Jordan', 'Casey', 'Taylor', 'Morgan', 'Riley', 'Avery', 'Quinn', 'Sage', 'Blake'];
-    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore', 'Taylor', 'Anderson'];
-    const randomFirstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-    const randomLastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-    const demoNickname = `${randomFirstName} ${randomLastName}`;
-    
     fetch('/api/send-invitation', {
         method: 'POST',
         headers: {
@@ -576,7 +563,6 @@ function createDemoUser() {
         },
         body: JSON.stringify({
             email: demoEmail,
-            nickname: demoNickname,
             message: 'Demo user created automatically',
             firebaseUid: firebaseUid,
             isDemoUser: true
@@ -886,26 +872,16 @@ function createUserCard(invite) {
     const dollarAmount = Math.floor(Math.random() * 25) + 1;
     const scoreNumber = Math.floor(Math.random() * 10) + 1;
 
-    // Determine display name
-    const displayName = invite.nickname || 'Anonymous';
-    const inviteId = invite.id;
-
     const userCard = document.createElement('div');
     userCard.className = 'dashboard-content user-card accepted-user';
     userCard.setAttribute('data-data-percentage', dataPercentage);
     userCard.setAttribute('data-time-percentage', timePercentage);
     userCard.setAttribute('data-dollar-amount', dollarAmount);
     userCard.setAttribute('data-score', scoreNumber);
-    userCard.setAttribute('data-invite-id', inviteId);
     
     userCard.innerHTML = `
         <div class="user-info-header">
-            <div class="user-name-container">
-                <div class="user-name" onclick="editUserNickname(this, ${inviteId})" title="Click to edit nickname">
-                    ${displayName}
-                    <i class="fas fa-edit edit-icon" style="margin-left: 8px; font-size: 12px; color: #666; cursor: pointer;"></i>
-                </div>
-            </div>
+            <div class="user-name">${invite.email}</div>
             <div class="remove-icon" onclick="removeUserCard(this)" title="Remove user">
                 <i class="fas fa-times"></i>
             </div>
@@ -1030,63 +1006,6 @@ function cancelInvitation(inviteId) {
     });
 }
 
-// Add nickname editing functionality
-function editUserNickname(element, inviteId) {
-    const currentName = element.textContent.replace('✏️', '').trim();
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = currentName === 'Anonymous' ? '' : currentName;
-    input.className = 'nickname-edit-input';
-    input.style.cssText = 'background: white; border: 2px solid #4d9aff; padding: 4px 8px; border-radius: 4px; font-size: 14px; width: 150px;';
-    
-    // Replace the name element with input
-    element.innerHTML = '';
-    element.appendChild(input);
-    input.focus();
-    input.select();
-    
-    function saveNickname() {
-        const newNickname = input.value.trim() || 'Anonymous';
-        
-        // Update the display immediately
-        element.innerHTML = `${newNickname} <i class="fas fa-edit edit-icon" style="margin-left: 8px; font-size: 12px; color: #666; cursor: pointer;"></i>`;
-        
-        // Save to database
-        fetch('/api/update-nickname', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                inviteId: inviteId,
-                nickname: newNickname
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (!data.success) {
-                console.error('Failed to save nickname:', data.message);
-                // Revert if save failed
-                element.innerHTML = `${currentName} <i class="fas fa-edit edit-icon" style="margin-left: 8px; font-size: 12px; color: #666; cursor: pointer;"></i>`;
-            }
-        })
-        .catch(error => {
-            console.error('Error saving nickname:', error);
-            // Revert if save failed
-            element.innerHTML = `${currentName} <i class="fas fa-edit edit-icon" style="margin-left: 8px; font-size: 12px; color: #666; cursor: pointer;"></i>`;
-        });
-    }
-    
-    // Save on Enter or blur
-    input.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            saveNickname();
-        }
-    });
-    
-    input.addEventListener('blur', saveNickname);
-}
-
 // Make functions globally available
 window.showAddUserPopup = showAddUserPopup;
 window.hideAddUserPopup = hideAddUserPopup;
@@ -1096,7 +1015,6 @@ window.cancelInvitation = cancelInvitation;
 window.removeUserCard = removeUserCard;
 window.toggleUserPause = toggleUserPause;
 window.performSort = performSort;
-window.editUserNickname = editUserNickname;
 
 // Global help functions for compatibility
 function startHelpSession() {

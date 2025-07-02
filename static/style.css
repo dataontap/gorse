@@ -1375,39 +1375,10 @@ body.light-mode {
 }
 
 .user-name {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
     margin-bottom: 4px;
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
-
-.user-name:hover {
-    color: var(--primary-color);
-}
-
-.user-name-container {
-    flex-grow: 1;
-}
-
-.edit-icon {
-    opacity: 0.6;
-    transition: opacity 0.2s ease;
-}
-
-.user-name:hover .edit-icon {
-    opacity: 1;
-}
-
-.nickname-edit-input {
-    background: white !important;
-    border: 2px solid var(--primary-color) !important;
-    padding: 4px 8px !important;
-    border-radius: 4px !important;
-    font-size: 14px !important;
-    width: 150px !important;
-    color: var(--text-primary) !important;
 }
 
 .remove-icon {
@@ -2112,7 +2083,8 @@ body.light-mode {
 
 .send-icon {
     color: #666;
-    cursor: pointer.
+    cursor: pointer;
+}
 
 .data-usage {
     margin-bottom: 15px;
@@ -3221,7 +3193,7 @@ input:checked + .toggle-slider:before {
     color: white;
 }
 
-.dark-mode .callback-btn {
+.dark-mode .callback-btn {```python
     background: #333;
     border-color: #555;
     color: #ccc;
