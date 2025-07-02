@@ -554,7 +554,6 @@ body.light-mode {
 }
 
 .carousel-item {
-    display: none;
     position: absolute;
     top: 0;
     left: 0;
@@ -563,11 +562,15 @@ body.light-mode {
     display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .carousel-item.active {
-    display: flex;
     position: relative;
+    opacity: 1;
+    visibility: visible;
 }
 
 .offer-content h3 {
