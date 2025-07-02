@@ -576,29 +576,7 @@
                             updateSubscriptionStatus(data);
                         }
 
-                        if (data.status === 'active') {
-                            // Show subscription info
-                            const subscriptionDiv = document.createElement('div');
-                            subscriptionDiv.className = 'subscription-status ' + (data.subscription_type || 'basic');
-
-                            const endDate = new Date(data.end_date);
-                            const now = new Date();
-                            const daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
-
-                            subscriptionDiv.innerHTML = `
-                                <div class="subscription-info">
-                                    <div class="subscription-type">${data.subscription_type?.replace('_', ' ')}</div>
-                                    <div class="subscription-validity">Valid for ${daysRemaining} more days</div>
-                                </div>
-                            `;
-
-                            // Insert after global status
-                            const globalStatus = document.getElementById('globalStatus');
-                            if (globalStatus && globalStatus.parentNode) {
-                                globalStatus.parentNode.insertBefore(subscriptionDiv, globalStatus.nextSibling);
-                                globalStatus.style.display = 'block';
-                            }
-                        }
+                        // Dynamic membership banner inside bubble removed
                     })
                     .catch(error => {
                         console.error('Error loading subscription status:', error);
