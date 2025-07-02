@@ -1004,12 +1004,12 @@ body.light-mode {
 .dark-mode .dot-indicator {
     background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
     box-shadow: 0 20px 60px rgba(255, 243, 113, 0.6), 0 0 40px rgba(255, 243, 113, 0.4);
-    animation: pulseUnderglow 0.8s ease-in-out infinite alternate;
+    animation: pulseUnderglow 1.2s ease-in-out infinite alternate;
 }
 
 @keyframes pulseUnderglow {
     0% {
-        box-shadow: 0 15px 45px rgba(255, 243, 113, 0.45), 0 0 30px rgba(255, 243, 113, 0.3);
+        box-shadow: 0 17.5px 52.5px rgba(255, 243, 113, 0.525), 0 0 35px rgba(255, 243, 113, 0.35);
     }
     100% {
         box-shadow: 0 20px 60px rgba(255, 243, 113, 0.6), 0 0 40px rgba(255, 243, 113, 0.4);
