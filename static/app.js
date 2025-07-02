@@ -770,6 +770,11 @@ function performSort() {
     }, 600);
 }
 
+// Edit user card function (placeholder for future functionality)
+function editUserCard(element) {
+    alert('Edit user functionality coming soon!');
+}
+
 // Remove user card function
 function removeUserCard(element) {
     const userCard = element.closest('.user-card');
@@ -872,6 +877,9 @@ function createUserCard(invite) {
     const dollarAmount = Math.floor(Math.random() * 25) + 1;
     const scoreNumber = Math.floor(Math.random() * 10) + 1;
 
+    // Truncate email after 16 characters
+    const truncatedEmail = invite.email.length > 16 ? invite.email.substring(0, 16) + '...' : invite.email;
+
     const userCard = document.createElement('div');
     userCard.className = 'dashboard-content user-card accepted-user';
     userCard.setAttribute('data-data-percentage', dataPercentage);
@@ -881,14 +889,19 @@ function createUserCard(invite) {
     
     userCard.innerHTML = `
         <div class="user-info-header">
-            <div class="user-name">${invite.email}</div>
-            <div class="remove-icon" onclick="removeUserCard(this)" title="Remove user">
-                <i class="fas fa-times"></i>
+            <div class="user-name">Datashare User ${invite.id}</div>
+            <div class="header-icons">
+                <div class="edit-icon" onclick="editUserCard(this)" title="Edit user">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="remove-icon" onclick="removeUserCard(this)" title="Remove user">
+                    <i class="fas fa-times"></i>
+                </div>
             </div>
         </div>
         <div class="email-container">
-            <div class="user-email">${invite.email}</div>
-            <div class="timestamp">Active Member since ${formatDate(invite.created_at)}</div>
+            <div class="user-email">${truncatedEmail}</div>
+            <div class="timestamp" style="text-align: left;">Active Member since ${formatDate(invite.created_at)}</div>
         </div>
         
         <div class="data-usage">
@@ -1012,6 +1025,7 @@ window.hideAddUserPopup = hideAddUserPopup;
 window.loadInvitesList = loadInvitesList;
 window.refreshInvitesList = loadInvitesList;
 window.cancelInvitation = cancelInvitation;
+window.editUserCard = editUserCard;
 window.removeUserCard = removeUserCard;
 window.toggleUserPause = toggleUserPause;
 window.performSort = performSort;

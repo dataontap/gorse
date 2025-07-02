@@ -1370,8 +1370,9 @@ body.light-mode {
 
 .user-info-header {
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
     align-items: flex-start;
+    width: 100%;
 }
 
 .user-name {
@@ -1379,17 +1380,37 @@ body.light-mode {
     font-weight: bold;
     color: #333;
     margin-bottom: 4px;
+    flex: 1;
 }
 
+.header-icons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.edit-icon,
 .remove-icon {
     cursor: pointer;
     padding: 8px;
     color: #666;
     transition: color 0.3s ease;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-icon:hover {
+    color: #0066ff;
+    background-color: rgba(0, 102, 255, 0.1);
 }
 
 .remove-icon:hover {
     color: #ff4444;
+    background-color: rgba(255, 68, 68, 0.1);
 }
 
 .floating-note {
