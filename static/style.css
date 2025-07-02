@@ -1045,8 +1045,8 @@ body.light-mode {
 
 .menu-dropdown {
     left: 0;
-    top: 50px;
-    height: calc(100vh - 50px);
+    top: 60px;
+    height: calc(100vh - 60px);
     display: none;
     overflow-y: auto;
     transform: translateX(-100%);
@@ -1064,7 +1064,7 @@ body.light-mode {
 .profile-dropdown {
     position: absolute;
     right: 0;
-    top: 50px;
+    top: 60px;
     overflow: hidden;
     max-width: 250px;
     background: rgba(50, 50, 50, 0.95);
