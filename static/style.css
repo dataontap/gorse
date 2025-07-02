@@ -2092,19 +2092,19 @@ body.light-mode {
 
 .usage-metrics {
     display: flex;
-    gap: 20px;
-    justify-content: space-evenly;
+    gap: 8px;
+    justify-content: space-between;
     align-items: center;
     text-align: center;
     margin: 0 auto;
     width: 100%;
-    padding: 0 20px;
+    padding: 0 10px;
 }
 
 .metric {
-    flex: 0 1 120px;
+    flex: 1;
     background: rgba(200, 200, 200, 0.2);
-    padding: 12px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2112,7 +2112,8 @@ body.light-mode {
     border-radius: 6px;
     transition: all 0.3s ease;
     text-align: center;
-    min-width: 100px;
+    min-width: 80px;
+    max-width: 90px;
 }
 
 .metric .usage-amount {
