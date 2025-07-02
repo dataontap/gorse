@@ -798,21 +798,21 @@ function toggleUserPause(element) {
     const icon = element;
     const pauseDuration = card.querySelector('.pause-duration');
     
-    if (icon.classList.contains('fa-play')) {
-        // Currently paused, resume
-        icon.classList.remove('fa-play');
-        icon.classList.add('fa-pause');
-        icon.title = 'Pause';
-        card.classList.remove('paused');
-        pauseDuration.style.display = 'none';
-    } else {
-        // Currently active, pause
+    if (icon.classList.contains('fa-pause')) {
+        // Currently active, pause it
         icon.classList.remove('fa-pause');
         icon.classList.add('fa-play');
-        icon.title = 'Resume';
+        icon.title = 'Resume data sharing';
         card.classList.add('paused');
         pauseDuration.style.display = 'inline';
-        pauseDuration.textContent = 'Paused 2m ago';
+        pauseDuration.textContent = 'Paused just now';
+    } else {
+        // Currently paused, resume it
+        icon.classList.remove('fa-play');
+        icon.classList.add('fa-pause');
+        icon.title = 'Temporarily pause data share for this user';
+        card.classList.remove('paused');
+        pauseDuration.style.display = 'none';
     }
 }
 
@@ -865,7 +865,7 @@ function createUserCard(invite) {
         </div>
 
         <div class="card-actions">
-            <i class="fas fa-play pause-play-icon" title="Resume" onclick="toggleUserPause(this)"></i>
+            <i class="fas fa-pause pause-play-icon" title="Temporarily pause data share for this user" onclick="toggleUserPause(this)"></i>
             <span class="pause-duration" style="display: none;"></span>
         </div>
     `;

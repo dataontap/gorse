@@ -2017,15 +2017,28 @@ body.light-mode {
     cursor: pointer;
     color: #666;
     padding: 8px;
+    font-size: 18px;
+    transition: color 0.3s ease;
 }
 
 .pause-play-icon:hover {
     color: #333;
 }
 
+.pause-play-icon.fa-pause {
+    color: #ff6b6b;
+}
+
+.pause-play-icon.fa-pause:hover {
+    color: #ff5252;
+}
+
 .pause-play-icon.fa-play {
     color: #0066ff;
-    fontsize: 18px;
+}
+
+.pause-play-icon.fa-play:hover {
+    color: #0052cc;
 }
 
 .dashboard-content.paused {
