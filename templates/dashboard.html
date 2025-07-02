@@ -621,12 +621,53 @@
                             updateSubscriptionStatus(data);
                         }
 
-                        // Dynamic membership banner inside bubble removed
+                        // Update membership banner with proper date formatting
+                        updateMembershipBanner(data);
                     })
                     .catch(error => {
                         console.error('Error loading subscription status:', error);
                     });
             }
+        }
+
+        function updateMembershipBanner(subscriptionData) {
+            var membershipBanner = document.getElementById('membershipBanner');
+            if (!membershipBanner) return;
+
+            if (subscriptionData.status === 'active') {
+                var subscriptionType = subscriptionData.subscription_type || 'basic_membership';
+                var displayName = subscriptionType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                
+                // Format the end date
+                var endDate = new Date(subscriptionData.end_date);
+                var formattedDate = formatMembershipDate(endDate);
+                
+                // Calculate days remaining
+                var now = new Date();
+                var daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+                
+                var subscriptionInfo = membershipBanner.querySelector('.subscription-info');
+                if (subscriptionInfo) {
+                    subscriptionInfo.innerHTML = `
+                        <div class="subscription-type">${displayName}</div>
+                        <div class="subscription-validity">Valid for ${daysRemaining} more days until ${formattedDate}</div>
+                    `;
+                }
+                
+                membershipBanner.style.display = 'flex';
+            } else {
+                membershipBanner.style.display = 'none';
+            }
+        }
+
+        function formatMembershipDate(date) {
+            var month = (date.getMonth() + 1).toString().padStart(2, '0');
+            var day = date.getDate().toString().padStart(2, '0');
+            var year = date.getFullYear();
+            var hours = date.getHours().toString().padStart(2, '0');
+            var minutes = date.getMinutes().toString().padStart(2, '0');
+            
+            return `${month}/${day}/${year} ${hours}:${minutes}`;
         }
 
         function toggleQRCode(event) {
