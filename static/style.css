@@ -611,7 +611,7 @@ body.light-mode {
     width: 100%;
     max-width: 350px;
     min-height: 450px;
-    height: auto;
+    height: 450px;
     position: relative;
     padding: 0;
     border: none;
@@ -636,6 +636,11 @@ body.light-mode {
     text-align: center !important;
     gap: 15px;
     box-sizing: border-box;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 .offer-card h3 {
@@ -1408,8 +1413,9 @@ body.light-mode {
 .carousel-item {
     position: absolute;
     top: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
     height: 100%;
     opacity: 0;
@@ -1464,12 +1470,11 @@ body.light-mode {
     position: relative;
     overflow: visible;
     width: 100%;
-    min-height: 500px;
-    height: auto;
+    height: 500px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px 0;
+    padding: 0;
     box-sizing: border-box;
 }
 
