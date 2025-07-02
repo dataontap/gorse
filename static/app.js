@@ -8,7 +8,6 @@ window.showConfirmationDrawer = showConfirmationDrawer;
 window.hideConfirmationDrawer = hideConfirmationDrawer;
 window.confirmPurchase = confirmPurchase;
 window.sendComingSoonNotification = sendComingSoonNotification;
-window.setActiveCarouselItem = setActiveCarouselItem;
 window.toggleTheme = toggleTheme;
 
 // Global menu toggle functionality
@@ -140,28 +139,7 @@ function sendComingSoonNotification() {
     alert('This feature is coming soon! Thank you for your interest.');
 }
 
-function setActiveCarouselItem(index) {
-    var carouselItems = document.querySelectorAll('.carousel-item');
-    var carouselControls = document.querySelectorAll('.carousel-controls button');
-
-    if (carouselItems.length === 0) return;
-
-    // Remove active class from all items and controls
-    carouselItems.forEach(function(item) {
-        item.classList.remove('active');
-    });
-    carouselControls.forEach(function(control) {
-        control.classList.remove('active');
-    });
-
-    // Add active class to current item and control
-    if (carouselItems[index]) {
-        carouselItems[index].classList.add('active');
-    }
-    if (carouselControls[index]) {
-        carouselControls[index].classList.add('active');
-    }
-}
+// Carousel functions removed - using grid layout now
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(event) {
@@ -428,7 +406,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function showAddUserPopup() {
     // Remove existing popup if any
     hideAddUserPopup();
-    
+
     const popup = document.createElement('div');
     popup.id = 'addUserPopup';
     popup.className = 'popup-overlay';
@@ -455,9 +433,9 @@ function showAddUserPopup() {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(popup);
-    
+
     // Add event listeners
     document.getElementById('inviteAnyoneBtn').addEventListener('click', showInviteForm);
     document.getElementById('demoUserBtn').addEventListener('click', createDemoUser);
@@ -473,7 +451,7 @@ function hideAddUserPopup() {
 function showInviteForm() {
     const container = document.getElementById('inviteFormContainer');
     if (!container) return;
-    
+
     container.innerHTML = `
         <div class="invite-form">
             <h4>Send Invitation</h4>
@@ -491,7 +469,7 @@ function showInviteForm() {
             </div>
         </div>
     `;
-    
+
     // Add event listeners for form buttons
     document.getElementById('cancelInviteBtn').addEventListener('click', hideAddUserPopup);
     document.getElementById('sendInvitationBtn').addEventListener('click', sendInvitation);
@@ -500,21 +478,21 @@ function showInviteForm() {
 function sendInvitation() {
     const email = document.getElementById('inviteEmail')?.value;
     const message = document.getElementById('inviteMessage')?.value || '';
-    
+
     if (!email) {
         alert('Please enter an email address');
         return;
     }
-    
+
     const firebaseUid = localStorage.getItem('userId');
-    
+
     // Disable button during processing
     const sendBtn = document.getElementById('sendInvitationBtn');
     if (sendBtn) {
         sendBtn.disabled = true;
         sendBtn.textContent = 'Sending...';
     }
-    
+
     fetch('/api/send-invitation', {
         method: 'POST',
         headers: {
@@ -555,7 +533,7 @@ function createDemoUser() {
     const timestamp = Date.now();
     const demoEmail = `demo${timestamp}@example.com`;
     const firebaseUid = localStorage.getItem('userId');
-    
+
     fetch('/api/send-invitation', {
         method: 'POST',
         headers: {
@@ -590,7 +568,7 @@ function createDemoUser() {
 function loadInvitesList() {
     const firebaseUid = localStorage.getItem('userId');
     if (!firebaseUid) return;
-    
+
     fetch(`/api/invites?firebaseUid=${firebaseUid}&limit=10`)
     .then(response => response.json())
     .then(data => {
@@ -609,15 +587,15 @@ function displayInvites(invites) {
     const invitationsSection = document.getElementById('recentInvitationsSection');
     const invitationsList = document.getElementById('invitationsList');
     const acceptedUsersContainer = document.getElementById('acceptedUsersContainer');
-    
+
     if (!invitationsList) return;
-    
+
     // Clear existing content
     invitationsList.innerHTML = '';
     if (acceptedUsersContainer) {
         acceptedUsersContainer.innerHTML = '';
     }
-    
+
     if (!invites || invites.length === 0) {
         invitationsList.innerHTML = '<p class="no-invites">No invitations sent yet</p>';
         if (invitationsSection) {
@@ -626,40 +604,40 @@ function displayInvites(invites) {
         toggleSortControls();
         return;
     }
-    
+
     // Show the invitations section
     if (invitationsSection) {
         invitationsSection.style.display = 'block';
     }
-    
+
     // Separate accepted and pending invitations
     const acceptedInvites = invites.filter(invite => invite.invitation_status === 'invite_accepted');
     const pendingInvites = invites.filter(invite => invite.invitation_status !== 'invite_accepted');
-    
+
     // Display accepted invitations as user cards
     if (acceptedInvites.length > 0 && acceptedUsersContainer) {
         acceptedInvites.forEach(invite => {
             const userCard = createUserCard(invite);
             acceptedUsersContainer.appendChild(userCard);
         });
-        
+
         // Update user count
         const userCountElement = document.querySelector('.user-count');
         if (userCountElement) {
             userCountElement.textContent = acceptedInvites.length;
         }
-        
+
         // Show/hide sort controls based on number of cards
         toggleSortControls();
         initializeSorting();
     }
-    
+
     // Display pending invitations in the invitations list
     pendingInvites.forEach(invite => {
         const inviteItem = createInviteItem(invite);
         invitationsList.appendChild(inviteItem);
     });
-    
+
     if (pendingInvites.length === 0) {
         invitationsList.innerHTML = '<p class="no-pending-invites">No pending invitations</p>';
     }
@@ -669,7 +647,7 @@ function displayInvites(invites) {
 function toggleSortControls() {
     const userCards = document.querySelectorAll('.accepted-user');
     const sortContainer = document.querySelector('.sort-container .sort-controls');
-    
+
     if (userCards.length >= 2) {
         if (sortContainer) {
             sortContainer.style.display = 'flex';
@@ -685,7 +663,7 @@ function toggleSortControls() {
 function initializeSorting() {
     const sortSelect = document.querySelector('.sort-select');
     const sortIcons = document.querySelectorAll('.sort-icon');
-    
+
     if (sortSelect) {
         sortSelect.addEventListener('change', function() {
             const activeIcon = document.querySelector('.sort-icon.active');
@@ -694,7 +672,7 @@ function initializeSorting() {
             }
         });
     }
-    
+
     sortIcons.forEach(icon => {
         icon.addEventListener('click', function() {
             // Remove active class from all icons
@@ -711,21 +689,21 @@ function performSort() {
     const sortSelect = document.querySelector('.sort-select');
     const activeIcon = document.querySelector('.sort-icon.active');
     const userCards = Array.from(document.querySelectorAll('.accepted-user'));
-    
+
     if (!sortSelect || !activeIcon || userCards.length < 2) return;
-    
+
     const sortBy = sortSelect.value;
     const sortDirection = activeIcon.dataset.sort;
-    
+
     // Add sorting class to cards for animation
     userCards.forEach(card => {
         card.classList.add('sorting');
     });
-    
+
     // Sort the cards array
     userCards.sort((a, b) => {
         let valueA, valueB;
-        
+
         switch(sortBy) {
             case 'percentage':
                 valueA = parseInt(a.getAttribute('data-data-percentage'));
@@ -743,14 +721,14 @@ function performSort() {
                 valueA = parseInt(a.getAttribute('data-score'));
                 valueB = parseInt(b.getAttribute('data-score'));
         }
-        
+
         if (sortDirection === 'asc' || sortDirection === 'oldest') {
             return valueA - valueB;
         } else {
             return valueB - valueA;
         }
     });
-    
+
     // Apply animation classes
     userCards.forEach((card, index) => {
         if (index % 2 === 0) {
@@ -759,7 +737,7 @@ function performSort() {
             card.classList.add('sorting-down');
         }
     });
-    
+
     // Re-append cards in sorted order after animation
     setTimeout(() => {
         const container = document.getElementById('acceptedUsersContainer');
@@ -782,11 +760,11 @@ function removeUserCard(element) {
         userCard.style.transition = 'all 0.3s ease';
         userCard.style.transform = 'translateX(100%)';
         userCard.style.opacity = '0';
-        
+
         setTimeout(() => {
             userCard.remove();
             toggleSortControls();
-            
+
             // Update user count
             const userCards = document.querySelectorAll('.accepted-user');
             const userCountElement = document.querySelector('.user-count');
@@ -802,7 +780,7 @@ function toggleUserPause(element) {
     const card = element.closest('.user-card');
     const icon = element;
     const pauseDuration = card.querySelector('.pause-duration');
-    
+
     if (icon.classList.contains('fa-pause')) {
         // Currently active, pause it
         icon.classList.remove('fa-pause');
@@ -810,12 +788,12 @@ function toggleUserPause(element) {
         icon.title = 'Resume data sharing';
         card.classList.add('paused');
         pauseDuration.style.display = 'inline';
-        
+
         // Store the pause timestamp
         const pauseTime = Date.now();
         card.setAttribute('data-pause-time', pauseTime);
         pauseDuration.textContent = 'Paused just now';
-        
+
         // Start updating the pause duration
         updatePauseDuration(card);
     } else {
@@ -833,14 +811,14 @@ function toggleUserPause(element) {
 function updatePauseDuration(card) {
     const pauseDuration = card.querySelector('.pause-duration');
     const pauseTime = parseInt(card.getAttribute('data-pause-time'));
-    
+
     if (!pauseTime || !card.classList.contains('paused')) {
         return; // Stop if card is no longer paused
     }
-    
+
     const now = Date.now();
     const secondsElapsed = Math.floor((now - pauseTime) / 1000);
-    
+
     let durationText;
     if (secondsElapsed < 60) {
         if (secondsElapsed < 5) {
@@ -851,7 +829,7 @@ function updatePauseDuration(card) {
     } else {
         const minutesElapsed = Math.floor(secondsElapsed / 60);
         const remainingSeconds = secondsElapsed % 60;
-        
+
         if (minutesElapsed === 1 && remainingSeconds === 0) {
             durationText = 'Paused 1 minute ago';
         } else if (remainingSeconds === 0) {
@@ -862,9 +840,9 @@ function updatePauseDuration(card) {
             durationText = `Paused ${minutesElapsed} minutes ${remainingSeconds} seconds ago`;
         }
     }
-    
+
     pauseDuration.textContent = durationText;
-    
+
     // Schedule next update in 10 seconds
     setTimeout(() => updatePauseDuration(card), 10000);
 }
@@ -886,7 +864,7 @@ function createUserCard(invite) {
     userCard.setAttribute('data-time-percentage', timePercentage);
     userCard.setAttribute('data-dollar-amount', dollarAmount);
     userCard.setAttribute('data-score', scoreNumber);
-    
+
     userCard.innerHTML = `
         <div class="user-info-header">
             <div class="user-name">Datashare User ${invite.id}</div>
@@ -903,7 +881,7 @@ function createUserCard(invite) {
             <div class="user-email">${truncatedEmail}</div>
             <div class="timestamp">Active Member since ${formatDate(invite.created_at)}</div>
         </div>
-        
+
         <div class="data-usage">
             <div class="usage-metrics">
                 <div class="metric" data-metric="data">
@@ -930,7 +908,7 @@ function createUserCard(invite) {
             <span class="pause-duration" style="display: none;"></span>
         </div>
     `;
-    
+
     return userCard;
 }
 
@@ -945,7 +923,7 @@ function initializePauseDurationUpdates() {
 // Call this when the page loads to handle any existing paused users
 document.addEventListener('DOMContentLoaded', function() {
     // Existing DOMContentLoaded code...
-    
+
     // Initialize pause duration updates after a short delay to ensure cards are loaded
     setTimeout(initializePauseDurationUpdates, 1500);
 });
@@ -953,10 +931,10 @@ document.addEventListener('DOMContentLoaded', function() {
 function createInviteItem(invite) {
     const inviteItem = document.createElement('div');
     inviteItem.className = 'invitation-item';
-    
+
     const statusClass = `status-${invite.invitation_status.replace('_', '-')}`;
     const canCancel = invite.invitation_status === 'invite_sent' || invite.invitation_status === 're_invited';
-    
+
     inviteItem.innerHTML = `
         <div class="invitation-info">
             <div class="invitation-email">${invite.email}</div>
@@ -967,7 +945,7 @@ function createInviteItem(invite) {
             <i class="fas fa-times"></i>
         </button>` : ''}
     `;
-    
+
     return inviteItem;
 }
 
@@ -992,9 +970,9 @@ function cancelInvitation(inviteId) {
     if (!confirm('Are you sure you want to cancel this invitation?')) {
         return;
     }
-    
+
     const firebaseUid = localStorage.getItem('userId');
-    
+
     fetch(`/api/invites/${inviteId}/cancel`, {
         method: 'POST',
         headers: {
@@ -1063,17 +1041,15 @@ function initializeCarousel() {
 }
 
 function populateOfferCards() {
-    const carouselInner = document.getElementById('carouselInner');
-    const carouselControls = document.getElementById('carouselControls');
-
-    if (!carouselInner || !carouselControls) return;
+    const offersGrid = document.getElementById('offersGrid');
+    if (!offersGrid) return;
 
     // Define all possible offers
     const allOffers = [
         {
             id: 'global_data',
             title: 'Global Priority Data',
-            description: ['10GB no-expiry data for $10.', 'Share with any member.', 'Works in 160+ countries.'],
+            description: ['10GB no-expiry data for $10', 'Share with any member', 'Works in 160+ countries'],
             price: '$10',
             buttonText: 'Buy',
             buttonClass: 'btn-primary',
@@ -1081,25 +1057,25 @@ function populateOfferCards() {
             alwaysShow: true
         },
         {
-            id: 'full_membership',
-            title: 'Full Membership',
-            description: ['Global Data Access. National Talk + Text.', 'Global Wi-Fi Calling & Satellite eTXT.'],
-            price: '$66/year',
-            buttonText: 'Subscribe',
-            buttonClass: 'btn-secondary',
-            action: "sendComingSoonNotification()",
-            disabled: true,
-            alwaysShow: true
-        },
-        {
             id: 'basic_membership',
             title: 'Basic Membership',
-            description: ['New number. 2FA. Global data access.', 'To include SAT T9-1-1 when available.'],
+            description: ['New number & 2FA', 'Global data access', 'SAT T9-1-1 when available'],
             price: '$24/year',
             buttonText: 'Subscribe',
             buttonClass: 'btn-primary',
             action: "showConfirmationDrawer(10, 24, 'basic_membership')",
             showCondition: shouldShowBasicMembership
+        },
+        {
+            id: 'full_membership',
+            title: 'Full Membership',
+            description: ['Global Data Access', 'National Talk + Text', 'Global Wi-Fi Calling & Satellite eTXT'],
+            price: '$66/year',
+            buttonText: 'Coming Soon',
+            buttonClass: 'btn-secondary',
+            action: "sendComingSoonNotification()",
+            disabled: true,
+            alwaysShow: true
         }
     ];
 
@@ -1111,40 +1087,29 @@ function populateOfferCards() {
     });
 
     // Clear existing content
-    carouselInner.innerHTML = '';
-    carouselControls.innerHTML = '';
+    offersGrid.innerHTML = '';
 
-    // Populate carousel with available offers
-    availableOffers.forEach((offer, index) => {
-        // Create carousel item
-        const carouselItem = document.createElement('div');
-        carouselItem.className = `carousel-item${index === 0 ? ' active' : ''}`;
+    // Create offer cards
+    availableOffers.forEach(offer => {
+        const offerCard = document.createElement('div');
+        offerCard.className = 'offer-card';
 
         const descriptions = offer.description.map(desc => `<p>${desc}</p>`).join('');
         const buttonDisabled = offer.disabled ? ' disabled' : '';
 
-        carouselItem.innerHTML = `
-            <div class="offer-card">
-                <div class="offer-content">
-                    <h3>${offer.title}</h3>
-                    ${descriptions}
-                    <div class="price">${offer.price}</div>
-                    <button class="btn ${offer.buttonClass}"${buttonDisabled} onclick="${offer.action}">${offer.buttonText}</button>
-                </div>
+        offerCard.innerHTML = `
+            <h3>${offer.title}</h3>
+            <div class="offer-description">
+                ${descriptions}
             </div>
+            <div class="price">${offer.price}</div>
+            <button class="offer-button ${offer.buttonClass}"${buttonDisabled} onclick="${offer.action}">
+                ${offer.buttonText}
+            </button>
         `;
 
-        carouselInner.appendChild(carouselItem);
-
-        // Create control button
-        const controlButton = document.createElement('button');
-        controlButton.className = index === 0 ? 'active' : '';
-        controlButton.onclick = () => setActiveCarouselItem(index);
-        carouselControls.appendChild(controlButton);
+        offersGrid.appendChild(offerCard);
     });
-
-    // Initialize carousel controls
-    initializeCarouselControls();
 }
 
 function shouldShowBasicMembership() {
@@ -1167,54 +1132,13 @@ function shouldShowBasicMembership() {
     return true;
 }
 
-function initializeCarouselControls() {
-    const carouselItems = document.querySelectorAll('.carousel-item');
-    const carouselControls = document.querySelectorAll('.carousel-controls button');
-    let currentSlide = 0;
-    let autoAdvanceInterval;
-
-    if (carouselItems.length === 0) return;
-
-    function showSlide(index) {
-        // Remove active class from all items and controls
-        carouselItems.forEach(function(item, i) {
-            if (i === index) {
-                item.classList.add('active');
-            } else {
-                item.classList.remove('active');
-            }
-        });
-        
-        carouselControls.forEach(function(control, i) {
-            if (i === index) {
-                control.classList.add('active');
-            } else {
-                control.classList.remove('active');
-            }
-        });
-
-        currentSlide = index;
-    }
-
-    // Start auto-advance if there are multiple items
-    if (carouselItems.length > 1) {
-        autoAdvanceInterval = setInterval(function() {
-            const nextSlide = (currentSlide + 1) % carouselItems.length;
-            showSlide(nextSlide);
-        }, 6000);
-    }
-
-    // Store the showSlide function globally for manual control
-    window.setActiveCarouselItem = showSlide;
-}
-
 // Update subscription status when it's received
 function updateSubscriptionStatus(subscriptionData) {
     currentSubscriptionStatus = subscriptionData;
     console.log('Subscription status updated:', subscriptionData);
 
     // Re-populate offer cards if carousel is already initialized
-    if (document.getElementById('carouselInner')) {
+    if (document.getElementById('offersGrid')) {
         populateOfferCards();
     }
 }

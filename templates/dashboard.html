@@ -188,6 +188,50 @@
         .menu-dropdown {
             background-color: transparent; /* Transparent background */
         }
+
+        /* Styles for offers section */
+        .offers-section {
+            margin-top: 20px;
+        }
+
+        .offers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .offer-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            color: white;
+            text-align: center; /* Center the text */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .offer-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .offer-card p {
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+
+        .offer-card .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .offer-card .btn:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body class="landing-page">
@@ -279,14 +323,10 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div class="offers-content-box">
-            <div id="promotionsCarousel" class="carousel slide" data-bs-touch="true">
-                <div class="carousel-inner" id="carouselInner">
-                    <!-- Offers will be dynamically populated based on subscription status -->
-                </div>
-                <div class="carousel-controls" id="carouselControls">
-                    <!-- Controls will be dynamically populated -->
-                </div>
+        <!-- Offers Section -->
+        <div class="offers-section">
+            <div class="offers-grid" id="offersGrid">
+                <!-- Offer cards will be populated here -->
             </div>
         </div>
 
@@ -632,17 +672,15 @@
         }
 
         function populateOfferCards() {
-            const carouselInner = document.getElementById('carouselInner');
-            const carouselControls = document.getElementById('carouselControls');
+            const offersGrid = document.getElementById('offersGrid');
 
-            if (!carouselInner || !carouselControls) {
-                console.error('Carousel elements not found.');
+            if (!offersGrid) {
+                console.error('Offers grid element not found.');
                 return;
             }
 
             // Clear existing content
-            carouselInner.innerHTML = '';
-            carouselControls.innerHTML = '';
+            offersGrid.innerHTML = '';
 
             let offers = [
                 {
@@ -691,19 +729,10 @@
                 }
             }
 
-            // Build carousel items and controls
-            offers.forEach((offer, index) => {
-                const isActive = index === 0 ? 'active' : '';
-
-                // Carousel Item
-                const carouselItem = document.createElement('div');
-                carouselItem.className = `carousel-item ${isActive}`;
-
+            // Build offer cards
+            offers.forEach(offer => {
                 const offerCard = document.createElement('div');
                 offerCard.className = 'offer-card';
-
-                const offerContent = document.createElement('div');
-                offerContent.className = 'offer-content';
 
                 const title = document.createElement('h3');
                 title.textContent = offer.title;
@@ -711,18 +740,15 @@
                 const description = document.createElement('p');
                 description.textContent = offer.description;
 
-                offerContent.appendChild(title);
-                offerContent.appendChild(description);
+                const detailsList = document.createElement('ul');
+                detailsList.style.listStyleType = 'none';
+                detailsList.style.padding = '0';
 
                 offer.details.forEach(detail => {
-                    const detailItem = document.createElement('p');
+                    const detailItem = document.createElement('li');
                     detailItem.textContent = detail;
-                    offerContent.appendChild(detailItem);
+                    detailsList.appendChild(detailItem);
                 });
-
-                const priceText = document.createElement('p');
-                priceText.innerHTML = `<strong>$${offer.price}/year</strong>`;
-                offerContent.appendChild(priceText);
 
                 const button = document.createElement('button');
                 button.className = `btn ${offer.disabled ? 'btn-secondary' : 'btn-primary'}`;
@@ -732,19 +758,12 @@
                     button.disabled = true;
                 }
 
-                offerContent.appendChild(button);
-                offerCard.appendChild(offerContent);
-                carouselItem.appendChild(offerCard);
-                carouselInner.appendChild(carouselItem);
+                offerCard.appendChild(title);
+                offerCard.appendChild(description);
+                offerCard.appendChild(detailsList);
+                offerCard.appendChild(button);
 
-                // Carousel Control
-                const controlButton = document.createElement('button');
-                controlButton.type = 'button';
-                controlButton.dataset.bsTarget = '#promotionsCarousel';
-                controlButton.dataset.bsSlideTo = index.toString();
-                controlButton.className = isActive;
-                controlButton.setAttribute('onclick', `setActiveCarouselItem(${index})`);
-                carouselControls.appendChild(controlButton);
+                offersGrid.appendChild(offerCard);
             });
         }
 
