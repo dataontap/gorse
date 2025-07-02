@@ -805,7 +805,14 @@ function toggleUserPause(element) {
         icon.title = 'Resume data sharing';
         card.classList.add('paused');
         pauseDuration.style.display = 'inline';
+        
+        // Store the pause timestamp
+        const pauseTime = Date.now();
+        card.setAttribute('data-pause-time', pauseTime);
         pauseDuration.textContent = 'Paused just now';
+        
+        // Start updating the pause duration
+        updatePauseDuration(card);
     } else {
         // Currently paused, resume it
         icon.classList.remove('fa-play');
@@ -813,7 +820,48 @@ function toggleUserPause(element) {
         icon.title = 'Temporarily pause data share for this user';
         card.classList.remove('paused');
         pauseDuration.style.display = 'none';
+        card.removeAttribute('data-pause-time');
     }
+}
+
+// Function to update pause duration display
+function updatePauseDuration(card) {
+    const pauseDuration = card.querySelector('.pause-duration');
+    const pauseTime = parseInt(card.getAttribute('data-pause-time'));
+    
+    if (!pauseTime || !card.classList.contains('paused')) {
+        return; // Stop if card is no longer paused
+    }
+    
+    const now = Date.now();
+    const secondsElapsed = Math.floor((now - pauseTime) / 1000);
+    
+    let durationText;
+    if (secondsElapsed < 60) {
+        if (secondsElapsed < 5) {
+            durationText = 'Paused just now';
+        } else {
+            durationText = `Paused ${secondsElapsed} seconds ago`;
+        }
+    } else {
+        const minutesElapsed = Math.floor(secondsElapsed / 60);
+        const remainingSeconds = secondsElapsed % 60;
+        
+        if (minutesElapsed === 1 && remainingSeconds === 0) {
+            durationText = 'Paused 1 minute ago';
+        } else if (remainingSeconds === 0) {
+            durationText = `Paused ${minutesElapsed} minutes ago`;
+        } else if (minutesElapsed === 1) {
+            durationText = `Paused 1 minute ${remainingSeconds} seconds ago`;
+        } else {
+            durationText = `Paused ${minutesElapsed} minutes ${remainingSeconds} seconds ago`;
+        }
+    }
+    
+    pauseDuration.textContent = durationText;
+    
+    // Schedule next update in 10 seconds
+    setTimeout(() => updatePauseDuration(card), 10000);
 }
 
 function createUserCard(invite) {
@@ -872,6 +920,22 @@ function createUserCard(invite) {
     
     return userCard;
 }
+
+// Initialize pause duration updates for any existing paused users on page load
+function initializePauseDurationUpdates() {
+    const pausedCards = document.querySelectorAll('.user-card.paused[data-pause-time]');
+    pausedCards.forEach(card => {
+        updatePauseDuration(card);
+    });
+}
+
+// Call this when the page loads to handle any existing paused users
+document.addEventListener('DOMContentLoaded', function() {
+    // Existing DOMContentLoaded code...
+    
+    // Initialize pause duration updates after a short delay to ensure cards are loaded
+    setTimeout(initializePauseDurationUpdates, 1500);
+});
 
 function createInviteItem(invite) {
     const inviteItem = document.createElement('div');
