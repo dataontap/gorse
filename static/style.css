@@ -1003,7 +1003,7 @@ body.light-mode {
 /* Default dark mode styles (no class needed) */
 .dark-mode .dot-indicator {
     background: linear-gradient(135deg, #FFF371 0%, #FFE066 100%);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 20px 60px rgba(255, 243, 113, 0.6), 0 0 40px rgba(255, 243, 113, 0.4);
 }
 
 .dark-mode .data-amount,
