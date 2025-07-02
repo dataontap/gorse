@@ -599,72 +599,83 @@ body.light-mode {
     width: 100%;
     max-width: 350px;
     height: 450px;
-    padding: 30px 25px;
+    padding: 25px 20px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     text-align: center;
     background: transparent;
     border: none;
     margin: 0 auto;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .offer-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     height: 100%;
     width: 100%;
-    padding: 20px 0;
+    padding: 20px 10px;
+    gap: 15px;
 }
 
 .offer-card h3 {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    margin: 0 0 16px 0;
+    margin: 0;
     color: #ffffff;
     text-align: center;
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
     width: 100%;
+    max-width: 100%;
 }
 
 .offer-card p {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     line-height: 1.4;
-    margin: 0 0 12px 0;
+    margin: 0;
     color: #ffffff;
     text-align: center;
     font-weight: 400;
     opacity: 0.9;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    width: 100%;
+    max-width: 100%;
 }
 
 .offer-card .price {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: 700;
-    margin: 16px 0 20px 0;
+    margin: 10px 0;
     color: #FFF371;
     text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
 }
 
 .offer-card button {
     padding: 12px 28px;
     border-radius: 25px;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     transition: all 0.3s ease;
     border: none;
     cursor: pointer;
     margin-top: auto;
-    width: 100%;
+    width: 90%;
     max-width: 200px;
+    min-height: 44px;
 }
 
 /* Light mode overrides */
