@@ -2678,6 +2678,7 @@ def send_invitation():
     try:
         data = request.get_json()
         email = data.get('email')
+        nickname = data.get('nickname', '')
         message = data.get('message', '')
         is_demo_user = data.get('isDemoUser', False)
         firebase_uid = data.get('firebaseUid')
@@ -2698,12 +2699,13 @@ def send_invitation():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Create invites table if it doesn't exist
+                    # Create invites table if it doesn't exist (add nickname column)
                     cur.execute("""
                         CREATE TABLE IF NOT EXISTS invites (
                             id SERIAL PRIMARY KEY,
                             user_id INTEGER,
                             email VARCHAR(255) NOT NULL,
+                            nickname VARCHAR(255),
                             invitation_status VARCHAR(50) NOT NULL DEFAULT 'invite_sent',
                             invited_by_user_id INTEGER,
                             invited_by_firebase_uid VARCHAR(128),
@@ -2718,6 +2720,17 @@ def send_invitation():
                             cancelled_at TIMESTAMP
                         )
                     """)
+                    
+                    # Check if nickname column exists and add it if missing
+                    cur.execute("""
+                        SELECT column_name FROM information_schema.columns 
+                        WHERE table_name = 'invites' AND column_name = 'nickname'
+                    """)
+                    nickname_column_exists = cur.fetchone()
+                    
+                    if not nickname_column_exists:
+                        cur.execute("ALTER TABLE invites ADD COLUMN nickname VARCHAR(255)")
+                        conn.commit()
 
                     # Get inviting user ID if Firebase UID provided
                     inviting_user_id = None
@@ -2743,21 +2756,22 @@ def send_invitation():
                                 updated_at = CURRENT_TIMESTAMP,
                                 expires_at = CURRENT_TIMESTAMP + INTERVAL '7 days',
                                 invitation_token = %s,
-                                personal_message = %s
+                                personal_message = %s,
+                                nickname = %s
                             WHERE id = %s
                             RETURNING id
-                        """, (invitation_token, message, existing_invite[0]))
+                        """, (invitation_token, message, nickname, existing_invite[0]))
                         invite_id = cur.fetchone()[0]
                         action_taken = 're_invited'
                     else:
                         # Create new invitation
                         cur.execute("""
                             INSERT INTO invites 
-                            (email, invitation_token, invited_by_user_id, invited_by_firebase_uid, 
+                            (email, nickname, invitation_token, invited_by_user_id, invited_by_firebase_uid, 
                              personal_message, is_demo_user, invitation_status)
-                            VALUES (%s, %s, %s, %s, %s, %s, 'invite_sent')
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, 'invite_sent')
                             RETURNING id
-                        """, (email, invitation_token, inviting_user_id, firebase_uid, message, is_demo_user))
+                        """, (email, nickname, invitation_token, inviting_user_id, firebase_uid, message, is_demo_user))
                         invite_id = cur.fetchone()[0]
                         action_taken = 'invite_sent'
 
@@ -2829,7 +2843,7 @@ def get_invites():
                     # Get invites sent by this user (not cancelled)
                     if firebase_uid:
                         cur.execute("""
-                            SELECT id, email, invitation_status, personal_message, is_demo_user,
+                            SELECT id, email, nickname, invitation_status, personal_message, is_demo_user,
                                    created_at, updated_at, expires_at, accepted_at, rejected_at,
                                    invited_by_firebase_uid
                             FROM invites 
@@ -2841,7 +2855,7 @@ def get_invites():
                     else:
                         # If no Firebase UID, get recent invites
                         cur.execute("""
-                            SELECT id, email, invitation_status, personal_message, is_demo_user,
+                            SELECT id, email, nickname, invitation_status, personal_message, is_demo_user,
                                    created_at, updated_at, expires_at, accepted_at, rejected_at,
                                    invited_by_firebase_uid
                             FROM invites 
@@ -2857,15 +2871,16 @@ def get_invites():
                         invite_list.append({
                             'id': invite[0],
                             'email': invite[1],
-                            'invitation_status': invite[2],
-                            'personal_message': invite[3],
-                            'is_demo_user': invite[4],
-                            'created_at': invite[5].isoformat() if invite[5] else None,
-                            'updated_at': invite[6].isoformat() if invite[6] else None,
-                            'expires_at': invite[7].isoformat() if invite[7] else None,
-                            'accepted_at': invite[8].isoformat() if invite[8] else None,
-                            'rejected_at': invite[9].isoformat() if invite[9] else None,
-                            'firebase_uid': invite[10] if len(invite) > 10 else None
+                            'nickname': invite[2],
+                            'invitation_status': invite[3],
+                            'personal_message': invite[4],
+                            'is_demo_user': invite[5],
+                            'created_at': invite[6].isoformat() if invite[6] else None,
+                            'updated_at': invite[7].isoformat() if invite[7] else None,
+                            'expires_at': invite[8].isoformat() if invite[8] else None,
+                            'accepted_at': invite[9].isoformat() if invite[9] else None,
+                            'rejected_at': invite[10].isoformat() if invite[10] else None,
+                            'firebase_uid': invite[11] if len(invite) > 11 else None
                         })
 
                     return jsonify({
@@ -3071,6 +3086,46 @@ def update_personal_message():
 
     except Exception as e:
         print(f"Error updating personal message: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/update-nickname', methods=['POST'])
+def update_nickname():
+    """Update nickname for an invitation"""
+    try:
+        data = request.get_json()
+        invite_id = data.get('inviteId')
+        nickname = data.get('nickname', '')
+
+        if not invite_id:
+            return jsonify({'success': False, 'message': 'Invite ID is required'}), 400
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Update the nickname
+                    cur.execute("""
+                        UPDATE invites 
+                        SET nickname = %s, 
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE id = %s
+                        RETURNING email
+                    """, (nickname, invite_id))
+
+                    result = cur.fetchone()
+                    if result:
+                        conn.commit()
+                        return jsonify({
+                            'success': True,
+                            'message': 'Nickname updated successfully',
+                            'email': result[0]
+                        })
+                    else:
+                        return jsonify({'success': False, 'message': 'Invitation not found'}), 404
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error updating nickname: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
