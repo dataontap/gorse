@@ -1000,6 +1000,22 @@ body.light-mode {
 }
 
 /* Default dark mode styles (no class needed) */
+.dark-mode .dot-indicator {
+    background: linear-gradient(135deg, #FFF371 0%, #FFE066 100%);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.dark-mode .data-amount,
+.dark-mode .main-number,
+.dark-mode .decimal-part,
+.dark-mode .unit {
+    color: #333 !important;
+}
+
+.dark-mode .status,
+.dark-mode .status i {
+    color: #333 !important;
+}
 .dot-indicator {
     background: #666666;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
@@ -3173,7 +3189,7 @@ input:checked + .toggle-slider:before {
     .callback-btn {
         width: 100%;
         max-width: 280px;
-    }
+        }
 
     .agent-info {
         flex-direction: column;
