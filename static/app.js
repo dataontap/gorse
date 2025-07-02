@@ -977,6 +977,7 @@ function cancelInvitation(inviteId) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+```python
         },
         body: JSON.stringify({
             firebaseUid: firebaseUid
@@ -1040,6 +1041,9 @@ function initializeCarousel() {
     }, 1000);
 }
 
+let currentOfferIndex = 0;
+let offerCarouselInterval;
+
 function populateOfferCards() {
     const offersGrid = document.getElementById('offersGrid');
     if (!offersGrid) return;
@@ -1086,30 +1090,102 @@ function populateOfferCards() {
         return true;
     });
 
-    // Clear existing content
-    offersGrid.innerHTML = '';
+    // Create carousel container
+    const carouselContainer = document.createElement('div');
+    carouselContainer.className = 'offers-carousel-container';
+
+    const carousel = document.createElement('div');
+    carousel.className = 'offers-carousel';
+    carousel.id = 'offersCarousel';
 
     // Create offer cards
-    availableOffers.forEach(offer => {
+    availableOffers.forEach((offer, index) => {
         const offerCard = document.createElement('div');
-        offerCard.className = 'offer-card';
+        offerCard.className = `offer-card${index === 0 ? ' active' : ''}`;
+        offerCard.dataset.index = index;
 
         const descriptions = offer.description.map(desc => `<p>${desc}</p>`).join('');
         const buttonDisabled = offer.disabled ? ' disabled' : '';
 
         offerCard.innerHTML = `
-            <h3>${offer.title}</h3>
-            <div class="offer-description">
-                ${descriptions}
+            <div class="offer-content">
+                <h3>${offer.title}</h3>
+                <div class="offer-description">
+                    ${descriptions}
+                </div>
+                <div class="price">${offer.price}</div>
+                <button class="offer-button ${offer.buttonClass}"${buttonDisabled} onclick="${offer.action}">
+                    ${offer.buttonText}
+                </button>
             </div>
-            <div class="price">${offer.price}</div>
-            <button class="offer-button ${offer.buttonClass}"${buttonDisabled} onclick="${offer.action}">
-                ${offer.buttonText}
-            </button>
         `;
 
-        offersGrid.appendChild(offerCard);
+        carousel.appendChild(offerCard);
     });
+
+    // Create indicators
+    const indicators = document.createElement('div');
+    indicators.className = 'carousel-indicators';
+
+    availableOffers.forEach((_, index) => {
+        const indicator = document.createElement('button');
+        indicator.className = `carousel-indicator${index === 0 ? ' active' : ''}`;
+        indicator.dataset.index = index;
+        indicator.addEventListener('click', () => goToOfferSlide(index));
+        indicators.appendChild(indicator);
+    });
+
+    carouselContainer.appendChild(carousel);
+    carouselContainer.appendChild(indicators);
+
+    // Replace the grid with carousel
+    const offersSection = offersGrid.parentElement;
+    offersSection.replaceChild(carouselContainer, offersGrid);
+
+    // Start auto-rotation
+    startOfferCarouselRotation(availableOffers.length);
+}
+
+function goToOfferSlide(index) {
+    const carousel = document.getElementById('offersCarousel');
+    if (!carousel) return;
+
+    const cards = carousel.querySelectorAll('.offer-card');
+    const indicators = document.querySelectorAll('.carousel-indicator');
+
+    // Remove active classes
+    cards.forEach(card => {
+        card.classList.remove('active', 'prev', 'next');
+    });
+    indicators.forEach(indicator => {
+        indicator.classList.remove('active');
+    });
+
+    // Set new active slide
+    currentOfferIndex = index;
+    cards[currentOfferIndex].classList.add('active');
+    indicators[currentOfferIndex].classList.add('active');
+
+    // Set previous and next classes for smooth transitions
+    const prevIndex = (currentOfferIndex - 1 + cards.length) % cards.length;
+    const nextIndex = (currentOfferIndex + 1) % cards.length;
+
+    cards[prevIndex].classList.add('prev');
+    cards[nextIndex].classList.add('next');
+}
+
+function startOfferCarouselRotation(totalSlides) {
+    if (totalSlides <= 1) return; // Don't rotate if only one slide
+
+    clearInterval(offerCarouselInterval);
+    offerCarouselInterval = setInterval(() => {
+        const nextIndex = (currentOfferIndex + 1) % totalSlides;
+        goToOfferSlide(nextIndex);
+    }, 5000); // Change slide every 5 seconds
+}
+
+function stopOfferCarouselRotation() {
+    clearInterval(offerCarouselInterval);
 }
 
 function shouldShowBasicMembership() {
