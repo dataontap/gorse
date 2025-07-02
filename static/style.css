@@ -564,13 +564,27 @@ body.light-mode {
     justify-content: center;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transform: translateX(100%);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
 }
 
 .carousel-item.active {
     position: relative;
     opacity: 1;
     visibility: visible;
+    transform: translateX(0);
+    z-index: 2;
+}
+
+.carousel-item.slide-out-left {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+.carousel-item.slide-in-right {
+    transform: translateX(100%);
+    opacity: 0;
 }
 
 .offer-content h3 {
@@ -585,52 +599,72 @@ body.light-mode {
     width: 100%;
     max-width: 350px;
     height: 450px;
-    padding: 40px 30px;
+    padding: 30px 25px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     text-align: center;
     background: transparent;
     border: none;
     margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.offer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    padding: 20px 0;
 }
 
 .offer-card h3 {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    margin: 0 0 20px 0;
+    margin: 0 0 16px 0;
     color: #ffffff;
     text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
 }
 
 .offer-card p {
-    font-size: 1rem;
-    line-height: 1.5;
-    margin: 0 0 15px 0;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    margin: 0 0 12px 0;
     color: #ffffff;
     text-align: center;
     font-weight: 400;
+    opacity: 0.9;
 }
 
 .offer-card .price {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: 700;
-    margin: 10px 0 25px 0;
+    margin: 16px 0 20px 0;
     color: #FFF371;
     text-align: center;
 }
 
 .offer-card button {
-    padding: 14px 32px;
+    padding: 12px 28px;
     border-radius: 25px;
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.95rem;
     transition: all 0.3s ease;
     border: none;
     cursor: pointer;
     margin-top: auto;
+    width: 100%;
+    max-width: 200px;
 }
 
 /* Light mode overrides */
