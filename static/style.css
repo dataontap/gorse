@@ -701,12 +701,12 @@ body.light-mode {
 .carousel-inner {
     position: relative;
     width: 100%;
+    height: 450px;
     overflow: hidden;
-    padding-bottom: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 400px;
+}
 
 /* Payment Method Card Styles */
 .payment-title {
@@ -999,7 +999,7 @@ body.light-mode {
 
 .light-mode #lightModeToggle:hover:not(.active) i {
     color: #333;
-}</old_str>
+}
 
 .menu-icon, .profile-section {
     position: relative;
@@ -1372,9 +1372,13 @@ body.light-mode {
 }
 
 .carousel-inner {
-    width: 100%;
-    height: 500px;
     position: relative;
+    width: 100%;
+    height: 450px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .carousel-item {
@@ -2111,7 +2115,6 @@ body.light-mode {
     display: flex;
     justify-content: space-between;
     align-items: center;
-<replit_final_file>
     margin-bottom: 15px;
 }
 
@@ -2119,6 +2122,7 @@ body.light-mode {
     text-align: left;
     font-size: 24px;
     color: #333;
+```python
     margin-bottom: 15px;
     display: flex;
     align-items: center;
