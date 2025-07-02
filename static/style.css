@@ -655,7 +655,9 @@ body.light-mode {
     width: 100%;
     text-align: center !important;
     padding: 0;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .offer-card p {
@@ -670,7 +672,9 @@ body.light-mode {
     width: 100%;
     text-align: center !important;
     padding: 0;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .offer-card button {
