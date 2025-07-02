@@ -3609,10 +3609,16 @@ input:checked + .toggle-slider:before {
     justify-content: space-between;
     align-items: center;
     padding: 15px;
-    background: var(--card-bg);
+    background: rgba(255, 255, 255, 0.15);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+/* Dark mode override for invitation items */
+.dark-mode .invitation-item {
+    background: rgba(40, 40, 40, 0.9);
 }
 
 .invitation-item:hover {
