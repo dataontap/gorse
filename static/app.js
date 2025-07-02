@@ -910,15 +910,6 @@ function createUserCard(invite) {
                     <div class="usage-amount">${scoreNumber}</div>
                 </div>
             </div>
-        </div>lars">
-                    <div class="usage-label"><i class="fas fa-dollar-sign"></i> Cost</div>
-                    <div class="usage-amount">$${dollarAmount}</div>
-                </div>
-                <div class="metric" data-metric="score">
-                    <div class="usage-label"><i class="fas fa-star"></i> Score</div>
-                    <div class="usage-amount">${scoreNumber}</div>
-                </div>
-            </div>
         </div>
 
         <div class="card-actions">
