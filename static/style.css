@@ -3658,68 +3658,31 @@ input:checked + .toggle-slider:before {
     padding: 0 20px;
 }
 
-.accepted-user-card {
+.accepted-user {
+    margin-bottom: 20px;
+}
+
+.user-card {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
-    margin-bottom: 15px;
     transition: all 0.3s ease;
 }
 
-.accepted-user-card:hover {
+.user-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
-.accepted-user-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 15px;
+.user-card.paused {
+    background: rgba(200, 200, 200, 0.25);
 }
 
-.accepted-user-info {
-    flex: 1;
-}
-
-.accepted-user-name {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-}
-
-.accepted-user-email {
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-
-.accepted-user-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 15px;
-    margin-top: 15px;
-}
-
-.stat-item {
-    text-align: center;
-    padding: 10px;
-    background: var(--hover-bg);
-    border-radius: 8px;
-}
-
-.stat-value {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--primary-color);
-    margin-bottom: 4px;
-}
-
-.stat-label {
-    font-size: 12px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
+.user-card.paused .user-name,
+.user-card.paused .user-email,
+.user-card.paused .usage-amount {
+    color: #999;
 }
 
 /* Help desk styles */

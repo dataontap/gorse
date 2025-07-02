@@ -623,6 +623,7 @@ function displayInvites(invites) {
         if (invitationsSection) {
             invitationsSection.style.display = 'none';
         }
+        toggleSortControls();
         return;
     }
     
@@ -641,6 +642,16 @@ function displayInvites(invites) {
             const userCard = createUserCard(invite);
             acceptedUsersContainer.appendChild(userCard);
         });
+        
+        // Update user count
+        const userCountElement = document.querySelector('.user-count');
+        if (userCountElement) {
+            userCountElement.textContent = acceptedInvites.length;
+        }
+        
+        // Show/hide sort controls based on number of cards
+        toggleSortControls();
+        initializeSorting();
     }
     
     // Display pending invitations in the invitations list
@@ -654,25 +665,211 @@ function displayInvites(invites) {
     }
 }
 
+// Toggle sort controls visibility
+function toggleSortControls() {
+    const userCards = document.querySelectorAll('.accepted-user');
+    const sortContainer = document.querySelector('.sort-container .sort-controls');
+    
+    if (userCards.length >= 2) {
+        if (sortContainer) {
+            sortContainer.style.display = 'flex';
+        }
+    } else {
+        if (sortContainer) {
+            sortContainer.style.display = 'none';
+        }
+    }
+}
+
+// Initialize sorting functionality
+function initializeSorting() {
+    const sortSelect = document.querySelector('.sort-select');
+    const sortIcons = document.querySelectorAll('.sort-icon');
+    
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const activeIcon = document.querySelector('.sort-icon.active');
+            if (activeIcon) {
+                performSort();
+            }
+        });
+    }
+    
+    sortIcons.forEach(icon => {
+        icon.addEventListener('click', function() {
+            // Remove active class from all icons
+            sortIcons.forEach(i => i.classList.remove('active'));
+            // Add active class to clicked icon
+            this.classList.add('active');
+            performSort();
+        });
+    });
+}
+
+// Perform sorting with animation
+function performSort() {
+    const sortSelect = document.querySelector('.sort-select');
+    const activeIcon = document.querySelector('.sort-icon.active');
+    const userCards = Array.from(document.querySelectorAll('.accepted-user'));
+    
+    if (!sortSelect || !activeIcon || userCards.length < 2) return;
+    
+    const sortBy = sortSelect.value;
+    const sortDirection = activeIcon.dataset.sort;
+    
+    // Add sorting class to cards for animation
+    userCards.forEach(card => {
+        card.classList.add('sorting');
+    });
+    
+    // Sort the cards array
+    userCards.sort((a, b) => {
+        let valueA, valueB;
+        
+        switch(sortBy) {
+            case 'percentage':
+                valueA = parseInt(a.getAttribute('data-data-percentage'));
+                valueB = parseInt(b.getAttribute('data-data-percentage'));
+                break;
+            case 'screentime':
+                valueA = parseInt(a.getAttribute('data-time-percentage'));
+                valueB = parseInt(b.getAttribute('data-time-percentage'));
+                break;
+            case 'dollars':
+                valueA = parseInt(a.getAttribute('data-dollar-amount'));
+                valueB = parseInt(b.getAttribute('data-dollar-amount'));
+                break;
+            default:
+                valueA = parseInt(a.getAttribute('data-score'));
+                valueB = parseInt(b.getAttribute('data-score'));
+        }
+        
+        if (sortDirection === 'asc' || sortDirection === 'oldest') {
+            return valueA - valueB;
+        } else {
+            return valueB - valueA;
+        }
+    });
+    
+    // Apply animation classes
+    userCards.forEach((card, index) => {
+        if (index % 2 === 0) {
+            card.classList.add('sorting-up');
+        } else {
+            card.classList.add('sorting-down');
+        }
+    });
+    
+    // Re-append cards in sorted order after animation
+    setTimeout(() => {
+        const container = document.getElementById('acceptedUsersContainer');
+        userCards.forEach(card => {
+            container.appendChild(card);
+            card.classList.remove('sorting', 'sorting-up', 'sorting-down');
+        });
+    }, 600);
+}
+
+// Remove user card function
+function removeUserCard(element) {
+    const userCard = element.closest('.user-card');
+    if (userCard && confirm('Are you sure you want to remove this user?')) {
+        userCard.style.transition = 'all 0.3s ease';
+        userCard.style.transform = 'translateX(100%)';
+        userCard.style.opacity = '0';
+        
+        setTimeout(() => {
+            userCard.remove();
+            toggleSortControls();
+            
+            // Update user count
+            const userCards = document.querySelectorAll('.accepted-user');
+            const userCountElement = document.querySelector('.user-count');
+            if (userCountElement) {
+                userCountElement.textContent = userCards.length;
+            }
+        }, 300);
+    }
+}
+
+// Toggle user pause function
+function toggleUserPause(element) {
+    const card = element.closest('.user-card');
+    const icon = element;
+    const pauseDuration = card.querySelector('.pause-duration');
+    
+    if (icon.classList.contains('fa-play')) {
+        // Currently paused, resume
+        icon.classList.remove('fa-play');
+        icon.classList.add('fa-pause');
+        icon.title = 'Pause';
+        card.classList.remove('paused');
+        pauseDuration.style.display = 'none';
+    } else {
+        // Currently active, pause
+        icon.classList.remove('fa-pause');
+        icon.classList.add('fa-play');
+        icon.title = 'Resume';
+        card.classList.add('paused');
+        pauseDuration.style.display = 'inline';
+        pauseDuration.textContent = 'Paused 2m ago';
+    }
+}
+
 function createUserCard(invite) {
+    // Generate random data for demo users
+    const isDemo = invite.email.includes('example.com');
+    const dataPercentage = Math.floor(Math.random() * 100) + 1;
+    const timePercentage = Math.floor(Math.random() * 100) + 1;
+    const dollarAmount = Math.floor(Math.random() * 25) + 1;
+    const scoreNumber = Math.floor(Math.random() * 10) + 1;
+
     const userCard = document.createElement('div');
-    userCard.className = 'user-card accepted-user';
+    userCard.className = 'dashboard-content user-card accepted-user';
+    userCard.setAttribute('data-data-percentage', dataPercentage);
+    userCard.setAttribute('data-time-percentage', timePercentage);
+    userCard.setAttribute('data-dollar-amount', dollarAmount);
+    userCard.setAttribute('data-score', scoreNumber);
+    
     userCard.innerHTML = `
-        <div class="user-info">
-            <div class="user-avatar">
-                <i class="fas fa-user"></i>
-            </div>
-            <div class="user-details">
-                <div class="user-name">${invite.email}</div>
-                <div class="user-status">Active Member</div>
+        <div class="user-info-header">
+            <div class="user-name">${invite.email}</div>
+            <div class="remove-icon" onclick="removeUserCard(this)" title="Remove user">
+                <i class="fas fa-times"></i>
             </div>
         </div>
-        <div class="user-actions">
-            <button class="user-action-btn" title="View Details">
-                <i class="fas fa-eye"></i>
-            </button>
+        <div class="email-container">
+            <div class="user-email">${invite.email}</div>
+            <div class="timestamp">Active Member since ${formatDate(invite.created_at)}</div>
+        </div>
+        
+        <div class="data-usage">
+            <div class="usage-metrics">
+                <div class="metric" data-metric="data">
+                    <div class="usage-label"><i class="fas fa-database"></i> Data</div>
+                    <div class="usage-amount">${dataPercentage}%</div>
+                </div>
+                <div class="metric" data-metric="time">
+                    <div class="usage-label"><i class="fas fa-clock"></i> Time</div>
+                    <div class="usage-amount">${timePercentage}%</div>
+                </div>
+                <div class="metric" data-metric="dollars">
+                    <div class="usage-label"><i class="fas fa-dollar-sign"></i> Cost</div>
+                    <div class="usage-amount">$${dollarAmount}</div>
+                </div>
+                <div class="metric" data-metric="score">
+                    <div class="usage-label"><i class="fas fa-star"></i> Score</div>
+                    <div class="usage-amount">${scoreNumber}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-actions">
+            <i class="fas fa-play pause-play-icon" title="Resume" onclick="toggleUserPause(this)"></i>
+            <span class="pause-duration" style="display: none;"></span>
         </div>
     `;
+    
     return userCard;
 }
 
@@ -751,6 +948,9 @@ window.hideAddUserPopup = hideAddUserPopup;
 window.loadInvitesList = loadInvitesList;
 window.refreshInvitesList = loadInvitesList;
 window.cancelInvitation = cancelInvitation;
+window.removeUserCard = removeUserCard;
+window.toggleUserPause = toggleUserPause;
+window.performSort = performSort;
 
 // Global help functions for compatibility
 function startHelpSession() {
