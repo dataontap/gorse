@@ -141,6 +141,49 @@
             }
         }
 
+        /* Styles for membership banner */
+        .subscription-status {
+            background: rgba(255, 255, 255, 0.1); /* Add transparency */
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            transition: all 0.3s ease;
+            opacity: 0.8;
+        }
+
+        .subscription-info {
+            flex-grow: 1;
+        }
+
+        .subscription-type {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .subscription-validity {
+            font-size: 0.9em;
+        }
+
+        .close-banner {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .close-banner:hover {
+            color: #ccc;
+        }
     </style>
 </head>
 <body class="landing-page">
@@ -217,7 +260,7 @@
                     <div class="data-amount" id="dataDisplay" style="display: none">
                         <i class="fas fa-sync-alt refresh-icon" title="Loading data..."></i><span>GB</span>
                     </div>
-                    <div class="status" id="globalStatus" style="display: none"><i class="fas fa-globe"></i> Global</div>
+                    <div class="status" id="globalStatus" style="display: none"><i class="fas fa-globe"></i> GLOBAL DATA</div>
                 </div>
             </div>
         </div>
@@ -301,12 +344,15 @@
                 <i class="fas fa-users"></i> Users
                 <span class="user-count">0</span>
             </h2>
-            <div class="subscription-status" id="subscriptionStatus" style="display: none;">
-                <div class="subscription-info">
-                    <span class="subscription-type" id="subscriptionType"></span>
-                    <span class="subscription-validity" id="subscriptionValidity"></span>
-                </div>
-            </div>
+            <div class="subscription-status" id="membershipBanner">
+                        <div class="subscription-info">
+                            <div class="subscription-type">Basic Membership</div>
+                            <div class="subscription-validity">Valid for 27029 more days</div>
+                        </div>
+                        <button class="close-banner" onclick="dismissMembershipBanner()" aria-label="Close membership banner">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
             <div class="sort-controls">
                 <div class="sort-group">
                     <select class="sort-select">
@@ -398,6 +444,9 @@
             loadMemberCount();
             loadSubscriptionStatus();
             populateOfferCards(); // Populate offer cards after subscription status is loaded
+
+            // Check if banner was previously dismissed
+            checkBannerDismissedState();
         });
 
         var dataBalanceValue = 0;
@@ -426,6 +475,7 @@
 
                         if (globalStatus) {
                             globalStatus.style.display = 'block';
+                            globalStatus.innerHTML = '<i class="fas fa-globe"></i> GLOBAL DATA';
                         }
                     })
                     .catch(error => {
@@ -443,6 +493,7 @@
 
                         if (globalStatus) {
                             globalStatus.style.display = 'block';
+                            globalStatus.innerHTML = '<i class="fas fa-globe"></i> GLOBAL DATA';
                         }
                     });
             }
@@ -710,6 +761,31 @@
                 controlButton.setAttribute('onclick', `setActiveCarouselItem(${index})`);
                 carouselControls.appendChild(controlButton);
             });
+        }
+
+        function dismissMembershipBanner() {
+            var banner = document.getElementById('membershipBanner');
+            if (banner) {
+                banner.style.opacity = '0';
+                banner.style.transform = 'translateY(-20px)';
+                setTimeout(function() {
+                    banner.style.display = 'none';
+                }, 300);
+
+                // Save dismissed state to localStorage
+                localStorage.setItem('membershipBannerDismissed', 'true');
+            }
+        }
+
+        // Check if banner was previously dismissed
+        function checkBannerDismissedState() {
+            var dismissed = localStorage.getItem('membershipBannerDismissed');
+            if (dismissed === 'true') {
+                var banner = document.getElementById('membershipBanner');
+                if (banner) {
+                    banner.style.display = 'none';
+                }
+            }
         }
     </script>
 </body>

@@ -480,11 +480,38 @@ body.light-mode {
 .subscription-status {
     margin-top: 10px;
     padding: 8px 12px;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(10px);
     border-radius: 8px;
     border-left: 4px solid #28a745;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.close-banner {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-banner:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
 }
 
 .subscription-info {
@@ -522,12 +549,21 @@ body.light-mode {
 
 /* Light mode overrides */
 .light-mode .subscription-status {
-    background-color: rgba(248, 249, 250, 0.9);
-    border-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(248, 249, 250, 0.8);
+    border-color: rgba(0, 0, 0, 0.15);
 }
 
 .light-mode .subscription-validity {
     color: #6c757d;
+}
+
+.light-mode .close-banner {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.light-mode .close-banner:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.8);
 }
 
 @media (min-width: 768px) {
