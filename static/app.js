@@ -414,13 +414,343 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load invites if on dashboard page
     if (window.location.pathname === '/dashboard') {
         setTimeout(() => {
-            refreshInvitesList();
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList();
+            }
         }, 1000);
     }
 
     // Initialize carousel functionality
     initializeCarousel();
 });
+
+// Add User Popup Functions
+function showAddUserPopup() {
+    // Remove existing popup if any
+    hideAddUserPopup();
+    
+    const popup = document.createElement('div');
+    popup.id = 'addUserPopup';
+    popup.className = 'popup-overlay';
+    popup.innerHTML = `
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>Add New User</h3>
+                <button class="popup-close" onclick="hideAddUserPopup()">&times;</button>
+            </div>
+            <div class="popup-body">
+                <div class="invitation-options">
+                    <button class="invite-option-btn" id="inviteAnyoneBtn">
+                        <i class="fas fa-envelope"></i>
+                        <span>Invite Anyone</span>
+                        <small>Send invitation via email</small>
+                    </button>
+                    <button class="invite-option-btn" id="demoUserBtn">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Demo User</span>
+                        <small>Create sample user instantly</small>
+                    </button>
+                </div>
+                <div id="inviteFormContainer"></div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(popup);
+    
+    // Add event listeners
+    document.getElementById('inviteAnyoneBtn').addEventListener('click', showInviteForm);
+    document.getElementById('demoUserBtn').addEventListener('click', createDemoUser);
+}
+
+function hideAddUserPopup() {
+    const popup = document.getElementById('addUserPopup');
+    if (popup) {
+        popup.remove();
+    }
+}
+
+function showInviteForm() {
+    const container = document.getElementById('inviteFormContainer');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="invite-form">
+            <h4>Send Invitation</h4>
+            <div class="form-group">
+                <label for="inviteEmail">Email Address</label>
+                <input type="email" id="inviteEmail" placeholder="Enter email address" required>
+            </div>
+            <div class="form-group">
+                <label for="inviteMessage">Personal Message (Optional)</label>
+                <textarea id="inviteMessage" placeholder="Add a personal message..." rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" id="cancelInviteBtn">Cancel</button>
+                <button class="btn-primary" id="sendInvitationBtn">Send Invitation</button>
+            </div>
+        </div>
+    `;
+    
+    // Add event listeners for form buttons
+    document.getElementById('cancelInviteBtn').addEventListener('click', hideAddUserPopup);
+    document.getElementById('sendInvitationBtn').addEventListener('click', sendInvitation);
+}
+
+function sendInvitation() {
+    const email = document.getElementById('inviteEmail')?.value;
+    const message = document.getElementById('inviteMessage')?.value || '';
+    
+    if (!email) {
+        alert('Please enter an email address');
+        return;
+    }
+    
+    const firebaseUid = localStorage.getItem('userId');
+    
+    // Disable button during processing
+    const sendBtn = document.getElementById('sendInvitationBtn');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending...';
+    }
+    
+    fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: email,
+            message: message,
+            firebaseUid: firebaseUid,
+            isDemoUser: false
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Invitation sent successfully!');
+            hideAddUserPopup();
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList(); // Refresh the invites list
+            }
+        } else {
+            alert('Error sending invitation: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error sending invitation:', error);
+        alert('Error sending invitation. Please try again.');
+    })
+    .finally(() => {
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send Invitation';
+        }
+    });
+}
+
+function createDemoUser() {
+    const timestamp = Date.now();
+    const demoEmail = `demo${timestamp}@example.com`;
+    const firebaseUid = localStorage.getItem('userId');
+    
+    fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: demoEmail,
+            message: 'Demo user created automatically',
+            firebaseUid: firebaseUid,
+            isDemoUser: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Demo user created successfully!');
+            hideAddUserPopup();
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList(); // Refresh the invites list
+            }
+        } else {
+            alert('Error creating demo user: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error creating demo user:', error);
+        alert('Error creating demo user. Please try again.');
+    });
+}
+
+// Invites List Functions
+function loadInvitesList() {
+    const firebaseUid = localStorage.getItem('userId');
+    if (!firebaseUid) return;
+    
+    fetch(`/api/invites?firebaseUid=${firebaseUid}&limit=10`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayInvites(data.invites);
+        } else {
+            console.error('Error loading invites:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading invites:', error);
+    });
+}
+
+function displayInvites(invites) {
+    const invitationsSection = document.getElementById('recentInvitationsSection');
+    const invitationsList = document.getElementById('invitationsList');
+    const acceptedUsersContainer = document.getElementById('acceptedUsersContainer');
+    
+    if (!invitationsList) return;
+    
+    // Clear existing content
+    invitationsList.innerHTML = '';
+    if (acceptedUsersContainer) {
+        acceptedUsersContainer.innerHTML = '';
+    }
+    
+    if (!invites || invites.length === 0) {
+        invitationsList.innerHTML = '<p class="no-invites">No invitations sent yet</p>';
+        if (invitationsSection) {
+            invitationsSection.style.display = 'none';
+        }
+        return;
+    }
+    
+    // Show the invitations section
+    if (invitationsSection) {
+        invitationsSection.style.display = 'block';
+    }
+    
+    // Separate accepted and pending invitations
+    const acceptedInvites = invites.filter(invite => invite.invitation_status === 'invite_accepted');
+    const pendingInvites = invites.filter(invite => invite.invitation_status !== 'invite_accepted');
+    
+    // Display accepted invitations as user cards
+    if (acceptedInvites.length > 0 && acceptedUsersContainer) {
+        acceptedInvites.forEach(invite => {
+            const userCard = createUserCard(invite);
+            acceptedUsersContainer.appendChild(userCard);
+        });
+    }
+    
+    // Display pending invitations in the invitations list
+    pendingInvites.forEach(invite => {
+        const inviteItem = createInviteItem(invite);
+        invitationsList.appendChild(inviteItem);
+    });
+    
+    if (pendingInvites.length === 0) {
+        invitationsList.innerHTML = '<p class="no-pending-invites">No pending invitations</p>';
+    }
+}
+
+function createUserCard(invite) {
+    const userCard = document.createElement('div');
+    userCard.className = 'user-card accepted-user';
+    userCard.innerHTML = `
+        <div class="user-info">
+            <div class="user-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="user-details">
+                <div class="user-name">${invite.email}</div>
+                <div class="user-status">Active Member</div>
+            </div>
+        </div>
+        <div class="user-actions">
+            <button class="user-action-btn" title="View Details">
+                <i class="fas fa-eye"></i>
+            </button>
+        </div>
+    `;
+    return userCard;
+}
+
+function createInviteItem(invite) {
+    const inviteItem = document.createElement('div');
+    inviteItem.className = 'invitation-item';
+    
+    const statusClass = `status-${invite.invitation_status.replace('_', '-')}`;
+    const canCancel = invite.invitation_status === 'invite_sent' || invite.invitation_status === 're_invited';
+    
+    inviteItem.innerHTML = `
+        <div class="invitation-info">
+            <div class="invitation-email">${invite.email}</div>
+            <div class="invitation-date">${formatDate(invite.created_at)}</div>
+        </div>
+        <div class="invitation-status ${statusClass}">${formatStatus(invite.invitation_status)}</div>
+        ${canCancel ? `<button class="cancel-invite-btn" onclick="cancelInvitation(${invite.id})" title="Cancel invitation">
+            <i class="fas fa-times"></i>
+        </button>` : ''}
+    `;
+    
+    return inviteItem;
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'Unknown date';
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+}
+
+function formatStatus(status) {
+    const statusMap = {
+        'invite_sent': 'Sent',
+        're_invited': 'Re-sent',
+        'invite_accepted': 'Accepted',
+        'invite_rejected': 'Rejected',
+        'invite_cancelled': 'Cancelled'
+    };
+    return statusMap[status] || status;
+}
+
+function cancelInvitation(inviteId) {
+    if (!confirm('Are you sure you want to cancel this invitation?')) {
+        return;
+    }
+    
+    const firebaseUid = localStorage.getItem('userId');
+    
+    fetch(`/api/invites/${inviteId}/cancel`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            firebaseUid: firebaseUid
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Invitation cancelled successfully');
+            loadInvitesList(); // Refresh the list
+        } else {
+            alert('Error cancelling invitation: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error cancelling invitation:', error);
+        alert('Error cancelling invitation. Please try again.');
+    });
+}
+
+// Make functions globally available
+window.showAddUserPopup = showAddUserPopup;
+window.hideAddUserPopup = hideAddUserPopup;
+window.loadInvitesList = loadInvitesList;
+window.refreshInvitesList = loadInvitesList;
+window.cancelInvitation = cancelInvitation;
 
 // Global help functions for compatibility
 function startHelpSession() {
