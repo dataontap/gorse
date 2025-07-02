@@ -739,10 +739,11 @@ body.light-mode {
     max-width: 180px;
     min-height: 44px;
     margin-top: auto;
-    margin-left: 0;
+    margin-left: auto;
+    margin-right: auto;
     margin-bottom: 0;
     flex-shrink: 0;
-    align-self: flex-start;
+    align-self: center;
     position: relative;
 }
 
