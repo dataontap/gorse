@@ -1635,7 +1635,6 @@ body.light-mode {
 .offer-card {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 16px;
     padding: 30px;
     text-align: center;
@@ -1646,7 +1645,6 @@ body.light-mode {
 .offer-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .offer-card h3 {
@@ -1725,7 +1723,6 @@ body.light-mode {
 /* Light mode overrides */
 .light-mode .offer-card {
     background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(0, 0, 0, 0.1);
 }
 
 .light-mode .offer-card h3,
