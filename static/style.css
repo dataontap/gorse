@@ -2215,7 +2215,7 @@ body.light-mode {
 .sort-container {
     text-align: right;
     padding: 20px;
-    margin: 0 auto 40px;
+    margin: 0 auto 20px;
     max-width: 600px;
     background: transparent;
 }
