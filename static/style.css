@@ -1646,7 +1646,7 @@ body.light-mode {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     border-radius: 16px;
-    padding: 30px;
+    padding: 20px;
     text-align: center;
     transition: all 0.3s ease;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -1671,9 +1671,9 @@ body.light-mode {
 }
 
 .offer-card .offer-description p {
-    font-size: 1rem;
-    line-height: 1.5;
-    margin: 8px 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin: 4px 0;
     color: #ffffff;
     text-align: center;
     font-weight: 400;

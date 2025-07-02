@@ -1049,7 +1049,7 @@ function populateOfferCards() {
         {
             id: 'global_data',
             title: 'Global Priority Data',
-            description: ['10GB no-expiry data for $10', 'Share with any member', 'Works in 160+ countries'],
+            description: ['10000MB no-expiry data for $10 incl. taxes.', 'Same network up to 10X cheaper than big guys.', 'Fast 5G+ when available.', 'Share with any member.', 'Works in 160+ countries.'],
             price: '$10',
             buttonText: 'Buy',
             buttonClass: 'btn-primary',
