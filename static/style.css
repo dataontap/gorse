@@ -1381,6 +1381,7 @@ body.light-mode {
     color: #333;
     margin-bottom: 4px;
     flex: 1;
+    text-align: left;
 }
 
 .header-icons {
@@ -2016,8 +2017,8 @@ body.light-mode {
 
 .email-container {
     display: flex;
+    flex-direction: column;
     align-items: flex-start;
-    justify-content: space-between;
     margin-bottom: 15px;
 }
 
@@ -2026,6 +2027,7 @@ body.light-mode {
     color: #666;
     display: block;
     margin-top: 4px;
+    text-align: left;
 }
 
 .card-actions {

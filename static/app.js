@@ -901,7 +901,7 @@ function createUserCard(invite) {
         </div>
         <div class="email-container">
             <div class="user-email">${truncatedEmail}</div>
-            <div class="timestamp" style="text-align: left;">Active Member since ${formatDate(invite.created_at)}</div>
+            <div class="timestamp">Active Member since ${formatDate(invite.created_at)}</div>
         </div>
         
         <div class="data-usage">
