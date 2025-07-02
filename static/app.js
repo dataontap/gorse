@@ -568,28 +568,22 @@ function initializeCarouselControls() {
     if (carouselItems.length === 0) return;
 
     function showSlide(index) {
-        // Add slide-out animation to current active item
-        const currentActive = document.querySelector('.carousel-item.active');
-        if (currentActive) {
-            currentActive.classList.add('slide-out-left');
-            currentActive.classList.remove('active');
-        }
-
-        // Remove all classes from all items
-        carouselItems.forEach(function(item) {
-            item.classList.remove('active', 'slide-out-left', 'slide-in-right');
-        });
-        carouselControls.forEach(function(control) {
-            control.classList.remove('active');
-        });
-
-        // Add slide-in animation to new item
-        setTimeout(() => {
-            carouselItems[index].classList.add('active');
-            if (carouselControls[index]) {
-                carouselControls[index].classList.add('active');
+        // Remove active class from all items and controls
+        carouselItems.forEach(function(item, i) {
+            if (i === index) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
             }
-        }, 100);
+        });
+        
+        carouselControls.forEach(function(control, i) {
+            if (i === index) {
+                control.classList.add('active');
+            } else {
+                control.classList.remove('active');
+            }
+        });
 
         currentSlide = index;
     }
