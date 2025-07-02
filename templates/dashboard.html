@@ -47,7 +47,7 @@
             background-color: yellow;
             border-radius: 50%;
             margin-right: 5px;
-            animation: pulse 1s ease-in-out infinite;
+            animation: pulse 1s ease-out infinite;
         }
 
         @keyframes pulse {
@@ -789,6 +789,15 @@
                 }
             }
         }
+    </script>
+    <script>
+                    // Refresh invites list function
+                    window.refreshInvitesList = function() {
+                        loadInvitesList();
+                    };
+
+                    // Load invites when page loads
+                    loadInvitesList();
     </script>
 </body>
 </html>
