@@ -3680,6 +3680,7 @@ input:checked + .toggle-slider:before {
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
+    margin-top: 20px;
     transition: all 0.3s ease;
 }
 
