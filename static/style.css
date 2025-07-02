@@ -638,18 +638,18 @@ body.light-mode {
     width: 100%;
     max-width: 350px;
     height: 450px;
-    padding: 0;
+    padding: 25px 20px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+    justify-content: flex-start;
+    align-items: flex-start;
+    text-align: left;
     background: transparent;
     border: none;
     margin: 0 auto;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .offer-content {
@@ -659,9 +659,10 @@ body.light-mode {
     justify-content: space-between;
     height: 100%;
     width: 100%;
-    padding: 25px 20px;
+    padding: 0;
     box-sizing: border-box;
     text-align: left;
+    position: relative;
 }
 
 .offer-card h3 {
@@ -718,8 +719,10 @@ body.light-mode {
     min-height: 44px;
     margin-top: auto;
     margin-left: 0;
+    margin-bottom: 0;
     flex-shrink: 0;
     align-self: flex-start;
+    position: relative;
 }
 
 /* Light mode overrides */
