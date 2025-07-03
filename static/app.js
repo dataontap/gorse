@@ -1079,8 +1079,6 @@ let isDragging = false;
 let startX = 0;
 let currentX = 0;
 let cardContainer = null;
-let availableOffers = [];
-let dismissedCards = new Set();
 
 function populateOfferCards() {
     const offersSection = document.querySelector('.offers-section');
@@ -1124,9 +1122,8 @@ function populateOfferCards() {
         }
     ];
 
-    // Filter offers based on conditions and dismissed cards
-    availableOffers = allOffers.filter((offer, index) => {
-        if (dismissedCards.has(index)) return false;
+    // Filter offers based on conditions
+    const availableOffers = allOffers.filter(offer => {
         if (offer.alwaysShow) return true;
         if (offer.showCondition) return offer.showCondition();
         return true;
@@ -1158,15 +1155,11 @@ function populateOfferCards() {
         const offerCard = document.createElement('div');
         offerCard.className = 'offer-card';
         offerCard.dataset.index = index;
-        offerCard.dataset.offerId = offer.id;
 
         const descriptions = offer.description.map(desc => `<p>${desc}</p>`).join('');
         const buttonDisabled = offer.disabled ? ' disabled' : '';
 
         offerCard.innerHTML = `
-            <button class="dismiss-card-btn" onclick="dismissCard(${index})" title="Dismiss this offer">
-                <i class="fas fa-times"></i>
-            </button>
             <h3>${offer.title}</h3>
             <div class="offer-description">
                 ${descriptions}
@@ -1189,9 +1182,6 @@ function populateOfferCards() {
 
     cardStack = Array.from(stackContainer.querySelectorAll('.offer-card'));
     console.log('Created card stack with', cardStack.length, 'cards');
-    
-    // Start from the last card (card #3 or last available)
-    currentCardIndex = Math.max(0, cardStack.length - 1);
     updateCardPositions();
 }
 
@@ -1230,9 +1220,8 @@ function initializeCardStack() {
 function handleTouchStart(e) {
     if (e.touches.length > 1) return;
     
-    // Don't prevent default on buttons or dismiss button
-    if (e.target.tagName === 'BUTTON' || e.target.closest('button') || 
-        e.target.classList.contains('dismiss-card-btn') || e.target.closest('.dismiss-card-btn')) {
+    // Don't prevent default on buttons
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
         return;
     }
     
@@ -1261,9 +1250,8 @@ function handleMouseStart(e) {
     // Only handle left mouse button
     if (e.button !== 0) return;
     
-    // Don't prevent default on buttons or dismiss button
-    if (e.target.tagName === 'BUTTON' || e.target.closest('button') || 
-        e.target.classList.contains('dismiss-card-btn') || e.target.closest('.dismiss-card-btn')) {
+    // Don't prevent default on buttons
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
         return;
     }
     
@@ -1454,77 +1442,10 @@ function updateCardPositions() {
     });
 }
 
-// Dismiss card function
-function dismissCard(cardIndex) {
-    const card = cardStack[cardIndex];
-    if (!card) return;
-    
-    // Add to dismissed cards set
-    const originalIndex = parseInt(card.dataset.index);
-    dismissedCards.add(originalIndex);
-    
-    // Animate card out
-    card.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-    card.style.transform = 'translateY(-100%) rotate(-10deg)';
-    card.style.opacity = '0';
-    
-    setTimeout(() => {
-        // Remove from DOM
-        card.remove();
-        
-        // Update card stack array
-        cardStack = cardStack.filter(c => c !== card);
-        
-        // Adjust current index if necessary
-        if (cardIndex <= currentCardIndex && currentCardIndex > 0) {
-            currentCardIndex--;
-        } else if (currentCardIndex >= cardStack.length) {
-            currentCardIndex = Math.max(0, cardStack.length - 1);
-        }
-        
-        // Update indicators
-        updateIndicators();
-        
-        // Update card positions
-        updateCardPositions();
-        
-        // If no cards left, hide the offers section
-        if (cardStack.length === 0) {
-            const offersSection = document.querySelector('.offers-section');
-            if (offersSection) {
-                offersSection.style.display = 'none';
-            }
-        }
-    }, 300);
-}
-
-function updateIndicators() {
-    const indicatorsContainer = document.getElementById('cardIndicators');
-    if (!indicatorsContainer) return;
-    
-    // Clear existing indicators
-    indicatorsContainer.innerHTML = '';
-    
-    // Create new indicators for remaining cards
-    cardStack.forEach((card, index) => {
-        const indicator = document.createElement('div');
-        indicator.className = 'indicator-dot';
-        indicator.dataset.index = index;
-        indicator.addEventListener('click', () => goToCard(index));
-        
-        if (index === currentCardIndex) {
-            indicator.classList.add('active');
-        }
-        
-        indicatorsContainer.appendChild(indicator);
-    });
-}
-
 // Make card stack functions globally available
 window.goToNextCard = goToNextCard;
 window.goToPreviousCard = goToPreviousCard;
 window.goToCard = goToCard;
-window.dismissCard = dismissCard;
 
 function shouldShowBasicMembership() {
     if (!currentSubscriptionStatus) return true;
