@@ -997,6 +997,20 @@ function cancelInvitation(inviteId) {
     });
 }
 
+// Add missing toggleChart function
+function toggleChart(element) {
+    const chart = element.closest('.insights-card').querySelector('.usage-chart');
+    if (chart) {
+        if (chart.style.display === 'none') {
+            chart.style.display = 'block';
+            element.textContent = element.textContent.replace('See details', 'Hide details');
+        } else {
+            chart.style.display = 'none';
+            element.textContent = element.textContent.replace('Hide details', 'See details');
+        }
+    }
+}
+
 // Make functions globally available
 window.showAddUserPopup = showAddUserPopup;
 window.hideAddUserPopup = hideAddUserPopup;
@@ -1007,6 +1021,7 @@ window.editUserCard = editUserCard;
 window.removeUserCard = removeUserCard;
 window.toggleUserPause = toggleUserPause;
 window.performSort = performSort;
+window.toggleChart = toggleChart;
 
 // Global help functions for compatibility
 function startHelpSession() {
