@@ -257,16 +257,6 @@ function answerCall() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('App.js loaded successfully');
 
-    // Add logout functionality
-    document.addEventListener('click', function(e) {
-        if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
-            e.preventDefault();
-            if (window.firebaseAuth && window.firebaseAuth.signOut) {
-                window.firebaseAuth.signOut();
-            }
-        }
-    });
-
     // Initialize theme based on localStorage or default to dark
     const savedTheme = localStorage.getItem('darkMode');
     const isDarkMode = savedTheme === null ? true : savedTheme === 'true';
@@ -297,35 +287,49 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Handle invitation popup events using event delegation
+    // Use event delegation for all interactive elements
     document.addEventListener('click', function(e) {
+        // Handle logout functionality
+        if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
+            e.preventDefault();
+            if (window.firebaseAuth && window.firebaseAuth.signOut) {
+                window.firebaseAuth.signOut();
+            }
+            return;
+        }
+
         // Close popup
         if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
             hideAddUserPopup();
+            return;
         }
 
         // Handle invite anyone button
         if (e.target.id === 'inviteAnyoneBtn') {
             e.preventDefault();
             showInviteForm();
+            return;
         }
 
         // Handle demo user button
         if (e.target.id === 'demoUserBtn') {
             e.preventDefault();
             createDemoUser();
+            return;
         }
 
         // Handle send invitation button
         if (e.target.id === 'sendInvitationBtn') {
             e.preventDefault();
             sendInvitation();
+            return;
         }
 
         // Handle cancel invitation button
         if (e.target.id === 'cancelInviteBtn') {
             e.preventDefault();
             hideAddUserPopup();
+            return;
         }
     });
 
@@ -1062,7 +1066,9 @@ function initializeCarousel() {
     // Wait for subscription status to be loaded
     setTimeout(() => {
         populateOfferCards();
-        initializeCardStack();
+        setTimeout(() => {
+            initializeCardStack();
+        }, 200);
     }, 100);
 }
 
@@ -1181,15 +1187,26 @@ function populateOfferCards() {
 
 function initializeCardStack() {
     cardContainer = document.getElementById('cardStackContainer');
-    if (!cardContainer) return;
+    if (!cardContainer) {
+        console.log('Card container not found');
+        return;
+    }
+
+    console.log('Initializing card stack with', cardStack.length, 'cards');
+
+    // Remove existing listeners first
+    cardContainer.removeEventListener('touchstart', handleTouchStart);
+    cardContainer.removeEventListener('touchmove', handleTouchMove);
+    cardContainer.removeEventListener('touchend', handleTouchEnd);
+    cardContainer.removeEventListener('mousedown', handleMouseStart);
 
     // Add touch event listeners with proper options
-    cardContainer.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
-    cardContainer.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
-    cardContainer.addEventListener('touchend', handleTouchEnd, { passive: false, capture: true });
+    cardContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
+    cardContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+    cardContainer.addEventListener('touchend', handleTouchEnd, { passive: false });
 
     // Add mouse event listeners for desktop
-    cardContainer.addEventListener('mousedown', handleMouseStart, { capture: true });
+    cardContainer.addEventListener('mousedown', handleMouseStart);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseEnd);
 
@@ -1202,9 +1219,15 @@ function initializeCardStack() {
 
 function handleTouchStart(e) {
     if (e.touches.length > 1) return;
+    
+    // Don't prevent default on buttons
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+        return;
+    }
+    
     e.preventDefault();
     e.stopPropagation();
-    console.log('Touch start detected');
+    console.log('Touch start detected at:', e.touches[0].clientX);
     startSwipe(e.touches[0].clientX);
 }
 
@@ -1216,6 +1239,7 @@ function handleTouchMove(e) {
 }
 
 function handleTouchEnd(e) {
+    if (!isDragging) return;
     e.preventDefault();
     e.stopPropagation();
     console.log('Touch end detected');
@@ -1225,9 +1249,15 @@ function handleTouchEnd(e) {
 function handleMouseStart(e) {
     // Only handle left mouse button
     if (e.button !== 0) return;
+    
+    // Don't prevent default on buttons
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+        return;
+    }
+    
     e.preventDefault();
     e.stopPropagation();
-    console.log('Mouse start detected');
+    console.log('Mouse start detected at:', e.clientX);
     startSwipe(e.clientX);
 }
 
@@ -1239,6 +1269,7 @@ function handleMouseMove(e) {
 
 function handleMouseEnd(e) {
     if (!isDragging) return;
+    e.preventDefault();
     console.log('Mouse end detected');
     endSwipe();
 }
@@ -1388,12 +1419,18 @@ function updateCardPositions() {
         
         if (index === currentCardIndex) {
             card.classList.add('top-card');
+            card.style.zIndex = '10';
+            card.style.opacity = '1';
             console.log('Setting card', index, 'as top card');
         } else if (index === currentCardIndex + 1) {
             card.classList.add('behind-card');
+            card.style.zIndex = '9';
+            card.style.opacity = '0.8';
             console.log('Setting card', index, 'as behind card');
         } else {
             card.classList.add('hidden-card');
+            card.style.zIndex = '8';
+            card.style.opacity = '0';
             console.log('Setting card', index, 'as hidden card');
         }
     });
