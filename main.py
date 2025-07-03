@@ -2313,10 +2313,10 @@ DOTM Team
                     VALUES (%s, %s, 'ON', 'esim_ready', CURRENT_TIMESTAMP)
                 """, (user_id, firebase_uid))
 
-                # Add 1000MB of data to user's balance
+                # Add 1000MB of data to user's balance (use empty string for stripeid to avoid NOT NULL constraint)
                 cur.execute("""
-                    INSERT INTO purchases (userid, stripeproductid, priceid, totalamount, datecreated, firebaseuid)
-                    VALUES (%s, 'beta_esim_data', 'price_beta_data', 100, CURRENT_TIMESTAMP, %s)
+                    INSERT INTO purchases (stripeid, stripeproductid, priceid, totalamount, userid, datecreated, firebaseuid)
+                    VALUES ('', 'beta_esim_data', 'price_beta_data', 100, %s, CURRENT_TIMESTAMP, %s)
                 """, (user_id, firebase_uid))
 
                 conn.commit()
