@@ -1030,19 +1030,28 @@ function trackHelpInteraction(type, data) {
 // Store current subscription status globally
 let currentSubscriptionStatus = null;
 
-// Initialize carousel functionality with intelligent offer filtering
+// Initialize card stack functionality
 function initializeCarousel() {
-    console.log('Carousel initialized');
+    console.log('Card stack initialized');
 
     // Wait for subscription status to be loaded
     setTimeout(() => {
         populateOfferCards();
+        initializeCardStack();
     }, 1000);
 }
 
+// Global variables for card stack
+let currentCardIndex = 0;
+let cardStack = [];
+let isDragging = false;
+let startX = 0;
+let currentX = 0;
+let cardContainer = null;
+
 function populateOfferCards() {
-    const offersGrid = document.getElementById('offersGrid');
-    if (!offersGrid) return;
+    const offersSection = document.querySelector('.offers-section');
+    if (!offersSection) return;
 
     // Define all possible offers
     const allOffers = [
@@ -1086,13 +1095,25 @@ function populateOfferCards() {
         return true;
     });
 
-    // Clear existing content
-    offersGrid.innerHTML = '';
+    // Create card stack container
+    offersSection.innerHTML = `
+        <div class="offers-stack-container" id="cardStackContainer">
+            <!-- Cards will be inserted here -->
+        </div>
+        <div class="card-indicators" id="cardIndicators">
+            <!-- Indicators will be inserted here -->
+        </div>
+    `;
 
-    // Create offer cards
-    availableOffers.forEach(offer => {
+    const stackContainer = document.getElementById('cardStackContainer');
+    const indicatorsContainer = document.getElementById('cardIndicators');
+
+    // Create cards and indicators
+    availableOffers.forEach((offer, index) => {
+        // Create card
         const offerCard = document.createElement('div');
         offerCard.className = 'offer-card';
+        offerCard.dataset.index = index;
 
         const descriptions = offer.description.map(desc => `<p>${desc}</p>`).join('');
         const buttonDisabled = offer.disabled ? ' disabled' : '';
@@ -1108,9 +1129,177 @@ function populateOfferCards() {
             </button>
         `;
 
-        offersGrid.appendChild(offerCard);
+        stackContainer.appendChild(offerCard);
+
+        // Create indicator
+        const indicator = document.createElement('div');
+        indicator.className = 'indicator-dot';
+        indicator.dataset.index = index;
+        indicator.addEventListener('click', () => goToCard(index));
+        indicatorsContainer.appendChild(indicator);
+    });
+
+    cardStack = Array.from(stackContainer.querySelectorAll('.offer-card'));
+    updateCardPositions();
+}
+
+function initializeCardStack() {
+    cardContainer = document.getElementById('cardStackContainer');
+    if (!cardContainer) return;
+
+    // Add touch event listeners
+    cardContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
+    cardContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+    cardContainer.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    // Add mouse event listeners for desktop
+    cardContainer.addEventListener('mousedown', handleMouseStart);
+    cardContainer.addEventListener('mousemove', handleMouseMove);
+    cardContainer.addEventListener('mouseup', handleMouseEnd);
+    cardContainer.addEventListener('mouseleave', handleMouseEnd);
+
+    // Prevent default drag behavior
+    cardContainer.addEventListener('dragstart', e => e.preventDefault());
+
+    updateCardPositions();
+}
+
+function handleTouchStart(e) {
+    if (e.touches.length > 1) return;
+    startSwipe(e.touches[0].clientX);
+}
+
+function handleTouchMove(e) {
+    if (e.touches.length > 1 || !isDragging) return;
+    e.preventDefault();
+    moveSwipe(e.touches[0].clientX);
+}
+
+function handleTouchEnd(e) {
+    endSwipe();
+}
+
+function handleMouseStart(e) {
+    startSwipe(e.clientX);
+    e.preventDefault();
+}
+
+function handleMouseMove(e) {
+    if (!isDragging) return;
+    moveSwipe(e.clientX);
+    e.preventDefault();
+}
+
+function handleMouseEnd(e) {
+    endSwipe();
+}
+
+function startSwipe(x) {
+    isDragging = true;
+    startX = x;
+    currentX = x;
+    
+    const topCard = cardStack[currentCardIndex];
+    if (topCard) {
+        topCard.classList.add('swiping');
+    }
+}
+
+function moveSwipe(x) {
+    if (!isDragging) return;
+    
+    currentX = x;
+    const deltaX = currentX - startX;
+    const topCard = cardStack[currentCardIndex];
+    
+    if (topCard) {
+        const rotation = deltaX * 0.1; // Subtle rotation effect
+        const opacity = Math.max(0.7, 1 - Math.abs(deltaX) / 300);
+        
+        topCard.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg)`;
+        topCard.style.opacity = opacity;
+    }
+}
+
+function endSwipe() {
+    if (!isDragging) return;
+    
+    isDragging = false;
+    const deltaX = currentX - startX;
+    const threshold = 100; // Minimum swipe distance
+    
+    const topCard = cardStack[currentCardIndex];
+    if (topCard) {
+        topCard.classList.remove('swiping');
+    }
+    
+    if (Math.abs(deltaX) > threshold) {
+        if (deltaX > 0) {
+            // Swipe right - previous card
+            goToPreviousCard();
+        } else {
+            // Swipe left - next card
+            goToNextCard();
+        }
+    } else {
+        // Snap back to center
+        if (topCard) {
+            topCard.style.transform = '';
+            topCard.style.opacity = '';
+        }
+    }
+}
+
+function goToNextCard() {
+    if (currentCardIndex < cardStack.length - 1) {
+        currentCardIndex++;
+        updateCardPositions();
+    }
+}
+
+function goToPreviousCard() {
+    if (currentCardIndex > 0) {
+        currentCardIndex--;
+        updateCardPositions();
+    }
+}
+
+function goToCard(index) {
+    if (index >= 0 && index < cardStack.length) {
+        currentCardIndex = index;
+        updateCardPositions();
+    }
+}
+
+function updateCardPositions() {
+    cardStack.forEach((card, index) => {
+        // Reset any inline styles
+        card.style.transform = '';
+        card.style.opacity = '';
+        
+        // Remove all position classes
+        card.classList.remove('top-card', 'behind-card', 'hidden-card');
+        
+        if (index === currentCardIndex) {
+            card.classList.add('top-card');
+        } else if (index === currentCardIndex + 1) {
+            card.classList.add('behind-card');
+        } else {
+            card.classList.add('hidden-card');
+        }
+    });
+    
+    // Update indicators
+    const indicators = document.querySelectorAll('.indicator-dot');
+    indicators.forEach((indicator, index) => {
+        indicator.classList.toggle('active', index === currentCardIndex);
     });
 }
+
+// Make card stack functions globally available
+window.goToNextCard = goToNextCard;
+window.goToPreviousCard = goToPreviousCard;
+window.goToCard = goToCard;
 
 function shouldShowBasicMembership() {
     if (!currentSubscriptionStatus) return true;
