@@ -2300,12 +2300,34 @@ Best regards,
 DOTM Team
                 """
 
-                # Send email with ICCID details (simulate for now)
-                print(f"=== BETA eSIM EMAIL ===")
-                print(f"To: {user_email}")
-                print(f"Subject: {email_subject}")
-                print(f"Content:\n{email_content}")
-                print("========================")
+                # Send actual email with ICCID details
+                try:
+                    from email_service import send_email
+                    email_sent = send_email(
+                        to_email=user_email,
+                        subject=email_subject,
+                        body=email_content
+                    )
+                    
+                    if email_sent:
+                        print(f"✅ Beta eSIM email sent successfully to {user_email}")
+                    else:
+                        print(f"❌ Failed to send beta eSIM email to {user_email}")
+                        # Fallback: print to console for debugging
+                        print(f"=== BETA eSIM EMAIL (FALLBACK) ===")
+                        print(f"To: {user_email}")
+                        print(f"Subject: {email_subject}")
+                        print(f"Content:\n{email_content}")
+                        print("================================")
+                except Exception as email_err:
+                    print(f"Error sending email: {str(email_err)}")
+                    # Fallback: print to console for debugging
+                    print(f"=== BETA eSIM EMAIL (ERROR FALLBACK) ===")
+                    print(f"To: {user_email}")
+                    print(f"Subject: {email_subject}")
+                    print(f"Content:\n{email_content}")
+                    print("=====================================")
+                    email_sent = False
 
                 # Record beta enrollment with eSIM ready status
                 cur.execute("""
@@ -2977,6 +2999,90 @@ def cancel_invitation(invite_id):
 
     except Exception as e:
         print(f"Error cancelling invitation: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/send-test-invoice', methods=['POST'])
+def send_test_invoice():
+    """Send a test Stripe invoice to the current user"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid')
+        
+        if not firebase_uid:
+            return jsonify({'success': False, 'message': 'Firebase UID required'}), 400
+
+        # Get user details
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT id, email, stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    user_result = cur.fetchone()
+
+                    if not user_result:
+                        return jsonify({'success': False, 'message': 'User not found'}), 404
+
+                    user_id, user_email, stripe_customer_id = user_result
+
+                    # Create or get Stripe customer
+                    if not stripe_customer_id and stripe.api_key:
+                        try:
+                            customer = stripe.Customer.create(
+                                email=user_email,
+                                metadata={'firebase_uid': firebase_uid, 'user_id': user_id}
+                            )
+                            stripe_customer_id = customer.id
+                            
+                            # Update user with Stripe ID
+                            cur.execute(
+                                "UPDATE users SET stripe_customer_id = %s WHERE id = %s",
+                                (stripe_customer_id, user_id)
+                            )
+                            conn.commit()
+                        except Exception as stripe_err:
+                            return jsonify({'success': False, 'message': f'Stripe customer error: {str(stripe_err)}'}), 500
+
+                    # Create and send invoice
+                    if stripe.api_key and stripe_customer_id:
+                        try:
+                            # Create invoice
+                            invoice = stripe.Invoice.create(
+                                customer=stripe_customer_id,
+                                collection_method='send_invoice',
+                                days_until_due=30,
+                                auto_advance=False,
+                                description='Test invoice from DOTM platform'
+                            )
+
+                            # Add invoice item for $1.00
+                            stripe.InvoiceItem.create(
+                                customer=stripe_customer_id,
+                                amount=100,  # $1.00 in cents
+                                currency='usd',
+                                description='Test charge - DOTM platform access',
+                                invoice=invoice.id
+                            )
+
+                            # Finalize and send invoice
+                            invoice = stripe.Invoice.finalize_invoice(invoice.id, auto_advance=False)
+                            invoice = stripe.Invoice.send_invoice(invoice.id)
+
+                            return jsonify({
+                                'success': True,
+                                'message': f'Test invoice sent to {user_email}',
+                                'invoice_id': invoice.id,
+                                'invoice_url': invoice.hosted_invoice_url,
+                                'amount': '$1.00'
+                            })
+
+                        except Exception as stripe_err:
+                            return jsonify({'success': False, 'message': f'Stripe invoice error: {str(stripe_err)}'}), 500
+                    else:
+                        return jsonify({'success': False, 'message': 'Stripe not configured or no customer ID'}), 500
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error sending test invoice: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/admin/create-subscription', methods=['POST'])
