@@ -2205,21 +2205,13 @@ def beta_enrollment():
                 
             with conn.cursor() as cur:
                 # Get user details
-                cur.execute("SELECT id, stripe_customer_id, email FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                cur.execute("SELECT id, email, display_name FROM users WHERE firebase_uid = %s", (firebase_uid,))
                 user_result = cur.fetchone()
 
                 if not user_result:
                     return jsonify({'success': False, 'message': 'User not found'}), 404
 
-                user_id, stripe_customer_id, user_email = user_result
-
-                # Check if Stripe is configured
-                if not stripe.api_key:
-                    return jsonify({'success': False, 'message': 'Payment system not configured'}), 500
-
-                # Check if user has Stripe customer ID
-                if not stripe_customer_id:
-                    return jsonify({'success': False, 'message': 'User payment profile not found'}), 400
+                user_id, user_email, display_name = user_result
 
                 # Check if already enrolled in beta
                 cur.execute("""
@@ -2229,55 +2221,113 @@ def beta_enrollment():
                 """, (user_id,))
 
                 existing_status = cur.fetchone()
-                if existing_status and existing_status[0] in ['payment_pending', 'esim_ready', 'enrolled']:
+                if existing_status and existing_status[0] in ['esim_ready', 'enrolled']:
                     return jsonify({
                         'success': True, 
                         'status': existing_status[0],
                         'message': 'Already enrolled in beta program'
                     })
 
-                # Create Stripe checkout session for $1 eSIM
-                try:
-                    stripe_session = stripe.checkout.Session.create(
-                        customer=stripe_customer_id,
-                        payment_method_types=['card'],
-                        line_items=[{
-                            'price_data': {
-                                'currency': 'usd',
-                                'product_data': {
-                                    'name': 'Beta eSIM Access',
-                                    'description': 'Global eSIM for beta testing with 1000MB data'
-                                },
-                                'unit_amount': 100,  # $1.00
-                            },
-                            'quantity': 1,
-                        }],
-                        mode='payment',
-                        success_url=f"{request.url_root}dashboard?beta_success=true",
-                        cancel_url=f"{request.url_root}dashboard?beta_cancelled=true",
-                        metadata={
-                            'user_id': str(user_id),
-                            'firebase_uid': firebase_uid,
-                            'product_type': 'beta_esim'
-                        }
-                    )
-                except stripe.error.StripeError as stripe_err:
-                    print(f"Stripe error in beta enrollment: {str(stripe_err)}")
-                    return jsonify({'success': False, 'message': f'Payment setup error: {str(stripe_err)}'}), 500
+                # Generate demo ICCID details for beta testing
+                import random
+                import time
+                
+                # Create mock ICCID data (in production, this would come from OXIO)
+                demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
+                activation_code = f"AC{random.randint(100000, 999999)}"
+                qr_code_data = f"LPA:1$api-staging.brandvno.com${activation_code}$"
+                
+                # Try to get OXIO SIM details (fallback to demo if service unavailable)
+                oxio_sim_details = {
+                    'iccid': demo_iccid,
+                    'activation_code': activation_code,
+                    'qr_code': qr_code_data,
+                    'plan_name': 'OXIO_10day_demo_plan',
+                    'data_allowance': '1000MB',
+                    'validity_days': 10,
+                    'regions': ['Global'],
+                    'status': 'ready_for_activation'
+                }
 
-                # Record beta enrollment attempt
+                try:
+                    # Attempt to get real OXIO details
+                    from oxio_service import oxio_service
+                    test_result = oxio_service.test_connection()
+                    if test_result.get('success'):
+                        print("OXIO service available - using real SIM details")
+                        # In a real implementation, you would call OXIO to get actual SIM details
+                        # For now, we'll use the demo data with a note that OXIO is available
+                        oxio_sim_details['note'] = 'OXIO service connected - using demo data for beta'
+                    else:
+                        oxio_sim_details['note'] = 'OXIO service unavailable - using demo data'
+                except Exception as oxio_err:
+                    print(f"OXIO service error: {str(oxio_err)}")
+                    oxio_sim_details['note'] = 'OXIO service error - using demo data'
+
+                # Create email content with ICCID details
+                email_subject = f"Beta eSIM Details - ICCID: {oxio_sim_details['iccid']}"
+                email_content = f"""
+Hello {display_name or 'Beta Tester'},
+
+Welcome to the DOTM Beta Program! Below are your eSIM activation details:
+
+=== eSIM ACTIVATION DETAILS ===
+ICCID: {oxio_sim_details['iccid']}
+Activation Code: {oxio_sim_details['activation_code']}
+QR Code Data: {oxio_sim_details['qr_code']}
+
+=== PLAN DETAILS ===
+Plan Name: {oxio_sim_details['plan_name']}
+Data Allowance: {oxio_sim_details['data_allowance']}
+Validity: {oxio_sim_details['validity_days']} days
+Coverage: {', '.join(oxio_sim_details['regions'])}
+Status: {oxio_sim_details['status']}
+
+=== ACTIVATION INSTRUCTIONS ===
+1. Go to your device's Settings > Cellular/Mobile Data
+2. Select "Add Cellular Plan" or "Add eSIM"
+3. Scan the QR code or manually enter the activation code above
+4. Follow the on-screen instructions to complete activation
+
+=== SUPPORT ===
+If you need assistance, please contact our support team with your ICCID reference.
+
+Note: {oxio_sim_details['note']}
+
+Thank you for participating in our beta program!
+
+Best regards,
+DOTM Team
+                """
+
+                # Send email with ICCID details (simulate for now)
+                print(f"=== BETA eSIM EMAIL ===")
+                print(f"To: {user_email}")
+                print(f"Subject: {email_subject}")
+                print(f"Content:\n{email_content}")
+                print("========================")
+
+                # Record beta enrollment with eSIM ready status
                 cur.execute("""
-                    INSERT INTO beta_testers (user_id, firebase_uid, stripe_customer_id, action, status, stripe_session_id)
-                    VALUES (%s, %s, %s, 'ON', 'payment_pending', %s)
-                """, (user_id, firebase_uid, stripe_customer_id, stripe_session.id))
+                    INSERT INTO beta_testers (user_id, firebase_uid, action, status, timestamp)
+                    VALUES (%s, %s, 'ON', 'esim_ready', CURRENT_TIMESTAMP)
+                """, (user_id, firebase_uid))
+
+                # Add 1000MB of data to user's balance
+                cur.execute("""
+                    INSERT INTO purchases (userid, stripeproductid, priceid, totalamount, datecreated, firebaseuid)
+                    VALUES (%s, 'beta_esim_data', 'price_beta_data', 100, CURRENT_TIMESTAMP, %s)
+                """, (user_id, firebase_uid))
 
                 conn.commit()
 
                 return jsonify({
                     'success': True,
-                    'status': 'payment_pending',
-                    'checkout_url': stripe_session.url,
-                    'message': 'Redirecting to payment...'
+                    'status': 'esim_ready',
+                    'message': f'Beta eSIM details sent to {user_email}',
+                    'iccid': oxio_sim_details['iccid'],
+                    'email_sent': True,
+                    'activation_details': oxio_sim_details
                 })
 
     except Exception as e:

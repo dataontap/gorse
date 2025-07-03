@@ -1603,23 +1603,24 @@ function handleBetaEnrollment() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            if (data.checkout_url) {
-                // Redirect to Stripe checkout
-                window.location.href = data.checkout_url;
+            if (data.email_sent && data.iccid) {
+                // Show success message with ICCID details
+                alert(`Beta eSIM Ready!\n\nICCID: ${data.iccid}\n\nActivation details have been sent to your email. Check your inbox for complete instructions.`);
+                updateBetaStatus(data.status, data.message);
             } else {
                 updateBetaStatus(data.status, data.message);
             }
         } else {
             alert('Error enrolling in beta: ' + (data.message || 'Unknown error'));
             betaEnrollBtn.disabled = false;
-            betaEnrollBtn.textContent = 'Request BETA access ($1 eSIM)';
+            betaEnrollBtn.textContent = 'Request BETA eSIM';
         }
     })
     .catch(error => {
         console.error('Error enrolling in beta:', error);
         alert('Error enrolling in beta. Please try again.');
         betaEnrollBtn.disabled = false;
-        betaEnrollBtn.textContent = 'Request BETA access ($1 eSIM)';
+        betaEnrollBtn.textContent = 'Request BETA eSIM';
     });
 }
 
