@@ -1073,7 +1073,7 @@ function initializeCarousel() {
 }
 
 // Global variables for card stack
-let currentCardIndex = 0;
+let currentCardIndex = 2; // Start at the last card (index 2)
 let cardStack = [];
 let isDragging = false;
 let startX = 0;
@@ -1130,6 +1130,9 @@ function populateOfferCards() {
     });
 
     console.log('Available offers:', availableOffers.length);
+    
+    // Set the initial card index to the last card
+    currentCardIndex = availableOffers.length - 1;
 
     // Create card stack container with proper styling
     offersSection.innerHTML = `
