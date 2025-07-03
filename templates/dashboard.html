@@ -275,7 +275,15 @@
                 <a href="/payments"><i class="fas fa-credit-card"></i> Payments</a>
                 <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
                 <div class="settings-submenu" style="display: none;">
-                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
+                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span data-translate="darkMode">Dark Mode</span></a>
+                    <div class="language-selector-container">
+                        <label for="languageSelect"><i class="fas fa-globe"></i> <span data-translate="language">Language</span></label>
+                        <select id="languageSelect" class="language-select">
+                            <option value="en" data-translate="english">English</option>
+                            <option value="es" data-translate="spanish">Español</option>
+                            <option value="fr" data-translate="french">Français</option>
+                        </select>
+                    </div>
                 </div>
                 <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 <a href="#" id="helpToggle">

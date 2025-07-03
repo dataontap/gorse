@@ -375,32 +375,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initialize settings toggle functionality
-    var settingsToggle = document.getElementById('settingsToggle');
-    var settingsSubmenu = document.querySelector('.settings-submenu');
-
-    if (settingsToggle && settingsSubmenu) {
-        settingsToggle.addEventListener('click', function(e) {
+    // Initialize settings toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'settingsToggle' || e.target.closest('#settingsToggle')) {
             e.preventDefault();
             e.stopPropagation();
 
-            // Toggle settings submenu visibility
-            if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
-                settingsSubmenu.style.display = 'block';
-            } else {
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu) {
+                // Toggle settings submenu visibility
+                if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
+                    settingsSubmenu.style.display = 'block';
+                } else {
+                    settingsSubmenu.style.display = 'none';
+                }
+            }
+        }
+
+        // Handle language selector changes
+        if (e.target.id === 'languageSelect') {
+            const selectedLanguage = e.target.value;
+            if (typeof setLanguage === 'function') {
+                setLanguage(selectedLanguage);
+            }
+        }
+
+        // Close settings submenu when clicking outside
+        if (!e.target.closest('#settingsToggle') && !e.target.closest('.settings-submenu')) {
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu && settingsSubmenu.style.display === 'block') {
                 settingsSubmenu.style.display = 'none';
             }
-        });
-    }
-
-    // Initialize language selector
-    const languageSelect = document.getElementById('languageSelect');
-    if (languageSelect) {
-        languageSelect.addEventListener('change', function(e) {
-            const selectedLanguage = e.target.value;
-            setLanguage(selectedLanguage);
-        });
-    }
+        }
+    });
 
     // Load invites if on dashboard page
     if (window.location.pathname === '/dashboard') {
