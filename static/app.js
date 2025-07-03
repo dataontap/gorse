@@ -1202,6 +1202,7 @@ function initializeCardStack() {
 
 function handleTouchStart(e) {
     if (e.touches.length > 1) return;
+    e.preventDefault();
     startSwipe(e.touches[0].clientX);
 }
 
@@ -1212,18 +1213,19 @@ function handleTouchMove(e) {
 }
 
 function handleTouchEnd(e) {
+    e.preventDefault();
     endSwipe();
 }
 
 function handleMouseStart(e) {
-    startSwipe(e.clientX);
     e.preventDefault();
+    startSwipe(e.clientX);
 }
 
 function handleMouseMove(e) {
     if (!isDragging) return;
-    moveSwipe(e.clientX);
     e.preventDefault();
+    moveSwipe(e.clientX);
 }
 
 function handleMouseEnd(e) {
@@ -1262,7 +1264,7 @@ function endSwipe() {
     
     isDragging = false;
     const deltaX = currentX - startX;
-    const threshold = 100; // Minimum swipe distance
+    const threshold = 80; // Reduced threshold for easier swiping
     
     const topCard = cardStack[currentCardIndex];
     if (topCard) {
@@ -1288,28 +1290,64 @@ function endSwipe() {
 
 function goToNextCard() {
     if (currentCardIndex < cardStack.length - 1) {
+        // Animate current card out
+        const currentCard = cardStack[currentCardIndex];
+        if (currentCard) {
+            currentCard.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+            currentCard.style.transform = 'translateX(-100%) rotate(-10deg)';
+            currentCard.style.opacity = '0';
+        }
+        
         currentCardIndex++;
-        updateCardPositions();
+        
+        // Update positions after a short delay
+        setTimeout(() => {
+            updateCardPositions();
+        }, 150);
     }
 }
 
 function goToPreviousCard() {
     if (currentCardIndex > 0) {
+        // Animate current card out
+        const currentCard = cardStack[currentCardIndex];
+        if (currentCard) {
+            currentCard.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+            currentCard.style.transform = 'translateX(100%) rotate(10deg)';
+            currentCard.style.opacity = '0';
+        }
+        
         currentCardIndex--;
-        updateCardPositions();
+        
+        // Update positions after a short delay
+        setTimeout(() => {
+            updateCardPositions();
+        }, 150);
     }
 }
 
 function goToCard(index) {
-    if (index >= 0 && index < cardStack.length) {
+    if (index >= 0 && index < cardStack.length && index !== currentCardIndex) {
+        const direction = index > currentCardIndex ? -1 : 1;
+        const currentCard = cardStack[currentCardIndex];
+        
+        if (currentCard) {
+            currentCard.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+            currentCard.style.transform = `translateX(${direction * 100}%) rotate(${direction * -10}deg)`;
+            currentCard.style.opacity = '0';
+        }
+        
         currentCardIndex = index;
-        updateCardPositions();
+        
+        setTimeout(() => {
+            updateCardPositions();
+        }, 150);
     }
 }
 
 function updateCardPositions() {
     cardStack.forEach((card, index) => {
-        // Reset any inline styles
+        // Reset any inline styles from dragging
         card.style.transform = '';
         card.style.opacity = '';
         
@@ -1318,10 +1356,19 @@ function updateCardPositions() {
         
         if (index === currentCardIndex) {
             card.classList.add('top-card');
+            card.style.zIndex = '10';
+            card.style.opacity = '1';
+            card.style.transform = 'translateX(0) scale(1)';
         } else if (index === currentCardIndex + 1) {
             card.classList.add('behind-card');
+            card.style.zIndex = '9';
+            card.style.opacity = '0.8';
+            card.style.transform = 'translateX(0) scale(0.95)';
         } else {
             card.classList.add('hidden-card');
+            card.style.zIndex = '8';
+            card.style.opacity = '0.6';
+            card.style.transform = 'translateX(0) scale(0.9)';
         }
     });
     
