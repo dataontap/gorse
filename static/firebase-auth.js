@@ -36,13 +36,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Register user with our backend
         registerUserWithBackend(user);
 
-        // Only auto-redirect if user is on home or signup page
-        // Don't auto-redirect from login page to allow manual logout
+        // Only auto-redirect from signup page, not from root page or login page
+        // This allows users to stay logged out on the root page
         const currentPath = window.location.pathname;
-        if (currentPath === '/' || currentPath === '/signup') {
+        if (currentPath === '/signup') {
           window.location.href = '/dashboard';
         }
-        // Login page is allowed for signed-in users (no auto-redirect)
+        // Root page and login page are allowed for signed-in users (no auto-redirect)
       } else {
         // User is signed out
         console.log("User is signed out");
