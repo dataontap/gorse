@@ -1183,19 +1183,19 @@ function initializeCardStack() {
     cardContainer = document.getElementById('cardStackContainer');
     if (!cardContainer) return;
 
-    // Add touch event listeners
-    cardContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
-    cardContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
-    cardContainer.addEventListener('touchend', handleTouchEnd, { passive: false });
+    // Add touch event listeners with proper options
+    cardContainer.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
+    cardContainer.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+    cardContainer.addEventListener('touchend', handleTouchEnd, { passive: false, capture: true });
 
     // Add mouse event listeners for desktop
-    cardContainer.addEventListener('mousedown', handleMouseStart);
-    cardContainer.addEventListener('mousemove', handleMouseMove);
-    cardContainer.addEventListener('mouseup', handleMouseEnd);
-    cardContainer.addEventListener('mouseleave', handleMouseEnd);
+    cardContainer.addEventListener('mousedown', handleMouseStart, { capture: true });
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseEnd);
 
     // Prevent default drag behavior
     cardContainer.addEventListener('dragstart', e => e.preventDefault());
+    cardContainer.addEventListener('selectstart', e => e.preventDefault());
 
     updateCardPositions();
 }
@@ -1203,22 +1203,31 @@ function initializeCardStack() {
 function handleTouchStart(e) {
     if (e.touches.length > 1) return;
     e.preventDefault();
+    e.stopPropagation();
+    console.log('Touch start detected');
     startSwipe(e.touches[0].clientX);
 }
 
 function handleTouchMove(e) {
     if (e.touches.length > 1 || !isDragging) return;
     e.preventDefault();
+    e.stopPropagation();
     moveSwipe(e.touches[0].clientX);
 }
 
 function handleTouchEnd(e) {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('Touch end detected');
     endSwipe();
 }
 
 function handleMouseStart(e) {
+    // Only handle left mouse button
+    if (e.button !== 0) return;
     e.preventDefault();
+    e.stopPropagation();
+    console.log('Mouse start detected');
     startSwipe(e.clientX);
 }
 
@@ -1229,10 +1238,13 @@ function handleMouseMove(e) {
 }
 
 function handleMouseEnd(e) {
+    if (!isDragging) return;
+    console.log('Mouse end detected');
     endSwipe();
 }
 
 function startSwipe(x) {
+    console.log('Starting swipe at', x);
     isDragging = true;
     startX = x;
     currentX = x;
@@ -1240,6 +1252,7 @@ function startSwipe(x) {
     const topCard = cardStack[currentCardIndex];
     if (topCard) {
         topCard.classList.add('swiping');
+        console.log('Added swiping class to card', currentCardIndex);
     }
 }
 
@@ -1250,21 +1263,25 @@ function moveSwipe(x) {
     const deltaX = currentX - startX;
     const topCard = cardStack[currentCardIndex];
     
-    if (topCard) {
-        const rotation = deltaX * 0.1; // Subtle rotation effect
-        const opacity = Math.max(0.7, 1 - Math.abs(deltaX) / 300);
+    if (topCard && Math.abs(deltaX) > 5) { // Add small threshold to prevent micro-movements
+        const rotation = deltaX * 0.08; // Reduced rotation for smoother feel
+        const opacity = Math.max(0.8, 1 - Math.abs(deltaX) / 400);
         
-        topCard.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg)`;
+        topCard.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg) scale(1)`;
         topCard.style.opacity = opacity;
+        topCard.style.zIndex = '15';
+        
+        console.log('Moving card with deltaX:', deltaX);
     }
 }
 
 function endSwipe() {
     if (!isDragging) return;
     
+    console.log('Ending swipe');
     isDragging = false;
     const deltaX = currentX - startX;
-    const threshold = 80; // Reduced threshold for easier swiping
+    const threshold = 60; // Reduced threshold for easier swiping
     
     const topCard = cardStack[currentCardIndex];
     if (topCard) {
@@ -1272,6 +1289,7 @@ function endSwipe() {
     }
     
     if (Math.abs(deltaX) > threshold) {
+        console.log('Threshold exceeded, deltaX:', deltaX);
         if (deltaX > 0) {
             // Swipe right - previous card
             goToPreviousCard();
@@ -1280,10 +1298,20 @@ function endSwipe() {
             goToNextCard();
         }
     } else {
+        console.log('Snapping back to center');
         // Snap back to center
         if (topCard) {
+            topCard.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
             topCard.style.transform = '';
             topCard.style.opacity = '';
+            topCard.style.zIndex = '';
+            
+            // Remove transition after animation
+            setTimeout(() => {
+                if (topCard) {
+                    topCard.style.transition = '';
+                }
+            }, 300);
         }
     }
 }
@@ -1346,29 +1374,27 @@ function goToCard(index) {
 }
 
 function updateCardPositions() {
+    console.log('Updating card positions, current index:', currentCardIndex);
+    
     cardStack.forEach((card, index) => {
-        // Reset any inline styles from dragging
+        // Clear any transition and inline styles
+        card.style.transition = '';
         card.style.transform = '';
         card.style.opacity = '';
+        card.style.zIndex = '';
         
         // Remove all position classes
         card.classList.remove('top-card', 'behind-card', 'hidden-card');
         
         if (index === currentCardIndex) {
             card.classList.add('top-card');
-            card.style.zIndex = '10';
-            card.style.opacity = '1';
-            card.style.transform = 'translateX(0) scale(1)';
+            console.log('Setting card', index, 'as top card');
         } else if (index === currentCardIndex + 1) {
             card.classList.add('behind-card');
-            card.style.zIndex = '9';
-            card.style.opacity = '0.8';
-            card.style.transform = 'translateX(0) scale(0.95)';
+            console.log('Setting card', index, 'as behind card');
         } else {
             card.classList.add('hidden-card');
-            card.style.zIndex = '8';
-            card.style.opacity = '0.6';
-            card.style.transform = 'translateX(0) scale(0.9)';
+            console.log('Setting card', index, 'as hidden card');
         }
     });
     
