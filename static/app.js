@@ -1034,11 +1034,21 @@ let currentSubscriptionStatus = null;
 function initializeCarousel() {
     console.log('Card stack initialized');
 
+    // Check if offers section exists, if not wait a bit
+    const offersSection = document.querySelector('.offers-section');
+    if (!offersSection) {
+        console.log('Offers section not found, waiting...');
+        setTimeout(() => {
+            initializeCarousel();
+        }, 500);
+        return;
+    }
+
     // Wait for subscription status to be loaded
     setTimeout(() => {
         populateOfferCards();
         initializeCardStack();
-    }, 1000);
+    }, 100);
 }
 
 // Global variables for card stack
@@ -1051,7 +1061,10 @@ let cardContainer = null;
 
 function populateOfferCards() {
     const offersSection = document.querySelector('.offers-section');
-    if (!offersSection) return;
+    if (!offersSection) {
+        console.log('Offers section not found');
+        return;
+    }
 
     // Define all possible offers
     const allOffers = [
@@ -1095,6 +1108,8 @@ function populateOfferCards() {
         return true;
     });
 
+    console.log('Available offers:', availableOffers.length);
+
     // Create card stack container
     offersSection.innerHTML = `
         <div class="offers-stack-container" id="cardStackContainer">
@@ -1107,6 +1122,11 @@ function populateOfferCards() {
 
     const stackContainer = document.getElementById('cardStackContainer');
     const indicatorsContainer = document.getElementById('cardIndicators');
+
+    if (!stackContainer || !indicatorsContainer) {
+        console.error('Stack container or indicators container not found');
+        return;
+    }
 
     // Create cards and indicators
     availableOffers.forEach((offer, index) => {
@@ -1140,6 +1160,7 @@ function populateOfferCards() {
     });
 
     cardStack = Array.from(stackContainer.querySelectorAll('.offer-card'));
+    console.log('Created card stack with', cardStack.length, 'cards');
     updateCardPositions();
 }
 
