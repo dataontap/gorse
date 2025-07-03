@@ -1668,13 +1668,13 @@ body.light-mode {
 
         .dismiss-card-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 5px;
+            right: 5px;
             background: rgba(255, 255, 255, 0.2);
             border: none;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 5px;
+            height: 5px;
             color: rgba(255, 255, 255, 0.7);
             cursor: pointer;
             display: flex;
@@ -1682,7 +1682,8 @@ body.light-mode {
             justify-content: center;
             transition: all 0.3s ease;
             z-index: 20;
-            font-size: 12px;
+            font-size: 8px;
+            padding: 8px;
         }
 
         .dismiss-card-btn:hover {
