@@ -727,7 +727,7 @@ body.light-mode {
     flex-shrink: 0;
 }
 
-.offer-button {
+.offer-card button {
     padding: 12px 28px;
     border-radius: 25px;
     font-weight: 600;
@@ -735,8 +735,15 @@ body.light-mode {
     transition: all 0.3s ease;
     border: none;
     cursor: pointer;
+    width: calc(85% - 90px);
+    max-width: 140px;
     min-height: 44px;
+    margin-top: auto;
+    margin-left: auto;
+    margin-right: 10px;
+    margin-bottom: 0;
     flex-shrink: 0;
+    align-self: flex-end;
     position: relative;
 }
 
@@ -1713,11 +1720,14 @@ body.light-mode {
         }
 
         .dismiss-card-btn {
+            position: absolute;
+            bottom: 12px;
+            right: 25px;
             background: rgba(255, 255, 255, 0.2);
             border: none;
             border-radius: 50%;
-            width: 44px;
-            height: 44px;
+            width: 32px;
+            height: 32px;
             color: rgba(255, 255, 255, 0.7);
             cursor: pointer;
             display: flex;
@@ -1726,8 +1736,6 @@ body.light-mode {
             transition: all 0.3s ease;
             z-index: 20;
             font-size: 14px;
-            flex-shrink: 0;
-            margin-left: 10px;
         }
 
         .dismiss-card-btn:hover {
