@@ -1,10 +1,18 @@
+
 <!DOCTYPE html>
 <html>
 <head>
-    <title>dot Network</title>
+    <title>Network - dot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
-    <link href="/static/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/help-styles.css">
+
+    <!-- Firebase v9+ modular SDK -->
+    <script type="module" src="/static/firebase-init.js"></script>
+    <script type="module" src="/static/firebase-auth.js"></script>
+
     <style>
         .usage-metrics {
             display: flex;
@@ -108,19 +116,21 @@
         }
 
         .network-scan-content.disabled {
-            opacity: 0.5; /* Decreased opacity by 50% */
+            opacity: 0.5;
             pointer-events: none;
         }
 
         .dark-mode .network-scan-toggle span {
             color: #fff;
         }
+
         .usage-header {
             margin-bottom: 8px;
             display: flex;
             align-items: center;
             width: 100%;
         }
+
         .dark-mode .help-timer {
             color: #aaa;
         }
@@ -146,7 +156,6 @@
             color: #fff;
         }
 
-        /* New Network Settings Styles */
         .network-settings-container {
             display: flex;
             flex-direction: column;
@@ -230,6 +239,19 @@
             border-color: #444;
             color: #fff;
         }
+
+        .insights-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+            color: var(--text-primary);
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body class="landing-page">
@@ -240,19 +262,24 @@
                 <a href="/dashboard"><i class="fas fa-database"></i> Data</a>
                 <a href="/network" class="active"><i class="fas fa-network-wired"></i> Network</a>
                 <a href="/marketplace"><i class="fas fa-store"></i> Marketplace</a>
+                <a href="/notifications"><i class="fas fa-bell"></i> Notifications</a>
             </div>
         </div>
         <div class="profile-section">
             <i class="fas fa-user-circle" onclick="toggleProfileDropdown()"></i>
             <div class="profile-dropdown">
                 <div class="profile-info">
-                    My Account 
-                    <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
-                    <a href="/payments" class="wallet-value-pill">$542.00 USD</a>
-                    <div id="qrCodePopup" class="qr-code-popup">
-                        <div id="qrcode"></div>
-                        <p>Scan to link accounts</p>
-                        <p id="qrMemberCount" class="member-count">Loading...</p>
+                    <div class="profile-header">
+                        <span class="account-text">My Account</span>
+                        <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
+                        <div id="qrCodePopup" class="qr-code-popup">
+                            <div id="qrcode"></div>
+                            <p>Scan to link accounts</p>
+                            <p id="qrMemberCount" class="member-count">Loading...</p>
+                        </div>
+                    </div>
+                    <div class="wallet-pill-container">
+                        <a href="/payments" class="wallet-value-pill">$542.00 USD</a>
                     </div>
                 </div>
                 <a href="/profile"><i class="fas fa-user"></i> Profile</a>
@@ -265,27 +292,11 @@
                 <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 <a href="#" id="helpToggle">
                     <i class="fas fa-question-circle"></i> <span id="helpText">Help</span>
-                    <i id="helpPhoneIcon" class="fas fa-phone-alt" style="display: none;"></i>
                 </a>
-                <div class="help-section" style="display: none;">
-                    <div class="help-content">
-                        <p><i class="fas fa-question-circle"></i> Talk to AI instead:</p>
-                        <ul>
-                            <li style="display: flex; align-items: center;">
-                                <span class="online-indicator chatgpt-indicator"></span>
-                                <a href="https://chat.openai.com" class="help-link" target="_blank">ChatGPT</a>
-                            </li>
-                            <li style="display: flex; align-items: center;">
-                                <span class="online-indicator gemini-indicator"></span>
-                                <a href="https://gemini.google.com" class="help-link" target="_blank">Google Gemini</a>
-                            </li>
-                        </ul>
-                        <p class="help-note">Timer when live help is available. Cancel anytime.<br>Powered by mcp.dotmobile.app</p>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
+
     <div class="container">
         <div class="section-header">
             <h2><i class="fas fa-chart-line"></i> Insights</h2>
@@ -421,11 +432,12 @@
             </div>
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="/static/app.js"></script>
-        <script>
+    <script>
         // Toggle menu dropdown
         function toggleMenu(element) {
             element.querySelector('.menu-dropdown').classList.toggle('visible');
@@ -434,13 +446,6 @@
         // Toggle profile dropdown
         function toggleProfileDropdown() {
             document.querySelector('.profile-dropdown').classList.toggle('visible');
-        }
-
-        // Hide profile dropdown
-        function hideProfileDropdown(event) {
-            event.preventDefault();
-            document.querySelector('.profile-dropdown').classList.remove('visible');
-            window.location.href = event.target.closest('a').getAttribute('href');
         }
 
         // Toggle QR code popup
@@ -470,12 +475,6 @@
             }
         }
 
-        function generateUserHash(userId) {
-            // Generate a consistent hash based on user ID
-            const baseString = `r6kUVJulApaUkVv7ksXqaQhwjo33${userId}`;
-            return baseString.substring(0, 32) + '/' + Math.random().toString(36).substring(2, 6);
-        }
-
         function updateMemberCountInPopup() {
             const memberCountElement = document.getElementById('qrMemberCount');
             if (memberCountElement) {
@@ -496,10 +495,6 @@
                         memberCountElement.textContent = `#${currentMemberId}/X`;
                     });
             }
-        }
-
-        function generateRandomLinkCode() {
-            return Math.random().toString(36).substring(2, 12);
         }
 
         // Toggle chart visibility
@@ -572,23 +567,6 @@
 
             // Set device count to 3 to match the network status display
             document.getElementById('deviceCount').textContent = '3';
-
-            // Alternative method to fetch user count from dashboard (commented out for now)
-            /*
-            fetch('/dashboard')
-                .then(response => response.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const userCount = doc.querySelector('.user-count');
-                    if (userCount) {
-                        document.getElementById('deviceCount').textContent = userCount.textContent;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching user count:', error);
-                });
-            */
 
             // Settings toggle
             document.getElementById('settingsToggle').addEventListener('click', function(e) {
