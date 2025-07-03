@@ -1,3 +1,4 @@
+
 // Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyDjjW2ot6L1XpKYtYU8KUnTj4IXmOaHfqw",
@@ -10,74 +11,100 @@ const firebaseConfig = {
     measurementId: "G-LPC0CTF5KC"
 };
 
-// Initialize Firebase
+// Global variables for auth state
 let auth;
+let currentUser = null;
+
+// Initialize Firebase
 try {
-    firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    console.log("Firebase initialized successfully");
+    if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        console.log("Firebase initialized successfully");
+        
+        // Auth state observer
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                console.log("User signed in:", user.email);
+
+                // Register user with backend
+                try {
+                    const response = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            firebaseUid: user.uid,
+                            email: user.email,
+                            displayName: user.displayName,
+                            photoURL: user.photoURL
+                        })
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log("User registered with backend:", result);
+                    } else {
+                        console.error("Failed to register user with backend");
+                    }
+                } catch (error) {
+                    console.error("Error registering user with backend:", error);
+                }
+
+                // Update UI for signed in user
+                updateUIForSignedInUser(user);
+            } else {
+                currentUser = null;
+                console.log("User signed out");
+                updateUIForSignedOutUser();
+            }
+        });
+    } else {
+        console.error("Firebase SDK not loaded");
+    }
 } catch (error) {
     console.error("Firebase Auth initialization error:", error);
 }
 
-// Global variables for auth state
-let currentUser = null;
-
-// Auth state observer
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        currentUser = user;
-        console.log("User signed in:", user.email);
-
-        // Register user with backend
-        try {
-            const response = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    firebaseUid: user.uid,
-                    email: user.email,
-                    displayName: user.displayName,
-                    photoURL: user.photoURL
-                })
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                console.log("User registered with backend:", result);
-            } else {
-                console.error("Failed to register user with backend");
-            }
-        } catch (error) {
-            console.error("Error registering user with backend:", error);
-        }
-
-        // Update UI for signed in user
-        updateUIForSignedInUser(user);
-    } else {
-        currentUser = null;
-        console.log("User signed out");
-        updateUIForSignedOutUser();
-    }
-});
-
 // Sign in with email and password
-async function signInWithEmail(email, password) {
+async function signInWithEmailPassword(email, password) {
     try {
+        if (!auth) {
+            throw new Error("Firebase Auth not initialized");
+        }
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         console.log("Sign in successful:", userCredential.user.email);
-        return { success: true, user: userCredential.user };
+        return userCredential;
     } catch (error) {
         console.error("Sign in error:", error);
-        return { success: false, error: error.message };
+        throw error;
+    }
+}
+
+// Sign in with Google
+async function signInWithGoogle() {
+    try {
+        if (!auth) {
+            throw new Error("Firebase Auth not initialized");
+        }
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await auth.signInWithPopup(provider);
+        console.log("Google sign in successful:", result.user.email);
+        return result;
+    } catch (error) {
+        console.error("Google sign in error:", error);
+        throw error;
     }
 }
 
 // Sign out
 async function signOut() {
     try {
+        if (!auth) {
+            throw new Error("Firebase Auth not initialized");
+        }
         await auth.signOut();
         console.log("Sign out successful");
         return { success: true };
@@ -134,30 +161,14 @@ function updateUIForSignedOutUser() {
     }
 }
 
-// Initialize page
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("Firebase Auth initialized");
-
-    // Set up login form if it exists
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            const result = await signInWithEmail(email, password);
-
-            if (result.success) {
-                console.log("Login successful");
-            } else {
-                alert("Login failed: " + result.error);
-            }
-        });
-    }
-});
-
 // Make functions globally available
+window.firebaseAuth = {
+    signInWithEmailPassword: signInWithEmailPassword,
+    signInWithGoogle: signInWithGoogle,
+    signOut: signOut,
+    getCurrentUser: () => currentUser
+};
+
 window.signOut = signOut;
-window.signInWithEmail = signInWithEmail;
+window.signInWithEmailPassword = signInWithEmailPassword;
+window.signInWithGoogle = signInWithGoogle;

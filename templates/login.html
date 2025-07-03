@@ -158,9 +158,9 @@
                 setCookie('loginEmail', email, 30);
 
                 // Check if Firebase auth is available
-                if (window.firebaseAuth && window.firebaseAuth.signInWithEmailPassword) {
+                if (typeof signInWithEmailPassword === 'function') {
                     // Sign in with email and password
-                    window.firebaseAuth.signInWithEmailPassword(email, password)
+                    signInWithEmailPassword(email, password)
                         .then((userCredential) => {
                             // Handle successful login
                             console.log('User logged in successfully:', userCredential.user);
@@ -180,8 +180,8 @@
 
             // Handle Google sign-in
             googleSigninBtn.addEventListener('click', function() {
-                if (window.firebaseAuth && window.firebaseAuth.signInWithGoogle) {
-                    window.firebaseAuth.signInWithGoogle()
+                if (typeof signInWithGoogle === 'function') {
+                    signInWithGoogle()
                         .then((result) => {
                             // Handle successful Google sign-in
                             console.log('Google sign-in successful:', result.user);
