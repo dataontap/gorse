@@ -1110,9 +1110,9 @@ function populateOfferCards() {
 
     console.log('Available offers:', availableOffers.length);
 
-    // Create card stack container
+    // Create card stack container with proper styling
     offersSection.innerHTML = `
-        <div class="offers-stack-container" id="cardStackContainer">
+        <div class="offers-stack-container" id="cardStackContainer" style="position: relative; height: 450px; width: 100%; max-width: 400px; margin: 0 auto;">
             <!-- Cards will be inserted here -->
         </div>
         <div class="card-indicators" id="cardIndicators">

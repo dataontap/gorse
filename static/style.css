@@ -1630,23 +1630,21 @@ body.light-mode {
     background: transparent;
 }
 
-/* Offers Section */
+/* Styles for offers section */
 .offers-section {
     margin-top: 20px;
     position: relative;
     width: 100%;
     max-width: 400px;
-    margin: 20px auto;
-    height: 480px;
-    overflow: hidden;
-    z-index: 50;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .offers-stack-container {
     position: relative;
+    height: 450px;
     width: 100%;
-    height: 100%;
-    touch-action: pan-y;
+    overflow: visible;
 }
 
 .offer-card {
