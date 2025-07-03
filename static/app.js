@@ -972,8 +972,7 @@ function createInviteItem(invite) {
 function formatDate(dateString) {
     if (!dateString) return 'Unknown date';
     const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' +```text
- date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 }
 
 function formatStatus(status) {
@@ -1141,19 +1140,19 @@ function populateOfferCards() {
 
     // Get dismissed offers from localStorage
     const dismissedOffers = JSON.parse(localStorage.getItem('dismissedOffers') || '[]');
-
+    
     // Filter offers based on conditions and dismissal status
     const availableOffers = allOffers.filter(offer => {
         // Check if offer is dismissed
         if (dismissedOffers.includes(offer.id)) return false;
-
+        
         if (offer.alwaysShow) return true;
         if (offer.showCondition) return offer.showCondition();
         return true;
     });
 
     console.log('Available offers:', availableOffers.length);
-
+    
     // Handle case when all offers are dismissed
     if (availableOffers.length === 0) {
         offersSection.innerHTML = `
@@ -1166,7 +1165,7 @@ function populateOfferCards() {
         `;
         return;
     }
-
+    
     // Set the initial card index to the last card
     currentCardIndex = availableOffers.length - 1;
 
@@ -1261,12 +1260,12 @@ function initializeCardStack() {
 
 function handleTouchStart(e) {
     if (e.touches.length > 1) return;
-
+    
     // Don't prevent default on buttons
     if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
         return;
     }
-
+    
     e.preventDefault();
     e.stopPropagation();
     console.log('Touch start detected at:', e.touches[0].clientX);
@@ -1291,12 +1290,12 @@ function handleTouchEnd(e) {
 function handleMouseStart(e) {
     // Only handle left mouse button
     if (e.button !== 0) return;
-
+    
     // Don't prevent default on buttons
     if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
         return;
     }
-
+    
     e.preventDefault();
     e.stopPropagation();
     console.log('Mouse start detected at:', e.clientX);
@@ -1321,7 +1320,7 @@ function startSwipe(x) {
     isDragging = true;
     startX = x;
     currentX = x;
-
+    
     const topCard = cardStack[currentCardIndex];
     if (topCard) {
         topCard.classList.add('swiping');
@@ -1331,36 +1330,36 @@ function startSwipe(x) {
 
 function moveSwipe(x) {
     if (!isDragging) return;
-
+    
     currentX = x;
     const deltaX = currentX - startX;
     const topCard = cardStack[currentCardIndex];
-
+    
     if (topCard && Math.abs(deltaX) > 5) { // Add small threshold to prevent micro-movements
         const rotation = deltaX * 0.08; // Reduced rotation for smoother feel
         const opacity = Math.max(0.8, 1 - Math.abs(deltaX) / 400);
-
+        
         topCard.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg) scale(1)`;
         topCard.style.opacity = opacity;
         topCard.style.zIndex = '15';
-
+        
         console.log('Moving card with deltaX:', deltaX);
     }
 }
 
 function endSwipe() {
     if (!isDragging) return;
-
+    
     console.log('Ending swipe');
     isDragging = false;
     const deltaX = currentX - startX;
     const threshold = 60; // Reduced threshold for easier swiping
-
+    
     const topCard = cardStack[currentCardIndex];
     if (topCard) {
         topCard.classList.remove('swiping');
     }
-
+    
     if (Math.abs(deltaX) > threshold) {
         console.log('Threshold exceeded, deltaX:', deltaX);
         if (deltaX > 0) {
@@ -1378,7 +1377,7 @@ function endSwipe() {
             topCard.style.transform = '';
             topCard.style.opacity = '';
             topCard.style.zIndex = '';
-
+            
             // Remove transition after animation
             setTimeout(() => {
                 if (topCard) {
@@ -1398,9 +1397,9 @@ function goToNextCard() {
             currentCard.style.transform = 'translateX(-100%) rotate(-10deg)';
             currentCard.style.opacity = '0';
         }
-
+        
         currentCardIndex++;
-
+        
         // Update positions after a short delay
         setTimeout(() => {
             updateCardPositions();
@@ -1417,9 +1416,9 @@ function goToPreviousCard() {
             currentCard.style.transform = 'translateX(100%) rotate(10deg)';
             currentCard.style.opacity = '0';
         }
-
+        
         currentCardIndex--;
-
+        
         // Update positions after a short delay
         setTimeout(() => {
             updateCardPositions();
@@ -1431,15 +1430,15 @@ function goToCard(index) {
     if (index >= 0 && index < cardStack.length && index !== currentCardIndex) {
         const direction = index > currentCardIndex ? -1 : 1;
         const currentCard = cardStack[currentCardIndex];
-
+        
         if (currentCard) {
             currentCard.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
             currentCard.style.transform = `translateX(${direction * 100}%) rotate(${direction * -10}deg)`;
             currentCard.style.opacity = '0';
         }
-
+        
         currentCardIndex = index;
-
+        
         setTimeout(() => {
             updateCardPositions();
         }, 150);
@@ -1448,17 +1447,17 @@ function goToCard(index) {
 
 function updateCardPositions() {
     console.log('Updating card positions, current index:', currentCardIndex);
-
+    
     cardStack.forEach((card, index) => {
         // Clear any transition and inline styles
         card.style.transition = '';
         card.style.transform = '';
         card.style.opacity = '';
         card.style.zIndex = '';
-
+        
         // Remove all position classes
         card.classList.remove('top-card', 'behind-card', 'hidden-card');
-
+        
         if (index === currentCardIndex) {
             card.classList.add('top-card');
             card.style.zIndex = '10';
@@ -1476,7 +1475,7 @@ function updateCardPositions() {
             console.log('Setting card', index, 'as hidden card');
         }
     });
-
+    
     // Update indicators
     const indicators = document.querySelectorAll('.indicator-dot');
     indicators.forEach((indicator, index) => {
@@ -1488,13 +1487,13 @@ function updateCardPositions() {
 function dismissOfferCard(offerId) {
     // Get current dismissed offers
     const dismissedOffers = JSON.parse(localStorage.getItem('dismissedOffers') || '[]');
-
+    
     // Add this offer to dismissed list if not already there
     if (!dismissedOffers.includes(offerId)) {
         dismissedOffers.push(offerId);
         localStorage.setItem('dismissedOffers', JSON.stringify(dismissedOffers));
     }
-
+    
     // Find the card to dismiss
     const currentCard = cardStack[currentCardIndex];
     if (currentCard && currentCard.querySelector(`[onclick*="${offerId}"]`)) {
@@ -1502,7 +1501,7 @@ function dismissOfferCard(offerId) {
         currentCard.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
         currentCard.style.transform = 'translateX(-100%) rotate(-10deg) scale(0.8)';
         currentCard.style.opacity = '0';
-
+        
         // After animation, repopulate the cards
         setTimeout(() => {
             populateOfferCards();
@@ -1577,37 +1576,6 @@ function endHelpSession() {
 function trackHelpInteraction(type, data) {
     if (typeof helpDesk !== 'undefined') {
         return helpDesk.trackInteraction(type, data);
-    }
-}
-
-// Send test Stripe invoice
-async function sendTestInvoice() {
-    if (!currentUser) {
-        alert('Please sign in first');
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/send-test-invoice', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                firebaseUid: currentUser.uid
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            alert(`Test invoice sent successfully to ${currentUser.email}!\n\nInvoice ID: ${result.invoice_id}\nAmount: ${result.amount}\n\nCheck your email for the invoice.`);
-        } else {
-            alert(`Failed to send test invoice: ${result.message}`);
-        }
-    } catch (error) {
-        console.error('Error sending test invoice:', error);
-        alert('Error sending test invoice. Please try again.');
     }
 }
 

@@ -1,173 +1,142 @@
+// Firebase Authentication handler using v9+ modular SDK
+// Remove import statements as we're using the Firebase SDK via script tags
 
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
-    authDomain: "gorse-24e76.firebaseapp.com",
-    projectId: "gorse-24e76",
-    storageBucket: "gorse-24e76.appspot.com",
-    messagingSenderId: "212829848250",
-    appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
-    measurementId: "G-WHW3XT925P"
-};
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    // Firebase configuration - using global Firebase object
+    const firebaseConfig = {
+      apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
+      authDomain: "gorse-24e76.firebaseapp.com",
+      projectId: "gorse-24e76",
+      storageBucket: "gorse-24e76.appspot.com",
+      messagingSenderId: "212829848250",
+      appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
+      measurementId: "G-WHW3XT925P"
+    };
 
-// Global variables for auth state
-let auth;
-let currentUser = null;
+    // Initialize Firebase using global Firebase object
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
 
-// Initialize Firebase
-try {
-    if (typeof firebase !== 'undefined') {
-        firebase.initializeApp(firebaseConfig);
-        auth = firebase.auth();
-        console.log("Firebase initialized successfully");
-        
-        // Auth state observer
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-                console.log("User signed in:", user.email);
+    console.log("Firebase Auth initialized successfully");
 
-                // Register user with backend
-                try {
-                    const response = await fetch('/api/auth/register', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            firebaseUid: user.uid,
-                            email: user.email,
-                            displayName: user.displayName,
-                            photoURL: user.photoURL
-                        })
-                    });
+    // Configure Google auth provider
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-                    if (response.ok) {
-                        const result = await response.json();
-                        console.log("User registered with backend:", result);
-                    } else {
-                        console.error("Failed to register user with backend");
-                    }
-                } catch (error) {
-                    console.error("Error registering user with backend:", error);
-                }
+    // Track auth state changes
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (user) {
+        // User is signed in
+        console.log("User is signed in:", user);
 
-                // Update UI for signed in user
-                updateUIForSignedInUser(user);
-            } else {
-                currentUser = null;
-                console.log("User signed out");
-                updateUIForSignedOutUser();
+        // Store user ID in localStorage for client-side use
+        localStorage.setItem('userId', user.uid);
+        localStorage.setItem('userEmail', user.email);
+
+        // Register user with our backend
+        registerUserWithBackend(user);
+
+        // Only auto-redirect from signup page, not from root page or login page
+        // This allows users to stay logged out on the root page
+        const currentPath = window.location.pathname;
+        if (currentPath === '/signup') {
+          window.location.href = '/dashboard';
+        }
+        // Root page and login page are allowed for signed-in users (no auto-redirect)
+      } else {
+        // User is signed out
+        console.log("User is signed out");
+
+        // Clear localStorage
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userEmail');
+
+        // Only redirect to home if on protected pages, not from login page
+        const currentPath = window.location.pathname;
+        const publicPages = ['/', '/signup', '/login'];
+        if (!publicPages.includes(currentPath)) {
+          window.location.href = '/';
+        }
+      }
+    });
+
+    // Register user with our backend API
+    function registerUserWithBackend(firebaseUser) {
+      // Send Firebase user info to backend
+      fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firebaseUid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('User registered with backend:', data);
+        if (data.userId) {
+          localStorage.setItem('databaseUserId', data.userId);
+        }
+      })
+      .catch(error => {
+        console.error('Error registering user with backend:', error);
+      });
+    }
+
+    // Expose auth functions to global scope
+    window.firebaseAuth = {
+      signInWithEmailPassword: function(email, password) {
+        return firebase.auth().signInWithEmailAndPassword(email, password)
+          .catch(error => {
+            console.error("Auth error:", error);
+            throw error;
+          });
+      },
+
+      signInWithGoogle: function() {
+        return firebase.auth().signInWithPopup(googleProvider)
+          .catch(error => {
+            console.error("Google sign-in error:", error);
+            throw error;
+          });
+      },
+
+      createUserWithEmailPassword: function(email, password) {
+        return firebase.auth().createUserWithEmailAndPassword(email, password)
+          .catch(error => {
+            console.error("User creation error:", error);
+            throw error;
+          });
+      },
+
+      signOut: function() {
+        return firebase.auth().signOut()
+          .then(() => {
+            // Clear all local storage
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('databaseUserId');
+            console.log('User signed out successfully');
+            
+            // Redirect to home page after logout  
+            if (window.location.pathname !== '/') {
+              window.location.href = '/';
             }
-        });
-    } else {
-        console.error("Firebase SDK not loaded");
-    }
-} catch (error) {
+          })
+          .catch((error) => {
+            console.error('Error during sign out:', error);
+          });
+      },
+
+      getCurrentUser: function() {
+        return firebase.auth().currentUser;
+      }
+    };
+  } catch (error) {
     console.error("Firebase Auth initialization error:", error);
-}
-
-// Sign in with email and password
-async function signInWithEmailPassword(email, password) {
-    try {
-        if (!auth) {
-            throw new Error("Firebase Auth not initialized");
-        }
-        const userCredential = await auth.signInWithEmailAndPassword(email, password);
-        console.log("Sign in successful:", userCredential.user.email);
-        return userCredential;
-    } catch (error) {
-        console.error("Sign in error:", error);
-        throw error;
-    }
-}
-
-// Sign in with Google
-async function signInWithGoogle() {
-    try {
-        if (!auth) {
-            throw new Error("Firebase Auth not initialized");
-        }
-        const provider = new firebase.auth.GoogleAuthProvider();
-        const result = await auth.signInWithPopup(provider);
-        console.log("Google sign in successful:", result.user.email);
-        return result;
-    } catch (error) {
-        console.error("Google sign in error:", error);
-        throw error;
-    }
-}
-
-// Sign out
-async function signOut() {
-    try {
-        if (!auth) {
-            throw new Error("Firebase Auth not initialized");
-        }
-        await auth.signOut();
-        console.log("Sign out successful");
-        return { success: true };
-    } catch (error) {
-        console.error("Sign out error:", error);
-        return { success: false, error: error.message };
-    }
-}
-
-// Update UI for signed in user
-function updateUIForSignedInUser(user) {
-    // Hide sign in forms
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.style.display = 'none';
-    }
-
-    // Show user info if elements exist
-    const userInfo = document.getElementById('userInfo');
-    if (userInfo) {
-        userInfo.style.display = 'block';
-        userInfo.innerHTML = `
-            <p>Welcome, ${user.displayName || user.email}!</p>
-            <button onclick="signOut()" class="btn-secondary">Sign Out</button>
-        `;
-    }
-
-    // Auto-redirect to dashboard if on login page
-    if (window.location.pathname === '/login' || window.location.pathname === '/') {
-        setTimeout(() => {
-            window.location.href = '/dashboard';
-        }, 1000);
-    }
-}
-
-// Update UI for signed out user
-function updateUIForSignedOutUser() {
-    // Show sign in forms
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.style.display = 'block';
-    }
-
-    // Hide user info
-    const userInfo = document.getElementById('userInfo');
-    if (userInfo) {
-        userInfo.style.display = 'none';
-    }
-
-    // Redirect to login if on protected pages
-    const protectedPages = ['/dashboard', '/profile', '/network', '/payments', '/marketplace', '/tokens'];
-    if (protectedPages.includes(window.location.pathname)) {
-        window.location.href = '/login';
-    }
-}
-
-// Make functions globally available
-window.firebaseAuth = {
-    signInWithEmailPassword: signInWithEmailPassword,
-    signInWithGoogle: signInWithGoogle,
-    signOut: signOut,
-    getCurrentUser: () => currentUser
-};
-
-window.signOut = signOut;
-window.signInWithEmailPassword = signInWithEmailPassword;
-window.signInWithGoogle = signInWithGoogle;
+  }
+});
