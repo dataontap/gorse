@@ -1174,9 +1174,6 @@ function populateOfferCards() {
         <div class="offers-stack-container" id="cardStackContainer" style="position: relative; height: 450px; width: 100%; max-width: 400px; margin: 0 auto;">
             <!-- Cards will be inserted here -->
         </div>
-        <div class="card-indicators" id="cardIndicators">
-            <!-- Indicators will be inserted here -->
-        </div>
     `;
 
     const stackContainer = document.getElementById('cardStackContainer');
@@ -1212,13 +1209,6 @@ function populateOfferCards() {
         `;
 
         stackContainer.appendChild(offerCard);
-
-        // Create indicator
-        const indicator = document.createElement('div');
-        indicator.className = 'indicator-dot';
-        indicator.dataset.index = index;
-        indicator.addEventListener('click', () => goToCard(index));
-        indicatorsContainer.appendChild(indicator);
     });
 
     cardStack = Array.from(stackContainer.querySelectorAll('.offer-card'));
