@@ -1176,7 +1176,7 @@ body.light-mode {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    z-index: 1003;
+    z-index: 1000;
     position: relative;
 }
 
@@ -1543,7 +1543,7 @@ body.light-mode {
     max-width: 600px;
     position: relative;
     backdrop-filter: blur(5px);
-    z-index: 2;
+    z-index: 20;
     transition: all 0.3s ease-out;
     max-width: 700px; /* Updated max-width */
     padding: 32px; /* Updated padding */
@@ -1626,7 +1626,8 @@ body.light-mode {
     align-items: center;
     padding: 40px 0 20px 0;
     position: relative;
-    z-index: 2;
+    z-index: 100;
+    background: transparent;
 }
 
 /* Offers Section */
@@ -1638,6 +1639,7 @@ body.light-mode {
     margin: 20px auto;
     height: 480px;
     overflow: hidden;
+    z-index: 50;
 }
 
 .offers-stack-container {
@@ -2816,10 +2818,11 @@ cursor: pointer;
 
 .container {
     position: relative;
-    z-index: 1;
+    z-index: 10;
     width: 100%;
     padding: 0 10px;
     box-sizing: border-box;
+    min-height: 100vh;
 }
 
 .online-indicator {
