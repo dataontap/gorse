@@ -1,14 +1,13 @@
 
 // Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyDjjW2ot6L1XpKYtYU8KUnTj4IXmOaHfqw",
-    authDomain: "dotmobile-1c6d0.firebaseapp.com",
-    databaseURL: "https://dotmobile-1c6d0-default-rtdb.firebaseio.com",
-    projectId: "dotmobile-1c6d0",
-    storageBucket: "dotmobile-1c6d0.appspot.com",
-    messagingSenderId: "885084103094",
-    appId: "1:885084103094:web:c2e93ab65f45f9bfd94c58",
-    measurementId: "G-LPC0CTF5KC"
+    apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
+    authDomain: "gorse-24e76.firebaseapp.com",
+    projectId: "gorse-24e76",
+    storageBucket: "gorse-24e76.appspot.com",
+    messagingSenderId: "212829848250",
+    appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
+    measurementId: "G-WHW3XT925P"
 };
 
 // Global variables for auth state
