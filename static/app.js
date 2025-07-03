@@ -1,3 +1,38 @@
+
+// Standalone logout function
+function handleLogout(event) {
+    if (event) {
+        event.preventDefault();
+    }
+    
+    console.log('Handling logout...');
+    
+    // Clear all localStorage
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('databaseUserId');
+    localStorage.clear();
+    
+    // Try Firebase logout if available
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        firebase.auth().signOut().then(() => {
+            console.log('Firebase logout successful');
+            window.location.href = '/';
+        }).catch((error) => {
+            console.error('Firebase logout error:', error);
+            window.location.href = '/';
+        });
+    } else {
+        // Direct redirect if Firebase not available
+        console.log('Firebase not available, redirecting directly');
+        window.location.href = '/';
+    }
+}
+
+// Make function globally available
+window.handleLogout = handleLogout;
+
+
 // Global variables
 let currentTheme = 'dark'; // Default to dark mode
 
@@ -292,8 +327,24 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle logout functionality
         if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
             e.preventDefault();
+            console.log('Logout button clicked');
+            
+            // Try multiple logout methods
             if (window.firebaseAuth && window.firebaseAuth.signOut) {
                 window.firebaseAuth.signOut();
+            } else if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().signOut().then(() => {
+                    localStorage.clear();
+                    window.location.href = '/';
+                }).catch((error) => {
+                    console.error('Logout error:', error);
+                    localStorage.clear();
+                    window.location.href = '/';
+                });
+            } else {
+                // Fallback: clear storage and redirect
+                localStorage.clear();
+                window.location.href = '/';
             }
             return;
         }

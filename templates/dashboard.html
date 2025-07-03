@@ -285,7 +285,9 @@
                         </select>
                     </div>
                 </div>
-                <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="#" id="logoutBtn" onclick="handleLogout(event)">
+                            <i class="fas fa-sign-out-alt"></i> <span data-translate="logout">Logout</span>
+                        </a>
                 <a href="#" id="helpToggle">
                     <i class="fas fa-question-circle"></i> <span id="helpText">Help</span>
                     <i id="helpPhoneIcon" class="fas fa-phone" style="display: none; margin-left: 8px;"></i>

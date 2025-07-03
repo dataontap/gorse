@@ -1,6 +1,5 @@
-
 document.addEventListener('DOMContentLoaded', async function() {
-  // Firebase configuration
+  // Firebase configuration - using global Firebase object
   const firebaseConfig = {
     apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
     authDomain: "gorse-24e76.firebaseapp.com",
@@ -11,13 +10,26 @@ document.addEventListener('DOMContentLoaded', async function() {
     measurementId: "G-WHW3XT925P"
   };
 
+  // Initialize Firebase
+  if (typeof firebase !== 'undefined') {
+    try {
+      const app = firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      console.log("Firebase initialized successfully");
+    } catch (error) {
+      console.error("Firebase initialization error:", error);
+    }
+  } else {
+    console.error("Firebase SDK not loaded");
+  }
+
   try {
     // Initialize Firebase Cloud Messaging only if supported
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       // Dynamically import Firebase modules
       const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
       const { getMessaging, getToken, onMessage } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js');
-      
+
       // Initialize Firebase
       const app = initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
@@ -26,12 +38,12 @@ document.addEventListener('DOMContentLoaded', async function() {
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
         scope: '/'
       });
-      
+
       console.log('Service worker registered successfully');
-      
+
       // Wait for service worker to be ready
       await navigator.serviceWorker.ready;
-      
+
       // Request notification permission
       const permission = await Notification.requestPermission();
       console.log('Notification permission status:', permission);
@@ -41,7 +53,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const currentToken = await getToken(messaging, {
           serviceWorkerRegistration: registration
         });
-        
+
         if (currentToken) {
           console.log('FCM token:', currentToken);
           // Send token to server for targeting this device
@@ -58,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Handle foreground messages
       onMessage(messaging, (payload) => {
         console.log('Message received in foreground: ', payload);
-        
+
         // Show a custom dismissible notification for foreground messages
         if (Notification.permission === 'granted') {
           const notificationTitle = payload.notification?.title || 'New Notification';
@@ -73,12 +85,12 @@ document.addEventListener('DOMContentLoaded', async function() {
           };
 
           const notification = new Notification(notificationTitle, notificationOptions);
-          
+
           // Auto-dismiss after 8 seconds
           setTimeout(() => {
             notification.close();
           }, 8000);
-          
+
           // Handle click to focus window
           notification.onclick = function() {
             window.focus();
@@ -91,7 +103,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const body = payload.notification?.body || 'You have a new notification';
         showInAppNotification(title, body);
       });
-      
+
     } else {
       console.log('Firebase messaging not supported in this browser');
       showNotificationStatus('Push notifications are not supported in this browser.');
@@ -99,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   } catch (err) {
     console.log('Error in Firebase messaging setup: ', err);
     console.log('Error details:', JSON.stringify(err));
-    
+
     // Special handling for common errors
     if (err.message === 'Notification permission denied') {
       showNotificationStatus('Notification permission denied. Please enable notifications in your browser settings and reload the page.');
@@ -115,10 +127,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       showNotificationStatus('Error setting up notifications: ' + err.message);
     }
   }
-  } catch (error) {
-    console.error('Firebase initialization error:', error);
-    showNotificationStatus('Firebase initialization failed: ' + error.message);
-  }
+   
 });
 
 // Send token to your server

@@ -114,6 +114,16 @@ document.addEventListener('DOMContentLoaded', function() {
       },
 
       signOut: function() {
+        if (!firebase || !firebase.auth) {
+          console.error('Firebase auth not available');
+          // Clear localStorage and redirect anyway
+          localStorage.removeItem('userId');
+          localStorage.removeItem('userEmail');
+          localStorage.removeItem('databaseUserId');
+          window.location.href = '/';
+          return Promise.resolve();
+        }
+        
         return firebase.auth().signOut()
           .then(() => {
             // Clear all local storage
@@ -123,12 +133,15 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('User signed out successfully');
             
             // Redirect to home page after logout  
-            if (window.location.pathname !== '/') {
-              window.location.href = '/';
-            }
+            window.location.href = '/';
           })
           .catch((error) => {
             console.error('Error during sign out:', error);
+            // Clear localStorage and redirect anyway
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('databaseUserId');
+            window.location.href = '/';
           });
       },
 
