@@ -1666,6 +1666,35 @@ body.light-mode {
             touch-action: pan-y pinch-zoom;
         }
 
+        .dismiss-card-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 20;
+            font-size: 12px;
+        }
+
+        .dismiss-card-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .dismiss-card-btn:active {
+            transform: scale(0.95);
+        }
+
         .offer-card.swiping {
             cursor: grabbing;
             transition: none !important;

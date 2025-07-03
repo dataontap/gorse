@@ -1122,14 +1122,33 @@ function populateOfferCards() {
         }
     ];
 
-    // Filter offers based on conditions
+    // Get dismissed offers from localStorage
+    const dismissedOffers = JSON.parse(localStorage.getItem('dismissedOffers') || '[]');
+    
+    // Filter offers based on conditions and dismissal status
     const availableOffers = allOffers.filter(offer => {
+        // Check if offer is dismissed
+        if (dismissedOffers.includes(offer.id)) return false;
+        
         if (offer.alwaysShow) return true;
         if (offer.showCondition) return offer.showCondition();
         return true;
     });
 
     console.log('Available offers:', availableOffers.length);
+    
+    // Handle case when all offers are dismissed
+    if (availableOffers.length === 0) {
+        offersSection.innerHTML = `
+            <div class="no-offers-message" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.7);">
+                <p>All offers have been dismissed.</p>
+                <button onclick="clearDismissedOffers()" style="background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">
+                    Show All Offers Again
+                </button>
+            </div>
+        `;
+        return;
+    }
     
     // Set the initial card index to the last card
     currentCardIndex = availableOffers.length - 1;
@@ -1163,6 +1182,9 @@ function populateOfferCards() {
         const buttonDisabled = offer.disabled ? ' disabled' : '';
 
         offerCard.innerHTML = `
+            <button class="dismiss-card-btn" onclick="dismissOfferCard('${offer.id}')" title="Dismiss this offer">
+                <i class="fas fa-times"></i>
+            </button>
             <h3>${offer.title}</h3>
             <div class="offer-description">
                 ${descriptions}
@@ -1445,10 +1467,51 @@ function updateCardPositions() {
     });
 }
 
+// Dismiss offer card function
+function dismissOfferCard(offerId) {
+    // Get current dismissed offers
+    const dismissedOffers = JSON.parse(localStorage.getItem('dismissedOffers') || '[]');
+    
+    // Add this offer to dismissed list if not already there
+    if (!dismissedOffers.includes(offerId)) {
+        dismissedOffers.push(offerId);
+        localStorage.setItem('dismissedOffers', JSON.stringify(dismissedOffers));
+    }
+    
+    // Find the card to dismiss
+    const currentCard = cardStack[currentCardIndex];
+    if (currentCard && currentCard.querySelector(`[onclick*="${offerId}"]`)) {
+        // Animate the card out
+        currentCard.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+        currentCard.style.transform = 'translateX(-100%) rotate(-10deg) scale(0.8)';
+        currentCard.style.opacity = '0';
+        
+        // After animation, repopulate the cards
+        setTimeout(() => {
+            populateOfferCards();
+            setTimeout(() => {
+                initializeCardStack();
+            }, 100);
+        }, 300);
+    }
+}
+
 // Make card stack functions globally available
 window.goToNextCard = goToNextCard;
 window.goToPreviousCard = goToPreviousCard;
 window.goToCard = goToCard;
+window.dismissOfferCard = dismissOfferCard;
+
+// Function to clear all dismissed offers
+function clearDismissedOffers() {
+    localStorage.removeItem('dismissedOffers');
+    populateOfferCards();
+    setTimeout(() => {
+        initializeCardStack();
+    }, 100);
+}
+
+window.clearDismissedOffers = clearDismissedOffers;
 
 function shouldShowBasicMembership() {
     if (!currentSubscriptionStatus) return true;
