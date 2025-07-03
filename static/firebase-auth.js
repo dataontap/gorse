@@ -122,9 +122,9 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.removeItem('databaseUserId');
             console.log('User signed out successfully');
             
-            // Redirect to login page after logout
-            if (window.location.pathname !== '/login') {
-              window.location.href = '/login';
+            // Redirect to home page after logout  
+            if (window.location.pathname !== '/') {
+              window.location.href = '/';
             }
           })
           .catch((error) => {
