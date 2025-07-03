@@ -1660,10 +1660,12 @@ body.light-mode {
             border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: center;
+            align-items: center;
             cursor: grab;
             user-select: none;
             touch-action: pan-y pinch-zoom;
+            position: relative;
         }
 
         .offer-card.swiping {
@@ -1689,10 +1691,35 @@ body.light-mode {
             opacity: 0;
         }
 
+        .dismiss-card-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 20;
+        }
+
+        .dismiss-card-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
         .offer-card h3 {
             font-size: 1.6em;
             margin-bottom: 15px;
             font-weight: bold;
+            text-align: center;
         }
 
         .offer-description {
@@ -1700,12 +1727,16 @@ body.light-mode {
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
         }
 
         .offer-description p {
             font-size: 0.95em;
             margin-bottom: 8px;
             line-height: 1.4;
+            text-align: center;
         }
 
         .price {
@@ -1713,6 +1744,7 @@ body.light-mode {
             font-weight: bold;
             color: #4CAF50;
             margin: 15px 0;
+            text-align: center;
         }
 
         .offer-button {
@@ -1727,6 +1759,11 @@ body.light-mode {
             font-weight: bold;
             min-height: 44px;
             touch-action: manipulation;
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            min-width: 120px;
         }
 
         .offer-button:hover {
