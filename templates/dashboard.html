@@ -481,6 +481,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="/static/translations.js"></script>
     <script src="/static/app.js"></script>
     <script>
         // Load user data and display data balance
@@ -634,15 +635,15 @@
             if (subscriptionData.status === 'active') {
                 var subscriptionType = subscriptionData.subscription_type || 'basic_membership';
                 var displayName = subscriptionType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-                
+
                 // Format the end date
                 var endDate = new Date(subscriptionData.end_date);
                 var formattedDate = formatMembershipDate(endDate);
-                
+
                 // Calculate days remaining
                 var now = new Date();
                 var daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
-                
+
                 var subscriptionInfo = membershipBanner.querySelector('.subscription-info');
                 if (subscriptionInfo) {
                     subscriptionInfo.innerHTML = `
@@ -650,7 +651,7 @@
                         <div class="subscription-validity">Valid for ${daysRemaining} more days until ${formattedDate}</div>
                     `;
                 }
-                
+
                 membershipBanner.style.display = 'flex';
             } else {
                 membershipBanner.style.display = 'none';
@@ -663,7 +664,7 @@
             var year = date.getFullYear();
             var hours = date.getHours().toString().padStart(2, '0');
             var minutes = date.getMinutes().toString().padStart(2, '0');
-            
+
             return `${month}/${day}/${year} ${hours}:${minutes}`;
         }
 
@@ -709,7 +710,7 @@
             populateOfferCards(); // Re-populate offer cards based on updated subscription
         }
 
-        
+
 
         function dismissMembershipBanner() {
             var banner = document.getElementById('membershipBanner');

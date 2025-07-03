@@ -38,7 +38,15 @@
                 <a href="/payments" class="active"><i class="fas fa-credit-card"></i> Payments</a>
                 <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
                 <div class="settings-submenu" style="display: none;">
-                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
+                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span data-translate="darkMode">Dark Mode</span></a>
+                    <div class="language-selector-container">
+                        <label for="languageSelect"><i class="fas fa-globe"></i> <span data-translate="language">Language</span></label>
+                        <select id="languageSelect" class="language-select">
+                            <option value="en" data-translate="english">English</option>
+                            <option value="es" data-translate="spanish">Español</option>
+                            <option value="fr" data-translate="french">Français</option>
+                        </select>
+                    </div>
                 </div>
                 <a href="#" id="helpToggle">
                     <i class="fas fa-phone-alt"></i> Live Person Callback
@@ -63,7 +71,15 @@
                 </div>
             </div>
                 <div class="settings-submenu" style="display: none;">
-                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
+                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span data-translate="darkMode">Dark Mode</span></a>
+                    <div class="language-selector-container">
+                        <label for="languageSelect"><i class="fas fa-globe"></i> <span data-translate="language">Language</span></label>
+                        <select id="languageSelect" class="language-select">
+                            <option value="en" data-translate="english">English</option>
+                            <option value="es" data-translate="spanish">Español</option>
+                            <option value="fr" data-translate="french">Français</option>
+                        </select>
+                    </div>
                 </div>
                 <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
@@ -564,6 +580,9 @@
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="/static/translations.js"></script>
     <script src="/static/app.js"></script>
     <script>
         function refreshBalance() {
@@ -899,6 +918,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             refreshTransactions();
             checkFoundingMemberStatus();
+
+            // Initialize translation
+            initializeTranslation();
         });
     </script>
 </body>

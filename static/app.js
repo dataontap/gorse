@@ -393,6 +393,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Initialize language selector
+    const languageSelect = document.getElementById('languageSelect');
+    if (languageSelect) {
+        languageSelect.addEventListener('change', function(e) {
+            const selectedLanguage = e.target.value;
+            setLanguage(selectedLanguage);
+        });
+    }
+
     // Load invites if on dashboard page
     if (window.location.pathname === '/dashboard') {
         setTimeout(() => {
@@ -1707,21 +1716,21 @@ function showHelpModal() {
         <div class="human-help-section">
             <div class="help-option-header">
                 <i class="fas fa-user"></i>
-                <span>Human help:</span>
+                <span data-translate="humanHelp">Human help:</span>
             </div>
             <div class="help-option-content">
                 <div class="agent-status">
                     <span class="agent-availability">Super agent available in <span class="countdown-timer" style="color: #28a745; font-weight: bold;">4:20</span></span>
                 </div>
-                <button id="orderCallbackBtn" class="callback-btn">Order callback</button>
+                <button id="orderCallbackBtn" class="callback-btn" data-translate="orderCallback">Order callback</button>
             </div>
-            <button id="chatWithAgentBtn" class="chat-btn">Chat with Agent</button>
+            <button id="chatWithAgentBtn" class="chat-btn" data-translate="chatWithAgent">Chat with Agent</button>
         </div>
 
         <div class="ai-help-section">
             <div class="help-option-header">
                 <i class="fas fa-robot"></i>
-                <span>Use AI help:</span>
+                <span data-translate="useAiHelp">Use AI help:</span>
             </div>
             <div class="help-option-content">
                 <div class="ai-links">
@@ -1737,6 +1746,11 @@ function showHelpModal() {
             </div>
         </div>
     `;
+
+    // Apply translations to the newly created content
+    setTimeout(() => {
+        updatePageTranslations();
+    }, 0);
 
     // Append elements to the modal
     modalContent.appendChild(closeButton);

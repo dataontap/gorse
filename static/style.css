@@ -1012,7 +1012,7 @@ body.light-mode {
         box-shadow: 0 17.5px 52.5px rgba(255, 243, 113, 0.525), 0 0 35px rgba(255, 243, 113, 0.35);
     }
     100% {
-        box-shadow: 0 20px 60px rgba(255, 243, 113, 0.6), 0 0 40px rgba(255, 243, 113, 0.4);
+        box-shadow: 0 20px 60px rgba(255, 243, 113, 0.6), 0 0 40px rgba(255,243, 113, 0.4);
     }
 }
 
@@ -1339,9 +1339,62 @@ body.light-mode {
 }
 
 .settings-submenu {
-    padding-left: 15px;
-    background: rgba(245, 245, 245, 0.5);
-    border-left: 2px solid #eee;
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 8px 0;
+    min-width: 180px;
+    z-index: 1000;
+}
+
+.language-selector-container {
+    padding: 8px 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    margin-top: 8px;
+}
+
+.language-selector-container label {
+    display: block;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.language-select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+}
+
+.language-select:focus {
+    outline: none;
+    border-color: #0066ff;
+    box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2);
+}
+
+.dark-mode .language-selector-container label {
+    color: #fff;
+}
+
+.dark-mode .language-select {
+    background: #2a2a2a;
+    border-color: #555;
+    color: #fff;
+}
+
+.dark-mode .language-select option {
+    background: #2a2a2a;
+    color: #fff;
 }
 
 .dark-mode .settings-submenu,
@@ -1767,6 +1820,7 @@ body.light-mode {
             background-color: #666;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
         .card-indicators {
@@ -2044,8 +2098,7 @@ body.light-mode {
 
 .section-header i, .authorized-users-title i {
     font-size: 24px;
-    color: #666;
-    margin-right: 10px;
+    color: #666;    margin-right: 10px;
 }
 
 .email-container {
