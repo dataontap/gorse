@@ -1000,7 +1000,7 @@ class IMEIResource(Resource):
 
 @app.route('/')
 def index():
-    return render_template('index.html', current_key=os.getenv('CURRENT_KEY', 'AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY'))
+    return render_template('index.html', current_key=os.getenv('CURRENT_KEY', 'your-api-key-here'))
 
 @app.route('/signup')
 def signup():
