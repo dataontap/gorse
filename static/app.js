@@ -1415,13 +1415,8 @@ function endSwipe() {
     
     if (Math.abs(deltaX) > threshold) {
         console.log('Threshold exceeded, deltaX:', deltaX);
-        if (deltaX > 0) {
-            // Swipe right - previous card
-            goToPreviousCard();
-        } else {
-            // Swipe left - next card
-            goToNextCard();
-        }
+        // Swipe in either direction dismisses the card
+        dismissCurrentCard();
     } else {
         console.log('Snapping back to center');
         // Snap back to center
@@ -1536,7 +1531,58 @@ function updateCardPositions() {
     });
 }
 
-// Dismiss offer card function
+// Dismiss current card function (for swipe dismissal)
+function dismissCurrentCard() {
+    const currentCard = cardStack[currentCardIndex];
+    if (!currentCard) return;
+    
+    // Find the offer ID from the card's button onclick attribute
+    const offerButton = currentCard.querySelector('.offer-button[onclick]');
+    let offerId = null;
+    
+    if (offerButton) {
+        const onclickAttr = offerButton.getAttribute('onclick');
+        // Extract offer ID from onclick attribute
+        if (onclickAttr.includes('global_data_10gb')) {
+            offerId = 'global_data';
+        } else if (onclickAttr.includes('basic_membership')) {
+            offerId = 'basic_membership';
+        } else if (onclickAttr.includes('full_membership')) {
+            offerId = 'full_membership';
+        }
+    }
+    
+    if (offerId) {
+        // Get current dismissed offers
+        const dismissedOffers = JSON.parse(localStorage.getItem('dismissedOffers') || '[]');
+        
+        // Add this offer to dismissed list if not already there
+        if (!dismissedOffers.includes(offerId)) {
+            dismissedOffers.push(offerId);
+            localStorage.setItem('dismissedOffers', JSON.stringify(dismissedOffers));
+        }
+        
+        console.log('Dismissing offer:', offerId);
+    }
+    
+    // Animate the card out based on swipe direction
+    const deltaX = currentX - startX;
+    const direction = deltaX > 0 ? 1 : -1;
+    
+    currentCard.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+    currentCard.style.transform = `translateX(${direction * 100}%) rotate(${direction * -10}deg) scale(0.8)`;
+    currentCard.style.opacity = '0';
+    
+    // After animation, repopulate the cards
+    setTimeout(() => {
+        populateOfferCards();
+        setTimeout(() => {
+            initializeCardStack();
+        }, 100);
+    }, 300);
+}
+
+// Dismiss offer card function (for button dismissal)
 function dismissOfferCard(offerId) {
     // Get current dismissed offers
     const dismissedOffers = JSON.parse(localStorage.getItem('dismissedOffers') || '[]');
@@ -1570,6 +1616,7 @@ window.goToNextCard = goToNextCard;
 window.goToPreviousCard = goToPreviousCard;
 window.goToCard = goToCard;
 window.dismissOfferCard = dismissOfferCard;
+window.dismissCurrentCard = dismissCurrentCard;
 
 // Function to clear all dismissed offers
 function clearDismissedOffers() {
