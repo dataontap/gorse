@@ -1818,24 +1818,15 @@ body.light-mode {
         }
 
         .card-indicators {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 15px;
+            display: none;
         }
 
         .indicator-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            cursor: pointer;
-            transition: all 0.3s ease;
+            display: none;
         }
 
         .indicator-dot.active {
-            background: #007bff;
-            transform: scale(1.2);
+            display: none;
         }
 .add-user-container {
     text-align: center;
