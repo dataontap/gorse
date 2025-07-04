@@ -13,9 +13,11 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    <script>
+      window.CURRENT_KEY = "{{ current_key }}";
+    </script>
     <script src="/static/firebase-init.js"></script>
-    <script src="/static/firebase-auth.js"></script>
-</head>
+    <script src="/static/firebase-auth.js"></script></head>
 <body class="landing-page">
     <div class="hero-container">
         <div class="hero-image"></div>
@@ -47,7 +49,7 @@
                         <i class="fas fa-envelope" style="margin-right: 5px;"></i>Contact Us
                     </a>
                 </div>
-                
+
                 <div class="service-provider" style="margin-top: 30px; text-align: center; color: #CCCCFF; font-size: 11px;">
                     <p style="margin: 0; line-height: 1.4;">Service Provided by Data On Tap Inc. Licensed Full MVNO. Network 302 100.<br>Parkdale, ON, CANADA</p>
                 </div>
@@ -55,7 +57,7 @@
         </div>
     </div>
 
-    
+
 </body>
 
     <!-- Bootstrap JS -->
@@ -70,7 +72,7 @@
             }
         });
 
-        
+
     </script>
 </body>
 </html>

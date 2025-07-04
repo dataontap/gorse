@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async function() {
   // Firebase configuration - using global Firebase object
   const firebaseConfig = {
-    apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
+    apiKey: window.CURRENT_KEY || "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
     authDomain: "gorse-24e76.firebaseapp.com",
     projectId: "gorse-24e76",
     storageBucket: "gorse-24e76.appspot.com",

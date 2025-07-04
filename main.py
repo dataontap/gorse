@@ -123,7 +123,7 @@ try:
                         WHERE table_name = 'beta_testers' AND column_name = 'status'
                     """)
                     status_column_exists = cur.fetchone()
-                    
+
                     if not status_column_exists:
                         print("Adding missing status column to beta_testers table...")
                         cur.execute("ALTER TABLE beta_testers ADD COLUMN status VARCHAR(50) DEFAULT 'not_enrolled'")
@@ -998,9 +998,9 @@ class IMEIResource(Resource):
 
 # The webhook route is already defined earlier in the file, so this duplicate is removed
 
-@app.route('/', methods=['GET'])
-def home():
-    return render_template('index.html')
+@app.route('/')
+def index():
+    return render_template('index.html', current_key=os.getenv('CURRENT_KEY', 'AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY'))
 
 @app.route('/signup')
 def signup():
@@ -1680,7 +1680,7 @@ class CheckMemberships(Resource):
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
-                        # Check if user has purchased any membership products
+                        # Check if user haspurchased any membership products
                         cur.execute("""
                             SELECT StripeProductID 
                             FROM purchases 
@@ -2202,7 +2202,7 @@ def beta_enrollment():
         with get_db_connection() as conn:
             if not conn:
                 return jsonify({'success': False, 'message': 'Database connection error'}), 500
-                
+
             with conn.cursor() as cur:
                 # Get user details
                 cur.execute("SELECT id, email, display_name FROM users WHERE firebase_uid = %s", (firebase_uid,))
@@ -2231,12 +2231,12 @@ def beta_enrollment():
                 # Generate demo ICCID details for beta testing
                 import random
                 import time
-                
+
                 # Create mock ICCID data (in production, this would come from OXIO)
                 demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
                 activation_code = f"AC{random.randint(100000, 999999)}"
                 qr_code_data = f"LPA:1$api-staging.brandvno.com${activation_code}$"
-                
+
                 # Try to get OXIO SIM details (fallback to demo if service unavailable)
                 oxio_sim_details = {
                     'iccid': demo_iccid,
