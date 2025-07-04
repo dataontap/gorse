@@ -1728,7 +1728,7 @@ body.light-mode {
             font-size: 1em;
             font-weight: bold;
             min-height: 44px;
-            min-width: 120px;
+            width: 120px;
             flex-shrink: 0;
             touch-action: manipulation;
         }
@@ -1803,7 +1803,7 @@ body.light-mode {
             font-size: 1em;
             font-weight: bold;
             min-height: 44px;
-            min-width: 120px;
+            width: 120px;
             touch-action: manipulation;
             display: flex;
             align-items: center;
