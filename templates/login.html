@@ -67,7 +67,7 @@
                         <div id="auth-error" class="alert alert-danger" style="display: none;">
                             <div id="error-message"></div>
                             <div id="forgot-password-section" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.3);">
-                                <p style="margin-bottom: 10px; font-size: 14px;">Forgot your password? Enter your email to receive a magic link:</p>
+                                <p style="margin-bottom: 10px; font-size: 14px;">Forgot your password? We will email it to below provided email if account exists and has not been deleted by the user.</p>
                                 <div class="input-group mb-2">
                                     <input type="email" class="form-control form-control-sm" id="reset-email" placeholder="Enter email for magic link">
                                     <button class="btn btn-outline-light btn-sm" type="button" id="send-magic-link-btn">Send Link</button>
@@ -200,21 +200,9 @@
 
             // Show auth error with optional forgot password section
             function showAuthError(message, showForgotPassword = false) {
-                // Check if it's an invalid credentials error and show funny GIF
+                // Check if it's an invalid credentials error
                 if (message.includes('INVALID_LOGIN_CREDENTIALS') || message.includes('invalid') || message.includes('credentials')) {
-                    errorMessage.innerHTML = `
-                        <div style="text-align: center; margin-bottom: 15px;">
-                            <img src="https://media.tenor.com/UhkiYkD4qm8AAAAC/bigfoot-finding-bigfoot.gif" 
-                                 alt="Searching for Bigfoot" 
-                                 style="width: 120px; height: auto; border-radius: 8px; image-rendering: pixelated; filter: sepia(20%) contrast(110%);">
-                            <div style="margin-top: 10px; font-family: 'Courier New', monospace; color: #ff6b6b; font-size: 14px;">
-                                🔍 BIGFOOT DETECTOR: No valid credentials found in the wilderness!
-                            </div>
-                            <div style="font-size: 12px; color: #74c0fc; margin-top: 5px;">
-                                Try again, fellow cryptid hunter! 🦶
-                            </div>
-                        </div>
-                    `;
+                    errorMessage.textContent = 'Invalid login credentials. Please check your email and password.';
                 } else {
                     errorMessage.textContent = message;
                 }
