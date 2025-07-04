@@ -16,7 +16,23 @@
     <script>
       window.CURRENT_KEY = "{{ current_key }}";
     </script>
-    <script src="/static/firebase-init.js"></script>
+    <script>
+    window.FIREBASE_API_KEY = "{{ firebase_api_key }}";
+    // Register service worker with API key
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(function(registration) {
+          // Pass API key to service worker
+          if (registration.active) {
+            registration.active.postMessage({
+              type: 'FIREBASE_CONFIG',
+              apiKey: "{{ firebase_api_key }}"
+            });
+          }
+        });
+    }
+  </script>
+  <script src="/static/firebase-init.js"></script>
     <script src="/static/firebase-auth.js"></script></head>
 <body class="landing-page">
     <div class="hero-container">

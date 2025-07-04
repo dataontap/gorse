@@ -3,9 +3,9 @@
 self.importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
 self.importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
+// Default Firebase configuration (API key will be set via message)
+let firebaseConfig = {
+  apiKey: "your-api-key-here",
   authDomain: "gorse-24e76.firebaseapp.com",
   projectId: "gorse-24e76",
   storageBucket: "gorse-24e76.appspot.com",
@@ -14,8 +14,21 @@ const firebaseConfig = {
   measurementId: "G-WHW3XT925P"
 };
 
-// Initialize Firebase in service worker
-firebase.initializeApp(firebaseConfig);
+// Listen for configuration messages
+self.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'FIREBASE_CONFIG') {
+    firebaseConfig.apiKey = event.data.apiKey;
+    // Re-initialize Firebase with the correct API key
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+  }
+});
+
+// Initialize Firebase in service worker (will be re-initialized with correct key)
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
 // Retrieve an instance of Firebase Messaging so that it can handle background messages
 const messaging = firebase.messaging();
