@@ -1249,17 +1249,19 @@ function populateOfferCards() {
         const buttonDisabled = offer.disabled ? ' disabled' : '';
 
         offerCard.innerHTML = `
-            <button class="dismiss-card-btn" onclick="dismissOfferCard('${offer.id}')" title="Dismiss this offer">
-                <i class="fas fa-times"></i>
-            </button>
             <h3>${offer.title}</h3>
             <div class="offer-description">
                 ${descriptions}
             </div>
             <div class="price">${offer.price}</div>
-            <button class="offer-button ${offer.buttonClass}"${buttonDisabled} onclick="${offer.action}">
-                ${offer.buttonText}
-            </button>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: auto; justify-content: flex-end;">
+                <button class="dismiss-card-btn" onclick="dismissOfferCard('${offer.id}')" title="Dismiss this offer">
+                    <i class="fas fa-times"></i>
+                </button>
+                <button class="offer-button ${offer.buttonClass}"${buttonDisabled} onclick="${offer.action}">
+                    ${offer.buttonText}
+                </button>
+            </div>
         `;
 
         stackContainer.appendChild(offerCard);
