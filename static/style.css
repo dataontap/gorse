@@ -690,8 +690,8 @@ body.light-mode {
     font-size: 1.4rem;
     font-weight: 700;
     margin: 0 0 15px 0;
-    color: #ffffff;
-    text-align: center;
+    color: #FFF371;
+    text-align: left;
     line-height: 1.2;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -705,7 +705,7 @@ body.light-mode {
     line-height: 1.4;
     margin: 0 0 10px 0;
     color: #ffffff;
-    text-align: center;
+    text-align: left;
     font-weight: 400;
     opacity: 0.9;
     word-wrap: break-word;
@@ -720,7 +720,7 @@ body.light-mode {
     font-weight: 700;
     margin: 15px 0;
     color: #FFF371;
-    text-align: center;
+    text-align: left;
     word-wrap: break-word;
     overflow-wrap: break-word;
     white-space: normal;
@@ -742,13 +742,19 @@ body.light-mode {
 }
 
 /* Light mode overrides */
-.light-mode .offer-card h3,
+.light-mode .offer-card h3 {
+    color: #FFF371 !important;
+}
+
 .light-mode .offer-card p {
     color: #333333 !important;
 }
 
 /* Dark mode overrides */
-.dark-mode .offer-card h3,
+.dark-mode .offer-card h3 {
+    color: #FFF371 !important;
+}
+
 .dark-mode .offer-card p {
     color: #ffffff !important;
 }
