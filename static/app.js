@@ -1178,8 +1178,8 @@ function populateOfferCards() {
         },
         {
             id: 'full_membership',
-            title: 'Full Membership',
-            description: ['Global Data Access', 'National Talk + Text', 'Global Wi-Fi Calling & Satellite eTXT'],
+            title: 'Full Service',
+            description: ['North America Talk + Text (RCS)', 'Wi-Fi Calling Access Globally', 'Satellite TXT (& E9-1-1)', 'Access GLOBAL DATA @ $1 a GIG'],
             price: '$66/year',
             buttonText: 'Coming Soon',
             buttonClass: 'btn-secondary',
