@@ -1256,7 +1256,7 @@ function populateOfferCards() {
             <div class="price">${offer.price}</div>
             <div style="display: flex; align-items: center; gap: 15px; margin-top: auto; justify-content: space-between; width: 100%;">
                 <button class="dismiss-card-btn" onclick="dismissOfferCard('${offer.id}')" title="Dismiss this offer">
-                    <i class="fas fa-times"></i><br>Dismiss
+                    <i class="fas fa-times"></i><br>
                 </button>
                 <button class="offer-button ${offer.buttonClass}"${buttonDisabled} onclick="${offer.action}">
                     ${offer.buttonText}

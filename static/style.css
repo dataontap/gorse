@@ -1725,14 +1725,12 @@ body.light-mode {
             justify-content: center;
             transition: all 0.3s ease;
             z-index: 20;
-            font-size: 0.9em;
+            font-size: 1em;
             font-weight: bold;
             min-height: 44px;
-            width: 140px;
+            width: 120px;
             flex-shrink: 0;
             touch-action: manipulation;
-            text-align: center;
-            line-height: 1.2;
         }
 
         .dismiss-card-btn:hover {
@@ -1772,8 +1770,6 @@ body.light-mode {
             font-size: 1.6em;
             margin-bottom: 15px;
             font-weight: bold;
-            text-align: center;
-            color: #FFF371; /* Yellow Gorse color */
         }
 
         .offer-description {
@@ -1781,24 +1777,12 @@ body.light-mode {
             display: flex;
             flex-direction: column;
             justify-content: center;
-            text-align: left;
         }
 
         .offer-description p {
             font-size: 0.95em;
             margin-bottom: 8px;
             line-height: 1.4;
-            position: relative;
-            padding-left: 20px;
-        }
-
-        .offer-description p:before {
-            content: '•';
-            position: absolute;
-            left: 0;
-            color: #FFF371;
-            font-weight: bold;
-            font-size: 1.2em;
         }
 
         .price {
