@@ -2873,6 +2873,87 @@ def send_invitation():
                         ORDER BY created_at DESC LIMIT 1
                     """, (email,))
 
+                    existing_invite = cur.fetchone()
+                    if existing_invite:
+                        # Update existing invitation as re-invited
+                        cur.execute("""
+                            UPDATE invites 
+                            SET invitation_status = 're_invited', 
+                                updated_at = CURRENT_TIMESTAMP,
+                                expires_at = CURRENT_TIMESTAMP + INTERVAL '7 days',
+                                invitation_token = %s,
+                                personal_message = %s
+                            WHERE id = %s
+                            RETURNING id
+                        """, (invitation_token, message, existing_invite[0]))
+                        invite_id = cur.fetchone()[0]
+                        action_taken = 're_invited'
+                    else:
+                        # Create new invitation
+                        cur.execute("""
+                            INSERT INTO invites 
+                            (email, invitation_token, invited_by_user_id, invited_by_firebase_uid, 
+                             personal_message, is_demo_user, invitation_status)
+                            VALUES (%s, %s, %s, %s, %s, %s, 'invite_sent')
+                            RETURNING id
+                        """, (email, invitation_token, inviting_user_id, firebase_uid, message, is_demo_user))
+                        invite_id = cur.fetchone()[0]
+                        action_taken = 'invite_sent'
+
+                    conn.commit()
+
+                    # For demo users, immediately create the user account
+                    if is_demo_user:
+                        try:
+                            # Create demo user with random display name
+                            demo_names = ['Demo User', 'Test User', 'Sample User', 'Trial User', 'Beta Tester']
+                            display_name = demo_names[hash(email) % len(demo_names)]
+
+                            # Create Ethereum wallet for demo user
+                            from web3 import Web3
+                            web3 = Web3()
+                            demo_account = web3.eth.account.create()
+
+                            cur.execute("""
+                                INSERT INTO users 
+                                (email, display_name, eth_address, firebase_uid) 
+                                VALUES (%s, %s, %s, %s) 
+                                RETURNING id
+                            """, (email, display_name, demo_account.address, f"demo_{invite_id}_{secrets.token_hex(8)}"))
+
+                            demo_user_id = cur.fetchone()[0]
+
+                            # Update invitation with user ID and mark as accepted
+                            cur.execute("""
+                                UPDATE invites 
+                                SET user_id = %s, 
+                                    invitation_status = 'invite_accepted',
+                                    accepted_at = CURRENT_TIMESTAMP,
+                                    updated_at = CURRENT_TIMESTAMP
+                                WHERE id = %s
+                            """, (demo_user_id, invite_id))
+
+                            conn.commit()
+
+                            print(f"Created demo user {demo_user_id} for invitation {invite_id}")
+
+                        except Exception as demo_err:
+                            print(f"Error creating demo user: {str(demo_err)}")
+                            # Don't fail the invitation if demo user creation fails
+
+                    return jsonify({
+                        'success': True,
+                        'message': f'Invitation {action_taken} successfully',
+                        'invite_id': invite_id,
+                        'email': email,
+                        'action': action_taken
+                    })
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error sending invitation: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/network-features/<firebase_uid>/reset', methods=['POST'])
 def reset_network_features_to_default(firebase_uid):
