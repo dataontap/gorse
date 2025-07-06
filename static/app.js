@@ -510,7 +510,7 @@ function showAddUserPopup() {
     popup.innerHTML = `
         <div class="popup-content" style="z-index: 999999; position: relative;">
             <div class="popup-header">
-                <h3>Add New User</h3>
+                <h3>Add New Datashare User</h3>
                 <button class="popup-close" onclick="hideAddUserPopup()">&times;</button>
             </div>
             <div class="popup-body">
