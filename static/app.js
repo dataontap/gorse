@@ -296,6 +296,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const isDarkMode = savedTheme === null ? true : savedTheme === 'true';
     toggleTheme(isDarkMode);
 
+    // Load DOTM balance if wallet is connected
+    loadDOTMBalance();
+
     // Add event listeners for theme toggles
     const darkToggle = document.getElementById('darkModeToggle');
     const lightToggle = document.getElementById('lightModeToggle');
@@ -1080,6 +1083,41 @@ function toggleChart(element) {
     }
 }
 
+// DOTM Balance Functions
+async function loadDOTMBalance() {
+    const tokenBalancePill = document.getElementById('tokenBalancePill');
+    if (!tokenBalancePill) return;
+
+    try {
+        // Check if MetaMask is available and connected
+        if (typeof window.ethereum !== 'undefined') {
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            if (accounts.length > 0) {
+                const address = accounts[0];
+                
+                // Fetch balance from our API
+                const response = await fetch(`/api/token/balance/${address}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Error fetching DOTM balance:', data.error);
+                    tokenBalancePill.textContent = '0.00 DOTM';
+                } else {
+                    // Display balance in the format "100.33 DOTM"
+                    tokenBalancePill.textContent = `${data.balance.toFixed(2)} DOTM`;
+                }
+            } else {
+                tokenBalancePill.textContent = 'Connect Wallet';
+            }
+        } else {
+            tokenBalancePill.textContent = 'MetaMask Required';
+        }
+    } catch (error) {
+        console.error('Error loading DOTM balance:', error);
+        tokenBalancePill.textContent = '0.00 DOTM';
+    }
+}
+
 // Make functions globally available
 window.showAddUserPopup = showAddUserPopup;
 window.hideAddUserPopup = hideAddUserPopup;
@@ -1091,6 +1129,7 @@ window.removeUserCard = removeUserCard;
 window.toggleUserPause = toggleUserPause;
 window.performSort = performSort;
 window.toggleChart = toggleChart;
+window.loadDOTMBalance = loadDOTMBalance;
 
 // Global help functions for compatibility
 function startHelpSession() {

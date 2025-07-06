@@ -262,7 +262,9 @@
                         <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
                     </div>
                     <div class="wallet-pill-container">
-                        <a href="/payments" class="wallet-value-pill">100 DOTM = $100.00</a>
+                        <a href="/payments" class="wallet-value-pill" id="tokenBalancePill">
+                            Loading DOTM...
+                        </a>
                     </div>
                     <div id="qrCodePopup" class="qr-code-popup">
                         <div id="qrcode"></div>
@@ -502,6 +504,9 @@
 
             // Check if banner was previously dismissed
             checkBannerDismissedState();
+
+            // Load DOTM balance
+            loadDotmBalance();
         });
 
         var dataBalanceValue = 0;
@@ -720,8 +725,6 @@
             populateOfferCards(); // Re-populate offer cards based on updated subscription
         }
 
-
-
         function dismissMembershipBanner() {
             var banner = document.getElementById('membershipBanner');
             if (banner) {
@@ -744,6 +747,13 @@
                 if (banner) {
                     banner.style.display = 'none';
                 }
+            }
+        }
+
+        function loadDotmBalance() {
+            const tokenBalancePill = document.getElementById('tokenBalancePill');
+            if (tokenBalancePill) {
+                tokenBalancePill.textContent = '100.33 DOTM'; // Hardcoded DOTM balance as requested
             }
         }
     </script>
