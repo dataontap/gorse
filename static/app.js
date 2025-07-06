@@ -518,7 +518,7 @@ function showAddUserPopup() {
                     <button class="invite-option-btn" id="inviteAnyoneBtn">
                         <i class="fas fa-envelope"></i>
                         <span>Invite Anyone</span>
-                        <small>Send invitation via email</small>
+                        <small>Send invitation via email for a start</small>
                     </button>
                     <button class="invite-option-btn" id="demoUserBtn">
                         <i class="fas fa-user-plus"></i>
