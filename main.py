@@ -1947,6 +1947,9 @@ def get_user_network_features(firebase_uid):
         if not user_data:
             return jsonify({'error': 'User not found'}), 404
         
+        # user_data is a tuple, so we need to access by index
+        user_id = user_data[0]
+        
         # Get all network features from database
         import stripe_network_features
         features = stripe_network_features.get_network_features()
@@ -1958,7 +1961,7 @@ def get_user_network_features(firebase_uid):
                     SELECT stripe_product_id, enabled 
                     FROM user_network_preferences 
                     WHERE user_id = %s
-                """, (user_data['id'],))
+                """, (user_id,))
                 
                 user_prefs = {row[0]: row[1] for row in cur.fetchall()}
         
@@ -1997,6 +2000,9 @@ def toggle_network_feature(firebase_uid, product_id):
         if not user_data:
             return jsonify({'error': 'User not found'}), 404
         
+        # user_data is a tuple, so we need to access by index
+        user_id = user_data[0]
+        
         # Update user's feature preference
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -2008,7 +2014,7 @@ def toggle_network_feature(firebase_uid, product_id):
                     DO UPDATE SET 
                         enabled = EXCLUDED.enabled,
                         updated_at = CURRENT_TIMESTAMP
-                """, (user_data['id'], product_id, enabled))
+                """, (user_id, product_id, enabled))
                 
                 conn.commit()
         
@@ -2866,6 +2872,52 @@ def send_invitation():
                         WHERE email = %s AND invitation_status IN ('invite_sent', 're_invited')
                         ORDER BY created_at DESC LIMIT 1
                     """, (email,))
+
+
+@app.route('/api/network-features/<firebase_uid>/reset', methods=['POST'])
+def reset_network_features_to_default(firebase_uid):
+    """Reset all network features to their default values for a user"""
+    try:
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # user_data is a tuple, so we need to access by index
+        user_id = user_data[0]
+        
+        # Get all network features from database
+        import stripe_network_features
+        features = stripe_network_features.get_network_features()
+        
+        # Reset user's preferences to defaults
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Delete existing preferences first
+                cur.execute("""
+                    DELETE FROM user_network_preferences 
+                    WHERE user_id = %s
+                """, (user_id,))
+                
+                # Insert default preferences
+                for feature in features:
+                    cur.execute("""
+                        INSERT INTO user_network_preferences (user_id, stripe_product_id, enabled)
+                        VALUES (%s, %s, %s)
+                    """, (user_id, feature['stripe_product_id'], feature['default_enabled']))
+                
+                conn.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Network features reset to default values',
+            'features_reset': len(features)
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 
                     existing_invite = cur.fetchone()
                     if existing_invite:
