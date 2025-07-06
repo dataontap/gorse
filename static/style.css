@@ -1995,6 +1995,14 @@ body.light-mode {
     color: #aaa;
 }
 
+.dark-mode .user-name {
+    color: #4d9aff;
+}
+
+.dark-mode .user-email {
+    color: #4d9aff;
+}
+
 .purchase-item .purchase-amount {
     position: absolute;
     right: 0;
