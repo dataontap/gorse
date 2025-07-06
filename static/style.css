@@ -2378,7 +2378,7 @@ body.light-mode {
 .dark-mode select,
 .dark-mode .sort-select {
     background: rgba(60, 60, 60, 0.9);
-    color: #ffffff;
+    color: #4d9aff;
     border-color: #555;
 }
 
@@ -2390,7 +2390,7 @@ body.light-mode {
 
 .dark-mode option {
     background: #2a2a2a;
-    color: #ffffff;
+    color: #4d9aff;
 }
 
 .sort-icons {
