@@ -324,6 +324,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Initialize chart toggle functionality
+    document.querySelectorAll('.insight-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleChart(this);
+        });
+    });
+
     // Use event delegation for all interactive elements
     document.addEventListener('click', function(e) {
         // Handle logout functionality
@@ -1071,16 +1079,82 @@ function cancelInvitation(inviteId) {
 
 // Add missing toggleChart function
 function toggleChart(element) {
-    const chart = element.closest('.insights-card').querySelector('.usage-chart');
+    const insightsCard = element.closest('.insights-card') || element.closest('.dashboard-content');
+    const chart = insightsCard ? insightsCard.querySelector('.usage-chart') : null;
+    
     if (chart) {
-        if (chart.style.display === 'none') {
+        const isCurrentlyHidden = chart.style.display === 'none' || chart.style.display === '';
+        
+        if (isCurrentlyHidden) {
             chart.style.display = 'block';
             element.textContent = element.textContent.replace('See details', 'Hide details');
+            
+            // Initialize chart if it doesn't exist
+            if (!chart.querySelector('canvas')) {
+                initializeUsageChart(chart);
+            }
         } else {
             chart.style.display = 'none';
             element.textContent = element.textContent.replace('Hide details', 'See details');
         }
     }
+}
+
+// Function to initialize the usage chart
+function initializeUsageChart(chartContainer) {
+    const canvas = chartContainer.querySelector('canvas');
+    if (!canvas || typeof Chart === 'undefined') {
+        console.log('Chart.js not available or canvas not found');
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    
+    // Sample data for the usage trend
+    const chartData = {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+            label: 'Data Usage (MB)',
+            data: [120, 150, 180, 220, 280, 320, 350],
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        }]
+    };
+
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Usage (MB)'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Day of Week'
+                }
+            }
+        }
+    };
+
+    new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: chartOptions
+    });
 }
 
 // DOTM Balance Functions
