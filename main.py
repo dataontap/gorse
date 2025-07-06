@@ -832,7 +832,8 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
                     result = cur.fetchone()
                     end_date = result[0]
                     subscription_id = result[1]
-                    conn.commit()                    print(f"Subscription {subscription_id} created for user {user_id} (Firebase UID: {firebase_uid}), type {subscription_type}, Stripe ID: {actual_stripe_subscription_id}, valid until {end_date}")
+                    conn.commit()
+                    print(f"Subscription {subscription_id} created for user {user_id} (Firebase UID: {firebase_uid}), type {subscription_type}, Stripe ID: {actual_stripe_subscription_id}, valid until {end_date}")
 
                     return end_date
             else:
