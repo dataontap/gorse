@@ -832,9 +832,7 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
                     result = cur.fetchone()
                     end_date = result[0]
                     subscription_id = result[1]
-                    conn.commit()
-
-                    print(f"Subscription {subscription_id} created for user {user_id} (Firebase UID: {firebase_uid}), type {subscription_type}, Stripe ID: {actual_stripe_subscription_id}, valid until {end_date}")
+                    conn.commit()                    print(f"Subscription {subscription_id} created for user {user_id} (Firebase UID: {firebase_uid}), type {subscription_type}, Stripe ID: {actual_stripe_subscription_id}, valid until {end_date}")
 
                     return end_date
             else:
@@ -1946,14 +1944,14 @@ def get_user_network_features(firebase_uid):
         user_data = get_user_by_firebase_uid(firebase_uid)
         if not user_data:
             return jsonify({'error': 'User not found'}), 404
-        
+
         # user_data is a tuple, so we need to access by index
         user_id = user_data[0]
-        
+
         # Get all network features from database
         import stripe_network_features
         features = stripe_network_features.get_network_features()
-        
+
         # Get user's current preferences
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -1962,14 +1960,14 @@ def get_user_network_features(firebase_uid):
                     FROM user_network_preferences 
                     WHERE user_id = %s
                 """, (user_id,))
-                
+
                 user_prefs = {row[0]: row[1] for row in cur.fetchall()}
-        
+
         user_features = []
         for feature in features:
             # Use user preference if exists, otherwise use default
             enabled = user_prefs.get(feature['stripe_product_id'], feature['default_enabled'])
-            
+
             user_features.append({
                 'stripe_product_id': feature['stripe_product_id'],
                 'feature_name': feature['feature_name'],
@@ -1978,7 +1976,7 @@ def get_user_network_features(firebase_uid):
                 'enabled': enabled,
                 'price_cents': feature['price_cents']
             })
-        
+
         return jsonify({
             'status': 'success',
             'features': user_features
@@ -1995,14 +1993,14 @@ def toggle_network_feature(firebase_uid, product_id):
     try:
         data = request.get_json()
         enabled = data.get('enabled', False)
-        
+
         user_data = get_user_by_firebase_uid(firebase_uid)
         if not user_data:
             return jsonify({'error': 'User not found'}), 404
-        
+
         # user_data is a tuple, so we need to access by index
         user_id = user_data[0]
-        
+
         # Update user's feature preference
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -2015,9 +2013,9 @@ def toggle_network_feature(firebase_uid, product_id):
                         enabled = EXCLUDED.enabled,
                         updated_at = CURRENT_TIMESTAMP
                 """, (user_id, product_id, enabled))
-                
+
                 conn.commit()
-        
+
         return jsonify({
             'status': 'success',
             'message': f'Feature {product_id} {"enabled" if enabled else "disabled"}'
@@ -2941,19 +2939,23 @@ def send_invitation():
                             print(f"Error creating demo user: {str(demo_err)}")
                             # Don't fail the invitation if demo user creation fails
 
+                    print(f"SUCCESS: Invitation {action_taken} for {email} with ID {invite_id}")
                     return jsonify({
                         'success': True,
                         'message': f'Invitation {action_taken} successfully',
                         'invite_id': invite_id,
                         'email': email,
-                        'action': action_taken
+                        'action': action_taken,
+                        'is_demo_user': is_demo_user
                     })
 
         return jsonify({'success': False, 'message': 'Database connection error'}), 500
 
     except Exception as e:
-        print(f"Error sending invitation: {str(e)}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        print(f"ERROR sending invitation: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Internal server error: {str(e)}'}), 500
 
 @app.route('/api/network-features/<firebase_uid>/reset', methods=['POST'])
 def reset_network_features_to_default(firebase_uid):
@@ -2962,14 +2964,14 @@ def reset_network_features_to_default(firebase_uid):
         user_data = get_user_by_firebase_uid(firebase_uid)
         if not user_data:
             return jsonify({'error': 'User not found'}), 404
-        
+
         # user_data is a tuple, so we need to access by index
         user_id = user_data[0]
-        
+
         # Get all network features from database
         import stripe_network_features
         features = stripe_network_features.get_network_features()
-        
+
         # Reset user's preferences to defaults
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -2978,16 +2980,16 @@ def reset_network_features_to_default(firebase_uid):
                     DELETE FROM user_network_preferences 
                     WHERE user_id = %s
                 """, (user_id,))
-                
+
                 # Insert default preferences
                 for feature in features:
                     cur.execute("""
                         INSERT INTO user_network_preferences (user_id, stripe_product_id, enabled)
                         VALUES (%s, %s, %s)
                     """, (user_id, feature['stripe_product_id'], feature['default_enabled']))
-                
+
                 conn.commit()
-        
+
         return jsonify({
             'status': 'success',
             'message': 'Network features reset to default values',
@@ -3068,19 +3070,23 @@ def reset_network_features_to_default(firebase_uid):
                             print(f"Error creating demo user: {str(demo_err)}")
                             # Don't fail the invitation if demo user creation fails
 
+                    print(f"SUCCESS: Invitation {action_taken} for {email} with ID {invite_id}")
                     return jsonify({
                         'success': True,
                         'message': f'Invitation {action_taken} successfully',
                         'invite_id': invite_id,
                         'email': email,
-                        'action': action_taken
+                        'action': action_taken,
+                        'is_demo_user': is_demo_user
                     })
 
         return jsonify({'success': False, 'message': 'Database connection error'}), 500
 
     except Exception as e:
-        print(f"Error sending invitation: {str(e)}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        print(f"ERROR sending invitation: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Internal server error: {str(e)}'}), 500
 
 @app.route('/api/invites', methods=['GET'])
 def get_invites():

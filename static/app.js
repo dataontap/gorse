@@ -486,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Add User Popup Functions
 function showAddUserPopup() {
     console.log('showAddUserPopup called');
-    
+
     // Remove existing popup if any
     hideAddUserPopup();
 
@@ -506,7 +506,7 @@ function showAddUserPopup() {
         z-index: 999999 !important;
         opacity: 1 !important;
     `;
-    
+
     popup.innerHTML = `
         <div class="popup-content" style="z-index: 999999; position: relative;">
             <div class="popup-header">
@@ -993,7 +993,7 @@ function createUserCard(invite) {
         <div class="data-usage">
             <div class="usage-metrics">
                 <div class="metric" data-metric="data">
-                    <div class="usage-label"><i class="fas fa-database"></i> Data</div>
+                    <div class="usage_label"><i class="fas fa-database"></i> Data</div>
                     <div class="usage-amount">${dataPercentage}%</div>
                 </div>
                 <div class="metric" data-metric="time">
@@ -1108,14 +1108,14 @@ function cancelInvitation(inviteId) {
 function toggleChart(element) {
     const insightsCard = element.closest('.insights-card') || element.closest('.dashboard-content');
     const chart = insightsCard ? insightsCard.querySelector('.usage-chart') : null;
-    
+
     if (chart) {
         const isCurrentlyHidden = chart.style.display === 'none' || chart.style.display === '';
-        
+
         if (isCurrentlyHidden) {
             chart.style.display = 'block';
             element.textContent = element.textContent.replace('See details', 'Hide details');
-            
+
             // Initialize chart if it doesn't exist
             if (!chart.querySelector('canvas')) {
                 initializeUsageChart(chart);
@@ -1136,7 +1136,7 @@ function initializeUsageChart(chartContainer) {
     }
 
     const ctx = canvas.getContext('2d');
-    
+
     // Sample data for the usage trend
     const chartData = {
         labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -1195,11 +1195,11 @@ async function loadDOTMBalance() {
             const accounts = await window.ethereum.request({ method: 'eth_accounts' });
             if (accounts.length > 0) {
                 const address = accounts[0];
-                
+
                 // Fetch balance from our API
                 const response = await fetch(`/api/token/balance/${address}`);
                 const data = await response.json();
-                
+
                 if (data.error) {
                     console.error('Error fetching DOTM balance:', data.error);
                     tokenBalancePill.textContent = '0.00 DOTM';
