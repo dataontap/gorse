@@ -765,6 +765,58 @@
 
                     // Load invites when page loads
                     loadInvitesList();
+
+        // Add event listener for resend eSIM button
+        document.addEventListener('DOMContentLoaded', function() {
+            const resendBtn = document.getElementById('resendEsimBtn');
+            if (resendBtn) {
+                resendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    resendEsimEmail();
+                });
+            }
+        });
+
+        function resendEsimEmail() {
+            const firebaseUid = localStorage.getItem('userId');
+            if (!firebaseUid) {
+                alert('User not authenticated');
+                return;
+            }
+
+            // Disable button and show loading
+            const resendBtn = document.getElementById('resendEsimBtn');
+            const originalText = resendBtn.textContent;
+            resendBtn.textContent = 'Sending...';
+            resendBtn.style.pointerEvents = 'none';
+
+            fetch('/api/resend-esim-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    firebaseUid: firebaseUid
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('eSIM details have been resent to your email!');
+                } else {
+                    alert('Failed to resend email: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error resending eSIM email:', error);
+                alert('Failed to resend email. Please try again.');
+            })
+            .finally(() => {
+                // Re-enable button
+                resendBtn.textContent = originalText;
+                resendBtn.style.pointerEvents = 'auto';
+            });
+        }
     </script>
 </body>
 </html>

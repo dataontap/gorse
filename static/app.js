@@ -2033,3 +2033,90 @@ function hideHelpModal() {
 function startChat() {
     alert('Starting chat with agent...');
 }
+
+// Function to resend the eSIM ready email
+function send_esim_ready_email() {
+    const firebaseUid = localStorage.getItem('userId');
+    if (!firebaseUid) {
+        alert('Please sign in to resend the email.');
+        return;
+    }
+
+    fetch('/api/resend-esim-email', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            firebaseUid: firebaseUid
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('eSIM Ready email resent successfully!');
+        } else {
+            alert('Error resending eSIM Ready email: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error resending eSIM Ready email:', error);
+        alert('Error resending eSIM Ready email. Please try again.');
+    });
+}
+
+// Modify updateBetaStatus function to handle resend link
+function updateBetaStatus(status, message) {
+    const betaEnrollBtn = document.getElementById('betaEnrollBtn');
+    const betaStatus = document.getElementById('betaStatus');
+    const betaStatusText = document.getElementById('betaStatusText');
+
+    switch(status) {
+        case 'not_enrolled':
+            betaEnrollBtn.style.display = 'block';
+            betaEnrollBtn.disabled = false;
+            betaEnrollBtn.textContent = 'Request BETA access ($1 eSIM)';
+            betaStatus.style.display = 'none';
+            break;
+        case 'payment_pending':
+            betaEnrollBtn.style.display = 'none';
+            betaStatus.style.display = 'block';
+            betaStatusText.textContent = 'Check for eSIM invite in your email.';
+            break;
+        case 'esim_ready':
+            betaEnrollBtn.style.display = 'none';
+            betaStatus.style.display = 'block';
+            betaStatusText.textContent = 'Your eSIM is ready to download';
+            betaStatusText.style.color = '#28a745';
+
+            // Show resend link
+            let resendContainer = document.getElementById('resendContainer');
+            if (!resendContainer) {
+                resendContainer = document.createElement('div');
+                resendContainer.id = 'resendContainer';
+                resendContainer.style.marginTop = '5px';
+
+                const resendLink = document.createElement('a');
+                resendLink.href = '#';
+                resendLink.textContent = 'Resend';
+                resendLink.style.color = '#007bff';
+                resendLink.style.textDecoration = 'underline';
+                resendLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    send_esim_ready_email();
+                });
+
+                resendContainer.appendChild(resendLink);
+                betaStatus.appendChild(resendContainer);
+            } else {
+                resendContainer.style.display = 'block'; // Ensure it's visible
+            }
+
+            break;
+        case 'enrolled':
+            betaEnrollBtn.style.display = 'none';
+            betaStatus.style.display = 'block';
+            betaStatusText.textContent = message || 'Beta enrollment complete';
+            break;
+    }
+}

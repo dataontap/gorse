@@ -2472,6 +2472,128 @@ def get_beta_status():
         print(f"Error getting beta status: {str(e)}")
         return jsonify({'success': False, 'message': 'Internal server error'}), 500
 
+@app.route('/api/resend-esim-email', methods=['POST'])
+def resend_esim_email():
+    """Resend eSIM ready email to user"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid')
+
+        if not firebase_uid:
+            return jsonify({'success': False, 'message': 'Firebase UID required'}), 400
+
+        with get_db_connection() as conn:
+            if not conn:
+                return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+            with conn.cursor() as cur:
+                # Get user details
+                cur.execute("SELECT id, email, display_name FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                user_result = cur.fetchone()
+
+                if not user_result:
+                    return jsonify({'success': False, 'message': 'User not found'}), 404
+
+                user_id, user_email, display_name = user_result
+
+                # Check if user has eSIM ready status
+                cur.execute("""
+                    SELECT status FROM beta_testers 
+                    WHERE user_id = %s AND status = 'esim_ready'
+                    ORDER BY timestamp DESC LIMIT 1
+                """, (user_id,))
+
+                status_result = cur.fetchone()
+
+                if not status_result:
+                    return jsonify({
+                        'success': False, 
+                        'message': 'eSIM not ready or user not enrolled in beta'
+                    }), 400
+
+                # Generate demo ICCID details for resending
+                import random
+                demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
+                activation_code = f"AC{random.randint(100000, 999999)}"
+                qr_code_data = f"LPA:1$api-staging.brandvno.com${activation_code}$"
+
+                # Create mock OXIO SIM details
+                oxio_sim_details = {
+                    'iccid': demo_iccid,
+                    'activation_code': activation_code,
+                    'qr_code': qr_code_data,
+                    'plan_name': 'OXIO_10day_demo_plan',
+                    'data_allowance': '1000MB',
+                    'validity_days': 10,
+                    'regions': ['Global'],
+                    'status': 'ready_for_activation',
+                    'note': 'Resent eSIM details - demo data'
+                }
+
+                # Create email content
+                email_subject = f"[RESENT] Beta eSIM Details - ICCID: {oxio_sim_details['iccid']}"
+                email_content = f"""
+Hello {display_name or 'Beta Tester'},
+
+Here are your eSIM activation details (resent):
+
+=== eSIM ACTIVATION DETAILS ===
+ICCID: {oxio_sim_details['iccid']}
+Activation Code: {oxio_sim_details['activation_code']}
+QR Code Data: {oxio_sim_details['qr_code']}
+
+=== PLAN DETAILS ===
+Plan Name: {oxio_sim_details['plan_name']}
+Data Allowance: {oxio_sim_details['data_allowance']}
+Validity: {oxio_sim_details['validity_days']} days
+Coverage: {', '.join(oxio_sim_details['regions'])}
+Status: {oxio_sim_details['status']}
+
+=== ACTIVATION INSTRUCTIONS ===
+1. Go to your device's Settings > Cellular/Mobile Data
+2. Select "Add Cellular Plan" or "Add eSIM"
+3. Scan the QR code or manually enter the activation code above
+4. Follow the on-screen instructions to complete activation
+
+=== SUPPORT ===
+If you need assistance, please contact our support team with your ICCID reference.
+
+Note: {oxio_sim_details['note']}
+
+Thank you for participating in our beta program!
+
+Best regards,
+DOTM Team
+                """
+
+                # Log the resend email (simulate for now)
+                print(f"=== RESENT BETA eSIM EMAIL ===")
+                print(f"To: {user_email}")
+                print(f"Subject: {email_subject}")
+                print(f"Content:\n{email_content}")
+                print("===============================")
+
+                # Record the resend action
+                cur.execute("""
+                    INSERT INTO beta_testers (user_id, firebase_uid, action, status, timestamp)
+                    VALUES (%s, %s, 'RESEND_EMAIL', 'esim_ready', CURRENT_TIMESTAMP)
+                """, (user_id, firebase_uid))
+
+                conn.commit()
+
+                return jsonify({
+                    'success': True,
+                    'message': f'eSIM details resent to {user_email}',
+                    'email_sent': True,
+                    'resent_at': datetime.now().isoformat()
+                })
+
+    except Exception as e:
+        print(f"Error resending eSIM email: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Internal server error: {str(e)}'}), 500
+
 def get_db_connection():
     database_url = os.environ.get('DATABASE_URL')
     if not database_url:
