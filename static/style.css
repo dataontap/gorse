@@ -3376,7 +3376,7 @@ input:checked + .toggle-slider:before {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10000;
+    z-index: 999999;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -3396,6 +3396,8 @@ input:checked + .toggle-slider:before {
     transform: scale(0.9);
     transition: transform 0.3s ease;
     backdrop-filter: blur(10px);
+    z-index: 999999;
+    position: relative;
 }
 
 .popup-overlay.show .popup-content {

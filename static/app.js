@@ -485,14 +485,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Add User Popup Functions
 function showAddUserPopup() {
+    console.log('showAddUserPopup called');
+    
     // Remove existing popup if any
     hideAddUserPopup();
 
     const popup = document.createElement('div');
     popup.id = 'addUserPopup';
     popup.className = 'popup-overlay';
+    popup.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: rgba(0, 0, 0, 0.7) !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        z-index: 999999 !important;
+        opacity: 1 !important;
+    `;
+    
     popup.innerHTML = `
-        <div class="popup-content">
+        <div class="popup-content" style="z-index: 999999; position: relative;">
             <div class="popup-header">
                 <h3>Add New User</h3>
                 <button class="popup-close" onclick="hideAddUserPopup()">&times;</button>
@@ -516,6 +532,13 @@ function showAddUserPopup() {
     `;
 
     document.body.appendChild(popup);
+    console.log('Popup added to body:', popup);
+
+    // Force show with timeout
+    setTimeout(() => {
+        popup.classList.add('show');
+        popup.style.opacity = '1';
+    }, 10);
 
     // Add event listeners
     document.getElementById('inviteAnyoneBtn').addEventListener('click', showInviteForm);
@@ -523,9 +546,13 @@ function showAddUserPopup() {
 }
 
 function hideAddUserPopup() {
+    console.log('hideAddUserPopup called');
     const popup = document.getElementById('addUserPopup');
     if (popup) {
-        popup.remove();
+        popup.style.opacity = '0';
+        setTimeout(() => {
+            popup.remove();
+        }, 300);
     }
 }
 
