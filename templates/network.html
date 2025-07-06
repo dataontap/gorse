@@ -350,82 +350,7 @@
                 <div class="insights-card">
                     <div class="data-usage">
                         <div id="networkSettings" class="network-settings-container">
-                            <div class="setting-box">
-                                <div class="setting-header">
-                                    <span class="setting-name">Video optimization</span>
-                                    <label class="switch">
-                                        <input type="checkbox" checked>
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                                <p class="setting-description">Optimizes video streaming quality to reduce data usage while maintaining a good viewing experience.</p>
-                            </div>
-
-                            <div class="setting-box">
-                                <div class="setting-header">
-                                    <span class="setting-name">Priority access</span>
-                                    <label class="switch">
-                                        <input type="checkbox" checked>
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                                <p class="setting-description">Provides prioritized network access during high congestion periods for more reliable connectivity.</p>
-                            </div>
-
-                            <div class="setting-box">
-                                <div class="setting-header">
-                                    <span class="setting-name">Private relay</span>
-                                    <label class="switch">
-                                        <input type="checkbox" checked>
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                                <p class="setting-description">Routes your internet traffic through multiple relays to enhance privacy and hide your IP address.</p>
-                            </div>
-
-                            <div class="setting-box">
-                                <div class="setting-header">
-                                    <span class="setting-name">VPN / Home route</span>
-                                    <label class="switch">
-                                        <input type="checkbox" checked>
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                                <p class="setting-description">Creates a secure encrypted tunnel for your data and allows remote access to your home network.</p>
-                            </div>
-
-                            <div class="setting-box">
-                                <div class="setting-header">
-                                    <span class="setting-name">Do not call list</span>
-                                    <label class="switch">
-                                        <input type="checkbox" checked>
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                                <p class="setting-description">Blocks unwanted calls from telemarketers and known spam numbers to reduce interruptions.</p>
-                            </div>
-
-                            <div class="setting-box">
-                                <div class="setting-header">
-                                    <span class="setting-name">Global Wi-Fi Calling</span>
-                                    <label class="switch">
-                                        <input type="checkbox" checked>
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                                <p class="setting-description">Enables making and receiving calls over Wi-Fi networks worldwide when cellular service is limited.</p>
-                            </div>
-
-                            <div class="setting-box">
-                                <div class="setting-header">
-                                    <span class="setting-name">ETXT on SAT</span>
-                                    <label class="switch">
-                                        <input type="checkbox" checked>
-                                        <span class="slider round"></span>
-                                    </label>
-                                </div>
-                                <p class="setting-description">Allows sending text messages via satellite when outside of cellular coverage areas.</p>
-                            </div>
+                            <!-- Network features will be loaded dynamically -->
                         </div>
                     </div>
                 </div>
@@ -544,6 +469,84 @@
             }
         });
 
+        // Load network features from API
+        async function loadNetworkFeatures() {
+            try {
+                const firebaseUid = localStorage.getItem('firebase_uid');
+                if (!firebaseUid) {
+                    console.error('No Firebase UID found');
+                    return;
+                }
+
+                const response = await fetch(`/api/network-features/${firebaseUid}`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    renderNetworkFeatures(data.features);
+                } else {
+                    console.error('Failed to load network features:', data.message);
+                }
+            } catch (error) {
+                console.error('Error loading network features:', error);
+            }
+        }
+
+        function renderNetworkFeatures(features) {
+            const container = document.getElementById('networkSettings');
+            container.innerHTML = '';
+
+            features.forEach(feature => {
+                const featureBox = document.createElement('div');
+                featureBox.className = 'setting-box';
+                
+                featureBox.innerHTML = `
+                    <div class="setting-header">
+                        <span class="setting-name">${feature.feature_title}</span>
+                        <label class="switch">
+                            <input type="checkbox" ${feature.enabled ? 'checked' : ''} 
+                                   onchange="toggleFeature('${feature.stripe_product_id}', this.checked)">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <p class="setting-description">${feature.description}</p>
+                `;
+                
+                container.appendChild(featureBox);
+            });
+        }
+
+        async function toggleFeature(productId, enabled) {
+            try {
+                const firebaseUid = localStorage.getItem('firebase_uid');
+                if (!firebaseUid) {
+                    console.error('No Firebase UID found');
+                    return;
+                }
+
+                const response = await fetch(`/api/network-features/${firebaseUid}/${productId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ enabled: enabled })
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    console.log('Feature toggle successful:', data.message);
+                } else {
+                    console.error('Failed to toggle feature:', data.message);
+                    // Revert the toggle if the API call failed
+                    event.target.checked = !enabled;
+                }
+            } catch (error) {
+                console.error('Error toggling feature:', error);
+                // Revert the toggle if there was an error
+                event.target.checked = !enabled;
+            }
+        }
+
         // Document ready
         function toggleNetworkScan() {
             const content = document.getElementById('networkScanContent');
@@ -567,6 +570,9 @@
 
             // Set device count to 3 to match the network status display
             document.getElementById('deviceCount').textContent = '3';
+
+            // Load network features from Stripe
+            loadNetworkFeatures();
 
             // Settings toggle
             document.getElementById('settingsToggle').addEventListener('click', function(e) {

@@ -1939,6 +1939,89 @@ def update_product_rule(product_id):
             'message': str(e)
         }), 500
 
+@app.route('/api/network-features/<firebase_uid>', methods=['GET'])
+def get_user_network_features(firebase_uid):
+    """Get network features and their status for a user"""
+    try:
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Get all network features from database
+        import stripe_network_features
+        features = stripe_network_features.get_network_features()
+        
+        # Get user's current preferences
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT stripe_product_id, enabled 
+                    FROM user_network_preferences 
+                    WHERE user_id = %s
+                """, (user_data['id'],))
+                
+                user_prefs = {row[0]: row[1] for row in cur.fetchall()}
+        
+        user_features = []
+        for feature in features:
+            # Use user preference if exists, otherwise use default
+            enabled = user_prefs.get(feature['stripe_product_id'], feature['default_enabled'])
+            
+            user_features.append({
+                'stripe_product_id': feature['stripe_product_id'],
+                'feature_name': feature['feature_name'],
+                'feature_title': feature['feature_title'],
+                'description': feature['description'],
+                'enabled': enabled,
+                'price_cents': feature['price_cents']
+            })
+        
+        return jsonify({
+            'status': 'success',
+            'features': user_features
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/network-features/<firebase_uid>/<product_id>', methods=['PUT'])
+def toggle_network_feature(firebase_uid, product_id):
+    """Toggle a network feature for a user"""
+    try:
+        data = request.get_json()
+        enabled = data.get('enabled', False)
+        
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Update user's feature preference
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Insert or update preference
+                cur.execute("""
+                    INSERT INTO user_network_preferences (user_id, stripe_product_id, enabled)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (user_id, stripe_product_id)
+                    DO UPDATE SET 
+                        enabled = EXCLUDED.enabled,
+                        updated_at = CURRENT_TIMESTAMP
+                """, (user_data['id'], product_id, enabled))
+                
+                conn.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Feature {product_id} {"enabled" if enabled else "disabled"}'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 @app.route('/test-ping-creation', methods=['GET'])
 def test_ping_creation():
     """Test endpoint to create a single ping record"""

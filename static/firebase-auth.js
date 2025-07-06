@@ -28,24 +28,18 @@ document.addEventListener('DOMContentLoaded', function() {
       if (user) {
         // User is signed in
         console.log("User is signed in:", user);
-
-        // Store user ID in localStorage for client-side use
-        localStorage.setItem('userId', user.uid);
-        localStorage.setItem('userEmail', user.email);
-
-        // Register user with our backend
-        registerUserWithBackend(user);
-
-        // Only auto-redirect from signup page, not from root page or login page
-        // This allows users to stay logged out on the root page
-        const currentPath = window.location.pathname;
-        if (currentPath === '/signup') {
-          window.location.href = '/dashboard';
-        }
-        // Root page and login page are allowed for signed-in users (no auto-redirect)
+        localStorage.setItem('firebase_token', user.accessToken);
+        localStorage.setItem('firebase_uid', user.uid);
+        window.dispatchEvent(new CustomEvent('firebaseAuthStateChanged', { 
+            detail: { user: user, signedIn: true } 
+        }));
       } else {
-        // User is signed out
-        console.log("User is signed out");
+        console.log('User is signed out');
+        localStorage.removeItem('firebase_token');
+        localStorage.removeItem('firebase_uid');
+        window.dispatchEvent(new CustomEvent('firebaseAuthStateChanged', { 
+            detail: { user: null, signedIn: false } 
+        }));
 
         // Clear localStorage
         localStorage.removeItem('userId');
@@ -123,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
           window.location.href = '/';
           return Promise.resolve();
         }
-        
+
         return firebase.auth().signOut()
           .then(() => {
             // Clear all local storage
@@ -131,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.removeItem('userEmail');
             localStorage.removeItem('databaseUserId');
             console.log('User signed out successfully');
-            
+
             // Redirect to home page after logout  
             window.location.href = '/';
           })
