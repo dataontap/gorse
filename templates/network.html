@@ -309,7 +309,7 @@
                         <div class="network-scan-toggle" style="margin: 0;">
                             <span>Network Scans</span>
                             <label class="switch">
-                                <input type="checkbox" id="scanToggle" onchange="toggleNetworkScan()">
+                                <input type="checkbox" id="scanToggle" onchange="toggleNetworkScanFeature()">
                                 <span class="slider round"></span>
                             </label>
                         </div>
@@ -419,6 +419,46 @@
                         console.error('Error fetching member count:', error);
                         memberCountElement.textContent = `#${currentMemberId}/X`;
                     });
+            }
+        }
+
+        // Toggle Network Scans feature
+        async function toggleNetworkScanFeature() {
+            const scanToggle = document.getElementById('scanToggle');
+            const enabled = scanToggle.checked;
+            
+            try {
+                const firebaseUid = localStorage.getItem('firebase_uid');
+                if (!firebaseUid) {
+                    console.error('No Firebase UID found');
+                    alert('Authentication error - please refresh the page');
+                    scanToggle.checked = !enabled;
+                    return;
+                }
+
+                const response = await fetch(`/api/network-features/${firebaseUid}/network_scans`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ enabled: enabled })
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    console.log('Network Scans toggle successful:', data.message);
+                    toggleNetworkScan(); // Update the UI
+                    showToast(`Network Scans ${enabled ? 'enabled' : 'disabled'} successfully`, 'success');
+                } else {
+                    console.error('Failed to toggle Network Scans:', data.message);
+                    alert('Failed to update Network Scans: ' + data.message);
+                    scanToggle.checked = !enabled;
+                }
+            } catch (error) {
+                console.error('Error toggling Network Scans:', error);
+                alert('Error updating Network Scans: ' + error.message);
+                scanToggle.checked = !enabled;
             }
         }
 
@@ -532,6 +572,16 @@
                     </div>
                 `;
                 return;
+            }
+
+            // Update the Network Scans toggle in the header based on the network_scans feature
+            const networkScansFeature = features.find(f => f.stripe_product_id === 'network_scans');
+            if (networkScansFeature) {
+                const scanToggle = document.getElementById('scanToggle');
+                if (scanToggle) {
+                    scanToggle.checked = networkScansFeature.enabled;
+                    toggleNetworkScan(); // Update the UI state
+                }
             }
 
             features.forEach(feature => {

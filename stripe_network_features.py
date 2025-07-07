@@ -300,6 +300,14 @@ def get_network_features():
     """Get all available network features"""
     return [
         {
+            'stripe_product_id': 'network_scans',
+            'feature_name': 'network_scans',
+            'feature_title': 'Network Scans',
+            'description': 'Advanced network scanning and monitoring capabilities',
+            'default_enabled': False,
+            'price_cents': 0  # Free
+        },
+        {
             'stripe_product_id': 'network_security_basic',
             'feature_name': 'network_security',
             'feature_title': 'Network Security',
