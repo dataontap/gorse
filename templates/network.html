@@ -472,28 +472,67 @@
         // Load network features from API
         async function loadNetworkFeatures() {
             try {
-                const firebaseUid = localStorage.getItem('firebase_uid');
+                // First ensure user is authenticated and get Firebase UID
+                let firebaseUid = localStorage.getItem('firebase_uid');
+                
+                // Try to get Firebase UID from current Firebase user if not in localStorage
+                if (!firebaseUid && window.firebaseAuth && window.firebaseAuth.getCurrentUser) {
+                    const currentUser = window.firebaseAuth.getCurrentUser();
+                    if (currentUser) {
+                        firebaseUid = currentUser.uid;
+                        localStorage.setItem('firebase_uid', firebaseUid);
+                    }
+                }
+
                 if (!firebaseUid) {
-                    console.error('No Firebase UID found');
+                    console.error('No Firebase UID found - user may not be authenticated');
+                    showNetworkError('Please log in to view network features');
                     return;
                 }
+
+                console.log('Loading network features for Firebase UID:', firebaseUid);
 
                 const response = await fetch(`/api/network-features/${firebaseUid}`);
                 const data = await response.json();
 
-                if (data.status === 'success') {
+                if (data.status === 'success' && data.features) {
+                    console.log('Loaded network features:', data.features);
                     renderNetworkFeatures(data.features);
                 } else {
                     console.error('Failed to load network features:', data.message);
+                    showNetworkError(data.message || 'No network features available');
                 }
             } catch (error) {
                 console.error('Error loading network features:', error);
+                showNetworkError('Error loading network features: ' + error.message);
             }
+        }
+
+        function showNetworkError(message) {
+            const container = document.getElementById('networkSettings');
+            container.innerHTML = `
+                <div class="setting-box" style="text-align: center; color: #666;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <p>${message}</p>
+                    <button onclick="loadNetworkFeatures()" class="btn btn-primary btn-sm">Retry</button>
+                </div>
+            `;
         }
 
         function renderNetworkFeatures(features) {
             const container = document.getElementById('networkSettings');
             container.innerHTML = '';
+
+            if (!features || features.length === 0) {
+                container.innerHTML = `
+                    <div class="setting-box" style="text-align: center; color: #666;">
+                        <i class="fas fa-info-circle" style="font-size: 24px; margin-bottom: 10px;"></i>
+                        <p>No network features configured yet.</p>
+                        <p style="font-size: 14px;">Network features will appear here once they are set up by the admin.</p>
+                    </div>
+                `;
+                return;
+            }
 
             features.forEach(feature => {
                 const featureBox = document.createElement('div');
@@ -501,14 +540,16 @@
                 
                 featureBox.innerHTML = `
                     <div class="setting-header">
-                        <span class="setting-name">${feature.feature_title}</span>
+                        <span class="setting-name">${feature.feature_title || feature.feature_name || 'Network Feature'}</span>
                         <label class="switch">
                             <input type="checkbox" ${feature.enabled ? 'checked' : ''} 
-                                   onchange="toggleFeature('${feature.stripe_product_id}', this.checked)">
+                                   onchange="toggleFeature('${feature.stripe_product_id}', this.checked)"
+                                   data-feature-id="${feature.stripe_product_id}">
                             <span class="slider round"></span>
                         </label>
                     </div>
-                    <p class="setting-description">${feature.description}</p>
+                    <p class="setting-description">${feature.description || 'Network feature configuration'}</p>
+                    ${feature.price_cents ? `<p class="setting-price" style="font-size: 12px; color: #888; margin-top: 5px;">Price: $${(feature.price_cents / 100).toFixed(2)}/month</p>` : ''}
                 `;
                 
                 container.appendChild(featureBox);
@@ -516,12 +557,18 @@
         }
 
         async function toggleFeature(productId, enabled) {
+            const toggleElement = document.querySelector(`input[data-feature-id="${productId}"]`);
+            
             try {
                 const firebaseUid = localStorage.getItem('firebase_uid');
                 if (!firebaseUid) {
                     console.error('No Firebase UID found');
+                    alert('Authentication error - please refresh the page');
+                    if (toggleElement) toggleElement.checked = !enabled;
                     return;
                 }
+
+                console.log(`Toggling feature ${productId} to ${enabled} for Firebase UID: ${firebaseUid}`);
 
                 const response = await fetch(`/api/network-features/${firebaseUid}/${productId}`, {
                     method: 'PUT',
@@ -535,15 +582,83 @@
                 
                 if (data.status === 'success') {
                     console.log('Feature toggle successful:', data.message);
+                    // Show success feedback
+                    showToast(`Feature ${enabled ? 'enabled' : 'disabled'} successfully`, 'success');
                 } else {
                     console.error('Failed to toggle feature:', data.message);
+                    alert('Failed to update feature: ' + data.message);
                     // Revert the toggle if the API call failed
-                    event.target.checked = !enabled;
+                    if (toggleElement) toggleElement.checked = !enabled;
                 }
             } catch (error) {
                 console.error('Error toggling feature:', error);
+                alert('Error updating feature: ' + error.message);
                 // Revert the toggle if there was an error
-                event.target.checked = !enabled;
+                if (toggleElement) toggleElement.checked = !enabled;
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 4px;
+                z-index: 10000;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.style.opacity = '1', 100);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // Check authentication and load features
+        function checkAuthenticationAndLoadFeatures() {
+            // Listen for Firebase auth state changes
+            window.addEventListener('firebaseAuthStateChanged', function(event) {
+                console.log('Firebase auth state changed:', event.detail);
+                if (event.detail.signedIn && event.detail.user) {
+                    // User is signed in, store Firebase UID and load features
+                    localStorage.setItem('firebase_uid', event.detail.user.uid);
+                    console.log('User authenticated with Firebase UID:', event.detail.user.uid);
+                    loadNetworkFeatures();
+                } else {
+                    // User is not signed in
+                    console.log('User not authenticated');
+                    showNetworkError('Please log in to view network features');
+                }
+            });
+
+            // Also check current auth state immediately
+            const firebaseUid = localStorage.getItem('firebase_uid');
+            if (firebaseUid) {
+                console.log('Found existing Firebase UID:', firebaseUid);
+                loadNetworkFeatures();
+            } else {
+                // Try to get from current Firebase user
+                setTimeout(() => {
+                    if (window.firebaseAuth && window.firebaseAuth.getCurrentUser) {
+                        const currentUser = window.firebaseAuth.getCurrentUser();
+                        if (currentUser) {
+                            localStorage.setItem('firebase_uid', currentUser.uid);
+                            console.log('Got Firebase UID from current user:', currentUser.uid);
+                            loadNetworkFeatures();
+                        } else {
+                            console.log('No current Firebase user found');
+                            showNetworkError('Please log in to view network features');
+                        }
+                    }
+                }, 1000); // Wait a bit for Firebase to initialize
             }
         }
 
@@ -560,6 +675,9 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication status first
+            checkAuthenticationAndLoadFeatures();
+
             // Initialize insight link click handlers
             document.querySelectorAll('.insight-link').forEach(link => {
                 link.addEventListener('click', function(e) {
@@ -570,9 +688,6 @@
 
             // Set device count to 3 to match the network status display
             document.getElementById('deviceCount').textContent = '3';
-
-            // Load network features from Stripe
-            loadNetworkFeatures();
 
             // Settings toggle
             document.getElementById('settingsToggle').addEventListener('click', function(e) {

@@ -296,3 +296,122 @@ if __name__ == "__main__":
         status = "ON" if feature['default_enabled'] else "OFF"
         price = f"${feature['price_cents']/100:.2f}" if feature['price_cents'] > 0 else "FREE"
         print(f"  {status:3} | {price:6} | {feature['feature_name']}")
+def get_network_features():
+    """Get all available network features"""
+    return [
+        {
+            'stripe_product_id': 'network_security_basic',
+            'feature_name': 'network_security',
+            'feature_title': 'Network Security',
+            'description': 'Basic network security features including firewall and threat detection',
+            'default_enabled': True,
+            'price_cents': 500  # $5.00/month
+        },
+        {
+            'stripe_product_id': 'network_optimization',
+            'feature_name': 'optimization', 
+            'feature_title': 'Network Optimization',
+            'description': 'Optimize network performance and reduce latency for faster connections',
+            'default_enabled': False,
+            'price_cents': 300  # $3.00/month
+        },
+        {
+            'stripe_product_id': 'network_monitoring',
+            'feature_name': 'monitoring',
+            'feature_title': 'Network Monitoring', 
+            'description': 'Real-time network monitoring and analytics dashboard',
+            'default_enabled': False,
+            'price_cents': 400  # $4.00/month
+        },
+        {
+            'stripe_product_id': 'network_vpn_access',
+            'feature_name': 'vpn_access',
+            'feature_title': 'VPN Access',
+            'description': 'Secure VPN access with global server locations',
+            'default_enabled': False,
+            'price_cents': 800  # $8.00/month
+        },
+        {
+            'stripe_product_id': 'network_priority_routing',
+            'feature_name': 'priority_routing',
+            'feature_title': 'Priority Routing',
+            'description': 'Priority network routing for improved connection speeds',
+            'default_enabled': False,
+            'price_cents': 600  # $6.00/month
+        }
+    ]
+
+def get_feature_by_product_id(product_id):
+    """Get a specific network feature by its Stripe product ID"""
+    features = get_network_features()
+    for feature in features:
+        if feature['stripe_product_id'] == product_id:
+            return feature
+    return None
+
+def create_network_features_in_stripe():
+    """Create network feature products in Stripe (for admin use)"""
+    try:
+        import stripe
+        import os
+        
+        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+        if not stripe.api_key:
+            print("Warning: STRIPE_SECRET_KEY not configured")
+            return False
+            
+        features = get_network_features()
+        created_products = []
+        
+        for feature in features:
+            try:
+                # Check if product already exists
+                try:
+                    existing_product = stripe.Product.retrieve(feature['stripe_product_id'])
+                    print(f"Product {feature['stripe_product_id']} already exists")
+                    continue
+                except stripe.error.InvalidRequestError:
+                    # Product doesn't exist, create it
+                    pass
+                
+                # Create the product
+                product = stripe.Product.create(
+                    id=feature['stripe_product_id'],
+                    name=feature['feature_title'],
+                    description=feature['description'],
+                    metadata={
+                        'feature_name': feature['feature_name'],
+                        'type': 'network_feature',
+                        'default_enabled': str(feature['default_enabled'])
+                    }
+                )
+                
+                # Create a recurring price for the product
+                price = stripe.Price.create(
+                    product=feature['stripe_product_id'],
+                    unit_amount=feature['price_cents'],
+                    currency='usd',
+                    recurring={'interval': 'month'},
+                    metadata={
+                        'feature_name': feature['feature_name']
+                    }
+                )
+                
+                created_products.append({
+                    'product_id': product.id,
+                    'price_id': price.id,
+                    'feature_title': feature['feature_title']
+                })
+                
+                print(f"Created network feature: {feature['feature_title']}")
+                
+            except Exception as product_err:
+                print(f"Error creating product {feature['stripe_product_id']}: {str(product_err)}")
+                continue
+        
+        print(f"Successfully created {len(created_products)} network feature products in Stripe")
+        return created_products
+        
+    except Exception as e:
+        print(f"Error creating network features in Stripe: {str(e)}")
+        return False

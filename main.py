@@ -1942,32 +1942,89 @@ def update_product_rule(product_id):
 def get_user_network_features(firebase_uid):
     """Get network features and their status for a user"""
     try:
+        print(f"Getting network features for Firebase UID: {firebase_uid}")
+        
         user_data = get_user_by_firebase_uid(firebase_uid)
         if not user_data:
-            return jsonify({'error': 'User not found'}), 404
+            print(f"User not found for Firebase UID: {firebase_uid}")
+            return jsonify({
+                'status': 'error',
+                'message': f'User not found for Firebase UID: {firebase_uid}. Please ensure you are logged in.'
+            }), 404
 
         # user_data is a tuple, so we need to access by index
         user_id = user_data[0]
+        print(f"Found user ID: {user_id} for Firebase UID: {firebase_uid}")
 
         # Get all network features from database
-        import stripe_network_features
-        features = stripe_network_features.get_network_features()
+        try:
+            import stripe_network_features
+            features = stripe_network_features.get_network_features()
+            print(f"Loaded {len(features)} network features from stripe_network_features")
+        except Exception as feature_err:
+            print(f"Error loading network features: {str(feature_err)}")
+            # Provide default features if the module fails
+            features = [
+                {
+                    'stripe_product_id': 'network_security_basic',
+                    'feature_name': 'network_security',
+                    'feature_title': 'Network Security',
+                    'description': 'Basic network security features including firewall and threat detection',
+                    'default_enabled': True,
+                    'price_cents': 500
+                },
+                {
+                    'stripe_product_id': 'network_optimization',
+                    'feature_name': 'optimization',
+                    'feature_title': 'Network Optimization',
+                    'description': 'Optimize network performance and reduce latency',
+                    'default_enabled': False,
+                    'price_cents': 300
+                },
+                {
+                    'stripe_product_id': 'network_monitoring',
+                    'feature_name': 'monitoring',
+                    'feature_title': 'Network Monitoring',
+                    'description': 'Real-time network monitoring and analytics',
+                    'default_enabled': False,
+                    'price_cents': 400
+                }
+            ]
 
         # Get user's current preferences
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    SELECT stripe_product_id, enabled 
-                    FROM user_network_preferences 
-                    WHERE user_id = %s
-                """, (user_id,))
+        user_prefs = {}
+        try:
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Ensure user_network_preferences table exists
+                        cur.execute("""
+                            CREATE TABLE IF NOT EXISTS user_network_preferences (
+                                id SERIAL PRIMARY KEY,
+                                user_id INTEGER NOT NULL,
+                                stripe_product_id VARCHAR(100) NOT NULL,
+                                enabled BOOLEAN DEFAULT FALSE,
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                UNIQUE(user_id, stripe_product_id)
+                            )
+                        """)
+                        
+                        cur.execute("""
+                            SELECT stripe_product_id, enabled 
+                            FROM user_network_preferences 
+                            WHERE user_id = %s
+                        """, (user_id,))
 
-                user_prefs = {row[0]: row[1] for row in cur.fetchall()}
+                        user_prefs = {row[0]: row[1] for row in cur.fetchall()}
+                        print(f"Found user preferences: {user_prefs}")
+        except Exception as pref_err:
+            print(f"Error getting user preferences: {str(pref_err)}")
 
         user_features = []
         for feature in features:
             # Use user preference if exists, otherwise use default
-            enabled = user_prefs.get(feature['stripe_product_id'], feature['default_enabled'])
+            enabled = user_prefs.get(feature['stripe_product_id'], feature.get('default_enabled', False))
 
             user_features.append({
                 'stripe_product_id': feature['stripe_product_id'],
@@ -1975,17 +2032,23 @@ def get_user_network_features(firebase_uid):
                 'feature_title': feature['feature_title'],
                 'description': feature['description'],
                 'enabled': enabled,
-                'price_cents': feature['price_cents']
+                'price_cents': feature.get('price_cents', 0)
             })
 
+        print(f"Returning {len(user_features)} features for user")
         return jsonify({
             'status': 'success',
-            'features': user_features
+            'features': user_features,
+            'user_id': user_id,
+            'firebase_uid': firebase_uid
         })
     except Exception as e:
+        print(f"Error in get_user_network_features: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'status': 'error',
-            'message': str(e)
+            'message': f'Internal server error: {str(e)}'
         }), 500
 
 @app.route('/api/network-features/<firebase_uid>/<product_id>', methods=['PUT'])
