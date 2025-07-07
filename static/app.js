@@ -769,47 +769,16 @@ function toggleSortControls() {
 
 // Initialize sorting functionality
 function initializeSorting() {
-    // Sort controls functionality
     const sortSelect = document.querySelector('.sort-select');
     const sortIcons = document.querySelectorAll('.sort-icon');
-    const metrics = document.querySelectorAll('.metric');
 
     if (sortSelect) {
         sortSelect.addEventListener('change', function() {
-            const selectedValue = this.value;
-            console.log('Sort by:', selectedValue);
-            updateMetricSelection(selectedValue);
-            // Add sorting logic here
-        });
-
-        // Initialize with default selection
-        updateMetricSelection(sortSelect.value);
-    }
-
-    // Make metrics clickable
-    metrics.forEach(metric => {
-        metric.addEventListener('click', function() {
-            const metricType = this.getAttribute('data-metric');
-            if (metricType && sortSelect) {
-                sortSelect.value = metricType;
-                updateMetricSelection(metricType);
-                // Trigger change event
-                sortSelect.dispatchEvent(new Event('change'));
+            const activeIcon = document.querySelector('.sort-icon.active');
+            if (activeIcon) {
+                performSort();
             }
         });
-    });
-
-    function updateMetricSelection(selectedType) {
-        // Remove selected class from all metrics
-        metrics.forEach(metric => {
-            metric.classList.remove('selected');
-        });
-
-        // Add selected class to matching metric
-        const selectedMetric = document.querySelector(`[data-metric="${selectedType}"]`);
-        if (selectedMetric) {
-            selectedMetric.classList.add('selected');
-        }
     }
 
     sortIcons.forEach(icon => {
@@ -1001,7 +970,6 @@ function createUserCard(invite) {
     userCard.className = 'dashboard-content user-card accepted-user';
     userCard.setAttribute('data-data-percentage', dataPercentage);
     userCard.setAttribute('data-time-percentage', timePercentage);
-    ```text
     userCard.setAttribute('data-dollar-amount', dollarAmount);
     userCard.setAttribute('data-score', scoreNumber);
 
@@ -1029,11 +997,11 @@ function createUserCard(invite) {
                     <div class="usage-amount">${dataPercentage}%</div>
                 </div>
                 <div class="metric" data-metric="time">
-                    <div class="usage_label"><i class="fas fa-clock"></i> Time</div>
+                    <div class="usage-label"><i class="fas fa-clock"></i> Time</div>
                     <div class="usage-amount">${timePercentage}%</div>
                 </div>
                 <div class="metric" data-metric="cost">
-                    <div class="usage_label"><i class="fas fa-dollar-sign"></i> Cost</div>
+                    <div class="usage-label"><i class="fas fa-dollar-sign"></i> Cost</div>
                     <div class="usage-amount">$${dollarAmount}</div>
                 </div>
                 <div class="metric" data-metric="score">
@@ -1935,31 +1903,6 @@ function updateBetaStatus(status, message) {
             betaEnrollBtn.style.display = 'none';
             betaStatus.style.display = 'block';
             betaStatusText.textContent = 'Your eSIM is ready to download';
-            betaStatusText.style.color = '#28a745';
-
-            // Show resend link
-            let resendContainer = document.getElementById('resendContainer');
-            if (!resendContainer) {
-                resendContainer = document.createElement('div');
-                resendContainer.id = 'resendContainer';
-                resendContainer.style.marginTop = '5px';
-
-                const resendLink = document.createElement('a');
-                resendLink.href = '#';
-                resendLink.textContent = 'Resend';
-                resendLink.style.color = '#007bff';
-                resendLink.style.textDecoration = 'underline';
-                resendLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    send_esim_ready_email();
-                });
-
-                resendContainer.appendChild(resendLink);
-                betaStatus.appendChild(resendContainer);
-            } else {
-                resendContainer.style.display = 'block'; // Ensure it's visible
-            }
-
             break;
         case 'enrolled':
             betaEnrollBtn.style.display = 'none';
