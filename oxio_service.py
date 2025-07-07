@@ -13,19 +13,11 @@ class OXIOService:
         # Debug information
         print(f"OXIO Service initialized:")
         print(f"  Base URL: {self.base_url}")
-        print(f"  API Key configured: {bool(self.api_key)} (length: {len(self.api_key) if self.api_key else 0})")
-        print(f"  Auth Token configured: {bool(self.auth_token)} (length: {len(self.auth_token) if self.auth_token else 0})")
+        print(f"  API Key configured: {bool(self.api_key)}")
+        print(f"  Auth Token configured: {bool(self.auth_token)}")
 
         if not self.api_key or not self.auth_token:
             raise ValueError("OXIO_API_KEY and OXIO_AUTH_TOKEN must be set in secrets")
-
-        # Show Base64 credentials immediately for debugging
-        import base64
-        credentials = f"{self.api_key}:{self.auth_token}"
-        encoded_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
-        print(f"DEBUG - OXIO Base64 Credentials: {encoded_credentials}")
-        print(f"DEBUG - Expected Base64: Z29yc2VvX0FZZ0thNlZja2Nac01wQkRLd2l6MjA1STp1NzBKaTNUcXBuZGM4elRBUDk2S1RrSjNEWVIwOXBGTw==")
-        print(f"DEBUG - Credentials match: {encoded_credentials == 'Z29yc2VvX0FZZ0thNlZja2Nac01wQkRLd2l6MjA1STp1NzBKaTNUcXBuZGM4elRBUDk2S1RrSjNEWVIwOXBGTw=='}")
 
     def get_headers(self) -> Dict[str, str]:
         """Get standard headers for OXIO API requests"""
@@ -35,10 +27,7 @@ class OXIOService:
         credentials = f"{self.api_key}:{self.auth_token}"
         encoded_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
 
-        # Debug output to show the exact Base64 encoding
-        print(f"DEBUG - Raw credentials format: {self.api_key[:10]}...:{self.auth_token[:10]}...")
-        print(f"DEBUG - Base64 encoded credentials: {encoded_credentials}")
-        print(f"DEBUG - Full Authorization header: Basic {encoded_credentials}")
+        # Credentials configured and encoded for authorization
 
         return {
             'Content-Type': 'application/json',
