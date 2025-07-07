@@ -990,7 +990,7 @@ function createUserCard(invite) {
             <div class="timestamp">Active Member since ${formatDate(invite.created_at)}</div>
         </div>
 
-        <The code updates the purchaseProduct function to handle 'no_expiry_esim' product purchases, calling a new API endpoint for processing.        <div class="data-usage">
+        <div class="data-usage">
             <div class="usage-metrics">
                 <div class="metric" data-metric="data">
                     <div class="usage_label"><i class="fas fa-database"></i> Data</div>
@@ -1328,16 +1328,6 @@ function populateOfferCards() {
             action: "sendComingSoonNotification()",
             disabled: true,
             alwaysShow: true
-        },
-        {
-            id: 'no_expiry_esim',
-            title: 'eSIM No Expiry',
-            description: ['Pay $1 for no-expiry eSIM', 'Connect in <1min', 'Pay up to 10X less for premium truly global access', 'Same rate everywhere you go'],
-            price: '$1',
-            buttonText: 'Buy Now',
-            buttonClass: 'btn-primary',
-            action: "purchaseProduct('no_expiry_esim')",
-            alwaysShow: true // Ensure this offer always shows
         }
     ];
 
@@ -1702,9 +1692,6 @@ function dismissCurrentCard() {
         } else if (onclickAttr.includes('full_membership')) {
             offerId = 'full_membership';
         }
-        else if (onclickAttr.includes('no_expiry_esim')) {
-           offerId = 'no_expiry_esim';
-        }
     }
 
     if (offerId) {
@@ -1916,31 +1903,6 @@ function updateBetaStatus(status, message) {
             betaEnrollBtn.style.display = 'none';
             betaStatus.style.display = 'block';
             betaStatusText.textContent = 'Your eSIM is ready to download';
-            betaStatusText.style.color = '#28a745';
-
-            // Show resend link
-            let resendContainer = document.getElementById('resendContainer');
-            if (!resendContainer) {
-                resendContainer = document.createElement('div');
-                resendContainer.id = 'resendContainer';
-                resendContainer.style.marginTop = '5px';
-
-                const resendLink = document.createElement('a');
-                resendLink.href = '#';
-                resendLink.textContent = 'Resend';
-                resendLink.style.color: '#007bff';
-                resendLink.style.textDecoration = 'underline';
-                resendLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    send_esim_ready_email();
-                });
-
-                resendContainer.appendChild(resendLink);
-                betaStatus.appendChild(resendContainer);
-            } else {
-                resendContainer.style.display = 'block'; // Ensure it's visible
-            }
-
             break;
         case 'enrolled':
             betaEnrollBtn.style.display = 'none';
@@ -2158,82 +2120,3 @@ function updateBetaStatus(status, message) {
             break;
     }
 }
-
-// Purchase product function
-async function purchaseProduct(productId) {
-    // Special handling for no-expiry eSIM
-    if (productId === 'no_expiry_esim') {
-        try {
-            const firebaseUid = localStorage.getItem('userId');
-            if (!firebaseUid) {
-                alert('Please sign in to purchase eSIM');
-                return;
-            }
-
-            const response = await fetch('/api/purchase-no-expiry-esim', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    firebaseUid: firebaseUid
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                alert(`✅ No-Expiry eSIM Purchased!\n\n🌍 Global Access: ${data.esim_details.global_access ? 'Yes' : 'No'}\n⏱️ Activation: ${data.esim_details.activation_time}\n📅 Expiry: ${data.esim_details.expiry}\n💰 Savings: ${data.esim_details.cost_savings}\n📍 Rate: ${data.esim_details.rate_structure}`);
-
-                // Refresh the page to update data balance
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                alert('Error purchasing eSIM: ' + (data.message || 'Unknown error'));
-            }
-        } catch (error) {
-            console.error('Error purchasing no-expiry eSIM:', error);
-            alert('Error purchasing eSIM. Please try again.');
-        }
-        return;
-    }
-
-    var drawer = document.getElementById('confirmationDrawer');
-    if (drawer && productId) {
-        console.log('Confirming purchase for:', productId);
-
-        // Get Firebase UID if available
-        var firebaseUid = localStorage.getItem('userId') || null;
-
-        // Make API call to record purchase
-        fetch('/api/record-global-purchase', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                productId: productId,
-                firebaseUid: firebaseUid
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Purchase recorded:', data);
-            hideConfirmationDrawer();
-
-            // Show success message
-            alert('Purchase successful! Your data will be available shortly.');
-
-            // Refresh the page to update data balance
-            window.location.reload();
-        })
-        .catch(error => {
-            console.error('Error recording purchase:', error);
-            alert('Error processing purchase. Please try again.');
-        });
-    }
-}
-
-// Make purchaseProduct function globally available
-window.purchaseProduct = purchaseProduct;
