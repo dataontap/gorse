@@ -1012,8 +1012,7 @@ body.light-mode {
         box-shadow: 0 17.5px 52.5px rgba(255, 243, 113, 0.525), 0 0 35px rgba(255, 243, 113, 0.35);
     }
     100% {
-        box-shadow: 0 20px 60px rgba(255, 243, 113, 0.6), 0 0 40px rgba(255,243, 113, 0.4);
-    }
+        box-shadow: 0 20px 60px rgba(255, 243, 113, 0.6), 0 0 40px rgba(255,243, 113, 0.4);    }
 }
 
 .dark-mode .data-amount,
@@ -2211,7 +2210,8 @@ body.light-mode {
     margin: 0 auto;
     width: 100%;
     padding: 0 10px;
-}```python
+}
+
 .metric {
     flex: 1;
     background: rgba(200, 200, 200, 0.2);
@@ -2225,6 +2225,12 @@ body.light-mode {
     text-align: center;
     min-width: 80px;
     max-width: 90px;
+    cursor: pointer;
+}
+
+.metric:hover {
+    background: rgba(200, 200, 200, 0.3);
+    transform: translateY(-1px);
 }
 
 .metric .usage-amount {
@@ -2238,6 +2244,23 @@ body.light-mode {
 .metric.highlighted {
     background: rgba(255, 243, 113, 0.3);
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.metric.selected {
+    background: rgba(77, 154, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(77, 154, 255, 0.3);
+}
+
+.metric.selected .usage-label,
+.metric.selected .usage-amount,
+.metric.selected .usage-label i {
+    color: #4d9aff;
+}
+
+.dark-mode .metric.selected .usage-label,
+.dark-mode .metric.selected .usage-amount,
+.dark-mode .metric.selected .usage-label i {
+    color: #4d9aff;
 }
 
 .usage-label {
@@ -2489,7 +2512,7 @@ body.light-mode {
     bottom: 60px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(102, 102, 102, 0.8);padding: 8px 16px;
+    background: rgba(102, 102, 102, 0.8);    padding: 8px 16px;
     border-radius: 20px;
     display: none;
     z-index: 1000;
@@ -2597,7 +2620,7 @@ body.light-mode {
     background: none;
     border: none;
     padding: 8px;
-cursor: pointer;
+    cursor: pointer;
     border-radius: 50%;
     transition: background-color 0.2s;
 }
@@ -3336,7 +3359,7 @@ input:checked + .toggle-slider:before {
     .callback-btn {
         width: 100%;
         max-width: 280px;
-        }
+    }
 
     .agent-info {
         flex-direction: column;
