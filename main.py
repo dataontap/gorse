@@ -29,6 +29,7 @@ except Exception as e:
 from datetime import datetime
 import stripe
 import json
+import random
 
 # Initialize Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
@@ -1997,6 +1998,133 @@ def get_user_network_features(firebase_uid):
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
+
+
+@app.route('/api/notifications/<firebase_uid>', methods=['GET'])
+def get_user_notifications(firebase_uid):
+    """Get notifications for a specific user"""
+    try:
+        limit = int(request.args.get('limit', 20))
+        offset = int(request.args.get('offset', 0))
+        unread_only = request.args.get('unread_only', 'false').lower() == 'true'
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get user ID from Firebase UID
+                    cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    user_result = cur.fetchone()
+
+                    if not user_result:
+                        return jsonify({'error': 'User not found'}), 404
+
+                    user_id = user_result[0]
+
+                    # Build query based on filters
+                    base_query = """
+                        SELECT id, title, message, type, is_read, metadata, created_at, updated_at
+                        FROM notifications 
+                        WHERE user_id = %s
+                    """
+                    params = [user_id]
+
+                    if unread_only:
+                        base_query += " AND is_read = FALSE"
+
+                    base_query += " ORDER BY created_at DESC LIMIT %s OFFSET %s"
+                    params.extend([limit, offset])
+
+                    cur.execute(base_query, params)
+                    notifications = cur.fetchall()
+
+                    # Get total count
+                    count_query = """
+                        SELECT COUNT(*) FROM notifications 
+                        WHERE user_id = %s
+                    """
+                    count_params = [user_id]
+
+                    if unread_only:
+                        count_query += " AND is_read = FALSE"
+
+                    cur.execute(count_query, count_params)
+                    total_count = cur.fetchone()[0]
+
+                    notification_list = []
+                    for notification in notifications:
+                        try:
+                            metadata = json.loads(notification[5]) if notification[5] else {}
+                        except:
+                            metadata = {}
+
+                        notification_list.append({
+                            'id': notification[0],
+                            'title': notification[1],
+                            'message': notification[2],
+                            'type': notification[3],
+                            'is_read': notification[4],
+                            'metadata': metadata,
+                            'created_at': notification[6].isoformat() if notification[6] else None,
+                            'updated_at': notification[7].isoformat() if notification[7] else None
+                        })
+
+                    return jsonify({
+                        'success': True,
+                        'notifications': notification_list,
+                        'total_count': total_count,
+                        'limit': limit,
+                        'offset': offset
+                    })
+
+        return jsonify({'error': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error getting user notifications: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/notifications/<int:notification_id>/read', methods=['POST'])
+def mark_notification_read(notification_id):
+    """Mark a notification as read"""
+    try:
+        data = request.get_json() or {}
+        firebase_uid = data.get('firebaseUid')
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    if firebase_uid:
+                        # Verify notification belongs to user
+                        cur.execute("""
+                            UPDATE notifications 
+                            SET is_read = TRUE, updated_at = CURRENT_TIMESTAMP
+                            WHERE id = %s AND firebase_uid = %s
+                            RETURNING id
+                        """, (notification_id, firebase_uid))
+                    else:
+                        # Update without user verification (admin action)
+                        cur.execute("""
+                            UPDATE notifications 
+                            SET is_read = TRUE, updated_at = CURRENT_TIMESTAMP
+                            WHERE id = %s
+                            RETURNING id
+                        """, (notification_id,))
+
+                    result = cur.fetchone()
+                    if result:
+                        conn.commit()
+                        return jsonify({
+                            'success': True,
+                            'message': 'Notification marked as read'
+                        })
+                    else:
+                        return jsonify({'error': 'Notification not found or not authorized'}), 404
+
+        return jsonify({'error': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error marking notification as read: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
                         # Ensure user_network_preferences table exists
                         cur.execute("""
                             CREATE TABLE IF NOT EXISTS user_network_preferences (
@@ -2537,7 +2665,7 @@ def get_beta_status():
 
 @app.route('/api/resend-esim-email', methods=['POST'])
 def resend_esim_email():
-    """Resend eSIM ready email to user"""
+    """Resend eSIM ready email to user with OXIO details and notifications"""
     try:
         data = request.get_json()
         firebase_uid = data.get('firebaseUid')
@@ -2550,6 +2678,35 @@ def resend_esim_email():
                 return jsonify({'success': False, 'message': 'Database connection error'}), 500
 
             with conn.cursor() as cur:
+                # Ensure notifications table exists
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS notifications (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        firebase_uid VARCHAR(128),
+                        title VARCHAR(255) NOT NULL,
+                        message TEXT NOT NULL,
+                        type VARCHAR(50) DEFAULT 'info',
+                        is_read BOOLEAN DEFAULT FALSE,
+                        metadata TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+
+                # Ensure beta_testers table has proper column sizes
+                cur.execute("""
+                    SELECT column_name, character_maximum_length 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'beta_testers' AND column_name = 'action'
+                """)
+                action_col = cur.fetchone()
+                
+                if action_col and action_col[1] and action_col[1] < 50:
+                    # Expand action column if it's too small
+                    cur.execute("ALTER TABLE beta_testers ALTER COLUMN action TYPE VARCHAR(100)")
+                    print("Expanded beta_testers action column to VARCHAR(100)")
+
                 # Get user details
                 cur.execute("SELECT id, email, display_name FROM users WHERE firebase_uid = %s", (firebase_uid,))
                 user_result = cur.fetchone()
@@ -2574,81 +2731,187 @@ def resend_esim_email():
                         'message': 'eSIM not ready or user not enrolled in beta'
                     }), 400
 
-                # Generate demo ICCID details for resending
-                import random
-                demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
-                activation_code = f"AC{random.randint(100000, 999999)}"
-                qr_code_data = f"LPA:1$api-staging.brandvno.com${activation_code}$"
+                # Get OXIO eSIM details - try real API first, fallback to demo
+                oxio_sim_details = None
+                try:
+                    # Try to get real OXIO details
+                    sample_payload = {
+                        "lineType": "LINE_TYPE_MOBILITY",
+                        "sim": {
+                            "simType": "EMBEDDED",
+                            "iccid": os.environ.get('EUICCID1', f"8910650420001{random.randint(100000, 999999)}F")
+                        },
+                        "endUser": {
+                            "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
+                        },
+                        "phoneNumberRequirements": {
+                            "preferredAreaCode": "212"
+                        },
+                        "countryCode": "US",
+                        "activateOnAttach": False
+                    }
 
-                # Create mock OXIO SIM details
-                oxio_sim_details = {
-                    'iccid': demo_iccid,
-                    'activation_code': activation_code,
-                    'qr_code': qr_code_data,
-                    'plan_name': 'OXIO_10day_demo_plan',
-                    'data_allowance': '1000MB',
-                    'validity_days': 10,
-                    'regions': ['Global'],
-                    'status': 'ready_for_activation',
-                    'note': 'Resent eSIM details - demo data'
-                }
+                    result = oxio_service.activate_line(sample_payload)
+                    if result.get('success'):
+                        # Extract OXIO details from successful response
+                        oxio_data = result.get('data', {})
+                        oxio_sim_details = {
+                            'iccid': sample_payload['sim']['iccid'],
+                            'activation_code': oxio_data.get('activationCode', f"AC{random.randint(100000, 999999)}"),
+                            'qr_code': oxio_data.get('qrCode', f"LPA:1$api-staging.brandvno.com${oxio_data.get('activationCode', 'demo')}$"),
+                            'plan_name': 'OXIO Global Beta Plan',
+                            'data_allowance': '1000MB',
+                            'validity_days': 10,
+                            'regions': ['Global'],
+                            'status': 'ready_for_activation',
+                            'note': 'Real OXIO eSIM profile'
+                        }
+                        print(f"Successfully retrieved OXIO eSIM details for resend: {oxio_sim_details['iccid']}")
+                    else:
+                        print(f"OXIO API failed, using demo data: {result.get('message', 'Unknown error')}")
+                        oxio_sim_details = None
+                except Exception as oxio_err:
+                    print(f"Error calling OXIO API: {str(oxio_err)}")
+                    oxio_sim_details = None
 
-                # Create email content
-                email_subject = f"[RESENT] Beta eSIM Details - ICCID: {oxio_sim_details['iccid']}"
-                email_content = f"""
-Hello {display_name or 'Beta Tester'},
+                # Fallback to demo data if OXIO fails
+                if not oxio_sim_details:
+                    import random
+                    demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
+                    activation_code = f"AC{random.randint(100000, 999999)}"
+                    qr_code_data = f"LPA:1$api-staging.brandvno.com${activation_code}$"
 
-Here are your eSIM activation details (resent):
+                    oxio_sim_details = {
+                        'iccid': demo_iccid,
+                        'activation_code': activation_code,
+                        'qr_code': qr_code_data,
+                        'plan_name': 'Demo Beta Plan',
+                        'data_allowance': '1000MB',
+                        'validity_days': 10,
+                        'regions': ['Global'],
+                        'status': 'ready_for_activation',
+                        'note': 'Demo eSIM profile - OXIO service unavailable'
+                    }
 
-=== eSIM ACTIVATION DETAILS ===
-ICCID: {oxio_sim_details['iccid']}
-Activation Code: {oxio_sim_details['activation_code']}
-QR Code Data: {oxio_sim_details['qr_code']}
-
-=== PLAN DETAILS ===
-Plan Name: {oxio_sim_details['plan_name']}
-Data Allowance: {oxio_sim_details['data_allowance']}
-Validity: {oxio_sim_details['validity_days']} days
-Coverage: {', '.join(oxio_sim_details['regions'])}
-Status: {oxio_sim_details['status']}
-
-=== ACTIVATION INSTRUCTIONS ===
-1. Go to your device's Settings > Cellular/Mobile Data
-2. Select "Add Cellular Plan" or "Add eSIM"
-3. Scan the QR code or manually enter the activation code above
-4. Follow the on-screen instructions to complete activation
-
-=== SUPPORT ===
-If you need assistance, please contact our support team with your ICCID reference.
-
-Note: {oxio_sim_details['note']}
-
-Thank you for participating in our beta program!
-
-Best regards,
-DOTM Team
+                # Create email content with proper formatting
+                email_subject = f"[RESENT] Beta eSIM Ready - ICCID: {oxio_sim_details['iccid']}"
+                email_html = f"""
+                <html>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <h2 style="color: #0066ff;">Your Beta eSIM Details (Resent)</h2>
+                    
+                    <p>Hello {display_name or 'Beta Tester'},</p>
+                    
+                    <p>Here are your eSIM activation details:</p>
+                    
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #0066ff; margin-top: 0;">eSIM Activation Details</h3>
+                        <ul>
+                            <li><strong>ICCID:</strong> {oxio_sim_details['iccid']}</li>
+                            <li><strong>Activation Code:</strong> {oxio_sim_details['activation_code']}</li>
+                            <li><strong>QR Code Data:</strong> {oxio_sim_details['qr_code']}</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #28a745; margin-top: 0;">Plan Details</h3>
+                        <ul>
+                            <li><strong>Plan Name:</strong> {oxio_sim_details['plan_name']}</li>
+                            <li><strong>Data Allowance:</strong> {oxio_sim_details['data_allowance']}</li>
+                            <li><strong>Validity:</strong> {oxio_sim_details['validity_days']} days</li>
+                            <li><strong>Coverage:</strong> {', '.join(oxio_sim_details['regions'])}</li>
+                            <li><strong>Status:</strong> {oxio_sim_details['status']}</li>
+                        </ul>
+                    </div>
+                    
+                    <h3>Activation Instructions</h3>
+                    <ol>
+                        <li>Go to your device's Settings → Cellular/Mobile Data</li>
+                        <li>Select "Add Cellular Plan" or "Add eSIM"</li>
+                        <li>Scan the QR code or manually enter the activation code</li>
+                        <li>Follow the on-screen instructions to complete activation</li>
+                    </ol>
+                    
+                    <p><strong>Support:</strong> If you need assistance, contact support with ICCID reference: {oxio_sim_details['iccid']}</p>
+                    
+                    <p><em>Note: {oxio_sim_details['note']}</em></p>
+                    
+                    <p>Best regards,<br>DOTM Team</p>
+                    
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                    <p style="font-size: 12px; color: #666;">
+                        Data On Tap Inc. - Licensed Full MVNO<br>
+                        Network 302 100, Parkdale, ON, Canada
+                    </p>
+                </body>
+                </html>
                 """
 
-                # Log the resend email (simulate for now)
-                print(f"=== RESENT BETA eSIM EMAIL ===")
-                print(f"To: {user_email}")
-                print(f"Subject: {email_subject}")
-                print(f"Content:\n{email_content}")
-                print("===============================")
+                # Send email using email service
+                try:
+                    from email_service import send_email
+                    email_success = send_email(
+                        to_email=user_email,
+                        subject=email_subject,
+                        body=f"Your eSIM details have been resent. ICCID: {oxio_sim_details['iccid']}",
+                        html_body=email_html
+                    )
+                    
+                    if email_success:
+                        print(f"eSIM details email sent successfully to {user_email}")
+                        email_status = 'sent'
+                    else:
+                        print(f"Failed to send eSIM details email to {user_email}")
+                        email_status = 'failed'
+                        
+                except Exception as email_err:
+                    print(f"Email service error: {str(email_err)}")
+                    email_status = 'failed'
+                    # Log email content for manual sending if needed
+                    print(f"=== FAILED EMAIL CONTENT ===")
+                    print(f"To: {user_email}")
+                    print(f"Subject: {email_subject}")
+                    print(f"HTML Content: {email_html[:500]}...")
+                    print("============================")
 
-                # Record the resend action
+                # Record the resend action in beta_testers
                 cur.execute("""
                     INSERT INTO beta_testers (user_id, firebase_uid, action, status, timestamp)
-                    VALUES (%s, %s, 'RESEND_EMAIL', 'esim_ready', CURRENT_TIMESTAMP)
-                """, (user_id, firebase_uid))
+                    VALUES (%s, %s, %s, 'esim_ready', CURRENT_TIMESTAMP)
+                """, (user_id, firebase_uid, 'RESEND_EMAIL'))
 
+                # Create notification for user
+                notification_title = "eSIM Details Resent"
+                notification_message = f"Your eSIM activation details have been resent to {user_email}. ICCID: {oxio_sim_details['iccid']}"
+                notification_metadata = json.dumps({
+                    'type': 'esim_resend',
+                    'iccid': oxio_sim_details['iccid'],
+                    'email_status': email_status,
+                    'email_address': user_email,
+                    'activation_code': oxio_sim_details['activation_code']
+                })
+
+                cur.execute("""
+                    INSERT INTO notifications (user_id, firebase_uid, title, message, type, metadata)
+                    VALUES (%s, %s, %s, %s, 'esim', %s)
+                    RETURNING id
+                """, (user_id, firebase_uid, notification_title, notification_message, notification_metadata))
+
+                notification_id = cur.fetchone()[0]
                 conn.commit()
 
                 return jsonify({
                     'success': True,
                     'message': f'eSIM details resent to {user_email}',
-                    'email_sent': True,
-                    'resent_at': datetime.now().isoformat()
+                    'email_sent': email_status == 'sent',
+                    'email_status': email_status,
+                    'notification_id': notification_id,
+                    'resent_at': datetime.now().isoformat(),
+                    'oxio_details': {
+                        'iccid': oxio_sim_details['iccid'],
+                        'activation_code': oxio_sim_details['activation_code'],
+                        'plan_name': oxio_sim_details['plan_name']
+                    }
                 })
 
     except Exception as e:
