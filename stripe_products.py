@@ -199,7 +199,44 @@ def create_stripe_products():
         except Exception as e:
             print(f"Error creating Beta Tester price: {str(e)}")
 
-        # 6. Create Meter for Data Usage Tracking
+        # 6. No-Expiry eSIM - One-time purchase
+        try:
+            no_expiry_esim_product = stripe.Product.retrieve('no_expiry_esim')
+            print(f"No-Expiry eSIM product already exists: {no_expiry_esim_product.id}")
+        except stripe.error.InvalidRequestError:
+            no_expiry_esim_product = stripe.Product.create(
+                id='no_expiry_esim',
+                name='No-Expiry eSIM',
+                description='$1 for no-expiry eSIM. Connect in <1min. Pay up to 10X less for premium truly global access.',
+                metadata={
+                    'type': 'esim',
+                    'product_catalog': 'connectivity',
+                    'expiry': 'never',
+                    'global_access': 'true'
+                }
+            )
+            print(f"Created No-Expiry eSIM product: {no_expiry_esim_product.id}")
+        
+        # Create price for No-Expiry eSIM
+        try:
+            prices = stripe.Price.list(product=no_expiry_esim_product.id, active=True)
+            if len(prices.data) == 0:
+                no_expiry_esim_price = stripe.Price.create(
+                    product=no_expiry_esim_product.id,
+                    unit_amount=100,  # $1.00
+                    currency='usd',
+                    metadata={
+                        'expiry': 'never',
+                        'global_rate': 'same_everywhere'
+                    }
+                )
+                print(f"Created No-Expiry eSIM price: {no_expiry_esim_price.id}")
+            else:
+                print(f"No-Expiry eSIM price already exists: {prices.data[0].id}")
+        except Exception as e:
+            print(f"Error creating No-Expiry eSIM price: {str(e)}")
+
+        # 7. Create Meter for Data Usage Tracking
         try:
             # Check if meter already exists
             meters = stripe.billing.Meter.list(limit=100)
