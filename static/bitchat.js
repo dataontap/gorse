@@ -66,6 +66,7 @@ class BitchatClient {
     async checkBluetoothSupport() {
         if (!navigator.bluetooth) {
             this.displaySystemMessage('Bluetooth not supported in this browser. Consider using Chrome or Edge.');
+            this.displaySystemMessage('💡 Tip: You can still use demo mode by clicking the status indicator.');
             return false;
         }
 
@@ -73,13 +74,16 @@ class BitchatClient {
             const available = await navigator.bluetooth.getAvailability();
             if (!available) {
                 this.displaySystemMessage('Bluetooth not available on this device.');
+                this.displaySystemMessage('💡 Tip: You can still use demo mode by clicking the status indicator.');
                 return false;
             }
             
-            this.displaySystemMessage('Bluetooth support detected. Click to connect when ready.');
+            this.displaySystemMessage('Bluetooth support detected. Click the status indicator to connect.');
+            this.displaySystemMessage('📱 Note: You need another bitchat-enabled device nearby for real mesh networking.');
             return true;
         } catch (error) {
             this.displaySystemMessage('Error checking Bluetooth availability: ' + error.message);
+            this.displaySystemMessage('💡 Tip: You can still use demo mode by clicking the status indicator.');
             return false;
         }
     }
@@ -89,24 +93,75 @@ class BitchatClient {
             this.updateBluetoothStatus('connecting');
             this.displaySystemMessage('Requesting Bluetooth device...');
 
-            const device = await navigator.bluetooth.requestDevice({
-                filters: [{ services: ['6ba1e2e9-2e00-4b5e-8b5a-7e8b5a7e8b5a'] }], // Bitchat service UUID
-                optionalServices: ['battery_service']
-            });
+            // Try to find bitchat-enabled devices first
+            let device;
+            try {
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [
+                        { services: ['6ba1e2e9-2e00-4b5e-8b5a-7e8b5a7e8b5a'] }, // Bitchat service UUID
+                        { namePrefix: 'bitchat' },
+                        { namePrefix: 'BITCHAT' }
+                    ],
+                    optionalServices: ['battery_service', 'device_information']
+                });
+            } catch (filterError) {
+                // If no bitchat devices found, try with broader filters
+                this.displaySystemMessage('No bitchat devices found. Scanning for compatible devices...');
+                device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['battery_service', 'device_information']
+                });
+            }
 
-            this.displaySystemMessage(`Connecting to ${device.name}...`);
+            this.displaySystemMessage(`Connecting to ${device.name || 'Unknown Device'}...`);
             
             const server = await device.gatt.connect();
-            this.isConnected = true;
-            this.updateBluetoothStatus('online');
-            this.displaySystemMessage('Connected to Bitchat mesh network!');
             
-            // Start peer discovery simulation
-            this.startPeerDiscovery();
+            // Check if device supports bitchat protocol
+            try {
+                const service = await server.getPrimaryService('6ba1e2e9-2e00-4b5e-8b5a-7e8b5a7e8b5a');
+                this.displaySystemMessage('✓ Bitchat protocol detected!');
+                this.isConnected = true;
+                this.updateBluetoothStatus('online');
+                this.displaySystemMessage('Connected to Bitchat mesh network!');
+                
+                // Start peer discovery simulation
+                this.startPeerDiscovery();
+            } catch (serviceError) {
+                // Device doesn't support bitchat - simulate connection anyway for demo
+                this.displaySystemMessage('⚠️ Device does not support bitchat protocol. Running in demo mode.');
+                this.isConnected = true;
+                this.updateBluetoothStatus('online');
+                this.displaySystemMessage('Connected in demo mode - simulating mesh network');
+                
+                // Start peer discovery simulation
+                this.startPeerDiscovery();
+            }
             
         } catch (error) {
             this.updateBluetoothStatus('offline');
-            this.displaySystemMessage('Failed to connect: ' + error.message);
+            let errorMessage = 'Failed to connect: ';
+            
+            if (error.name === 'NotFoundError') {
+                errorMessage += 'No compatible devices found. Make sure Bluetooth is enabled and bitchat devices are nearby.';
+            } else if (error.name === 'SecurityError') {
+                errorMessage += 'Bluetooth access denied. Please allow Bluetooth permissions and try again.';
+            } else if (error.name === 'NotSupportedError') {
+                errorMessage += 'Bluetooth not supported on this device or browser.';
+            } else {
+                errorMessage += error.message || 'Unknown error occurred';
+            }
+            
+            this.displaySystemMessage(errorMessage);
+            
+            // Offer demo mode as fallback
+            setTimeout(() => {
+                this.displaySystemMessage('Would you like to try demo mode instead? Click the status indicator again.');
+                const statusElement = document.getElementById('bluetooth-status');
+                statusElement.addEventListener('click', () => {
+                    this.startDemoMode();
+                }, { once: true });
+            }, 2000);
         }
     }
 
@@ -392,6 +447,14 @@ Available Commands:
             this.updateMeshStatus();
             this.displaySystemMessage('🚨 Emergency wipe completed. All data cleared.');
         }
+    }
+
+    startDemoMode() {
+        this.displaySystemMessage('🎮 Starting demo mode...');
+        this.updateBluetoothStatus('online');
+        this.isConnected = true;
+        this.displaySystemMessage('Demo mode active - simulating bitchat mesh network');
+        this.startPeerDiscovery();
     }
 
     simulateInitialState() {
