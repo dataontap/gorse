@@ -92,6 +92,7 @@ class BitchatClient {
         try {
             this.updateBluetoothStatus('connecting');
             this.displaySystemMessage('Requesting Bluetooth device...');
+            this.showPairingOverlay();
 
             // Try to find bitchat-enabled devices first
             let device;
@@ -124,6 +125,7 @@ class BitchatClient {
                 this.isConnected = true;
                 this.updateBluetoothStatus('online');
                 this.displaySystemMessage('Connected to Bitchat mesh network!');
+                this.hidePairingOverlay();
                 
                 // Start peer discovery simulation
                 this.startPeerDiscovery();
@@ -133,6 +135,7 @@ class BitchatClient {
                 this.isConnected = true;
                 this.updateBluetoothStatus('online');
                 this.displaySystemMessage('Connected in demo mode - simulating mesh network');
+                this.hidePairingOverlay();
                 
                 // Start peer discovery simulation
                 this.startPeerDiscovery();
@@ -140,6 +143,7 @@ class BitchatClient {
             
         } catch (error) {
             this.updateBluetoothStatus('offline');
+            this.hidePairingOverlay();
             let errorMessage = 'Failed to connect: ';
             
             if (error.name === 'NotFoundError') {
@@ -465,6 +469,36 @@ Available Commands:
         this.displaySystemMessage('📱 All messages and connections are simulated for demonstration');
         this.displaySystemMessage('🚀 You can now test all bitchat features safely!');
         this.startPeerDiscovery();
+    }
+
+    showPairingOverlay() {
+        // Create overlay if it doesn't exist
+        let overlay = document.getElementById('bluetooth-pairing-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'bluetooth-pairing-overlay';
+            overlay.className = 'bluetooth-pairing-overlay';
+            overlay.innerHTML = `
+                <div class="pairing-message">
+                    <h3>🔗 Bluetooth Pairing</h3>
+                    <p>Select your bitchat device from the list</p>
+                    <p>or choose any Bluetooth device to try demo mode</p>
+                    <div style="margin-top: 15px; color: #ffff00;">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Check your browser's pairing dialog
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+        overlay.classList.add('active');
+    }
+
+    hidePairingOverlay() {
+        const overlay = document.getElementById('bluetooth-pairing-overlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
     }
 
     simulateInitialState() {

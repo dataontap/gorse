@@ -68,8 +68,49 @@ header p {
     grid-template-rows: auto 1fr;
     gap: 2px;
     height: 70vh;
-    margin: 20px 0;
+    margin: 20px auto;
     background: linear-gradient(45deg, #001122, #000000);
+    position: relative;
+    max-width: 1200px;
+}
+
+/* Overlay for when Bluetooth pairing is active */
+.bluetooth-pairing-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.bluetooth-pairing-overlay.active {
+    display: flex;
+}
+
+.pairing-message {
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(0, 255, 255, 0.1));
+    border: 2px solid #00ffff;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    max-width: 400px;
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+}
+
+.pairing-message h3 {
+    color: #00ffff;
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px #00ffff;
+}
+
+.pairing-message p {
+    color: #00aaaa;
+    margin-bottom: 10px;
 }
 
 .connection-status {
@@ -573,6 +614,11 @@ header p {
 @keyframes peer-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
+}
+
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); }
+    100% { box-shadow: 0 0 40px rgba(0, 255, 255, 0.8), 0 0 80px rgba(0, 255, 255, 0.3); }
 }
 
 /* Mobile Responsive */
