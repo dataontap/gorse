@@ -1085,6 +1085,10 @@ def tokens():
 def notifications():
     return render_template('notifications.html')
 
+@app.route('/bitchat', methods=['GET'])
+def bitchat():
+    return render_template('bitchat.html')
+
 @app.route('/help-admin', methods=['GET'])
 def help_admin():
     return render_template('help_admin.html')
