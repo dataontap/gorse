@@ -148,20 +148,28 @@ class BitchatClient {
                 errorMessage += 'Bluetooth access denied. Please allow Bluetooth permissions and try again.';
             } else if (error.name === 'NotSupportedError') {
                 errorMessage += 'Bluetooth not supported on this device or browser.';
+            } else if (error.message && error.message.includes('cancelled')) {
+                errorMessage += 'Connection cancelled by user.';
             } else {
                 errorMessage += error.message || 'Unknown error occurred';
             }
             
             this.displaySystemMessage(errorMessage);
             
-            // Offer demo mode as fallback
-            setTimeout(() => {
-                this.displaySystemMessage('Would you like to try demo mode instead? Click the status indicator again.');
-                const statusElement = document.getElementById('bluetooth-status');
-                statusElement.addEventListener('click', () => {
-                    this.startDemoMode();
-                }, { once: true });
-            }, 2000);
+            // Offer demo mode as immediate fallback for cancelled requests
+            if (error.message && error.message.includes('cancelled')) {
+                this.displaySystemMessage('💡 Try demo mode instead - click the Bluetooth status again for a simulated experience.');
+            } else {
+                // Offer demo mode as fallback for other errors
+                setTimeout(() => {
+                    this.displaySystemMessage('Would you like to try demo mode instead? Click the status indicator again.');
+                }, 2000);
+            }
+            
+            const statusElement = document.getElementById('bluetooth-status');
+            statusElement.addEventListener('click', () => {
+                this.startDemoMode();
+            }, { once: true });
         }
     }
 
@@ -453,7 +461,9 @@ Available Commands:
         this.displaySystemMessage('🎮 Starting demo mode...');
         this.updateBluetoothStatus('online');
         this.isConnected = true;
-        this.displaySystemMessage('Demo mode active - simulating bitchat mesh network');
+        this.displaySystemMessage('✨ Demo mode active - simulating bitchat mesh network');
+        this.displaySystemMessage('📱 All messages and connections are simulated for demonstration');
+        this.displaySystemMessage('🚀 You can now test all bitchat features safely!');
         this.startPeerDiscovery();
     }
 
@@ -463,10 +473,24 @@ Available Commands:
             if (!this.isConnected) {
                 const statusElement = document.getElementById('bluetooth-status');
                 statusElement.addEventListener('click', () => {
+                    if (this.isConnected) return;
                     this.connectBluetooth();
                 });
                 statusElement.style.cursor = 'pointer';
-                statusElement.title = 'Click to connect to Bitchat mesh network';
+                statusElement.title = 'Click to connect to Bitchat mesh network (or try demo mode)';
+                
+                // Add visual indicator that it's clickable
+                statusElement.style.transition = 'all 0.3s ease';
+                statusElement.addEventListener('mouseenter', () => {
+                    if (!this.isConnected) {
+                        statusElement.style.transform = 'scale(1.05)';
+                        statusElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+                    }
+                });
+                statusElement.addEventListener('mouseleave', () => {
+                    statusElement.style.transform = 'scale(1)';
+                    statusElement.style.boxShadow = 'none';
+                });
             }
         }, 1000);
     }
