@@ -99,7 +99,7 @@ class BitchatClient {
                 this.hidePairingOverlay();
                 this.displaySystemMessage('⏰ Pairing timed out. Click status to try again or use demo mode.');
                 this.updateBluetoothStatus('offline');
-            }, 30000); // 30 second timeout
+            }, 45000); // 45 second timeout for better user experience
 
             // Try to find bitchat-enabled devices first
             let device;
@@ -116,10 +116,20 @@ class BitchatClient {
             } catch (filterError) {
                 // If no bitchat devices found, try with broader filters
                 this.displaySystemMessage('📱 No bitchat devices found. Showing all Bluetooth devices...');
-                device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: ['battery_service', 'device_information']
-                });
+                try {
+                    device = await navigator.bluetooth.requestDevice({
+                        acceptAllDevices: true,
+                        optionalServices: ['battery_service', 'device_information']
+                    });
+                } catch (broadError) {
+                    // If user cancels or no devices available, offer demo mode
+                    clearTimeout(pairingTimeout);
+                    this.hidePairingOverlay();
+                    this.displaySystemMessage('No Bluetooth devices available or permission denied.');
+                    this.displaySystemMessage('💡 Starting demo mode for full feature testing...');
+                    setTimeout(() => this.startDemoMode(), 1000);
+                    return;
+                }
             }
             
             // Clear the timeout since user made a selection
@@ -493,18 +503,19 @@ Available Commands:
                 <div class="pairing-message">
                     <h3>🔗 Bluetooth Pairing Active</h3>
                     <p><strong>Look for your browser's pairing dialog</strong></p>
-                    <p>It may appear as a popup or notification</p>
-                    <div style="margin: 20px 0; padding: 15px; background: rgba(255, 255, 0, 0.1); border: 1px solid #ffff00; border-radius: 5px;">
-                        <p style="color: #ffff00; margin: 0;"><strong>📱 Instructions:</strong></p>
-                        <p style="margin: 5px 0 0 0;">• Select any Bluetooth device to try Bitchat</p>
-                        <p style="margin: 5px 0 0 0;">• Or cancel to use demo mode</p>
+                    <p>It may appear as a popup or notification at the top of the screen</p>
+                    <div style="margin: 15px 0; padding: 12px; background: rgba(255, 255, 0, 0.1); border: 1px solid #ffff00; border-radius: 5px;">
+                        <p style="color: #ffff00; margin: 0; font-size: 0.9em;"><strong>📱 Instructions:</strong></p>
+                        <p style="margin: 5px 0 0 0; font-size: 0.85em;">• Select any Bluetooth device to try Bitchat</p>
+                        <p style="margin: 5px 0 0 0; font-size: 0.85em;">• Or cancel to use demo mode</p>
                     </div>
-                    <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
-                        <button id="cancel-pairing" class="btn-secondary" style="background: rgba(255, 0, 64, 0.2); border-color: #ff0040; color: #ff0040;">Cancel & Demo</button>
-                        <button id="retry-pairing" class="btn-primary">Retry Pairing</button>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
+                        <button id="cancel-pairing" class="btn-secondary" style="background: rgba(255, 0, 64, 0.2); border-color: #ff0040; color: #ff0040; padding: 10px 20px; font-size: 0.9em;">Cancel & Demo</button>
+                        <button id="retry-pairing" class="btn-primary" style="padding: 10px 20px; font-size: 0.9em;">Retry Pairing</button>
                     </div>
-                    <div style="margin-top: 15px; color: #00aaaa; font-size: 0.9em;">
+                    <div style="margin-top: 12px; color: #00aaaa; font-size: 0.8em;">
                         <p>This dialog will stay visible while pairing is active</p>
+                        <p>Native dialog may appear separately from browser</p>
                     </div>
                 </div>
             `;
@@ -521,6 +532,9 @@ Available Commands:
                 setTimeout(() => this.connectBluetooth(), 500);
             });
         }
+        
+        // Position overlay to avoid conflicts with native dialogs
+        overlay.style.top = window.innerHeight > 600 ? '60%' : '50%';
         overlay.classList.add('active');
     }
 
@@ -555,6 +569,10 @@ Available Commands:
                     statusElement.style.transform = 'scale(1)';
                     statusElement.style.boxShadow = 'none';
                 });
+                
+                // Show helpful initial message
+                this.displaySystemMessage('🚀 Bitchat ready! Click the Bluetooth status to connect or start demo mode.');
+                this.displaySystemMessage('💡 Demo mode works without any Bluetooth devices for testing.');
             }
         }, 1000);
     }

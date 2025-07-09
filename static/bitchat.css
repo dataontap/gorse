@@ -77,7 +77,7 @@ header p {
 /* Overlay for when Bluetooth pairing is active */
 .bluetooth-pairing-overlay {
     position: fixed;
-    top: 50%;
+    top: 60%;
     left: 50%;
     transform: translate(-50%, -50%);
     background: rgba(0, 0, 0, 0.95);
@@ -89,6 +89,8 @@ header p {
     box-shadow: 
         0 0 50px rgba(0, 255, 255, 0.8),
         inset 0 0 30px rgba(0, 255, 255, 0.1);
+    max-height: 70vh;
+    overflow-y: auto;
 }
 
 .bluetooth-pairing-overlay.active {
@@ -98,11 +100,11 @@ header p {
 .pairing-message {
     background: linear-gradient(135deg, rgba(0, 255, 255, 0.3), rgba(0, 255, 255, 0.1));
     border: 2px solid #00ffff;
-    padding: 40px;
+    padding: 30px;
     border-radius: 10px;
     text-align: center;
     max-width: 450px;
-    min-width: 350px;
+    min-width: 300px;
     animation: pulse-glow 2s ease-in-out infinite alternate;
     position: relative;
 }
@@ -671,16 +673,27 @@ header p {
     }
     
     .bluetooth-pairing-overlay {
-        top: 40%;
-        left: 10px;
-        right: 10px;
+        top: 50%;
+        left: 15px;
+        right: 15px;
         transform: translateY(-50%);
-        max-width: calc(100vw - 20px);
+        max-width: calc(100vw - 30px);
+        max-height: 80vh;
     }
     
     .pairing-message {
-        padding: 25px 20px;
+        padding: 20px 15px;
         min-width: auto;
         max-width: 100%;
+    }
+    
+    .pairing-message h3 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+    
+    .pairing-message p {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
     }
 }
