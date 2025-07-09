@@ -1,0 +1,296 @@
+
+.bitchat-interface {
+    display: grid;
+    grid-template-columns: 200px 1fr 200px;
+    grid-template-rows: auto 1fr;
+    gap: 20px;
+    height: 70vh;
+    margin: 20px 0;
+}
+
+.connection-status {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ff4444;
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.online .status-dot {
+    background: #44ff44;
+}
+
+.status-indicator.connecting .status-dot {
+    background: #ffaa00;
+}
+
+.peers-count {
+    font-weight: bold;
+    color: #2196f3;
+}
+
+.channels-sidebar {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #ddd;
+}
+
+.channels-sidebar h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+}
+
+.channel-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    margin: 5px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.channel-item:hover {
+    background: #e9ecef;
+}
+
+.channel-item.active {
+    background: #2196f3;
+    color: white;
+}
+
+.channel-users {
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+
+.chat-main {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    overflow: hidden;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #2196f3;
+    color: white;
+}
+
+.chat-header h3 {
+    margin: 0;
+}
+
+.channel-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.welcome-message {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.message {
+    margin: 10px 0;
+    padding: 8px 12px;
+    border-radius: 18px;
+    max-width: 80%;
+}
+
+.message.own {
+    background: #2196f3;
+    color: white;
+    margin-left: auto;
+    text-align: right;
+}
+
+.message.peer {
+    background: #f1f1f1;
+    color: #333;
+}
+
+.message.system {
+    background: #fff3cd;
+    color: #856404;
+    text-align: center;
+    border-radius: 4px;
+    font-style: italic;
+}
+
+.chat-input {
+    display: flex;
+    padding: 15px;
+    border-top: 1px solid #ddd;
+    background: #f8f9fa;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    outline: none;
+    margin-right: 10px;
+}
+
+.chat-input input:focus {
+    border-color: #2196f3;
+}
+
+.peers-panel {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #ddd;
+}
+
+.peers-panel h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+}
+
+.peer-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    margin: 5px 0;
+    border-radius: 6px;
+    background: white;
+    border: 1px solid #eee;
+}
+
+.peer-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #44ff44;
+}
+
+.no-peers {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 20px;
+}
+
+.bitchat-features {
+    margin-top: 30px;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.feature-card {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+.feature-card h4 {
+    margin: 0 0 10px 0;
+    color: #2196f3;
+}
+
+.btn-primary, .btn-secondary, .btn-danger {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.btn-primary {
+    background: #2196f3;
+    color: white;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.btn-primary:hover {
+    background: #1976d2;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .bitchat-interface {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto;
+        height: auto;
+    }
+    
+    .channels-sidebar, .peers-panel {
+        order: 2;
+    }
+    
+    .chat-main {
+        order: 1;
+        min-height: 400px;
+    }
+}

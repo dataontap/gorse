@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitchat - Secure Mesh Messaging</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bitchat.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔗 Bitchat</h1>
+            <p>Secure, decentralized Bluetooth mesh messaging</p>
+        </header>
+
+        <div class="bitchat-interface">
+            <div class="connection-status">
+                <div id="bluetooth-status" class="status-indicator offline">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Bluetooth Disconnected</span>
+                </div>
+                <div id="mesh-status" class="status-indicator">
+                    <span class="peers-count">0</span> peers connected
+                </div>
+            </div>
+
+            <div class="chat-container">
+                <div class="channels-sidebar">
+                    <h3>Channels</h3>
+                    <div id="channels-list">
+                        <div class="channel-item active" data-channel="#general">
+                            <span class="channel-name">#general</span>
+                            <span class="channel-users">0</span>
+                        </div>
+                    </div>
+                    <button id="join-channel-btn" class="btn-primary">Join Channel</button>
+                </div>
+
+                <div class="chat-main">
+                    <div class="chat-header">
+                        <h3 id="current-channel">#general</h3>
+                        <div class="channel-actions">
+                            <button id="channel-settings" class="btn-secondary">⚙️</button>
+                            <button id="emergency-wipe" class="btn-danger">🚨 Wipe</button>
+                        </div>
+                    </div>
+
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="welcome-message">
+                            <p>🔐 Welcome to Bitchat! Secure mesh messaging without servers.</p>
+                            <p>Type <code>/help</code> for commands or start chatting.</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-input">
+                        <input type="text" id="message-input" placeholder="Type your message... (use /help for commands)" />
+                        <button id="send-btn">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="peers-panel">
+                <h3>Connected Peers</h3>
+                <div id="peers-list">
+                    <div class="no-peers">No peers connected</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bitchat-features">
+            <h3>Features</h3>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h4>🔒 End-to-End Encrypted</h4>
+                    <p>X25519 + AES-256-GCM encryption</p>
+                </div>
+                <div class="feature-card">
+                    <h4>📡 Mesh Network</h4>
+                    <p>Multi-hop message relay</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🚫 No Servers</h4>
+                    <p>Completely decentralized</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔋 Battery Optimized</h4>
+                    <p>Adaptive power modes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='bitchat.js') }}"></script>
+</body>
+</html>
