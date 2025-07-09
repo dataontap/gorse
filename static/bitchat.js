@@ -91,12 +91,20 @@ class BitchatClient {
     async connectBluetooth() {
         try {
             this.updateBluetoothStatus('connecting');
-            this.displaySystemMessage('Requesting Bluetooth device...');
+            this.displaySystemMessage('Initiating Bluetooth pairing...');
             this.showPairingOverlay();
+
+            // Set a timeout for the pairing process
+            const pairingTimeout = setTimeout(() => {
+                this.hidePairingOverlay();
+                this.displaySystemMessage('⏰ Pairing timed out. Click status to try again or use demo mode.');
+                this.updateBluetoothStatus('offline');
+            }, 30000); // 30 second timeout
 
             // Try to find bitchat-enabled devices first
             let device;
             try {
+                this.displaySystemMessage('🔍 Looking for Bitchat devices...');
                 device = await navigator.bluetooth.requestDevice({
                     filters: [
                         { services: ['6ba1e2e9-2e00-4b5e-8b5a-7e8b5a7e8b5a'] }, // Bitchat service UUID
@@ -107,12 +115,15 @@ class BitchatClient {
                 });
             } catch (filterError) {
                 // If no bitchat devices found, try with broader filters
-                this.displaySystemMessage('No bitchat devices found. Scanning for compatible devices...');
+                this.displaySystemMessage('📱 No bitchat devices found. Showing all Bluetooth devices...');
                 device = await navigator.bluetooth.requestDevice({
                     acceptAllDevices: true,
                     optionalServices: ['battery_service', 'device_information']
                 });
             }
+            
+            // Clear the timeout since user made a selection
+            clearTimeout(pairingTimeout);
 
             this.displaySystemMessage(`Connecting to ${device.name || 'Unknown Device'}...`);
             
@@ -480,16 +491,35 @@ Available Commands:
             overlay.className = 'bluetooth-pairing-overlay';
             overlay.innerHTML = `
                 <div class="pairing-message">
-                    <h3>🔗 Bluetooth Pairing</h3>
-                    <p>Select your bitchat device from the list</p>
-                    <p>or choose any Bluetooth device to try demo mode</p>
-                    <div style="margin-top: 15px; color: #ffff00;">
-                        <i class="fas fa-exclamation-triangle"></i> 
-                        Check your browser's pairing dialog
+                    <h3>🔗 Bluetooth Pairing Active</h3>
+                    <p><strong>Look for your browser's pairing dialog</strong></p>
+                    <p>It may appear as a popup or notification</p>
+                    <div style="margin: 20px 0; padding: 15px; background: rgba(255, 255, 0, 0.1); border: 1px solid #ffff00; border-radius: 5px;">
+                        <p style="color: #ffff00; margin: 0;"><strong>📱 Instructions:</strong></p>
+                        <p style="margin: 5px 0 0 0;">• Select any Bluetooth device to try Bitchat</p>
+                        <p style="margin: 5px 0 0 0;">• Or cancel to use demo mode</p>
+                    </div>
+                    <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
+                        <button id="cancel-pairing" class="btn-secondary" style="background: rgba(255, 0, 64, 0.2); border-color: #ff0040; color: #ff0040;">Cancel & Demo</button>
+                        <button id="retry-pairing" class="btn-primary">Retry Pairing</button>
+                    </div>
+                    <div style="margin-top: 15px; color: #00aaaa; font-size: 0.9em;">
+                        <p>This dialog will stay visible while pairing is active</p>
                     </div>
                 </div>
             `;
             document.body.appendChild(overlay);
+            
+            // Add event listeners for the new buttons
+            document.getElementById('cancel-pairing').addEventListener('click', () => {
+                this.hidePairingOverlay();
+                this.startDemoMode();
+            });
+            
+            document.getElementById('retry-pairing').addEventListener('click', () => {
+                this.hidePairingOverlay();
+                setTimeout(() => this.connectBluetooth(), 500);
+            });
         }
         overlay.classList.add('active');
     }
