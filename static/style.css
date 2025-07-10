@@ -1016,6 +1016,7 @@ body.light-mode {
     }
 }
 
+```
 .dark-mode .data-amount,
 .dark-mode .main-number,
 .dark-mode .decimal-part,
@@ -2211,7 +2212,7 @@ body.light-mode {
     margin: 0 auto;
     width: 100%;
     padding: 0 10px;
-}```python
+}
 .metric {
     flex: 1;
     background: rgba(200, 200, 200, 0.2);
@@ -3879,5 +3880,71 @@ input:checked + .toggle-slider:before {
     display: inline-block;
     box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
     border: 2px solid #2ecc71;
+}
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-balance {
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid #00ffff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: #00ffff;
+}
+
+.founder-badge {
+    background: linear-gradient(90deg, #ffd700, #ffed4e);
+    color: #000;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.demo-mode-active {
+    background: rgba(255, 165, 0, 0.1);
+    border: 1px solid #ffa500;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.demo-mode-btn {
+    background: linear-gradient(90deg, rgba(255, 165, 0, 0.2), rgba(255, 165, 0, 0.1));
+    border: 1px solid #ffa500;
+    color: #ffa500;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.demo-mode-btn:hover {
+    background: rgba(255, 165, 0, 0.3);
+    box-shadow: 0 0 15px rgba(255, 165, 0, 0.5);
+}
+
+.exit-demo-btn {
+    background: linear-gradient(90deg, rgba(255, 0, 0, 0.2), rgba(255, 0, 0, 0.1));
+    border: 1px solid #ff0000;
+    color: #ff0000;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.loading {
+    color: #00ffff;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 /* Replaced offer cards with a new grid-based section with centered text and improved styling. */

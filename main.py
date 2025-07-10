@@ -1234,10 +1234,9 @@ def get_user_data_balance():
     firebase_uid = request.args.get('firebaseUid')
     user_id_param = request.args.get('userId')
 
-    # Default user_id for fallback
-    user_id = 1
-
     try:
+        user_id = None
+        
         # If Firebase UID is provided, look up the internal user ID
         if firebase_uid:
             user_data = get_user_by_firebase_uid(firebase_uid)
@@ -1246,59 +1245,106 @@ def get_user_data_balance():
                 stripe_customer_id = user_data[3]  # Get Stripe customer ID
                 print(f"Found user {user_id} for Firebase UID {firebase_uid} with Stripe customer {stripe_customer_id}")
             else:
-                print(f"No user found for Firebase UID {firebase_uid}, using default user_id=1")
+                return jsonify({
+                    'error': 'User not found for Firebase UID',
+                    'firebaseUid': firebase_uid,
+                    'dataBalance': 0,
+                    'unit': 'GB'
+                }), 404
         elif user_id_param and user_id_param.isdigit():
             # If a numeric user ID is provided, use it
             user_id = int(user_id_param)
             print(f"Using provided numeric user_id: {user_id}")
         else:
-            print(f"Invalid or no user identifier provided, using default user_id=1")
+            return jsonify({
+                'error': 'Firebase UID or user ID required',
+                'dataBalance': 0,
+                'unit': 'GB'
+            }), 400
 
-        # Get total global data purchases for this user using internal user ID
+        # Get comprehensive purchase data for this user
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Get total global data purchases using internal UserID
+                    # Get all data-related purchases for this user
                     cur.execute("""
-                        SELECT SUM(TotalAmount) 
+                        SELECT 
+                            SUM(CASE WHEN StripeProductID = 'global_data_10gb' THEN TotalAmount ELSE 0 END) as global_data_cents,
+                            SUM(CASE WHEN StripeProductID LIKE '%data%' OR StripeProductID = 'beta_esim_data' THEN TotalAmount ELSE 0 END) as total_data_cents,
+                            COUNT(*) as total_purchases
                         FROM purchases 
-                        WHERE StripeProductID = 'global_data_10gb' AND UserID = %s
-                    """, (user_id,))
+                        WHERE UserID = %s OR FirebaseUID = %s
+                    """, (user_id, firebase_uid))
 
                     result = cur.fetchone()
-                    total_amount = result[0] if result and result[0] else 0
+                    global_data_cents = result[0] if result and result[0] else 0
+                    total_data_cents = result[1] if result and result[1] else 0
+                    total_purchases = result[2] if result and result[2] else 0
 
-                    # Convert cents to dollars and then to data amount (10GB per $10)
-                    data_amount = (total_amount / 100) * 1.0  # 1GB per dollar
+                    # Calculate data balance based on purchases
+                    # 10GB per $10 for global data = 1GB per $1 = 1GB per 100 cents
+                    global_data_gb = global_data_cents / 100.0
+                    
+                    # For other data products, assume similar rate
+                    other_data_gb = (total_data_cents - global_data_cents) / 100.0
+                    
+                    # Total data balance
+                    total_data_balance = global_data_gb + other_data_gb
+                    
+                    # Get subscription status for additional data allowances
+                    cur.execute("""
+                        SELECT subscription_type, end_date 
+                        FROM subscriptions 
+                        WHERE user_id = %s AND status = 'active' AND end_date > CURRENT_TIMESTAMP
+                        ORDER BY end_date DESC LIMIT 1
+                    """, (user_id,))
+                    
+                    subscription = cur.fetchone()
+                    subscription_data = 0
+                    if subscription:
+                        subscription_type = subscription[0]
+                        if subscription_type == 'basic_membership':
+                            subscription_data = 5.0  # 5GB for basic
+                        elif subscription_type == 'full_membership':
+                            subscription_data = 50.0  # 50GB for full
+                    
+                    final_balance = total_data_balance + subscription_data
 
-                    print(f"Data balance lookup: user_id={user_id}, total_amount={total_amount}, data_amount={data_amount}")
+                    print(f"Data balance calculation: user_id={user_id}, purchases={total_purchases}, "
+                          f"global_data={global_data_gb}GB, other_data={other_data_gb}GB, "
+                          f"subscription={subscription_data}GB, total={final_balance}GB")
 
                     return jsonify({
+                        'status': 'success',
                         'userId': user_id,
                         'firebaseUid': firebase_uid,
-                        'dataBalance': data_amount,
+                        'dataBalance': round(final_balance, 2),
+                        'breakdown': {
+                            'purchased_data': round(total_data_balance, 2),
+                            'subscription_data': round(subscription_data, 2),
+                            'total_purchases': total_purchases
+                        },
                         'unit': 'GB',
-                        'billing_type': 'purchase_based',
-                        'note': 'Future releases will include real-time usage tracking with Stripe metering'
+                        'billing_type': 'purchase_and_subscription_based'
                     })
 
         return jsonify({
+            'error': 'Database connection failed',
             'userId': user_id,
             'firebaseUid': firebase_uid,
             'dataBalance': 0,
-            'unit': 'GB',
-            'error': 'No database connection'
-        })
+            'unit': 'GB'
+        }), 500
 
     except Exception as e:
         print(f"Error getting user data balance: {str(e)}")
         return jsonify({
-            'userId': user_id,
+            'error': str(e),
+            'userId': user_id if 'user_id' in locals() else None,
             'firebaseUid': firebase_uid,
             'dataBalance': 0,
-            'unit': 'GB',
-            'error': str(e)
-        })
+            'unit': 'GB'
+        }), 500
 
 @app.route('/api/report-data-usage', methods=['POST'])
 def report_data_usage():
