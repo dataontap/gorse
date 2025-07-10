@@ -4,28 +4,53 @@ The code implements Firebase authentication, user data retrieval from the backen
 ```replit_final_file
 // Firebase Authentication handler using Firebase SDK v8
 document.addEventListener('DOMContentLoaded', function() {
-  try {
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
-      authDomain: "gorse-24e76.firebaseapp.com",
-      projectId: "gorse-24e76",
-      storageBucket: "gorse-24e76.appspot.com",
-      messagingSenderId: "212829848250",
-      appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
-      measurementId: "G-WHW3XT925P"
-    };
+  console.log("Firebase auth script loading...");
+  
+  // Wait for Firebase SDK to load
+  function initializeFirebaseAuth() {
+    try {
+      // Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
+        authDomain: "gorse-24e76.firebaseapp.com",
+        projectId: "gorse-24e76",
+        storageBucket: "gorse-24e76.appspot.com",
+        messagingSenderId: "212829848250",
+        appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
+        measurementId: "G-WHW3XT925P"
+      };
 
-    // Initialize Firebase using global Firebase object
-    if (typeof firebase !== 'undefined') {
-      const app = firebase.initializeApp(firebaseConfig);
+      // Check if Firebase is loaded
+      if (typeof firebase === 'undefined') {
+        console.error("Firebase SDK not loaded - waiting...");
+        setTimeout(initializeFirebaseAuth, 1000);
+        return;
+      }
+
+      // Initialize Firebase if not already initialized
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+        console.log("Firebase App initialized successfully");
+      } else {
+        console.log("Firebase App already initialized");
+      }
+
       const auth = firebase.auth();
       console.log("Firebase Auth initialized successfully");
-    } else {
-      console.error("Firebase SDK not loaded");
-      return;
+      
+      // Set up auth state listener
+      setupAuthStateListener();
+      
+    } catch (error) {
+      console.error("Firebase initialization error:", error);
+      setTimeout(initializeFirebaseAuth, 2000);
     }
+  }
 
+  // Start initialization
+  initializeFirebaseAuth();
+
+    function setupAuthStateListener() {
     // Configure Google auth provider
     const googleProvider = new firebase.auth.GoogleAuthProvider();
 
@@ -276,6 +301,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Expose auth functions to global scope
     window.firebaseAuth = {
       signInWithEmailPassword: function(email, password) {
+        if (!firebase || !firebase.auth) {
+          console.error('Firebase auth not available for email sign-in');
+          return Promise.reject(new Error('Authentication service not available'));
+        }
         return firebase.auth().signInWithEmailAndPassword(email, password)
           .catch(error => {
             console.error("Auth error:", error);
@@ -284,6 +313,11 @@ document.addEventListener('DOMContentLoaded', function() {
       },
 
       signInWithGoogle: function() {
+        if (!firebase || !firebase.auth) {
+          console.error('Firebase auth not available for Google sign-in');
+          return Promise.reject(new Error('Authentication service not available'));
+        }
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
         return firebase.auth().signInWithPopup(googleProvider)
           .catch(error => {
             console.error("Google sign-in error:", error);
@@ -292,6 +326,10 @@ document.addEventListener('DOMContentLoaded', function() {
       },
 
       createUserWithEmailPassword: function(email, password) {
+        if (!firebase || !firebase.auth) {
+          console.error('Firebase auth not available for user creation');
+          return Promise.reject(new Error('Authentication service not available'));
+        }
         return firebase.auth().createUserWithEmailAndPassword(email, password)
           .catch(error => {
             console.error("User creation error:", error);
@@ -306,6 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
           localStorage.removeItem('userId');
           localStorage.removeItem('userEmail');
           localStorage.removeItem('databaseUserId');
+          localStorage.removeItem('currentUser');
           window.location.href = '/';
           return Promise.resolve();
         }
@@ -316,6 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.removeItem('userId');
             localStorage.removeItem('userEmail');
             localStorage.removeItem('databaseUserId');
+            localStorage.removeItem('currentUser');
             console.log('User signed out successfully');
 
             // Redirect to home page after logout  
@@ -327,34 +367,42 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.removeItem('userId');
             localStorage.removeItem('userEmail');
             localStorage.removeItem('databaseUserId');
+            localStorage.removeItem('currentUser');
             window.location.href = '/';
           });
       },
 
       getCurrentUser: function() {
+        if (!firebase || !firebase.auth) {
+          return null;
+        }
         return firebase.auth().currentUser;
       }
     };
+  }
 
     // Make functions globally available
-    window.signInWithGoogle = function() {
-      if (window.firebaseAuth && window.firebaseAuth.signInWithGoogle) {
-        return window.firebaseAuth.signInWithGoogle();
-      } else {
-        console.error('Firebase auth not available');
-        alert('Authentication service not available. Please refresh the page and try again.');
-      }
-    };
+  window.signInWithGoogle = function() {
+    console.log("signInWithGoogle called");
+    if (window.firebaseAuth && window.firebaseAuth.signInWithGoogle) {
+      return window.firebaseAuth.signInWithGoogle();
+    } else {
+      console.error('Firebase auth not available');
+      alert('Authentication service not available. Please refresh the page and try again.');
+      return Promise.reject(new Error('Authentication service not available'));
+    }
+  };
 
-    window.signOut = function() {
-      if (window.firebaseAuth && window.firebaseAuth.signOut) {
-        return window.firebaseAuth.signOut();
-      } else {
-        console.error('Firebase auth not available');
-        localStorage.clear();
-        window.location.href = '/';
-      }
-    };
+  window.signOut = function() {
+    console.log("signOut called");
+    if (window.firebaseAuth && window.firebaseAuth.signOut) {
+      return window.firebaseAuth.signOut();
+    } else {
+      console.error('Firebase auth not available');
+      localStorage.clear();
+      window.location.href = '/';
+    }
+  };
 
     window.enableDemoMode = function() {
       localStorage.setItem('demoMode', 'true');
