@@ -25,6 +25,88 @@
             background-color: #218838;
             color: white;
         }
+
+        /* Dark mode styles for better text visibility */
+        .landing-page.dark-mode .card {
+            background: rgba(40, 40, 40, 0.95) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .landing-page.dark-mode h2 {
+            color: #ffffff !important;
+        }
+
+        .landing-page.dark-mode .divider span {
+            color: #e0e0e0 !important;
+            font-weight: 500;
+        }
+
+        .landing-page.dark-mode .form-label {
+            color: #ffffff !important;
+        }
+
+        .landing-page.dark-mode .form-text {
+            color: #cccccc !important;
+        }
+
+        .landing-page.dark-mode .signin-link {
+            color: #66a3ff !important;
+        }
+
+        .landing-page.dark-mode .form-control {
+            background-color: rgba(60, 60, 60, 0.9) !important;
+            border-color: #555 !important;
+            color: #ffffff !important;
+        }
+
+        .landing-page.dark-mode .form-control:focus {
+            background-color: rgba(70, 70, 70, 0.95) !important;
+            border-color: #66a3ff !important;
+            color: #ffffff !important;
+        }
+
+        /* Auto-detect dark mode */
+        @media (prefers-color-scheme: dark) {
+            .landing-page .card {
+                background: rgba(40, 40, 40, 0.95) !important;
+                color: #ffffff !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            }
+
+            .landing-page h2 {
+                color: #ffffff !important;
+            }
+
+            .landing-page .divider span {
+                color: #e0e0e0 !important;
+                font-weight: 500;
+            }
+
+            .landing-page .form-label {
+                color: #ffffff !important;
+            }
+
+            .landing-page .form-text {
+                color: #cccccc !important;
+            }
+
+            .landing-page .signin-link {
+                color: #66a3ff !important;
+            }
+
+            .landing-page .form-control {
+                background-color: rgba(60, 60, 60, 0.9) !important;
+                border-color: #555 !important;
+                color: #ffffff !important;
+            }
+
+            .landing-page .form-control:focus {
+                background-color: rgba(70, 70, 70, 0.95) !important;
+                border-color: #66a3ff !important;
+                color: #ffffff !important;
+            }
+        }
     </style>
 
     <!-- Firebase SDK - using consistent versions -->
@@ -51,7 +133,7 @@
                         </div>
 
                         <div class="divider mb-4">
-                            <span>Pay $1 for no-expiry eSIM through Stripe. Connect in <1min. Pay up to 10X less for premium global data everywhere.</span>
+                            <span>Pay $1 for no-expiry eSIM through Stripe. Connect in <1min. Pay up to 10X less for premium global data everywhere. Add Talk and Text service and bring your number (coming soon).</span>
                         </div>
 
                         <div id="auth-error" class="alert alert-danger" style="display: none;"></div>
