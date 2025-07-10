@@ -2,12 +2,10 @@ The code implements Firebase authentication, user data retrieval from the backen
 ```
 
 ```replit_final_file
-// Firebase Authentication handler using v9+ modular SDK
-// Remove import statements as we're using the Firebase SDK via script tags
-
+// Firebase Authentication handler using Firebase SDK v8
 document.addEventListener('DOMContentLoaded', function() {
   try {
-    // Firebase configuration - using global Firebase object
+    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
       authDomain: "gorse-24e76.firebaseapp.com",
@@ -19,10 +17,14 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Initialize Firebase using global Firebase object
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-
-    console.log("Firebase Auth initialized successfully");
+    if (typeof firebase !== 'undefined') {
+      const app = firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      console.log("Firebase Auth initialized successfully");
+    } else {
+      console.error("Firebase SDK not loaded");
+      return;
+    }
 
     // Configure Google auth provider
     const googleProvider = new firebase.auth.GoogleAuthProvider();
@@ -332,6 +334,54 @@ document.addEventListener('DOMContentLoaded', function() {
       getCurrentUser: function() {
         return firebase.auth().currentUser;
       }
+    };
+
+    // Make functions globally available
+    window.signInWithGoogle = function() {
+      if (window.firebaseAuth && window.firebaseAuth.signInWithGoogle) {
+        return window.firebaseAuth.signInWithGoogle();
+      } else {
+        console.error('Firebase auth not available');
+        alert('Authentication service not available. Please refresh the page and try again.');
+      }
+    };
+
+    window.signOut = function() {
+      if (window.firebaseAuth && window.firebaseAuth.signOut) {
+        return window.firebaseAuth.signOut();
+      } else {
+        console.error('Firebase auth not available');
+        localStorage.clear();
+        window.location.href = '/';
+      }
+    };
+
+    window.enableDemoMode = function() {
+      localStorage.setItem('demoMode', 'true');
+      showDemoData();
+      updateAuthUI(null, null);
+    };
+
+    window.disableDemoMode = function() {
+      localStorage.removeItem('demoMode');
+      updateAuthUI(null, null);
+    };
+
+    window.getCurrentUser = function() {
+      const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+      if (user) {
+        return user;
+      } else if (isDemoMode()) {
+        return {
+          uid: 'demo_user',
+          email: 'demo@example.com',
+          displayName: 'Demo User',
+          userId: 1,
+          dataBalance: 5.5,
+          founderStatus: 'N'
+        };
+      }
+      return null;
     };
   } catch (error) {
     console.error("Firebase Auth initialization error:", error);

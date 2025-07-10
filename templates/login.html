@@ -36,9 +36,11 @@
         }
     </style>
 
-    <!-- Firebase v8 SDK -->
+    <!-- Firebase SDK v8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <!-- Custom Scripts -->
     <script src="/static/firebase-auth.js"></script>
 </head>
 <body class="landing-page">
@@ -207,7 +209,7 @@
                     errorMessage.textContent = message;
                 }
                 authError.style.display = 'block';
-                
+
                 if (showForgotPassword) {
                     forgotPasswordSection.style.display = 'block';
                     resetEmailInput.value = emailInput.value; // Pre-fill with entered email
@@ -219,7 +221,7 @@
             // Send magic link for password reset
             function sendMagicLink() {
                 const email = resetEmailInput.value.trim();
-                
+
                 if (!email) {
                     resetStatus.innerHTML = '<span style="color: #ff6b6b;">Please enter your email address.</span>';
                     return;
@@ -243,10 +245,10 @@
                     .then(() => {
                         // Save the email locally for verification when user clicks the link
                         window.localStorage.setItem('emailForSignIn', email);
-                        
+
                         resetStatus.innerHTML = '<span style="color: #51cf66;">✓ Magic link sent! Check your email and click the link to sign in.</span>';
                         resetEmailInput.value = '';
-                        
+
                         // Hide the forgot password section after 3 seconds
                         setTimeout(() => {
                             forgotPasswordSection.style.display = 'none';
@@ -256,7 +258,7 @@
                     .catch((error) => {
                         console.error('Magic link error:', error);
                         let errorMessage = 'Failed to send magic link. ';
-                        
+
                         switch (error.code) {
                             case 'auth/invalid-email':
                                 errorMessage += 'Invalid email address.';
@@ -273,7 +275,7 @@
                             default:
                                 errorMessage += error.message;
                         }
-                        
+
                         resetStatus.innerHTML = `<span style="color: #ff6b6b;">${errorMessage}</span>`;
                     })
                     .finally(() => {
@@ -300,12 +302,12 @@
                 if (firebase.auth().isSignInWithEmailLink(window.location.href)) {
                     // Get the email from localStorage
                     let email = window.localStorage.getItem('emailForSignIn');
-                    
+
                     if (!email) {
                         // If email is not available, ask user to provide it
                         email = window.prompt('Please provide your email for confirmation');
                     }
-                    
+
                     if (email) {
                         // Sign in with the magic link
                         firebase.auth().signInWithEmailLink(email, window.location.href)
@@ -313,13 +315,13 @@
                                 // Clear the email from storage
                                 window.localStorage.removeItem('emailForSignIn');
                                 console.log('Magic link sign-in successful:', result.user.email);
-                                
+
                                 // Show success message
                                 const alertDiv = document.createElement('div');
                                 alertDiv.className = 'alert alert-success';
                                 alertDiv.innerHTML = '<strong>✓ Success!</strong> Signed in with magic link from gorse.dotmobile.app';
                                 document.body.insertBefore(alertDiv, document.body.firstChild);
-                                
+
                                 // Redirect to dashboard after a short delay
                                 setTimeout(() => {
                                     window.location.href = '/dashboard';
