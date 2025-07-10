@@ -2,6 +2,7 @@
 class BitchatClient {
     constructor() {
         this.isConnected = false;
+        this.isDemoMode = false;
         this.currentChannel = '#general';
         this.peers = new Map();
         this.channels = new Map();
@@ -34,6 +35,7 @@ class BitchatClient {
         const sendBtn = document.getElementById('send-btn');
         const joinChannelBtn = document.getElementById('join-channel-btn');
         const emergencyWipeBtn = document.getElementById('emergency-wipe');
+        const demoModeBtn = document.getElementById('demo-mode-btn');
 
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -51,6 +53,10 @@ class BitchatClient {
 
         emergencyWipeBtn.addEventListener('click', () => {
             this.emergencyWipe();
+        });
+
+        demoModeBtn.addEventListener('click', () => {
+            this.toggleDemoMode();
         });
 
         // Channel selection
@@ -482,14 +488,57 @@ Available Commands:
         }
     }
 
+    toggleDemoMode() {
+        const demoBtn = document.getElementById('demo-mode-btn');
+        
+        if (this.isConnected && this.isDemoMode) {
+            // Exit demo mode
+            this.exitDemoMode();
+        } else {
+            // Start demo mode
+            this.startDemoMode();
+        }
+    }
+
     startDemoMode() {
+        this.isDemoMode = true;
+        const demoBtn = document.getElementById('demo-mode-btn');
+        demoBtn.textContent = '🚪 Exit Demo';
+        demoBtn.classList.add('active');
+        
         this.displaySystemMessage('🎮 Starting demo mode...');
         this.updateBluetoothStatus('online');
         this.isConnected = true;
         this.displaySystemMessage('✨ Demo mode active - simulating bitchat mesh network');
         this.displaySystemMessage('📱 All messages and connections are simulated for demonstration');
         this.displaySystemMessage('🚀 You can now test all bitchat features safely!');
+        this.displaySystemMessage('💡 Click "Exit Demo" to return to normal mode');
         this.startPeerDiscovery();
+    }
+
+    exitDemoMode() {
+        this.isDemoMode = false;
+        const demoBtn = document.getElementById('demo-mode-btn');
+        demoBtn.textContent = '🎮 Demo Mode';
+        demoBtn.classList.remove('active');
+        
+        this.isConnected = false;
+        this.updateBluetoothStatus('offline');
+        this.peers.clear();
+        this.updatePeersList();
+        this.updateMeshStatus();
+        
+        this.displaySystemMessage('🚪 Exited demo mode');
+        this.displaySystemMessage('🔗 Click Bluetooth status to connect to real devices');
+        
+        // Clear messages when exiting demo
+        document.getElementById('chat-messages').innerHTML = `
+            <div class="welcome-message">
+                <p>🔐 Welcome to Bitchat! Secure mesh messaging without servers.</p>
+                <p>Type <code>/help</code> for commands or start chatting.</p>
+                <p>⚡ <strong>Quick Start:</strong> Click the Bluetooth status above to connect or use demo mode.</p>
+            </div>
+        `;
     }
 
     showPairingOverlay() {

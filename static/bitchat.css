@@ -132,6 +132,39 @@ header p {
     overflow: hidden;
 }
 
+.demo-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.demo-btn {
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    background: linear-gradient(90deg, rgba(255, 165, 0, 0.2), rgba(255, 165, 0, 0.1));
+    border-color: #ffa500;
+    color: #ffa500;
+    text-shadow: 0 0 10px #ffa500;
+    box-shadow: 0 0 15px rgba(255, 165, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.demo-btn:hover {
+    background: rgba(255, 165, 0, 0.3);
+    box-shadow: 
+        0 0 25px rgba(255, 165, 0, 0.6),
+        inset 0 0 20px rgba(255, 165, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.demo-btn.active {
+    background: linear-gradient(90deg, rgba(0, 255, 0, 0.2), rgba(0, 255, 0, 0.1));
+    border-color: #00ff00;
+    color: #00ff00;
+    text-shadow: 0 0 10px #00ff00;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+}
+
 .connection-status::before {
     content: '';
     position: absolute;
@@ -670,6 +703,21 @@ header p {
     
     .features-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .connection-status {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px 20px;
+    }
+    
+    .demo-controls {
+        order: -1;
+    }
+    
+    .demo-btn {
+        padding: 10px 25px;
+        font-size: 1rem;
     }
     
     .bluetooth-pairing-overlay {
