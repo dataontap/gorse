@@ -47,10 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Start initialization
-  initializeFirebaseAuth();
-
-    function setupAuthStateListener() {
+  function setupAuthStateListener() {
     // Configure Google auth provider
     const googleProvider = new firebase.auth.GoogleAuthProvider();
 
@@ -382,27 +379,27 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
     // Make functions globally available
-  window.signInWithGoogle = function() {
-    console.log("signInWithGoogle called");
-    if (window.firebaseAuth && window.firebaseAuth.signInWithGoogle) {
-      return window.firebaseAuth.signInWithGoogle();
-    } else {
-      console.error('Firebase auth not available');
-      alert('Authentication service not available. Please refresh the page and try again.');
-      return Promise.reject(new Error('Authentication service not available'));
-    }
-  };
+    window.signInWithGoogle = function() {
+      console.log("signInWithGoogle called");
+      if (window.firebaseAuth && window.firebaseAuth.signInWithGoogle) {
+        return window.firebaseAuth.signInWithGoogle();
+      } else {
+        console.error('Firebase auth not available');
+        alert('Authentication service not available. Please refresh the page and try again.');
+        return Promise.reject(new Error('Authentication service not available'));
+      }
+    };
 
-  window.signOut = function() {
-    console.log("signOut called");
-    if (window.firebaseAuth && window.firebaseAuth.signOut) {
-      return window.firebaseAuth.signOut();
-    } else {
-      console.error('Firebase auth not available');
-      localStorage.clear();
-      window.location.href = '/';
-    }
-  };
+    window.signOut = function() {
+      console.log("signOut called");
+      if (window.firebaseAuth && window.firebaseAuth.signOut) {
+        return window.firebaseAuth.signOut();
+      } else {
+        console.error('Firebase auth not available');
+        localStorage.clear();
+        window.location.href = '/';
+      }
+    };
 
     window.enableDemoMode = function() {
       localStorage.setItem('demoMode', 'true');
@@ -431,6 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       return null;
     };
+
   } catch (error) {
     console.error("Firebase Auth initialization error:", error);
   }

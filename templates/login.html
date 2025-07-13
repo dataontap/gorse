@@ -344,24 +344,17 @@
                         }
                     });
                 }
+            } else {
+                console.log('Firebase not available yet');
+            }
 
-                // Show auth error with optional forgot password section
-                function showAuthError(message, showForgotPassword = false) {
-                    // Check if it's an invalid credentials error
-                    if (message.includes('INVALID_LOGIN_CREDENTIALS') || message.includes('invalid') || message.includes('credentials')) {
-                        errorMessage.textContent = 'Invalid login credentials. Please check your email and password.';
-                    } else {
-                        errorMessage.textContent = message;
-                    }
-                    authError.style.display = 'block';
-
-                    if (showForgotPassword) {
-                        forgotPasswordSection.style.display = 'block';
-                        resetEmailInput.value = emailInput.value; // Pre-fill with entered email
-                    } else {
-                        forgotPasswordSection.style.display = 'none';
-                    }
+            // Wait for Firebase to be available
+            function waitForFirebase() {
+                if (typeof firebase === 'undefined') {
+                    setTimeout(waitForFirebase, 100);
+                    return;
                 }
+                console.log('Firebase is now available');
             }
 
             waitForFirebase();
