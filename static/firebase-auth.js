@@ -6,25 +6,36 @@ The code implements Firebase authentication, user data retrieval from the backen
 document.addEventListener('DOMContentLoaded', function() {
   console.log("Firebase auth script loading...");
   
-  // Wait for Firebase SDK to load
+  // Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
+    authDomain: "gorse-24e76.firebaseapp.com",
+    projectId: "gorse-24e76",
+    storageBucket: "gorse-24e76.appspot.com",
+    messagingSenderId: "212829848250",
+    appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
+    measurementId: "G-WHW3XT925P"
+  };
+
+  let initAttempts = 0;
+  const maxAttempts = 10;
+
+  // Wait for Firebase SDK to load with proper error handling
   function initializeFirebaseAuth() {
     try {
-      // Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
-        authDomain: "gorse-24e76.firebaseapp.com",
-        projectId: "gorse-24e76",
-        storageBucket: "gorse-24e76.appspot.com",
-        messagingSenderId: "212829848250",
-        appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
-        measurementId: "G-WHW3XT925P"
-      };
-
+      initAttempts++;
+      
       // Check if Firebase is loaded
       if (typeof firebase === 'undefined') {
-        console.error("Firebase SDK not loaded - waiting...");
-        setTimeout(initializeFirebaseAuth, 1000);
-        return;
+        if (initAttempts < maxAttempts) {
+          console.log(`Firebase SDK not loaded - attempt ${initAttempts}/${maxAttempts}, waiting...`);
+          setTimeout(initializeFirebaseAuth, 1000);
+          return;
+        } else {
+          console.error("Firebase SDK failed to load after maximum attempts");
+          showFirebaseUnavailable();
+          return;
+        }
       }
 
       // Initialize Firebase if not already initialized
@@ -35,7 +46,12 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("Firebase App already initialized");
       }
 
+      // Test Firebase Auth availability
       const auth = firebase.auth();
+      if (!auth) {
+        throw new Error("Firebase Auth not available");
+      }
+      
       console.log("Firebase Auth initialized successfully");
       
       // Set up auth state listener
@@ -43,8 +59,53 @@ document.addEventListener('DOMContentLoaded', function() {
       
     } catch (error) {
       console.error("Firebase initialization error:", error);
-      setTimeout(initializeFirebaseAuth, 2000);
+      if (initAttempts < maxAttempts) {
+        setTimeout(initializeFirebaseAuth, 2000);
+      } else {
+        showFirebaseUnavailable();
+      }
     }
+  }
+
+  function showFirebaseUnavailable() {
+    console.error("Firebase authentication is not available");
+    
+    // Update UI to show Firebase is unavailable
+    const authContainer = document.getElementById('auth-container');
+    const userInfo = document.getElementById('user-info');
+    
+    if (authContainer) {
+      authContainer.innerHTML = `
+        <div class="firebase-unavailable">
+          <p style="color: #ff6b6b; text-align: center; margin: 20px 0;">
+            🔥 Authentication service is temporarily unavailable
+          </p>
+          <button onclick="enableDemoMode()" class="demo-mode-btn">
+            🎮 Try Demo Mode Instead
+          </button>
+          <button onclick="location.reload()" class="retry-btn" style="margin-top: 10px;">
+            🔄 Retry Connection
+          </button>
+        </div>
+      `;
+    }
+
+    if (userInfo) {
+      userInfo.innerHTML = `
+        <div class="firebase-unavailable">
+          <h2>🔥 Authentication Service Unavailable</h2>
+          <p>The authentication service is currently not available. You can:</p>
+          <ul>
+            <li>Try demo mode to explore the platform</li>
+            <li>Refresh the page to retry the connection</li>
+            <li>Check back later when the service is restored</li>
+          </ul>
+        </div>
+      `;
+    }
+
+    // Set up global auth functions with error handling
+    setupFallbackAuthFunctions();
   }
 
   function setupAuthStateListener() {
@@ -374,6 +435,33 @@ document.addEventListener('DOMContentLoaded', function() {
           return null;
         }
         return firebase.auth().currentUser;
+      }
+    };
+  }
+
+  function setupFallbackAuthFunctions() {
+    // Set up fallback auth functions when Firebase is not available
+    window.firebaseAuth = {
+      signInWithEmailPassword: function(email, password) {
+        return Promise.reject(new Error('Authentication service not available'));
+      },
+
+      signInWithGoogle: function() {
+        return Promise.reject(new Error('Authentication service not available'));
+      },
+
+      createUserWithEmailPassword: function(email, password) {
+        return Promise.reject(new Error('Authentication service not available'));
+      },
+
+      signOut: function() {
+        localStorage.clear();
+        window.location.href = '/';
+        return Promise.resolve();
+      },
+
+      getCurrentUser: function() {
+        return null;
       }
     };
   }

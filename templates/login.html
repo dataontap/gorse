@@ -158,6 +158,12 @@
                 // Save email to cookie for next time
                 setCookie('loginEmail', email, 30);
 
+                // Show loading state
+                const submitBtn = loginForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Signing in...';
+                submitBtn.disabled = true;
+
                 // Check if Firebase auth is available
                 if (window.firebaseAuth && window.firebaseAuth.signInWithEmailPassword) {
                     // Sign in with email and password
@@ -172,15 +178,39 @@
                             // Handle login errors
                             console.error('Error logging in:', error);
                             showAuthError(error.message, true);
+                        })
+                        .finally(() => {
+                            // Restore button state
+                            submitBtn.textContent = originalText;
+                            submitBtn.disabled = false;
                         });
                 } else {
-                    // Firebase not available, show message
-                    showAuthError('Authentication service is not available. Please try again later.', false);
+                    // Firebase not available, show message with demo option
+                    setTimeout(() => {
+                        showAuthError('Authentication service is temporarily unavailable. You can try demo mode or refresh the page.', false);
+                        // Add demo mode button to the error
+                        const demoBtn = document.createElement('button');
+                        demoBtn.textContent = '🎮 Try Demo Mode';
+                        demoBtn.className = 'btn btn-outline-light btn-sm mt-2';
+                        demoBtn.onclick = function() {
+                            window.location.href = '/?demo=true';
+                        };
+                        document.getElementById('auth-error').appendChild(demoBtn);
+                        
+                        // Restore button state
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+                    }, 1000);
                 }
             });
 
             // Handle Google sign-in
             googleSigninBtn.addEventListener('click', function() {
+                // Show loading state
+                const originalText = googleSigninBtn.innerHTML;
+                googleSigninBtn.innerHTML = '<span>Signing in...</span>';
+                googleSigninBtn.disabled = true;
+
                 if (window.firebaseAuth && window.firebaseAuth.signInWithGoogle) {
                     window.firebaseAuth.signInWithGoogle()
                         .then((result) => {
@@ -193,10 +223,29 @@
                             // Handle Google sign-in errors
                             console.error('Error with Google sign-in:', error);
                             showAuthError(error.message, false);
+                        })
+                        .finally(() => {
+                            // Restore button state
+                            googleSigninBtn.innerHTML = originalText;
+                            googleSigninBtn.disabled = false;
                         });
                 } else {
-                    // Firebase not available, show message
-                    showAuthError('Google sign-in is not available. Please try again later.', false);
+                    // Firebase not available, show message with demo option
+                    setTimeout(() => {
+                        showAuthError('Authentication service is temporarily unavailable. You can try demo mode or refresh the page.', false);
+                        // Add demo mode button to the error
+                        const demoBtn = document.createElement('button');
+                        demoBtn.textContent = '🎮 Try Demo Mode';
+                        demoBtn.className = 'btn btn-outline-light btn-sm mt-2';
+                        demoBtn.onclick = function() {
+                            window.location.href = '/?demo=true';
+                        };
+                        document.getElementById('auth-error').appendChild(demoBtn);
+                        
+                        // Restore button state
+                        googleSigninBtn.innerHTML = originalText;
+                        googleSigninBtn.disabled = false;
+                    }, 1000);
                 }
             });
 

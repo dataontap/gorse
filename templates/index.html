@@ -37,7 +37,7 @@
         });
     }
   </script>
-  
+
     </head>
 <body class="landing-page">
     <div class="hero-container">
@@ -96,4 +96,15 @@
 
     </script>
 </body>
+        <!-- Demo mode activation from URL -->
+        <script>
+            // Check if demo mode is requested via URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('demo') === 'true') {
+                localStorage.setItem('demoMode', 'true');
+                // Remove demo parameter from URL
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+        </script>
 </html>
