@@ -99,6 +99,15 @@
                         <div class="mt-4 text-center">
                             Don't have an account? <a href="/signup" class="signin-link">Sign Up</a>
                         </div>
+
+                        <div class="mt-4 text-center" style="padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
+                            <p style="color: #cccccc; margin-bottom: 15px; font-size: 14px;">
+                                Or explore without signing in:
+                            </p>
+                            <button onclick="window.location.href='/?demo=true'" class="btn btn-outline-secondary">
+                                🎮 Try Demo Mode
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -185,17 +194,9 @@
                             submitBtn.disabled = false;
                         });
                 } else {
-                    // Firebase not available, show message with demo option
+                    // Firebase not available, show message
                     setTimeout(() => {
-                        showAuthError('Authentication service is temporarily unavailable. You can try demo mode or refresh the page.', false);
-                        // Add demo mode button to the error
-                        const demoBtn = document.createElement('button');
-                        demoBtn.textContent = '🎮 Try Demo Mode';
-                        demoBtn.className = 'btn btn-outline-light btn-sm mt-2';
-                        demoBtn.onclick = function() {
-                            window.location.href = '/?demo=true';
-                        };
-                        document.getElementById('auth-error').appendChild(demoBtn);
+                        showAuthError('Authentication service is temporarily unavailable. Please refresh the page and try again.', false);
                         
                         // Restore button state
                         submitBtn.textContent = originalText;
@@ -230,17 +231,9 @@
                             googleSigninBtn.disabled = false;
                         });
                 } else {
-                    // Firebase not available, show message with demo option
+                    // Firebase not available, show message
                     setTimeout(() => {
-                        showAuthError('Authentication service is temporarily unavailable. You can try demo mode or refresh the page.', false);
-                        // Add demo mode button to the error
-                        const demoBtn = document.createElement('button');
-                        demoBtn.textContent = '🎮 Try Demo Mode';
-                        demoBtn.className = 'btn btn-outline-light btn-sm mt-2';
-                        demoBtn.onclick = function() {
-                            window.location.href = '/?demo=true';
-                        };
-                        document.getElementById('auth-error').appendChild(demoBtn);
+                        showAuthError('Authentication service is temporarily unavailable. Please refresh the page and try again.', false);
                         
                         // Restore button state
                         googleSigninBtn.innerHTML = originalText;

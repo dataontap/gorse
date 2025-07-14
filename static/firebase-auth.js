@@ -80,11 +80,16 @@ document.addEventListener('DOMContentLoaded', function() {
           <p style="color: #ff6b6b; text-align: center; margin: 20px 0;">
             🔥 Authentication service is temporarily unavailable
           </p>
-          <button onclick="enableDemoMode()" class="demo-mode-btn">
-            🎮 Try Demo Mode Instead
-          </button>
-          <button onclick="location.reload()" class="retry-btn" style="margin-top: 10px;">
+          <button onclick="location.reload()" class="retry-btn" style="margin-bottom: 15px;">
             🔄 Retry Connection
+          </button>
+        </div>
+        <div class="demo-mode-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
+          <p style="text-align: center; color: #cccccc; margin-bottom: 10px;">
+            Or explore without signing in:
+          </p>
+          <button onclick="enableDemoMode()" class="demo-mode-btn">
+            🎮 Try Demo Mode
           </button>
         </div>
       `;
@@ -96,9 +101,9 @@ document.addEventListener('DOMContentLoaded', function() {
           <h2>🔥 Authentication Service Unavailable</h2>
           <p>The authentication service is currently not available. You can:</p>
           <ul>
-            <li>Try demo mode to explore the platform</li>
             <li>Refresh the page to retry the connection</li>
             <li>Check back later when the service is restored</li>
+            <li>Try demo mode to explore the platform features</li>
           </ul>
         </div>
       `;
@@ -275,9 +280,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" width="20">
                         Sign in with Google
                     </button>
-                    <button onclick="enableDemoMode()" class="demo-mode-btn">
-                        🎮 Try Demo Mode
-                    </button>
+                    <div class="demo-mode-section" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <p style="text-align: center; color: #cccccc; margin-bottom: 10px; font-size: 14px;">
+                            Or explore without signing in:
+                        </p>
+                        <button onclick="enableDemoMode()" class="demo-mode-btn">
+                            🎮 Try Demo Mode
+                        </button>
+                    </div>
                 `;
             }
 
