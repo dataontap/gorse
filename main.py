@@ -1269,17 +1269,22 @@ def get_user_data_balance():
                     # Get all data-related purchases for this user
                     cur.execute("""
                         SELECT 
-                            SUM(CASE WHEN StripeProductID = 'global_data_10gb' THEN TotalAmount ELSE 0 END) as global_data_cents,
-                            SUM(CASE WHEN StripeProductID LIKE '%data%' OR StripeProductID = 'beta_esim_data' THEN TotalAmount ELSE 0 END) as total_data_cents,
+                            COALESCE(SUM(CASE WHEN StripeProductID = 'global_data_10gb' THEN TotalAmount ELSE 0 END), 0) as global_data_cents,
+                            COALESCE(SUM(CASE WHEN StripeProductID LIKE '%data%' OR StripeProductID = 'beta_esim_data' THEN TotalAmount ELSE 0 END), 0) as total_data_cents,
                             COUNT(*) as total_purchases
                         FROM purchases 
                         WHERE UserID = %s OR FirebaseUID = %s
                     """, (user_id, firebase_uid))
 
                     result = cur.fetchone()
-                    global_data_cents = result[0] if result and result[0] else 0
-                    total_data_cents = result[1] if result and result[1] else 0
-                    total_purchases = result[2] if result and result[2] else 0
+                    if result and len(result) >= 3:
+                        global_data_cents = result[0] if result[0] else 0
+                        total_data_cents = result[1] if result[1] else 0
+                        total_purchases = result[2] if result[2] else 0
+                    else:
+                        global_data_cents = 0
+                        total_data_cents = 0
+                        total_purchases = 0
 
                     # Calculate data balance based on purchases
                     # 10GB per $10 for global data = 1GB per $1 = 1GB per 100 cents
