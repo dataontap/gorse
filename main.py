@@ -1583,13 +1583,26 @@ def record_global_purchase():
     transaction_id = f"API_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
     print(f"Generated transaction ID: {transaction_id}")
 
-    # Record the purchase with Firebase UID
+    # Get user ID from Firebase UID before recording purchase
+    user_id = None
+    if firebase_uid:
+        try:
+            user_data = get_user_by_firebase_uid(firebase_uid)
+            if user_data:
+                user_id = user_data[0]
+                print(f"Found user_id {user_id} for Firebase UID {firebase_uid}")
+            else:
+                print(f"No user found for Firebase UID {firebase_uid}")
+        except Exception as lookup_err:
+            print(f"Error looking up user by Firebase UID: {str(lookup_err)}")
+
+    # Record the purchase with Firebase UID and user_id
     purchase_id = record_purchase(
         stripe_id=None,  # No stripe id in this case
         product_id=product_id,
         price_id=price_id,
         amount=amount,
-        user_id=None,  # Will be looked up from Firebase UID
+        user_id=user_id,  # Use looked up user_id
         transaction_id=transaction_id,
         firebase_uid=firebase_uid,
         stripe_transaction_id=None  # No Stripe transaction for API purchases
@@ -2888,6 +2901,60 @@ def token_price_pings():
             'status': 'error',
             'message': str(e)
         }), 500
+
+@app.route('/api/debug/recent-purchases', methods=['GET'])
+def debug_recent_purchases():
+    """Debug endpoint to check recent purchases"""
+    try:
+        firebase_uid = request.args.get('firebaseUid')
+        user_id = request.args.get('userId')
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get recent purchases
+                    if firebase_uid:
+                        cur.execute("""
+                            SELECT PurchaseID, StripeProductID, TotalAmount, DateCreated, UserID, FirebaseUID
+                            FROM purchases 
+                            WHERE FirebaseUID = %s OR UserID = (
+                                SELECT id FROM users WHERE firebase_uid = %s
+                            )
+                            ORDER BY DateCreated DESC 
+                            LIMIT 10
+                        """, (firebase_uid, firebase_uid))
+                    else:
+                        cur.execute("""
+                            SELECT PurchaseID, StripeProductID, TotalAmount, DateCreated, UserID, FirebaseUID
+                            FROM purchases 
+                            ORDER BY DateCreated DESC 
+                            LIMIT 10
+                        """)
+                    
+                    purchases = cur.fetchall()
+                    purchase_list = []
+                    for purchase in purchases:
+                        purchase_list.append({
+                            'purchase_id': purchase[0],
+                            'product_id': purchase[1],
+                            'amount': purchase[2],
+                            'date_created': purchase[3].isoformat() if purchase[3] else None,
+                            'user_id': purchase[4],
+                            'firebase_uid': purchase[5]
+                        })
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'purchases': purchase_list,
+                        'firebase_uid': firebase_uid,
+                        'count': len(purchase_list)
+                    })
+                    
+        return jsonify({'status': 'error', 'message': 'Database connection failed'})
+        
+    except Exception as e:
+        print(f"Error in debug purchases: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/db-test', methods=['GET'])
 def db_test():

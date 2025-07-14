@@ -153,8 +153,25 @@ function confirmPurchase() {
         var productId = drawer.dataset.productId;
         console.log('Confirming purchase for:', productId);
 
-        // Get Firebase UID if available
-        var firebaseUid = localStorage.getItem('userId') || null;
+        // Get Firebase UID from multiple possible sources
+        var firebaseUid = null;
+        
+        // First try to get current user data
+        var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        if (currentUserData && currentUserData.uid) {
+            firebaseUid = currentUserData.uid;
+            console.log('Using Firebase UID from currentUser:', firebaseUid);
+        } else {
+            // Fallback to other localStorage keys
+            firebaseUid = localStorage.getItem('firebaseUid') || 
+                         localStorage.getItem('userId') || null;
+            console.log('Using Firebase UID from fallback:', firebaseUid);
+        }
+
+        if (!firebaseUid) {
+            alert('Please log in to make a purchase.');
+            return;
+        }
 
         // Make API call to record purchase
         fetch('/api/record-global-purchase', {
