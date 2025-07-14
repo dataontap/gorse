@@ -38,6 +38,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
 
+      // Check if Firebase Auth is available
+      if (!firebase.auth) {
+        console.error("Firebase Auth module not available");
+        if (initAttempts < maxAttempts) {
+          setTimeout(initializeFirebaseAuth, 1000);
+          return;
+        } else {
+          showFirebaseUnavailable();
+          return;
+        }
+      }
+
       // Initialize Firebase if not already initialized
       if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
@@ -76,19 +88,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (authContainer) {
       authContainer.innerHTML = `
-        <div class="firebase-unavailable">
-          <p style="color: #ff6b6b; text-align: center; margin: 20px 0;">
-            🔥 Authentication service is temporarily unavailable
+        <div class="firebase-unavailable-error" style="background: rgba(255, 107, 107, 0.15); border: 1px solid rgba(255, 107, 107, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <p style="color: #ff6b6b; text-align: center; margin: 10px 0;">
+            🔥 Authentication service is temporarily unavailable.
           </p>
-          <button onclick="location.reload()" class="retry-btn" style="margin-bottom: 15px;">
-            🔄 Retry Connection
-          </button>
+          <p style="color: #ff6b6b; text-align: center; margin: 10px 0; font-size: 14px;">
+            Please refresh the page and try again.
+          </p>
+          <div style="text-align: center;">
+            <button onclick="location.reload()" style="background: rgba(255, 107, 107, 0.2); border: 1px solid #ff6b6b; color: #ff6b6b; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+              🔄 Retry Connection
+            </button>
+          </div>
         </div>
-        <div class="demo-mode-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
-          <p style="text-align: center; color: #cccccc; margin-bottom: 10px;">
+        <div class="demo-mode-section" style="text-align: center;">
+          <p style="color: #cccccc; margin-bottom: 15px; font-size: 16px;">
             Or explore without signing in:
           </p>
-          <button onclick="enableDemoMode()" class="demo-mode-btn">
+          <button onclick="enableDemoMode()" class="demo-mode-btn" style="background: rgba(116, 192, 252, 0.2); border: 1px solid #74c0fc; color: #74c0fc; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px;">
             🎮 Try Demo Mode
           </button>
         </div>
@@ -97,14 +114,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (userInfo) {
       userInfo.innerHTML = `
-        <div class="firebase-unavailable">
-          <h2>🔥 Authentication Service Unavailable</h2>
-          <p>The authentication service is currently not available. You can:</p>
-          <ul>
-            <li>Refresh the page to retry the connection</li>
-            <li>Check back later when the service is restored</li>
-            <li>Try demo mode to explore the platform features</li>
-          </ul>
+        <div class="firebase-unavailable" style="text-align: center; padding: 20px;">
+          <h2 style="color: #ff6b6b; margin-bottom: 15px;">🔥 Authentication Service Unavailable</h2>
+          <p style="color: #cccccc; margin-bottom: 20px;">The authentication service is currently not available. You can:</p>
+          <div style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+            <ul style="text-align: left; color: #cccccc; margin: 0; padding-left: 20px;">
+              <li>Refresh the page to retry the connection</li>
+              <li>Check back later when the service is restored</li>
+              <li>Try demo mode to explore the platform features</li>
+            </ul>
+          </div>
+          <button onclick="enableDemoMode()" style="background: rgba(116, 192, 252, 0.2); border: 1px solid #74c0fc; color: #74c0fc; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
+            🎮 Try Demo Mode
+          </button>
         </div>
       `;
     }
@@ -323,24 +345,76 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('demoMode', 'true');
         showDemoData();
         updateAuthUI(null, null);
+        
+        // Show success message
+        const successMessage = document.createElement('div');
+        successMessage.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(81, 207, 102, 0.2);
+            border: 1px solid #51cf66;
+            color: #51cf66;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-size: 14px;
+        `;
+        successMessage.textContent = '🎮 Demo Mode Activated! You can now explore the platform.';
+        document.body.appendChild(successMessage);
+        
+        setTimeout(() => {
+            if (document.body.contains(successMessage)) {
+                document.body.removeChild(successMessage);
+            }
+        }, 3000);
     }
 
     function disableDemoMode() {
         localStorage.removeItem('demoMode');
         updateAuthUI(null, null);
+        
+        // Show exit message
+        const exitMessage = document.createElement('div');
+        exitMessage.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+            color: #ffc107;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-size: 14px;
+        `;
+        exitMessage.textContent = '👋 Demo Mode Deactivated. Sign in to access your account.';
+        document.body.appendChild(exitMessage);
+        
+        setTimeout(() => {
+            if (document.body.contains(exitMessage)) {
+                document.body.removeChild(exitMessage);
+            }
+        }, 3000);
     }
 
     function showDemoData() {
         const userInfo = document.getElementById('user-info');
         if (userInfo) {
             userInfo.innerHTML = `
-                <div class="demo-mode-active">
-                    <h2>🎮 Demo Mode Active</h2>
-                    <p>Name: Demo User</p>
-                    <p>Email: demo@example.com</p>
-                    <p>Data Balance: 5.5 GB</p>
-                    <p>Status: Demo Member</p>
-                    <button onclick="disableDemoMode()" class="exit-demo-btn">Exit Demo Mode</button>
+                <div class="demo-mode-active" style="text-align: center; padding: 20px;">
+                    <h2 style="color: #74c0fc; margin-bottom: 15px;">🎮 Demo Mode Active</h2>
+                    <div style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <p style="color: #cccccc; margin: 5px 0;"><strong>Name:</strong> Demo User</p>
+                        <p style="color: #cccccc; margin: 5px 0;"><strong>Email:</strong> demo@example.com</p>
+                        <p style="color: #cccccc; margin: 5px 0;"><strong>Data Balance:</strong> 5.5 GB</p>
+                        <p style="color: #cccccc; margin: 5px 0;"><strong>Status:</strong> Demo Member</p>
+                    </div>
+                    <button onclick="disableDemoMode()" style="background: rgba(255, 193, 7, 0.2); border: 1px solid #ffc107; color: #ffc107; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                        Exit Demo Mode
+                    </button>
                 </div>
             `;
         }
