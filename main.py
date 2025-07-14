@@ -1266,7 +1266,7 @@ def get_user_data_balance():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Get all data-related purchases for this user
+                    # Get all data-related purchases for this user - using correct column names
                     cur.execute("""
                         SELECT 
                             COALESCE(SUM(CASE WHEN StripeProductID = 'global_data_10gb' THEN TotalAmount ELSE 0 END), 0) as global_data_cents,
@@ -1277,11 +1277,21 @@ def get_user_data_balance():
                     """, (user_id, firebase_uid))
 
                     result = cur.fetchone()
-                    if result and len(result) >= 3:
-                        global_data_cents = result[0] if result[0] else 0
-                        total_data_cents = result[1] if result[1] else 0
-                        total_purchases = result[2] if result[2] else 0
+                    print(f"Debug: SQL result = {result}")
+                    
+                    if result:
+                        try:
+                            global_data_cents = int(result[0]) if result[0] is not None else 0
+                            total_data_cents = int(result[1]) if result[1] is not None else 0
+                            total_purchases = int(result[2]) if result[2] is not None else 0
+                            print(f"Debug: Parsed values - global_data_cents={global_data_cents}, total_data_cents={total_data_cents}, total_purchases={total_purchases}")
+                        except (IndexError, TypeError, ValueError) as e:
+                            print(f"Error parsing SQL result: {e}")
+                            global_data_cents = 0
+                            total_data_cents = 0
+                            total_purchases = 0
                     else:
+                        print("No SQL result returned")
                         global_data_cents = 0
                         total_data_cents = 0
                         total_purchases = 0
@@ -2954,6 +2964,54 @@ def debug_recent_purchases():
         
     except Exception as e:
         print(f"Error in debug purchases: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/debug/purchases-structure', methods=['GET'])
+def debug_purchases_structure():
+    """Debug endpoint to check purchases table structure and data"""
+    try:
+        firebase_uid = request.args.get('firebaseUid')
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check table structure
+                    cur.execute("""
+                        SELECT column_name, data_type 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'purchases' 
+                        ORDER BY ordinal_position
+                    """)
+                    columns = cur.fetchall()
+                    
+                    # Check actual data for this user
+                    if firebase_uid:
+                        cur.execute("""
+                            SELECT * FROM purchases 
+                            WHERE FirebaseUID = %s 
+                            ORDER BY DateCreated DESC 
+                            LIMIT 5
+                        """, (firebase_uid,))
+                        recent_purchases = cur.fetchall()
+                    else:
+                        cur.execute("""
+                            SELECT * FROM purchases 
+                            ORDER BY DateCreated DESC 
+                            LIMIT 5
+                        """)
+                        recent_purchases = cur.fetchall()
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'columns': [{'name': col[0], 'type': col[1]} for col in columns],
+                        'recent_purchases': [list(purchase) for purchase in recent_purchases],
+                        'firebase_uid': firebase_uid
+                    })
+                    
+        return jsonify({'status': 'error', 'message': 'Database connection failed'})
+        
+    except Exception as e:
+        print(f"Error in debug purchases structure: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/db-test', methods=['GET'])

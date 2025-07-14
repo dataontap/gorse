@@ -181,9 +181,44 @@ document.addEventListener('DOMContentLoaded', function() {
                   };
 
                   // Get user balance
-                  const balanceResponse = await fetch(`/api/user/data-balance?firebaseUid=${user.uid}`);
-                  const balanceData = await balanceResponse.json();
-                  currentUserData.dataBalance = balanceData.dataBalance || 0;
+                  try {
+                      const balanceResponse = await fetch(`/api/user/data-balance?firebaseUid=${user.uid}`);
+                      const balanceData = await balanceResponse.json();
+                      
+                      if (balanceData.status === 'success') {
+                          currentUserData.dataBalance = balanceData.dataBalance || 0;
+                      } else {
+                          console.error('Balance API error:', balanceData);
+                          currentUserData.dataBalance = 0;
+                          
+                          // Show error message to user
+                          const errorMessage = document.createElement('div');
+                          errorMessage.style.cssText = `
+                              position: fixed;
+                              top: 20px;
+                              left: 50%;
+                              transform: translateX(-50%);
+                              background: rgba(255, 107, 107, 0.2);
+                              border: 1px solid #ff6b6b;
+                              color: #ff6b6b;
+                              padding: 12px 20px;
+                              border-radius: 8px;
+                              z-index: 10000;
+                              font-size: 14px;
+                          `;
+                          errorMessage.textContent = '⚠️ Unable to load data balance. Please refresh the page.';
+                          document.body.appendChild(errorMessage);
+                          
+                          setTimeout(() => {
+                              if (document.body.contains(errorMessage)) {
+                                  document.body.removeChild(errorMessage);
+                              }
+                          }, 5000);
+                      }
+                  } catch (balanceError) {
+                      console.error('Error fetching balance:', balanceError);
+                      currentUserData.dataBalance = 0;
+                  }
 
                   console.log('Complete user data loaded:', currentUserData);
 
