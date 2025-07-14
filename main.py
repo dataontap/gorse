@@ -1267,31 +1267,37 @@ def get_user_data_balance():
             if conn:
                 with conn.cursor() as cur:
                     # Get all data-related purchases for this user - using correct column names
-                    cur.execute("""
-                        SELECT 
-                            COALESCE(SUM(CASE WHEN StripeProductID = 'global_data_10gb' THEN TotalAmount ELSE 0 END), 0) as global_data_cents,
-                            COALESCE(SUM(CASE WHEN StripeProductID LIKE '%data%' OR StripeProductID = 'beta_esim_data' THEN TotalAmount ELSE 0 END), 0) as total_data_cents,
-                            COUNT(*) as total_purchases
-                        FROM purchases 
-                        WHERE UserID = %s OR FirebaseUID = %s
-                    """, (user_id, firebase_uid))
+                    try:
+                        cur.execute("""
+                            SELECT 
+                                COALESCE(SUM(CASE WHEN StripeProductID = 'global_data_10gb' THEN TotalAmount ELSE 0 END), 0) as global_data_cents,
+                                COALESCE(SUM(CASE WHEN StripeProductID LIKE '%data%' OR StripeProductID = 'beta_esim_data' THEN TotalAmount ELSE 0 END), 0) as total_data_cents,
+                                COUNT(*) as total_purchases
+                            FROM purchases 
+                            WHERE UserID = %s OR FirebaseUID = %s
+                        """, (user_id, firebase_uid))
 
-                    result = cur.fetchone()
-                    print(f"Debug: SQL result = {result}")
-                    
-                    if result:
-                        try:
-                            global_data_cents = int(result[0]) if result[0] is not None else 0
-                            total_data_cents = int(result[1]) if result[1] is not None else 0
-                            total_purchases = int(result[2]) if result[2] is not None else 0
-                            print(f"Debug: Parsed values - global_data_cents={global_data_cents}, total_data_cents={total_data_cents}, total_purchases={total_purchases}")
-                        except (IndexError, TypeError, ValueError) as e:
-                            print(f"Error parsing SQL result: {e}")
+                        result = cur.fetchone()
+                        print(f"Debug: SQL result = {result}")
+                        
+                        if result and len(result) >= 3:
+                            try:
+                                global_data_cents = int(result[0]) if result[0] is not None else 0
+                                total_data_cents = int(result[1]) if result[1] is not None else 0
+                                total_purchases = int(result[2]) if result[2] is not None else 0
+                                print(f"Debug: Parsed values - global_data_cents={global_data_cents}, total_data_cents={total_data_cents}, total_purchases={total_purchases}")
+                            except (IndexError, TypeError, ValueError) as e:
+                                print(f"Error parsing SQL result: {e}")
+                                global_data_cents = 0
+                                total_data_cents = 0
+                                total_purchases = 0
+                        else:
+                            print(f"No SQL result returned or insufficient columns: {result}")
                             global_data_cents = 0
                             total_data_cents = 0
                             total_purchases = 0
-                    else:
-                        print("No SQL result returned")
+                    except Exception as sql_err:
+                        print(f"SQL query error: {sql_err}")
                         global_data_cents = 0
                         total_data_cents = 0
                         total_purchases = 0
