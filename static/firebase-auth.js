@@ -1,7 +1,4 @@
-The code implements Firebase authentication, user data retrieval from the backend, demo mode, and UI updates, ensuring a smooth user experience.
-```
 
-```replit_final_file
 // Firebase Authentication handler using Firebase SDK v8
 document.addEventListener('DOMContentLoaded', function() {
   console.log("Firebase auth script loading...");
@@ -213,36 +210,9 @@ document.addEventListener('DOMContentLoaded', function() {
           localStorage.removeItem('currentUser');
           updateAuthUI(null, null);
       }
-  });
+    });
 
-    // Register user with our backend API
-    function registerUserWithBackend(firebaseUser) {
-      // Send Firebase user info to backend
-      fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firebaseUid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log('User registered with backend:', data);
-        if (data.userId) {
-          localStorage.setItem('databaseUserId', data.userId);
-        }
-      })
-      .catch(error => {
-        console.error('Error registering user with backend:', error);
-      });
-    }
-
-     function updateAuthUI(user, userData = null) {
+    function updateAuthUI(user, userData) {
         const authContainer = document.getElementById('auth-container');
         const userInfo = document.getElementById('user-info');
 
@@ -521,6 +491,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return firebase.auth().currentUser;
       }
     };
+
+    // Make nested functions globally available
+    window.enableDemoMode = enableDemoMode;
+    window.disableDemoMode = disableDemoMode;
+    window.isDemoMode = isDemoMode;
+    window.showDemoData = showDemoData;
+    window.getCurrentUser = getCurrentUser;
   }
 
   function setupFallbackAuthFunctions() {
@@ -548,47 +525,43 @@ document.addEventListener('DOMContentLoaded', function() {
         return null;
       }
     };
-  }
 
-    // Make functions globally available
-    window.signInWithGoogle = function() {
-      console.log("signInWithGoogle called");
-      if (window.firebaseAuth && window.firebaseAuth.signInWithGoogle) {
-        return window.firebaseAuth.signInWithGoogle();
-      } else {
-        console.error('Firebase auth not available');
-        alert('Authentication service not available. Please refresh the page and try again.');
-        return Promise.reject(new Error('Authentication service not available'));
-      }
-    };
-
-    window.signOut = function() {
-      console.log("signOut called");
-      if (window.firebaseAuth && window.firebaseAuth.signOut) {
-        return window.firebaseAuth.signOut();
-      } else {
-        console.error('Firebase auth not available');
-        localStorage.clear();
-        window.location.href = '/';
-      }
-    };
-
+    // Make demo functions available even in fallback mode
     window.enableDemoMode = function() {
       localStorage.setItem('demoMode', 'true');
       showDemoData();
-      updateAuthUI(null, null);
     };
 
     window.disableDemoMode = function() {
       localStorage.removeItem('demoMode');
-      updateAuthUI(null, null);
+    };
+
+    window.isDemoMode = function() {
+      return localStorage.getItem('demoMode') === 'true';
+    };
+
+    window.showDemoData = function() {
+      const userInfo = document.getElementById('user-info');
+      if (userInfo) {
+        userInfo.innerHTML = `
+          <div class="demo-mode-active" style="text-align: center; padding: 20px;">
+            <h2 style="color: #74c0fc; margin-bottom: 15px;">🎮 Demo Mode Active</h2>
+            <div style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+              <p style="color: #cccccc; margin: 5px 0;"><strong>Name:</strong> Demo User</p>
+              <p style="color: #cccccc; margin: 5px 0;"><strong>Email:</strong> demo@example.com</p>
+              <p style="color: #cccccc; margin: 5px 0;"><strong>Data Balance:</strong> 5.5 GB</p>
+              <p style="color: #cccccc; margin: 5px 0;"><strong>Status:</strong> Demo Member</p>
+            </div>
+            <button onclick="disableDemoMode()" style="background: rgba(255, 193, 7, 0.2); border: 1px solid #ffc107; color: #ffc107; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+              Exit Demo Mode
+            </button>
+          </div>
+        `;
+      }
     };
 
     window.getCurrentUser = function() {
-      const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
-      if (user) {
-        return user;
-      } else if (isDemoMode()) {
+      if (localStorage.getItem('demoMode') === 'true') {
         return {
           uid: 'demo_user',
           email: 'demo@example.com',
@@ -600,8 +573,31 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       return null;
     };
-
-  } catch (error) {
-    console.error("Firebase Auth initialization error:", error);
   }
+
+  // Make functions globally available
+  window.signInWithGoogle = function() {
+    console.log("signInWithGoogle called");
+    if (window.firebaseAuth && window.firebaseAuth.signInWithGoogle) {
+      return window.firebaseAuth.signInWithGoogle();
+    } else {
+      console.error('Firebase auth not available');
+      alert('Authentication service not available. Please refresh the page and try again.');
+      return Promise.reject(new Error('Authentication service not available'));
+    }
+  };
+
+  window.signOut = function() {
+    console.log("signOut called");
+    if (window.firebaseAuth && window.firebaseAuth.signOut) {
+      return window.firebaseAuth.signOut();
+    } else {
+      console.error('Firebase auth not available');
+      localStorage.clear();
+      window.location.href = '/';
+    }
+  };
+
+  // Start the initialization process
+  initializeFirebaseAuth();
 });
