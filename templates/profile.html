@@ -208,70 +208,106 @@
         });
 
         function loadFirebaseUserData() {
-            // Get current user data from localStorage (set by firebase-auth.js)
-            const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-            
-            if (currentUserData) {
-                // Update email
-                const emailElement = document.getElementById('profileUserEmail');
-                if (emailElement && currentUserData.email) {
-                    emailElement.textContent = currentUserData.email;
-                }
-
-                // Update display name
-                const nameElement = document.getElementById('profileUserName');
-                if (nameElement && currentUserData.displayName) {
-                    const founderBadge = currentUserData.founderStatus === 'Y' ? 'Founding Member' : 'Member';
-                    nameElement.innerHTML = `${currentUserData.displayName} <span class="founding-shield">${founderBadge}</span>`;
-                }
-            } else {
-                // Fallback to old method if currentUser data not available
-                const userEmail = localStorage.getItem('userEmail');
-                const userId = localStorage.getItem('userId');
-
-                if (userEmail) {
+            try {
+                // Get current user data from localStorage (set by firebase-auth.js)
+                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                
+                if (currentUserData) {
+                    // Update email
                     const emailElement = document.getElementById('profileUserEmail');
-                    if (emailElement) {
-                        emailElement.textContent = userEmail;
+                    if (emailElement && currentUserData.email) {
+                        emailElement.textContent = currentUserData.email;
                     }
 
-                    // Extract name from email as fallback
-                    const nameFromEmail = userEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    // Update display name
                     const nameElement = document.getElementById('profileUserName');
                     if (nameElement) {
-                        nameElement.innerHTML = `${nameFromEmail} <span class="founding-shield">Member</span>`;
+                        const displayName = currentUserData.displayName || 'User';
+                        const founderBadge = currentUserData.founderStatus === 'Y' ? 'Founding Member' : 'Member';
+                        nameElement.innerHTML = `${displayName} <span class="founding-shield">${founderBadge}</span>`;
                     }
+                } else {
+                    // Fallback to old method if currentUser data not available
+                    const userEmail = localStorage.getItem('userEmail');
+                    const userId = localStorage.getItem('userId');
+
+                    if (userEmail) {
+                        const emailElement = document.getElementById('profileUserEmail');
+                        if (emailElement) {
+                            emailElement.textContent = userEmail;
+                        }
+
+                        // Extract name from email as fallback
+                        const nameFromEmail = userEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        const nameElement = document.getElementById('profileUserName');
+                        if (nameElement) {
+                            nameElement.innerHTML = `${nameFromEmail} <span class="founding-shield">Member</span>`;
+                        }
+                    } else {
+                        // Show demo data if nothing is available
+                        const emailElement = document.getElementById('profileUserEmail');
+                        const nameElement = document.getElementById('profileUserName');
+                        
+                        if (emailElement) {
+                            emailElement.textContent = 'demo@example.com';
+                        }
+                        if (nameElement) {
+                            nameElement.innerHTML = `Demo User <span class="founding-shield">Demo Member</span>`;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading Firebase user data:', error);
+                // Fallback to demo data on error
+                const emailElement = document.getElementById('profileUserEmail');
+                const nameElement = document.getElementById('profileUserName');
+                
+                if (emailElement) {
+                    emailElement.textContent = 'demo@example.com';
+                }
+                if (nameElement) {
+                    nameElement.innerHTML = `Demo User <span class="founding-shield">Demo Member</span>`;
                 }
             }
         }
 
         function loadOxioData() {
-            // Get current user data from localStorage (set by firebase-auth.js)
-            const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-            
-            let firebaseUid = null;
-            
-            if (currentUserData) {
-                firebaseUid = currentUserData.uid;
-            } else {
-                // Fallback to old localStorage keys
-                firebaseUid = localStorage.getItem('firebaseUid') || localStorage.getItem('userId');
-            }
+            try {
+                // Get current user data from localStorage (set by firebase-auth.js)
+                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                
+                let firebaseUid = null;
+                
+                if (currentUserData) {
+                    firebaseUid = currentUserData.uid;
+                } else {
+                    // Fallback to old localStorage keys
+                    firebaseUid = localStorage.getItem('firebaseUid') || localStorage.getItem('userId');
+                }
 
-            if (!firebaseUid) {
-                displayNoOxioData();
-                return;
-            }
+                if (!firebaseUid) {
+                    displayNoOxioData();
+                    return;
+                }
 
-            fetch(`/api/oxio-user-data?firebaseUid=${firebaseUid}`)
-                .then(response => response.json())
-                .then(data => {
-                    displayOxioData(data);
-                })
-                .catch(error => {
-                    console.error('Error loading OXIO data:', error);
-                    displayOxioError();
-                });
+                fetch(`/api/oxio-user-data?firebaseUid=${firebaseUid}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        displayOxioData(data);
+                    })
+                    .catch(error => {
+                        console.error('Error loading OXIO data:', error);
+                        displayOxioError(error.message);
+                    });
+            } catch (error) {
+                console.error('Error in loadOxioData:', error);
+                displayOxioError(error.message);
+            }
         }
 
         function displayOxioData(data) {
@@ -417,83 +453,112 @@
         }
 
         function showQRCode(qrData) {
-            // Create modal for QR code display
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.8);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 10000;
-            `;
+            try {
+                // Create modal for QR code display
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.8);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                `;
 
-            modal.innerHTML = `
-                <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
-                    <h4>eSIM Activation QR Code</h4>
-                    <div id="qrCodeDisplay"></div>
-                    <p style="margin: 10px 0; font-family: monospace; word-break: break-all;">${qrData}</p>
-                    <button onclick="this.closest('div').parentElement.remove()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Close</button>
-                </div>
-            `;
+                modal.innerHTML = `
+                    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; max-width: 90%; max-height: 90%; overflow: auto;">
+                        <h4 style="color: #333;">eSIM Activation QR Code</h4>
+                        <div id="qrCodeDisplay"></div>
+                        <p style="margin: 10px 0; font-family: monospace; word-break: break-all; color: #666; font-size: 12px;">${qrData || 'No QR data available'}</p>
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">Close</button>
+                    </div>
+                `;
 
-            document.body.appendChild(modal);
+                document.body.appendChild(modal);
 
-            // Generate QR code if QRCode library is available
-            if (typeof QRCode !== 'undefined') {
-                new QRCode(document.getElementById("qrCodeDisplay"), {
-                    text: qrData,
-                    width: 200,
-                    height: 200,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
+                // Generate QR code if QRCode library is available
+                if (typeof QRCode !== 'undefined' && qrData) {
+                    try {
+                        new QRCode(document.getElementById("qrCodeDisplay"), {
+                            text: qrData,
+                            width: 200,
+                            height: 200,
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                    } catch (qrError) {
+                        console.error('Error generating QR code:', qrError);
+                        document.getElementById("qrCodeDisplay").innerHTML = '<p style="color: #666;">QR code generation failed</p>';
+                    }
+                } else {
+                    document.getElementById("qrCodeDisplay").innerHTML = '<p style="color: #666;">QR code library not available</p>';
+                }
+
+                // Close modal when clicking outside
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
                 });
+            } catch (error) {
+                console.error('Error showing QR code:', error);
+                alert('Error displaying QR code');
             }
         }
 
         function loadSubscriptionData() {
-            // Get current user data from localStorage (set by firebase-auth.js)
-            const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-            
-            let firebaseUid = null;
-            let userId = null;
-            
-            if (currentUserData) {
-                firebaseUid = currentUserData.uid;
-                userId = currentUserData.userId;
-            } else {
-                // Fallback to old localStorage keys
-                firebaseUid = localStorage.getItem('firebaseUid') || localStorage.getItem('userId');
-                userId = localStorage.getItem('userId');
-            }
+            try {
+                // Get current user data from localStorage (set by firebase-auth.js)
+                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                
+                let firebaseUid = null;
+                let userId = null;
+                
+                if (currentUserData) {
+                    firebaseUid = currentUserData.uid;
+                    userId = currentUserData.userId;
+                } else {
+                    // Fallback to old localStorage keys
+                    firebaseUid = localStorage.getItem('firebaseUid') || localStorage.getItem('userId');
+                    userId = localStorage.getItem('userId');
+                }
 
-            if (!firebaseUid && !userId) {
-                displayNoSubscription();
-                return;
-            }
-
-            // Build query parameters
-            let queryParams = new URLSearchParams();
-            if (firebaseUid) {
-                queryParams.append('firebaseUid', firebaseUid);
-            } else if (userId) {
-                queryParams.append('userId', userId);
-            }
-
-            fetch(`/api/subscription-status?${queryParams.toString()}`)
-                .then(response => response.json())
-                .then(data => {
-                    displaySubscriptionData(data);
-                })
-                .catch(error => {
-                    console.error('Error loading subscription data:', error);
+                if (!firebaseUid && !userId) {
                     displayNoSubscription();
-                });
+                    return;
+                }
+
+                // Build query parameters
+                let queryParams = new URLSearchParams();
+                if (firebaseUid) {
+                    queryParams.append('firebaseUid', firebaseUid);
+                } else if (userId) {
+                    queryParams.append('userId', userId);
+                }
+
+                fetch(`/api/subscription-status?${queryParams.toString()}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        displaySubscriptionData(data);
+                    })
+                    .catch(error => {
+                        console.error('Error loading subscription data:', error);
+                        displayNoSubscription();
+                    });
+            } catch (error) {
+                console.error('Error in loadSubscriptionData:', error);
+                displayNoSubscription();
+            }
         }
 
         function displaySubscriptionData(data) {
@@ -580,6 +645,11 @@
                 default:
                     return 'Contact Support';
             }
+        }
+
+        function editAddress(element) {
+            // For now, just show an alert - you can implement actual editing later
+            alert('Address editing feature coming soon!');
         }
 
         function editSubscription(element) {
