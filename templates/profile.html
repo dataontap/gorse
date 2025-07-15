@@ -103,6 +103,15 @@
                 </div>
 
                 <div class="address-section mb-4">
+                    <h3 class="mb-3"><i class="fas fa-mobile-alt"></i> OXIO Information</h3>
+                    <div id="oxioContainer">
+                        <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
+                            <p>Loading OXIO information...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="address-section mb-4">
                     <h3 class="mb-3"><i class="fas fa-sync"></i> Subscriptions</h3>
                     <div id="subscriptionContainer">
                         <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
@@ -194,6 +203,7 @@
         // Load Firebase user data from localStorage
         document.addEventListener('DOMContentLoaded', function() {
             loadFirebaseUserData();
+            loadOxioData();
             loadSubscriptionData();
         });
 
@@ -232,6 +242,217 @@
                         nameElement.innerHTML = `${nameFromEmail} <span class="founding-shield">Member</span>`;
                     }
                 }
+            }
+        }
+
+        function loadOxioData() {
+            // Get current user data from localStorage (set by firebase-auth.js)
+            const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            
+            let firebaseUid = null;
+            
+            if (currentUserData) {
+                firebaseUid = currentUserData.uid;
+            } else {
+                // Fallback to old localStorage keys
+                firebaseUid = localStorage.getItem('firebaseUid') || localStorage.getItem('userId');
+            }
+
+            if (!firebaseUid) {
+                displayNoOxioData();
+                return;
+            }
+
+            fetch(`/api/oxio-user-data?firebaseUid=${firebaseUid}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayOxioData(data);
+                })
+                .catch(error => {
+                    console.error('Error loading OXIO data:', error);
+                    displayOxioError();
+                });
+        }
+
+        function displayOxioData(data) {
+            const container = document.getElementById('oxioContainer');
+            
+            if (data.status === 'success' && data.oxio_data) {
+                const oxioData = data.oxio_data;
+                
+                // Format regions
+                const regionsText = oxioData.regions && oxioData.regions.length > 0 
+                    ? oxioData.regions.join(', ') 
+                    : 'Not specified';
+
+                // Status badge color
+                const statusColor = getOxioStatusColor(oxioData.status);
+                
+                container.innerHTML = `
+                    <div class="address-card p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5><i class="fas fa-user me-2"></i>User Information</h5>
+                                        <p><strong>User ID:</strong> ${oxioData.user_id || 'N/A'}</p>
+                                        <p><strong>Email:</strong> ${oxioData.email || 'N/A'}</p>
+                                        <p><strong>Phone Number:</strong> ${oxioData.phone_number || 'Not assigned'}</p>
+                                        <p><strong>Line ID:</strong> ${oxioData.line_id || 'Not assigned'}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5><i class="fas fa-sim-card me-2"></i>eSIM Profile</h5>
+                                        <p><strong>ICCID:</strong> ${oxioData.iccid || 'Not assigned'}</p>
+                                        <p><strong>Profile ID:</strong> ${oxioData.profile_id || 'Not assigned'}</p>
+                                        <p><strong>Activation Code:</strong> ${oxioData.activation_code || 'Not assigned'}</p>
+                                        <p><strong>Status:</strong> <span class="badge" style="background-color: ${statusColor};">${formatOxioStatus(oxioData.status)}</span></p>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <h5><i class="fas fa-mobile-alt me-2"></i>Plan Details</h5>
+                                        <p><strong>Plan Name:</strong> ${oxioData.plan_name || 'Not assigned'}</p>
+                                        <p><strong>Data Allowance:</strong> ${oxioData.data_allowance || 'Not specified'}</p>
+                                        <p><strong>Validity:</strong> ${oxioData.validity_days ? oxioData.validity_days + ' days' : 'Not specified'}</p>
+                                        <p><strong>Coverage:</strong> ${regionsText}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5><i class="fas fa-qrcode me-2"></i>Activation</h5>
+                                        ${oxioData.qr_code ? `
+                                            <p><strong>QR Code:</strong> <button class="btn btn-sm btn-outline-primary" onclick="showQRCode('${oxioData.qr_code}')">Show QR</button></p>
+                                        ` : '<p><strong>QR Code:</strong> Not available</p>'}
+                                        <p><strong>Subscription ID:</strong> ${oxioData.subscription_id || 'Not assigned'}</p>
+                                        <p><strong>Last Updated:</strong> ${oxioData.last_updated ? new Date(oxioData.last_updated).toLocaleString() : 'Never'}</p>
+                                    </div>
+                                </div>
+                                ${oxioData.error ? `
+                                    <div class="alert alert-warning mt-3" role="alert">
+                                        <strong>Note:</strong> ${oxioData.error}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <i class="fas fa-sync-alt refresh-icon" onclick="refreshOxioData()" title="Refresh OXIO data" style="cursor: pointer; color: #007bff;"></i>
+                        </div>
+                    </div>
+                `;
+            } else {
+                displayOxioError(data.error);
+            }
+        }
+
+        function displayNoOxioData() {
+            const container = document.getElementById('oxioContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="border-left: 4px solid #6c757d;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="address-content">
+                            <h4>No OXIO Data Available</h4>
+                            <p>Please sign in to view your OXIO information.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayOxioError(error) {
+            const container = document.getElementById('oxioContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="border-left: 4px solid #dc3545;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="address-content">
+                            <h4>OXIO Service Error</h4>
+                            <p>Unable to load OXIO information: ${error || 'Unknown error'}</p>
+                            <button class="btn btn-sm btn-primary" onclick="refreshOxioData()">Retry</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getOxioStatusColor(status) {
+            switch(status) {
+                case 'active':
+                    return '#28a745';
+                case 'pending':
+                    return '#ffc107';
+                case 'esim_ready':
+                    return '#17a2b8';
+                case 'not_activated':
+                    return '#6c757d';
+                case 'oxio_unavailable':
+                case 'oxio_error':
+                    return '#dc3545';
+                default:
+                    return '#6c757d';
+            }
+        }
+
+        function formatOxioStatus(status) {
+            switch(status) {
+                case 'active':
+                    return 'Active';
+                case 'pending':
+                    return 'Pending';
+                case 'esim_ready':
+                    return 'eSIM Ready';
+                case 'not_activated':
+                    return 'Not Activated';
+                case 'oxio_unavailable':
+                    return 'Service Unavailable';
+                case 'oxio_error':
+                    return 'Service Error';
+                default:
+                    return status;
+            }
+        }
+
+        function refreshOxioData() {
+            const container = document.getElementById('oxioContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
+                    <p><i class="fas fa-spinner fa-spin"></i> Refreshing OXIO information...</p>
+                </div>
+            `;
+            loadOxioData();
+        }
+
+        function showQRCode(qrData) {
+            // Create modal for QR code display
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            `;
+
+            modal.innerHTML = `
+                <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+                    <h4>eSIM Activation QR Code</h4>
+                    <div id="qrCodeDisplay"></div>
+                    <p style="margin: 10px 0; font-family: monospace; word-break: break-all;">${qrData}</p>
+                    <button onclick="this.closest('div').parentElement.remove()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Close</button>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Generate QR code if QRCode library is available
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(document.getElementById("qrCodeDisplay"), {
+                    text: qrData,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
             }
         }
 

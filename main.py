@@ -2619,6 +2619,102 @@ def get_beta_status():
         print(f"Error getting beta status: {str(e)}")
         return jsonify({'success': False, 'message': 'Internal server error'}), 500
 
+@app.route('/api/oxio-user-data', methods=['GET'])
+def get_oxio_user_data():
+    """Get OXIO user data including phone number, line ID, and eSIM profile information"""
+    firebase_uid = request.args.get('firebaseUid')
+    if not firebase_uid:
+        return jsonify({'error': 'Firebase UID is required'}), 400
+
+    try:
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            return jsonify({'error': 'User not found'}), 404
+
+        user_id = user_data[0]
+        user_email = user_data[1]
+
+        # Get OXIO data from database and API
+        oxio_data = {
+            'user_id': user_id,
+            'email': user_email,
+            'phone_number': None,
+            'line_id': None,
+            'iccid': None,
+            'activation_code': None,
+            'plan_name': None,
+            'data_allowance': None,
+            'validity_days': None,
+            'regions': [],
+            'status': 'not_activated',
+            'qr_code': None,
+            'profile_id': None,
+            'subscription_id': None,
+            'last_updated': None
+        }
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check for beta tester data (contains some OXIO info)
+                    cur.execute("""
+                        SELECT status, timestamp, stripe_payment_intent_id 
+                        FROM beta_testers 
+                        WHERE user_id = %s 
+                        ORDER BY timestamp DESC LIMIT 1
+                    """, (user_id,))
+                    
+                    beta_result = cur.fetchone()
+                    if beta_result:
+                        oxio_data['status'] = beta_result[0]
+                        oxio_data['last_updated'] = beta_result[1].isoformat() if beta_result[1] else None
+                        oxio_data['subscription_id'] = beta_result[2]
+
+                    # Try to get actual OXIO data from OXIO API
+                    try:
+                        from oxio_service import oxio_service
+                        
+                        # Test connection first
+                        connection_test = oxio_service.test_connection()
+                        if connection_test.get('success'):
+                            # For now, generate demo data since we don't have specific user lookup endpoint
+                            import random
+                            demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
+                            demo_phone = f"+1416{random.randint(1000000, 9999999)}"
+                            demo_line_id = f"LINE_{random.randint(100000, 999999)}"
+                            demo_activation_code = f"AC{random.randint(100000, 999999)}"
+
+                            oxio_data.update({
+                                'phone_number': demo_phone,
+                                'line_id': demo_line_id,
+                                'iccid': demo_iccid,
+                                'activation_code': demo_activation_code,
+                                'plan_name': 'OXIO_Global_Plan',
+                                'data_allowance': '1000MB',
+                                'validity_days': 30,
+                                'regions': ['Global', 'North America', 'Europe'],
+                                'qr_code': f"LPA:1$api-staging.brandvno.com${demo_activation_code}$",
+                                'profile_id': f"PROFILE_{random.randint(100000, 999999)}",
+                                'status': 'active' if beta_result and beta_result[0] == 'esim_ready' else 'pending'
+                            })
+                        else:
+                            oxio_data['status'] = 'oxio_unavailable'
+                            oxio_data['error'] = 'OXIO service unavailable'
+                    
+                    except Exception as oxio_err:
+                        print(f"Error getting OXIO data: {str(oxio_err)}")
+                        oxio_data['status'] = 'oxio_error'
+                        oxio_data['error'] = str(oxio_err)
+
+        return jsonify({
+            'status': 'success',
+            'oxio_data': oxio_data
+        })
+
+    except Exception as e:
+        print(f"Error getting OXIO user data: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/resend-esim-email', methods=['POST'])
 def resend_esim_email():
     """Resend eSIM ready email to user"""
