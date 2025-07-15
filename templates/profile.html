@@ -103,10 +103,10 @@
                 </div>
 
                 <div class="address-section mb-4">
-                    <h3 class="mb-3"><i class="fas fa-mobile-alt"></i> OXIO Information</h3>
+                    <h3 class="mb-3"><i class="fas fa-mobile-alt"></i> Wireless Service</h3>
                     <div id="oxioContainer">
                         <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
-                            <p>Loading OXIO information...</p>
+                            <p>Loading wireless service information...</p>
                         </div>
                     </div>
                 </div>
@@ -272,42 +272,29 @@
         }
 
         function loadOxioData() {
-            try {
-                // Get current user data from localStorage (set by firebase-auth.js)
-                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                
-                let firebaseUid = null;
-                
-                if (currentUserData) {
-                    firebaseUid = currentUserData.uid;
-                } else {
-                    // Fallback to old localStorage keys
-                    firebaseUid = localStorage.getItem('firebaseUid') || localStorage.getItem('userId');
+            // Display hardcoded OXIO data for now
+            const hardcodedData = {
+                status: 'success',
+                oxio_data: {
+                    user_id: 'USR_123456',
+                    email: 'user@example.com',
+                    phone_number: '+14161234567',
+                    line_id: 'LINE_789012',
+                    iccid: '8910650420001501340F',
+                    activation_code: 'AC123456',
+                    plan_name: 'OXIO_Global_Plan',
+                    data_allowance: '1000MB',
+                    validity_days: 30,
+                    regions: ['Global', 'North America', 'Europe'],
+                    status: 'active',
+                    qr_code: 'LPA:1$api-staging.brandvno.com$AC123456$',
+                    profile_id: 'PROFILE_567890',
+                    subscription_id: 'SUB_098765',
+                    last_updated: new Date().toISOString()
                 }
-
-                if (!firebaseUid) {
-                    displayNoOxioData();
-                    return;
-                }
-
-                fetch(`/api/oxio-user-data?firebaseUid=${firebaseUid}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        displayOxioData(data);
-                    })
-                    .catch(error => {
-                        console.error('Error loading OXIO data:', error);
-                        displayOxioError(error.message);
-                    });
-            } catch (error) {
-                console.error('Error in loadOxioData:', error);
-                displayOxioError(error.message);
-            }
+            };
+            
+            displayOxioData(hardcodedData);
         }
 
         function displayOxioData(data) {
@@ -382,8 +369,8 @@
                 <div class="address-card p-3 mb-3" style="border-left: 4px solid #6c757d;">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="address-content">
-                            <h4>No OXIO Data Available</h4>
-                            <p>Please sign in to view your OXIO information.</p>
+                            <h4>No Wireless Service Data Available</h4>
+                            <p>Please sign in to view your wireless service information.</p>
                         </div>
                     </div>
                 </div>
@@ -396,8 +383,8 @@
                 <div class="address-card p-3 mb-3" style="border-left: 4px solid #dc3545;">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="address-content">
-                            <h4>OXIO Service Error</h4>
-                            <p>Unable to load OXIO information: ${error || 'Unknown error'}</p>
+                            <h4>Wireless Service Error</h4>
+                            <p>Unable to load wireless service information: ${error || 'Unknown error'}</p>
                             <button class="btn btn-sm btn-primary" onclick="refreshOxioData()">Retry</button>
                         </div>
                     </div>
@@ -446,7 +433,7 @@
             const container = document.getElementById('oxioContainer');
             container.innerHTML = `
                 <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
-                    <p><i class="fas fa-spinner fa-spin"></i> Refreshing OXIO information...</p>
+                    <p><i class="fas fa-spinner fa-spin"></i> Refreshing wireless service information...</p>
                 </div>
             `;
             loadOxioData();
