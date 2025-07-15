@@ -340,7 +340,7 @@ def register_firebase_user():
                     table_exists = cur.fetchone()[0]
 
                     if not table_exists:
-                        # Create users table with correct column names
+                        # Create users table with correct column names including OXIO user ID
                         cur.execute("""
                             CREATE TABLE users (
                                 id SERIAL PRIMARY KEY,
@@ -351,11 +351,25 @@ def register_firebase_user():
                                 photo_url TEXT,
                                 imei VARCHAR(100),
                                 eth_address VARCHAR(42),
+                                oxio_user_id VARCHAR(100),
                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                             )
                         """)
                         conn.commit()
-                        print("Users table created with Firebase fields")
+                        print("Users table created with Firebase fields and OXIO user ID")
+                    else:
+                        # Check if oxio_user_id column exists and add it if missing
+                        cur.execute("""
+                            SELECT column_name FROM information_schema.columns 
+                            WHERE table_name = 'users' AND column_name = 'oxio_user_id'
+                        """)
+                        oxio_column_exists = cur.fetchone()
+
+                        if not oxio_column_exists:
+                            print("Adding oxio_user_id column to users table...")
+                            cur.execute("ALTER TABLE users ADD COLUMN oxio_user_id VARCHAR(100)")
+                            conn.commit()
+                            print("OXIO user ID column added successfully")
 
                     # Check if user already exists by Firebase UID
                     cur.execute("SELECT id, stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
@@ -403,16 +417,40 @@ def register_firebase_user():
                         web3 = Web3()
                         test_account = web3.eth.account.create()
 
+                        # Create OXIO user first
+                        oxio_user_id = None
+                        try:
+                            print(f"Creating OXIO user for Firebase UID: {firebase_uid}")
+                            # Parse display_name to get first and last name
+                            name_parts = (display_name or "Anonymous Anonymous").split(' ', 1)
+                            first_name = name_parts[0] if name_parts else "Anonymous"
+                            last_name = name_parts[1] if len(name_parts) > 1 else "Anonymous"
+                            
+                            oxio_result = oxio_service.create_oxio_user(
+                                first_name=first_name,
+                                last_name=last_name,
+                                email=email,
+                                firebase_uid=firebase_uid
+                            )
+                            
+                            if oxio_result.get('success'):
+                                oxio_user_id = oxio_result.get('oxio_user_id')
+                                print(f"Successfully created OXIO user: {oxio_user_id}")
+                            else:
+                                print(f"Failed to create OXIO user: {oxio_result.get('message', 'Unknown error')}")
+                        except Exception as oxio_err:
+                            print(f"Error creating OXIO user: {str(oxio_err)}")
+
                         cur.execute(
                             """INSERT INTO users 
-                                (email, firebase_uid, display_name, photo_url, eth_address) 
-                            VALUES (%s, %s, %s, %s, %s) 
+                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id) 
+                            VALUES (%s, %s, %s, %s, %s, %s) 
                             RETURNING id""",
-                            (email, firebase_uid, display_name, photo_url, test_account.address)
+                            (email, firebase_uid, display_name, photo_url, test_account.address, oxio_user_id)
                         )
                         user_id = cur.fetchone()[0]
                         conn.commit()
-                        print(f"New Firebase user created: {user_id} with Sepolia wallet: {test_account.address}")
+                        print(f"New Firebase user created: {user_id} with Sepolia wallet: {test_account.address} and OXIO user ID: {oxio_user_id}")
 
                         # Award 1 DOTM token to new member
                         try:
@@ -431,7 +469,7 @@ def register_firebase_user():
                                 customer = stripe.Customer.create(
                                     email=email,
                                     name=display_name,
-                                    metadata={'firebase_uid': firebase_uid, 'user_id': user_id}
+                                    metadata={'firebase_uid': firebase_uid, 'user_id': user_id, 'oxio_user_id': oxio_user_id or ''}
                                 )
                                 stripe_customer_id = customer.id
 
@@ -505,10 +543,10 @@ def get_current_user():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Get user data including founder status
+                    # Get user data including founder status and OXIO user ID
                     cur.execute(
                         """SELECT u.id, u.email, u.display_name, u.photo_url, u.imei, u.stripe_customer_id,
-                                  COALESCE(f.founder, 'N') as founder_status
+                                  COALESCE(f.founder, 'N') as founder_status, u.oxio_user_id
                         FROM users u
                         LEFT JOIN founders f ON u.firebase_uid = f.firebase_uid
                         WHERE u.firebase_uid = %s""",
@@ -525,7 +563,8 @@ def get_current_user():
                             'photoURL': user[3],
                             'imei': user[4],
                             'stripeCustomerId': user[5],
-                            'founderStatus': user[6]
+                            'founderStatus': user[6],
+                            'oxioUserId': user[7]
                         })
 
                     return jsonify({'error': 'User not found'}), 404
@@ -1195,7 +1234,7 @@ def get_user_by_firebase_uid(firebase_uid):
                 with conn.cursor() as cur:
                     cur.execute(
                         """SELECT id, email, firebase_uid, stripe_customer_id, display_name, 
-                                  photo_url, imei, eth_address 
+                                  photo_url, imei, eth_address, oxio_user_id 
                         FROM users WHERE firebase_uid = %s""",
                         (firebase_uid,)
                     )
@@ -2638,6 +2677,7 @@ def get_oxio_user_data():
         oxio_data = {
             'user_id': user_id,
             'email': user_email,
+            'oxio_user_id': user_data[7] if len(user_data) > 7 else None,  # OXIO user ID from database
             'phone_number': None,
             'line_id': None,
             'iccid': None,
@@ -3656,6 +3696,88 @@ def about():
 @app.route('/message-admin')
 def message_admin():
     return render_template('message_admin.html')
+
+@app.route('/api/create-oxio-user', methods=['POST'])
+def create_oxio_user_endpoint():
+    """Create an OXIO user for an existing Firebase user"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid')
+
+        if not firebase_uid:
+            return jsonify({'success': False, 'message': 'Firebase UID is required'}), 400
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get user details
+                    cur.execute("""
+                        SELECT id, email, display_name, oxio_user_id 
+                        FROM users 
+                        WHERE firebase_uid = %s
+                    """, (firebase_uid,))
+                    user_result = cur.fetchone()
+
+                    if not user_result:
+                        return jsonify({'success': False, 'message': 'User not found'}), 404
+
+                    user_id, email, display_name, existing_oxio_user_id = user_result
+
+                    if existing_oxio_user_id:
+                        return jsonify({
+                            'success': True,
+                            'message': 'OXIO user already exists',
+                            'oxio_user_id': existing_oxio_user_id
+                        })
+
+                    # Create OXIO user
+                    try:
+                        print(f"Creating OXIO user for existing Firebase user: {firebase_uid}")
+                        # Parse display_name to get first and last name
+                        name_parts = (display_name or "Anonymous Anonymous").split(' ', 1)
+                        first_name = name_parts[0] if name_parts else "Anonymous"
+                        last_name = name_parts[1] if len(name_parts) > 1 else "Anonymous"
+                        
+                        oxio_result = oxio_service.create_oxio_user(
+                            first_name=first_name,
+                            last_name=last_name,
+                            email=email,
+                            firebase_uid=firebase_uid
+                        )
+                        
+                        if oxio_result.get('success'):
+                            oxio_user_id = oxio_result.get('oxio_user_id')
+                            
+                            # Update user with OXIO user ID
+                            cur.execute(
+                                "UPDATE users SET oxio_user_id = %s WHERE id = %s",
+                                (oxio_user_id, user_id)
+                            )
+                            conn.commit()
+                            
+                            return jsonify({
+                                'success': True,
+                                'message': 'OXIO user created successfully',
+                                'oxio_user_id': oxio_user_id,
+                                'oxio_response': oxio_result
+                            })
+                        else:
+                            return jsonify({
+                                'success': False,
+                                'message': f'Failed to create OXIO user: {oxio_result.get("message", "Unknown error")}',
+                                'oxio_response': oxio_result
+                            }), 500
+                    except Exception as oxio_err:
+                        return jsonify({
+                            'success': False,
+                            'message': f'Error creating OXIO user: {str(oxio_err)}'
+                        }), 500
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error in create OXIO user endpoint: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/update-personal-message', methods=['POST'])
 def update_personal_message():

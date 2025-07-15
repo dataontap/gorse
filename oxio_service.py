@@ -202,6 +202,129 @@ class OXIOService:
                 'request_payload': payload
             }
 
+    def create_oxio_user(self, first_name=None, last_name=None, email=None, firebase_uid=None) -> Dict[str, Any]:
+        """
+        Create a new OXIO end user
+
+        Args:
+            first_name: User's first name (optional, defaults to "Anonymous")
+            last_name: User's last name (optional, defaults to "Anonymous")
+            email: User's email address (optional)
+            firebase_uid: Firebase UID for tracking (optional)
+
+        Returns:
+            API response as dictionary
+        """
+        try:
+            url = f"{self.base_url}/v2/end-users"
+            headers = self.get_headers()
+
+            payload = {
+                "sex": "UNSPECIFIED",
+                "firstName": first_name or "Anonymous",
+                "lastName": last_name or "Anonymous"
+            }
+
+            # Add email if provided
+            if email:
+                payload["email"] = email
+
+            print(f"OXIO Create User Request URL: {url}")
+            print(f"OXIO Create User Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
+            print(f"OXIO Create User Payload: {json.dumps(payload, indent=2)}")
+
+            response = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=30
+            )
+
+            print(f"OXIO Create User Response Status: {response.status_code}")
+            print(f"OXIO Create User Response Headers: {dict(response.headers)}")
+
+            # Get response text first
+            response_text = response.text
+            print(f"Raw response body: {response_text}")
+
+            # Check if response is JSON
+            content_type = response.headers.get('content-type', '').lower()
+
+            if 'application/json' in content_type:
+                try:
+                    response_data = response.json() if response.content else {}
+                    print(f"OXIO Create User Response Body (parsed): {json.dumps(response_data, indent=2)}")
+                except json.JSONDecodeError as json_err:
+                    print(f"Failed to parse JSON response: {str(json_err)}")
+                    response_data = {
+                        'error': 'Invalid JSON response',
+                        'json_error': str(json_err),
+                        'raw_response': response_text[:1000]
+                    }
+            else:
+                print(f"Non-JSON response received (Content-Type: {content_type})")
+                response_data = {
+                    'error': 'Non-JSON response',
+                    'content_type': content_type,
+                    'raw_response': response_text[:1000]
+                }
+
+            if response.status_code >= 200 and response.status_code < 300:
+                return {
+                    'success': True,
+                    'status_code': response.status_code,
+                    'data': response_data,
+                    'message': 'OXIO user created successfully',
+                    'oxio_user_id': response_data.get('id'),
+                    'request_payload': payload,
+                    'firebase_uid': firebase_uid
+                }
+            else:
+                error_details = {
+                    'success': False,
+                    'status_code': response.status_code,
+                    'data': response_data,
+                    'error': f'OXIO API error: {response.status_code}',
+                    'message': response_data.get('message', f'HTTP {response.status_code} error'),
+                    'request_payload': payload,
+                    'firebase_uid': firebase_uid
+                }
+
+                return error_details
+
+        except requests.exceptions.Timeout:
+            return {
+                'success': False,
+                'error': 'Request timeout',
+                'message': 'OXIO API request timed out after 30 seconds',
+                'request_payload': payload,
+                'firebase_uid': firebase_uid
+            }
+        except requests.exceptions.ConnectionError as conn_err:
+            return {
+                'success': False,
+                'error': 'Connection error',
+                'message': f'Could not connect to OXIO API: {str(conn_err)}',
+                'request_payload': payload,
+                'firebase_uid': firebase_uid
+            }
+        except requests.exceptions.RequestException as req_err:
+            return {
+                'success': False,
+                'error': 'Request error',
+                'message': f'Request failed: {str(req_err)}',
+                'request_payload': payload,
+                'firebase_uid': firebase_uid
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': 'Unexpected error',
+                'message': f'Unexpected error: {str(e)}',
+                'request_payload': payload,
+                'firebase_uid': firebase_uid
+            }
+
     def create_custom_plan(self, user_email, plan_name, duration_seconds, data_limit_kb):
         """Create a custom plan for beta users"""
         if not self.api_key:
