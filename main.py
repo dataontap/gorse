@@ -2710,14 +2710,14 @@ def get_oxio_user_data():
         
         # Extract additional fields from user_data tuple
         oxio_user_id = user_data[7] if len(user_data) > 7 else None
-        metamask_address = user_data[8] if len(user_data) > 8 else None
+        eth_address = user_data[8] if len(user_data) > 8 else None
 
         # Get OXIO data from database and API
         oxio_data = {
             'user_id': user_id,
             'email': user_email,
             'oxio_user_id': oxio_user_id,  # OXIO user ID from oxio_user_id column
-            'metamask_address': metamask_address,  # MetaMask address from eth_address column
+            'metamask_address': eth_address,  # MetaMask address from eth_address column
             'phone_number': None,
             'line_id': None,
             'iccid': None,
