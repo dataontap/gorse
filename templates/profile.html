@@ -19,6 +19,17 @@
             font-size: 1.2em;
         }
 
+        .copy-btn {
+            font-size: 0.8em;
+            padding: 2px 6px;
+            margin-left: 5px;
+        }
+
+        .text-break {
+            word-break: break-all;
+            word-wrap: break-word;
+        }
+
     </style>
 </head>
 <body class="dashboard-body">
@@ -103,7 +114,10 @@
                 </div>
 
                 <div class="address-section mb-4">
-                    <h3 class="mb-3"><i class="fas fa-mobile-alt"></i> OXIO Information</h3>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3><i class="fas fa-mobile-alt"></i> OXIO Information</h3>
+                        <i class="fas fa-sync-alt refresh-icon" onclick="refreshOxioData()" title="Refresh OXIO data" style="cursor: pointer; color: #007bff; display: none;" id="oxioRefreshBtn"></i>
+                    </div>
                     <div id="oxioContainer">
                         <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
                             <p>Loading OXIO information...</p>
@@ -312,9 +326,13 @@
 
         function displayOxioData(data) {
             const container = document.getElementById('oxioContainer');
+            const refreshBtn = document.getElementById('oxioRefreshBtn');
 
             if (data.status === 'success' && data.oxio_data) {
                 const oxioData = data.oxio_data;
+
+                // Show refresh button
+                if (refreshBtn) refreshBtn.style.display = 'block';
 
                 // Format regions
                 const regionsText = oxioData.regions && oxioData.regions.length > 0 
@@ -324,56 +342,61 @@
                 // Status badge color
                 const statusColor = getOxioStatusColor(oxioData.status);
 
+                // Helper function to create copy button
+                const createCopyButton = (value, label) => {
+                    if (!value || value === 'Not created' || value === 'Not assigned' || value === 'N/A') {
+                        return '';
+                    }
+                    return ` <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyToClipboard('${value}', '${label}')" title="Copy ${label}"><i class="fas fa-copy"></i></button>`;
+                };
+
                 container.innerHTML = `
                     <div class="address-card p-3 mb-3">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="address-content">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <h5><i class="fas fa-user me-2"></i>User Information</h5>
-                                        <p><strong>OXIO User ID:</strong> ${oxioData.oxio_user_id || 'Not created'}</p>
-                                        <p><strong>DOT User ID:</strong> ${oxioData.user_id || 'N/A'}</p>
-                                        <p><strong>Email:</strong> ${oxioData.email || 'N/A'}</p>
-                                        <p><strong>Phone Number:</strong> ${oxioData.phone_number || 'Not assigned'}</p>
-                                        <p><strong>Line ID:</strong> ${oxioData.line_id || 'Not assigned'}</p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h5><i class="fas fa-sim-card me-2"></i>eSIM Information</h5>
-                                        <p><strong>ICCID:</strong> ${oxioData.iccid || 'Not assigned'}</p>
-                                        <p><strong>Activation Code:</strong> ${oxioData.activation_code || 'Not assigned'}</p>
-                                        <p><strong>Profile ID:</strong> ${oxioData.profile_id || 'Not assigned'}</p>
-                                        <p><strong>Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${formatOxioStatus(oxioData.status)}</span></p>
-                                        <p><strong>Plan:</strong> ${oxioData.plan_name || 'Not assigned'}</p>
-                                        <p><strong>Data Allowance:</strong> ${oxioData.data_allowance || 'Not specified'}</p>
-                                        <p><strong>Validity:</strong> ${oxioData.validity_days ? oxioData.validity_days + ' days' : 'Not specified'}</p>
-                                        <p><strong>Coverage:</strong> ${regionsText}</p>
-                                        <p><strong>Last Updated:</strong> ${oxioData.last_updated ? new Date(oxioData.last_updated).toLocaleString() : 'Never'}</p>
-                                    </div>
+                        <div class="address-content">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-user me-2"></i>User Information</h5>
+                                    <p><strong>OXIO User ID:</strong> <span class="text-break">${oxioData.oxio_user_id || 'Not created'}</span>${createCopyButton(oxioData.oxio_user_id, 'OXIO User ID')}</p>
+                                    <p><strong>DOT User ID:</strong> <span class="text-break">${oxioData.user_id || 'N/A'}</span>${createCopyButton(oxioData.user_id, 'DOT User ID')}</p>
+                                    <p><strong>Email:</strong> <span class="text-break">${oxioData.email || 'N/A'}</span>${createCopyButton(oxioData.email, 'Email')}</p>
+                                    <p><strong>Phone Number:</strong> <span class="text-break">${oxioData.phone_number || 'Not assigned'}</span>${createCopyButton(oxioData.phone_number, 'Phone Number')}</p>
+                                    <p><strong>Line ID:</strong> <span class="text-break">${oxioData.line_id || 'Not assigned'}</span>${createCopyButton(oxioData.line_id, 'Line ID')}</p>
                                 </div>
-                                <div class="row mt-3">
-                                    <div class="col-md-6">
-                                        <h5><i class="fas fa-mobile-alt me-2"></i>Plan Details</h5>
-                                        <p><strong>Plan Name:</strong> ${oxioData.plan_name || 'Not assigned'}</p>
-                                        <p><strong>Data Allowance:</strong> ${oxioData.data_allowance || 'Not specified'}</p>
-                                        <p><strong>Validity:</strong> ${oxioData.validity_days ? oxioData.validity_days + ' days' : 'Not specified'}</p>
-                                        <p><strong>Coverage:</strong> ${regionsText}</p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h5><i class="fas fa-qrcode me-2"></i>Activation</h5>
-                                        ${oxioData.qr_code ? `
-                                            <p><strong>QR Code:</strong> <button class="btn btn-sm btn-outline-primary" onclick="showQRCode('${oxioData.qr_code}')">Show QR</button></p>
-                                        ` : '<p><strong>QR Code:</strong> Not available</p>'}
-                                        <p><strong>Subscription ID:</strong> ${oxioData.subscription_id || 'Not assigned'}</p>
-                                        <p><strong>Last Updated:</strong> ${oxioData.last_updated ? new Date(oxioData.last_updated).toLocaleString() : 'Never'}</p>
-                                    </div>
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-sim-card me-2"></i>eSIM Information</h5>
+                                    <p><strong>ICCID:</strong> <span class="text-break">${oxioData.iccid || 'Not assigned'}</span>${createCopyButton(oxioData.iccid, 'ICCID')}</p>
+                                    <p><strong>Activation Code:</strong> <span class="text-break">${oxioData.activation_code || 'Not assigned'}</span>${createCopyButton(oxioData.activation_code, 'Activation Code')}</p>
+                                    <p><strong>Profile ID:</strong> <span class="text-break">${oxioData.profile_id || 'Not assigned'}</span>${createCopyButton(oxioData.profile_id, 'Profile ID')}</p>
+                                    <p><strong>Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${formatOxioStatus(oxioData.status)}</span></p>
+                                    <p><strong>Plan:</strong> ${oxioData.plan_name || 'Not assigned'}</p>
+                                    <p><strong>Data Allowance:</strong> ${oxioData.data_allowance || 'Not specified'}</p>
+                                    <p><strong>Validity:</strong> ${oxioData.validity_days ? oxioData.validity_days + ' days' : 'Not specified'}</p>
+                                    <p><strong>Coverage:</strong> ${regionsText}</p>
+                                    <p><strong>Last Updated:</strong> ${oxioData.last_updated ? new Date(oxioData.last_updated).toLocaleString() : 'Never'}</p>
                                 </div>
-                                ${oxioData.error ? `
-                                    <div class="alert alert-warning mt-3" role="alert">
-                                        <strong>Note:</strong> ${oxioData.error}
-                                    </div>
-                                ` : ''}
                             </div>
-                            <i class="fas fa-sync-alt refresh-icon" onclick="refreshOxioData()" title="Refresh OXIO data" style="cursor: pointer; color: #007bff;"></i>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-mobile-alt me-2"></i>Plan Details</h5>
+                                    <p><strong>Plan Name:</strong> ${oxioData.plan_name || 'Not assigned'}</p>
+                                    <p><strong>Data Allowance:</strong> ${oxioData.data_allowance || 'Not specified'}</p>
+                                    <p><strong>Validity:</strong> ${oxioData.validity_days ? oxioData.validity_days + ' days' : 'Not specified'}</p>
+                                    <p><strong>Coverage:</strong> ${regionsText}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-qrcode me-2"></i>Activation</h5>
+                                    ${oxioData.qr_code ? `
+                                        <p><strong>QR Code:</strong> <button class="btn btn-sm btn-outline-primary" onclick="showQRCode('${oxioData.qr_code}')">Show QR</button></p>
+                                    ` : '<p><strong>QR Code:</strong> Not available</p>'}
+                                    <p><strong>Subscription ID:</strong> <span class="text-break">${oxioData.subscription_id || 'Not assigned'}</span>${createCopyButton(oxioData.subscription_id, 'Subscription ID')}</p>
+                                    <p><strong>Last Updated:</strong> ${oxioData.last_updated ? new Date(oxioData.last_updated).toLocaleString() : 'Never'}</p>
+                                </div>
+                            </div>
+                            ${oxioData.error ? `
+                                <div class="alert alert-warning mt-3" role="alert">
+                                    <strong>Note:</strong> ${oxioData.error}
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -482,6 +505,77 @@
 
             // Reload OXIO data
             loadOxioData();
+        }
+
+        function copyToClipboard(text, label) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function() {
+                    // Create a temporary toast notification
+                    const toast = document.createElement('div');
+                    toast.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: #28a745;
+                        color: white;
+                        padding: 10px 15px;
+                        border-radius: 5px;
+                        z-index: 10000;
+                        font-size: 14px;
+                    `;
+                    toast.textContent = `${label} copied to clipboard!`;
+                    document.body.appendChild(toast);
+
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 2000);
+                }).catch(function() {
+                    fallbackCopyTextToClipboard(text, label);
+                });
+            } else {
+                fallbackCopyTextToClipboard(text, label);
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text, label) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    const toast = document.createElement('div');
+                    toast.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: #28a745;
+                        color: white;
+                        padding: 10px 15px;
+                        border-radius: 5px;
+                        z-index: 10000;
+                        font-size: 14px;
+                    `;
+                    toast.textContent = `${label} copied to clipboard!`;
+                    document.body.appendChild(toast);
+
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 2000);
+                } else {
+                    alert(`Please manually copy: ${text}`);
+                }
+            } catch (err) {
+                alert(`Please manually copy: ${text}`);
+            }
+
+            document.body.removeChild(textArea);
         }
 
         function createOxioUser() {
