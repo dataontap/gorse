@@ -371,6 +371,19 @@ def register_firebase_user():
                             conn.commit()
                             print("OXIO user ID column added successfully")
 
+                        # Ensure eth_address column exists separately
+                        cur.execute("""
+                            SELECT column_name FROM information_schema.columns 
+                            WHERE table_name = 'users' AND column_name = 'eth_address'
+                        """)
+                        eth_column_exists = cur.fetchone()
+
+                        if not eth_column_exists:
+                            print("Adding eth_address column to users table...")
+                            cur.execute("ALTER TABLE users ADD COLUMN eth_address VARCHAR(42)")
+                            conn.commit()
+                            print("ETH address column added successfully")
+
                     # Check if user already exists by Firebase UID
                     cur.execute("SELECT id, stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
                     existing_user = cur.fetchone()
@@ -543,10 +556,10 @@ def get_current_user():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Get user data including founder status and OXIO user ID
+                    # Get user data including founder status, OXIO user ID, and ETH address
                     cur.execute(
                         """SELECT u.id, u.email, u.display_name, u.photo_url, u.imei, u.stripe_customer_id,
-                                  COALESCE(f.founder, 'N') as founder_status, u.oxio_user_id
+                                  COALESCE(f.founder, 'N') as founder_status, u.oxio_user_id, u.eth_address
                         FROM users u
                         LEFT JOIN founders f ON u.firebase_uid = f.firebase_uid
                         WHERE u.firebase_uid = %s""",
@@ -564,7 +577,8 @@ def get_current_user():
                             'imei': user[4],
                             'stripeCustomerId': user[5],
                             'founderStatus': user[6],
-                            'oxioUserId': user[7]
+                            'oxioUserId': user[7],
+                            'metamaskAddress': user[8] if len(user) > 8 else None
                         })
 
                     return jsonify({'error': 'User not found'}), 404
@@ -2114,6 +2128,27 @@ def get_user_network_features(firebase_uid):
                 }
             ]
 
+        # Get user data from database
+        oxio_data = {
+            'user_id': user_id,
+            'email': user_email,
+            'oxio_user_id': user_data[7] if len(user_data) > 7 else None,  # OXIO user ID from database
+            'metamask_address': user_data[8] if len(user_data) > 8 else None,  # ETH address from database
+            'phone_number': None,
+            'line_id': None,
+            'iccid': None,
+            'activation_code': None,
+            'plan_name': None,
+            'data_allowance': None,
+            'validity_days': None,
+            'regions': [],
+            'status': 'not_activated',
+            'qr_code': None,
+            'profile_id': None,
+            'subscription_id': None,
+            'last_updated': None
+        }
+
         # Get user's current preferences
         user_prefs = {}
         try:
@@ -2672,12 +2707,17 @@ def get_oxio_user_data():
 
         user_id = user_data[0]
         user_email = user_data[1]
+        
+        # Extract additional fields from user_data tuple
+        oxio_user_id = user_data[7] if len(user_data) > 7 else None
+        metamask_address = user_data[8] if len(user_data) > 8 else None
 
         # Get OXIO data from database and API
         oxio_data = {
             'user_id': user_id,
             'email': user_email,
-            'oxio_user_id': user_data[7] if len(user_data) > 7 else None,  # OXIO user ID from database
+            'oxio_user_id': oxio_user_id,  # OXIO user ID from oxio_user_id column
+            'metamask_address': metamask_address,  # MetaMask address from eth_address column
             'phone_number': None,
             'line_id': None,
             'iccid': None,
@@ -2759,6 +2799,9 @@ def get_oxio_user_data():
                                     'profile_id': f"PROFILE_{random.randint(100000, 999999)}",
                                     'status': 'active' if beta_result and beta_result[0] == 'esim_ready' else 'pending'
                                 })
+                                # Keep the MetaMask address separate from OXIO user ID
+                                if not oxio_data.get('metamask_address'):
+                                    oxio_data['metamask_address'] = metamask_address
                             else:
                                 oxio_data['status'] = 'oxio_user_not_created'
                                 oxio_data['error'] = 'OXIO user not created yet'
