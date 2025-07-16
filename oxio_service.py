@@ -275,7 +275,7 @@ class OXIOService:
                     'status_code': response.status_code,
                     'data': response_data,
                     'message': 'OXIO user created successfully',
-                    'oxio_user_id': response_data.get('id'),
+                    'oxio_user_id': response_data.get('endUserId') or response_data.get('id'),
                     'request_payload': payload,
                     'firebase_uid': firebase_uid
                 }
