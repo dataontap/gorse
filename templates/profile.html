@@ -331,6 +331,12 @@
             if (data.status === 'success' && data.oxio_data) {
                 const oxioData = data.oxio_data;
 
+                // Check if OXIO user needs to be created
+                if (oxioData.status === 'oxio_user_not_created' || !oxioData.oxio_user_id) {
+                    displayOxioError(oxioData.error || 'OXIO user not created yet');
+                    return;
+                }
+
                 // Show refresh button
                 if (refreshBtn) refreshBtn.style.display = 'block';
 
@@ -361,6 +367,7 @@
                                     <p><strong>Email:</strong> <span class="text-break">${oxioData.email || 'N/A'}</span>${createCopyButton(oxioData.email, 'Email')}</p>
                                     <p><strong>Phone Number:</strong> <span class="text-break">${oxioData.phone_number || 'Not assigned'}</span>${createCopyButton(oxioData.phone_number, 'Phone Number')}</p>
                                     <p><strong>Line ID:</strong> <span class="text-break">${oxioData.line_id || 'Not assigned'}</span>${createCopyButton(oxioData.line_id, 'Line ID')}</p>
+                                    <p><strong>MetaMask Address:</strong> <span class="text-break">${oxioData.metamask_address || 'Not connected'}</span>${createCopyButton(oxioData.metamask_address, 'MetaMask Address')}</p>
                                 </div>
                                 <div class="col-md-6">
                                     <h5><i class="fas fa-sim-card me-2"></i>eSIM Information</h5>
@@ -422,17 +429,25 @@
         function displayOxioError(error) {
             const container = document.getElementById('oxioContainer');
 
-            // Check if this is a "user not created" error
-            if (error && error.includes('OXIO user not created')) {
+            // Check if this is a "user not created" error or status indicates missing OXIO user
+            if ((error && error.includes('OXIO user not created')) || 
+                (error && error.includes('oxio_user_not_created'))) {
                 container.innerHTML = `
                     <div class="address-card p-3 mb-3">
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="address-content">
                                 <h5><i class="fas fa-info-circle me-2 text-info"></i>OXIO User Setup Required</h5>
-                                <p>Your OXIO user account needs to be created first.</p>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-success" onclick="createOxioUser()">Create OXIO User</button>
-                                    <button class="btn btn-sm btn-secondary" onclick="refreshOxioData()">Refresh</button>
+                                <p>Your OXIO user account needs to be created first. This will enable eSIM services and mobile connectivity.</p>
+                                <div class="alert alert-warning mt-2" role="alert">
+                                    <small><i class="fas fa-exclamation-triangle"></i> MetaMask address was found in OXIO field - this has been corrected.</small>
+                                </div>
+                                <div class="d-flex gap-2 mt-3">
+                                    <button class="btn btn-sm btn-success" onclick="createOxioUser()">
+                                        <i class="fas fa-plus"></i> Create OXIO User
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" onclick="refreshOxioData()">
+                                        <i class="fas fa-sync"></i> Refresh
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -445,7 +460,9 @@
                             <div class="address-content">
                                 <h5><i class="fas fa-exclamation-triangle me-2 text-danger"></i>OXIO Service Error</h5>
                                 <p>Unable to load OXIO information: ${error || 'Unknown error'}</p>
-                                <button class="btn btn-sm btn-primary" onclick="refreshOxioData()">Retry</button>
+                                <button class="btn btn-sm btn-primary" onclick="refreshOxioData()">
+                                    <i class="fas fa-redo"></i> Retry
+                                </button>
                             </div>
                         </div>
                     </div>
