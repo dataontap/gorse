@@ -2696,6 +2696,27 @@ def get_oxio_user_data():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
+                    # Ensure beta_testers table has all required columns
+                    cur.execute("""
+                        SELECT column_name FROM information_schema.columns 
+                        WHERE table_name = 'beta_testers'
+                    """)
+                    columns = [row[0] for row in cur.fetchall()]
+                    
+                    # Add missing columns if they don't exist
+                    missing_columns = []
+                    if 'stripe_payment_intent_id' not in columns:
+                        missing_columns.append('stripe_payment_intent_id VARCHAR(255)')
+                    if 'stripe_session_id' not in columns:
+                        missing_columns.append('stripe_session_id VARCHAR(255)')
+                    
+                    for column_def in missing_columns:
+                        cur.execute(f"ALTER TABLE beta_testers ADD COLUMN {column_def}")
+                    
+                    if missing_columns:
+                        conn.commit()
+                        print(f"Added missing columns to beta_testers: {missing_columns}")
+
                     # Check for beta tester data (contains some OXIO info)
                     cur.execute("""
                         SELECT status, timestamp, stripe_payment_intent_id 
@@ -2717,26 +2738,30 @@ def get_oxio_user_data():
                         # Test connection first
                         connection_test = oxio_service.test_connection()
                         if connection_test.get('success'):
-                            # For now, generate demo data since we don't have specific user lookup endpoint
-                            import random
-                            demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
-                            demo_phone = f"+1416{random.randint(1000000, 9999999)}"
-                            demo_line_id = f"LINE_{random.randint(100000, 999999)}"
-                            demo_activation_code = f"AC{random.randint(100000, 999999)}"
+                            # If user has OXIO user ID, generate realistic demo data
+                            if oxio_data.get('oxio_user_id'):
+                                import random
+                                demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
+                                demo_phone = f"+1416{random.randint(1000000, 9999999)}"
+                                demo_line_id = f"LINE_{random.randint(100000, 999999)}"
+                                demo_activation_code = f"AC{random.randint(100000, 999999)}"
 
-                            oxio_data.update({
-                                'phone_number': demo_phone,
-                                'line_id': demo_line_id,
-                                'iccid': demo_iccid,
-                                'activation_code': demo_activation_code,
-                                'plan_name': 'OXIO_Global_Plan',
-                                'data_allowance': '1000MB',
-                                'validity_days': 30,
-                                'regions': ['Global', 'North America', 'Europe'],
-                                'qr_code': f"LPA:1$api-staging.brandvno.com${demo_activation_code}$",
-                                'profile_id': f"PROFILE_{random.randint(100000, 999999)}",
-                                'status': 'active' if beta_result and beta_result[0] == 'esim_ready' else 'pending'
-                            })
+                                oxio_data.update({
+                                    'phone_number': demo_phone,
+                                    'line_id': demo_line_id,
+                                    'iccid': demo_iccid,
+                                    'activation_code': demo_activation_code,
+                                    'plan_name': 'OXIO_Global_Plan',
+                                    'data_allowance': '1000MB',
+                                    'validity_days': 30,
+                                    'regions': ['Global', 'North America', 'Europe'],
+                                    'qr_code': f"LPA:1$api-staging.brandvno.com${demo_activation_code}$",
+                                    'profile_id': f"PROFILE_{random.randint(100000, 999999)}",
+                                    'status': 'active' if beta_result and beta_result[0] == 'esim_ready' else 'pending'
+                                })
+                            else:
+                                oxio_data['status'] = 'oxio_user_not_created'
+                                oxio_data['error'] = 'OXIO user not created yet'
                         else:
                             oxio_data['status'] = 'oxio_unavailable'
                             oxio_data['error'] = 'OXIO service unavailable'

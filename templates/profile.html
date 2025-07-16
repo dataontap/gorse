@@ -211,7 +211,7 @@
             try {
                 // Get current user data from localStorage (set by firebase-auth.js)
                 const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                
+
                 if (currentUserData) {
                     // Update email
                     const emailElement = document.getElementById('profileUserEmail');
@@ -247,7 +247,7 @@
                         // Show demo data if nothing is available
                         const emailElement = document.getElementById('profileUserEmail');
                         const nameElement = document.getElementById('profileUserName');
-                        
+
                         if (emailElement) {
                             emailElement.textContent = 'demo@example.com';
                         }
@@ -261,7 +261,7 @@
                 // Fallback to demo data on error
                 const emailElement = document.getElementById('profileUserEmail');
                 const nameElement = document.getElementById('profileUserName');
-                
+
                 if (emailElement) {
                     emailElement.textContent = 'demo@example.com';
                 }
@@ -275,9 +275,9 @@
             try {
                 // Get current user data from localStorage (set by firebase-auth.js)
                 const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                
+
                 let firebaseUid = null;
-                
+
                 if (currentUserData) {
                     firebaseUid = currentUserData.uid;
                 } else {
@@ -312,10 +312,10 @@
 
         function displayOxioData(data) {
             const container = document.getElementById('oxioContainer');
-            
+
             if (data.status === 'success' && data.oxio_data) {
                 const oxioData = data.oxio_data;
-                
+
                 // Format regions
                 const regionsText = oxioData.regions && oxioData.regions.length > 0 
                     ? oxioData.regions.join(', ') 
@@ -323,7 +323,7 @@
 
                 // Status badge color
                 const statusColor = getOxioStatusColor(oxioData.status);
-                
+
                 container.innerHTML = `
                     <div class="address-card p-3 mb-3">
                         <div class="d-flex justify-content-between align-items-start">
@@ -331,17 +331,22 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <h5><i class="fas fa-user me-2"></i>User Information</h5>
-                                        <p><strong>User ID:</strong> ${oxioData.user_id || 'N/A'}</p>
+                                        <p><strong>OXIO User ID:</strong> ${oxioData.user_id || 'N/A'}</p>
                                         <p><strong>Email:</strong> ${oxioData.email || 'N/A'}</p>
                                         <p><strong>Phone Number:</strong> ${oxioData.phone_number || 'Not assigned'}</p>
                                         <p><strong>Line ID:</strong> ${oxioData.line_id || 'Not assigned'}</p>
                                     </div>
                                     <div class="col-md-6">
-                                        <h5><i class="fas fa-sim-card me-2"></i>eSIM Profile</h5>
+                                        <h5><i class="fas fa-sim-card me-2"></i>eSIM Information</h5>
                                         <p><strong>ICCID:</strong> ${oxioData.iccid || 'Not assigned'}</p>
-                                        <p><strong>Profile ID:</strong> ${oxioData.profile_id || 'Not assigned'}</p>
                                         <p><strong>Activation Code:</strong> ${oxioData.activation_code || 'Not assigned'}</p>
-                                        <p><strong>Status:</strong> <span class="badge" style="background-color: ${statusColor};">${formatOxioStatus(oxioData.status)}</span></p>
+                                        <p><strong>Profile ID:</strong> ${oxioData.profile_id || 'Not assigned'}</p>
+                                        <p><strong>Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${formatOxioStatus(oxioData.status)}</span></p>
+                                        <p><strong>Plan:</strong> ${oxioData.plan_name || 'Not assigned'}</p>
+                                        <p><strong>Data Allowance:</strong> ${oxioData.data_allowance || 'Not specified'}</p>
+                                        <p><strong>Validity:</strong> ${oxioData.validity_days ? oxioData.validity_days + ' days' : 'Not specified'}</p>
+                                        <p><strong>Coverage:</strong> ${regionsText}</p>
+                                        <p><strong>Last Updated:</strong> ${oxioData.last_updated ? new Date(oxioData.last_updated).toLocaleString() : 'Never'}</p>
                                     </div>
                                 </div>
                                 <div class="row mt-3">
@@ -392,17 +397,36 @@
 
         function displayOxioError(error) {
             const container = document.getElementById('oxioContainer');
-            container.innerHTML = `
-                <div class="address-card p-3 mb-3" style="border-left: 4px solid #dc3545;">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="address-content">
-                            <h4>OXIO Service Error</h4>
-                            <p>Unable to load OXIO information: ${error || 'Unknown error'}</p>
-                            <button class="btn btn-sm btn-primary" onclick="refreshOxioData()">Retry</button>
+
+            // Check if this is a "user not created" error
+            if (error && error.includes('OXIO user not created')) {
+                container.innerHTML = `
+                    <div class="address-card p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <h5><i class="fas fa-info-circle me-2 text-info"></i>OXIO User Setup Required</h5>
+                                <p>Your OXIO user account needs to be created first.</p>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-success" onclick="createOxioUser()">Create OXIO User</button>
+                                    <button class="btn btn-sm btn-secondary" onclick="refreshOxioData()">Refresh</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="address-card p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <h5><i class="fas fa-exclamation-triangle me-2 text-danger"></i>OXIO Service Error</h5>
+                                <p>Unable to load OXIO information: ${error || 'Unknown error'}</p>
+                                <button class="btn btn-sm btn-primary" onclick="refreshOxioData()">Retry</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
         }
 
         function getOxioStatusColor(status) {
@@ -445,11 +469,65 @@
         function refreshOxioData() {
             const container = document.getElementById('oxioContainer');
             container.innerHTML = `
-                <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
-                    <p><i class="fas fa-spinner fa-spin"></i> Refreshing OXIO information...</p>
+                <div class="address-card p-3 mb-3">
+                    <div class="d-flex justify-content-center align-items-center" style="min-height: 100px;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span class="ms-3">Refreshing OXIO data...</span>
+                    </div>
                 </div>
             `;
+
+            // Reload OXIO data
             loadOxioData();
+        }
+
+        function createOxioUser() {
+            const container = document.getElementById('oxioContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3">
+                    <div class="d-flex justify-content-center align-items-center" style="min-height: 100px;">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Creating...</span>
+                        </div>
+                        <span class="ms-3">Creating OXIO user...</span>
+                    </div>
+                </div>
+            `;
+
+            // Get current user data
+            const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+            if (!currentUserData || !currentUserData.uid) {
+                displayOxioError('No user authentication found');
+                return;
+            }
+
+            fetch('/api/create-oxio-user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    firebaseUid: currentUserData.uid
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Success - reload OXIO data
+                    setTimeout(() => {
+                        loadOxioData();
+                    }, 1000);
+                } else {
+                    displayOxioError(data.message || 'Failed to create OXIO user');
+                }
+            })
+            .catch(error => {
+                console.error('Error creating OXIO user:', error);
+                displayOxioError(error.message);
+            });
         }
 
         function showQRCode(qrData) {
@@ -515,10 +593,10 @@
             try {
                 // Get current user data from localStorage (set by firebase-auth.js)
                 const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                
+
                 let firebaseUid = null;
                 let userId = null;
-                
+
                 if (currentUserData) {
                     firebaseUid = currentUserData.uid;
                     userId = currentUserData.userId;
