@@ -1652,8 +1652,9 @@ def record_global_purchase():
     transaction_id = f"API_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
     print(f"Generated transaction ID: {transaction_id}")
 
-    # Get user ID from Firebase UID before recording purchase
+    # Get user ID and user data from Firebase UID before recording purchase
     user_id = None
+    user_data = None
     if firebase_uid:
         try:
             user_data = get_user_by_firebase_uid(firebase_uid)
@@ -1686,6 +1687,89 @@ def record_global_purchase():
             firebase_uid=firebase_uid
         )
         print(f"Created subscription for Firebase UID {firebase_uid}, product {product_id}, valid until {subscription_end_date}")
+        
+        # Activate OXIO line for Basic Membership purchases
+        if product_id == 'basic_membership' and user_data:
+            try:
+                print(f"Activating OXIO line for Basic Membership purchase by user {user_id}")
+                
+                # Get user details for OXIO activation
+                user_email = user_data[1] if len(user_data) > 1 else "unknown@example.com"
+                oxio_user_id = user_data[7] if len(user_data) > 7 else None
+                
+                # Use environment variable for ICCID or generate a demo one
+                iccid = os.environ.get('EUICCID1', f'8910650420001{user_id % 1000000:06d}F')
+                
+                # Create OXIO line activation payload
+                oxio_activation_payload = {
+                    "lineType": "LINE_TYPE_MOBILITY",
+                    "sim": {
+                        "simType": "EMBEDDED",
+                        "iccid": iccid
+                    },
+                    "endUser": {
+                        "brandId": oxio_user_id or "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
+                    },
+                    "phoneNumberRequirements": {
+                        "preferredAreaCode": "212"
+                    },
+                    "countryCode": "US",
+                    "activateOnAttach": True
+                }
+                
+                print(f"OXIO activation payload: {oxio_activation_payload}")
+                
+                # Call OXIO line activation
+                oxio_result = oxio_service.activate_line(oxio_activation_payload)
+                
+                if oxio_result.get('success'):
+                    print(f"Successfully activated OXIO line for Basic Membership purchase: {oxio_result}")
+                    
+                    # Store OXIO activation details in database
+                    try:
+                        with get_db_connection() as conn:
+                            if conn:
+                                with conn.cursor() as cur:
+                                    # Create OXIO activations table if it doesn't exist
+                                    cur.execute("""
+                                        CREATE TABLE IF NOT EXISTS oxio_activations (
+                                            id SERIAL PRIMARY KEY,
+                                            user_id INTEGER NOT NULL,
+                                            firebase_uid VARCHAR(128),
+                                            purchase_id INTEGER,
+                                            product_id VARCHAR(100),
+                                            iccid VARCHAR(50),
+                                            line_id VARCHAR(100),
+                                            phone_number VARCHAR(20),
+                                            activation_status VARCHAR(50),
+                                            oxio_response TEXT,
+                                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                        )
+                                    """)
+                                    
+                                    # Extract details from OXIO response
+                                    oxio_data = oxio_result.get('data', {})
+                                    line_id = oxio_data.get('lineId')
+                                    phone_number = oxio_data.get('phoneNumber')
+                                    
+                                    # Insert activation record
+                                    cur.execute("""
+                                        INSERT INTO oxio_activations 
+                                        (user_id, firebase_uid, purchase_id, product_id, iccid, 
+                                         line_id, phone_number, activation_status, oxio_response)
+                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                    """, (user_id, firebase_uid, purchase_id, product_id, iccid, 
+                                          line_id, phone_number, 'activated', json.dumps(oxio_result)))
+                                    
+                                    conn.commit()
+                                    print(f"Stored OXIO activation record for user {user_id}")
+                    except Exception as db_err:
+                        print(f"Error storing OXIO activation record: {str(db_err)}")
+                else:
+                    print(f"Failed to activate OXIO line: {oxio_result.get('message', 'Unknown error')}")
+                    
+            except Exception as oxio_err:
+                print(f"Error during OXIO line activation: {str(oxio_err)}")
 
     if purchase_id:
         print(f"Successfully recorded purchase: {purchase_id} for product: {product_id} with Firebase UID: {firebase_uid}")
@@ -3067,6 +3151,86 @@ def stripe_webhook():
         # Check if this is a beta eSIM payment
         if session.get('metadata', {}).get('product_type') == 'beta_esim':
             handle_beta_esim_payment(session)
+        
+        # Check if this is a Basic Membership purchase
+        elif session.get('metadata', {}).get('product_id') == 'basic_membership':
+            try:
+                print(f"Processing Basic Membership checkout completion: {session.id}")
+                
+                # Get customer and user information
+                customer_id = session.get('customer')
+                firebase_uid = session.get('metadata', {}).get('firebase_uid')
+                
+                if customer_id and firebase_uid:
+                    # Get user data
+                    user_data = get_user_by_firebase_uid(firebase_uid)
+                    if user_data:
+                        user_id = user_data[0]
+                        user_email = user_data[1]
+                        oxio_user_id = user_data[7] if len(user_data) > 7 else None
+                        
+                        print(f"Activating OXIO line for Stripe Basic Membership purchase by user {user_id}")
+                        
+                        # Use environment variable for ICCID or generate a demo one
+                        iccid = os.environ.get('EUICCID1', f'8910650420001{user_id % 1000000:06d}F')
+                        
+                        # Create OXIO line activation payload
+                        oxio_activation_payload = {
+                            "lineType": "LINE_TYPE_MOBILITY",
+                            "sim": {
+                                "simType": "EMBEDDED",
+                                "iccid": iccid
+                            },
+                            "endUser": {
+                                "brandId": oxio_user_id or "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
+                            },
+                            "phoneNumberRequirements": {
+                                "preferredAreaCode": "212"
+                            },
+                            "countryCode": "US",
+                            "activateOnAttach": True
+                        }
+                        
+                        print(f"Stripe OXIO activation payload: {oxio_activation_payload}")
+                        
+                        # Call OXIO line activation
+                        oxio_result = oxio_service.activate_line(oxio_activation_payload)
+                        
+                        if oxio_result.get('success'):
+                            print(f"Successfully activated OXIO line for Stripe Basic Membership: {oxio_result}")
+                            
+                            # Store OXIO activation details in database
+                            try:
+                                with get_db_connection() as conn:
+                                    if conn:
+                                        with conn.cursor() as cur:
+                                            # Extract details from OXIO response
+                                            oxio_data = oxio_result.get('data', {})
+                                            line_id = oxio_data.get('lineId')
+                                            phone_number = oxio_data.get('phoneNumber')
+                                            
+                                            # Insert activation record
+                                            cur.execute("""
+                                                INSERT INTO oxio_activations 
+                                                (user_id, firebase_uid, purchase_id, product_id, iccid, 
+                                                 line_id, phone_number, activation_status, oxio_response)
+                                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                            """, (user_id, firebase_uid, None, 'basic_membership', iccid, 
+                                                  line_id, phone_number, 'activated', json.dumps(oxio_result)))
+                                            
+                                            conn.commit()
+                                            print(f"Stored Stripe OXIO activation record for user {user_id}")
+                            except Exception as db_err:
+                                print(f"Error storing Stripe OXIO activation record: {str(db_err)}")
+                        else:
+                            print(f"Failed to activate OXIO line via Stripe: {oxio_result.get('message', 'Unknown error')}")
+                    else:
+                        print(f"User not found for Firebase UID: {firebase_uid}")
+                else:
+                    print(f"Missing customer_id or firebase_uid in session metadata")
+                    
+            except Exception as stripe_oxio_err:
+                print(f"Error during Stripe OXIO line activation: {str(stripe_oxio_err)}")
 
     else:
         print(f"Unhandled event type: {event.type}")
@@ -3954,6 +4118,66 @@ def create_oxio_user_endpoint():
     except Exception as e:
         print(f"Error in create OXIO user endpoint: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/oxio-activation-status', methods=['GET'])
+def get_oxio_activation_status():
+    """Get OXIO activation status for a user"""
+    firebase_uid = request.args.get('firebaseUid')
+    if not firebase_uid:
+        return jsonify({'error': 'Firebase UID is required'}), 400
+
+    try:
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            return jsonify({'error': 'User not found'}), 404
+
+        user_id = user_data[0]
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get OXIO activation records for this user
+                    cur.execute("""
+                        SELECT id, product_id, iccid, line_id, phone_number, 
+                               activation_status, oxio_response, created_at
+                        FROM oxio_activations 
+                        WHERE user_id = %s 
+                        ORDER BY created_at DESC
+                    """, (user_id,))
+                    
+                    activations = cur.fetchall()
+                    activation_list = []
+                    
+                    for activation in activations:
+                        try:
+                            oxio_response = json.loads(activation[6]) if activation[6] else {}
+                        except:
+                            oxio_response = {}
+                            
+                        activation_list.append({
+                            'id': activation[0],
+                            'product_id': activation[1],
+                            'iccid': activation[2],
+                            'line_id': activation[3],
+                            'phone_number': activation[4],
+                            'activation_status': activation[5],
+                            'oxio_response': oxio_response,
+                            'created_at': activation[7].isoformat() if activation[7] else None
+                        })
+
+                    return jsonify({
+                        'status': 'success',
+                        'user_id': user_id,
+                        'firebase_uid': firebase_uid,
+                        'activations': activation_list,
+                        'total_activations': len(activation_list)
+                    })
+
+        return jsonify({'error': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error getting OXIO activation status: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/update-personal-message', methods=['POST'])
 def update_personal_message():
