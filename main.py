@@ -3156,6 +3156,114 @@ def debug_purchases_structure():
         print(f"Error in debug purchases structure: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)})
 
+@app.route('/api/debug/user-creation-status/<firebase_uid>', methods=['GET'])
+def debug_user_creation_status(firebase_uid):
+    """Debug endpoint to verify user creation in all systems (Database, Stripe, OXIO)"""
+    try:
+        verification_results = {
+            'firebase_uid': firebase_uid,
+            'database': {'status': 'not_found'},
+            'stripe': {'status': 'not_found'},
+            'oxio': {'status': 'not_found'},
+            'summary': {'all_systems_ok': False}
+        }
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check user in database
+                    cur.execute("""
+                        SELECT id, email, display_name, stripe_customer_id, oxio_user_id, created_at
+                        FROM users 
+                        WHERE firebase_uid = %s
+                    """, (firebase_uid,))
+                    user_data = cur.fetchone()
+                    
+                    if user_data:
+                        verification_results['database'] = {
+                            'status': 'found',
+                            'user_id': user_data[0],
+                            'email': user_data[1],
+                            'display_name': user_data[2],
+                            'stripe_customer_id': user_data[3],
+                            'oxio_user_id': user_data[4],
+                            'created_at': user_data[5].isoformat() if user_data[5] else None
+                        }
+                        
+                        # Check Stripe customer
+                        stripe_customer_id = user_data[3]
+                        if stripe_customer_id:
+                            try:
+                                customer = stripe.Customer.retrieve(stripe_customer_id)
+                                verification_results['stripe'] = {
+                                    'status': 'found',
+                                    'customer_id': customer.id,
+                                    'email': customer.email,
+                                    'created': customer.created,
+                                    'metadata': customer.metadata
+                                }
+                            except Exception as stripe_err:
+                                verification_results['stripe'] = {
+                                    'status': 'error',
+                                    'customer_id': stripe_customer_id,
+                                    'error': str(stripe_err)
+                                }
+                        else:
+                            verification_results['stripe']['status'] = 'not_created'
+                        
+                        # Check OXIO user
+                        oxio_user_id = user_data[4]
+                        if oxio_user_id:
+                            verification_results['oxio'] = {
+                                'status': 'found',
+                                'oxio_user_id': oxio_user_id,
+                                'note': 'OXIO user ID recorded in database'
+                            }
+                            
+                            # Try to verify with OXIO API
+                            try:
+                                oxio_test = oxio_service.test_connection()
+                                if oxio_test.get('success'):
+                                    verification_results['oxio']['oxio_api_status'] = 'available'
+                                else:
+                                    verification_results['oxio']['oxio_api_status'] = 'unavailable'
+                                    verification_results['oxio']['oxio_api_error'] = oxio_test.get('message')
+                            except Exception as oxio_err:
+                                verification_results['oxio']['oxio_api_status'] = 'error'
+                                verification_results['oxio']['oxio_api_error'] = str(oxio_err)
+                        else:
+                            verification_results['oxio']['status'] = 'not_created'
+                    
+                    # Generate summary
+                    db_ok = verification_results['database']['status'] == 'found'
+                    stripe_ok = verification_results['stripe']['status'] == 'found'
+                    oxio_ok = verification_results['oxio']['status'] == 'found'
+                    
+                    verification_results['summary'] = {
+                        'all_systems_ok': db_ok and stripe_ok and oxio_ok,
+                        'database_ok': db_ok,
+                        'stripe_ok': stripe_ok,
+                        'oxio_ok': oxio_ok,
+                        'missing_systems': []
+                    }
+                    
+                    if not db_ok:
+                        verification_results['summary']['missing_systems'].append('database')
+                    if not stripe_ok:
+                        verification_results['summary']['missing_systems'].append('stripe')
+                    if not oxio_ok:
+                        verification_results['summary']['missing_systems'].append('oxio')
+        
+        return jsonify(verification_results)
+        
+    except Exception as e:
+        print(f"Error in user creation status debug: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'firebase_uid': firebase_uid
+        }), 500
+
 @app.route('/db-test', methods=['GET'])
 def db_test():
     """Endpoint to test database connectivity"""

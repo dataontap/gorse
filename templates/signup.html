@@ -191,44 +191,86 @@
             }
 
             // Handle form submission
+            let isSubmitting = false;
+
             signupForm.addEventListener('submit', function(e) {
                 e.preventDefault();
 
-                const email = emailInput.value.trim();
-                const password = passwordInput.value;
-                const imei = imeiInput.value.trim();
-
-                // Store IMEI to local storage for later use
-                if (imei) {
-                    localStorage.setItem('pendingImei', imei);
+                // Prevent double submission
+                if (isSubmitting) {
+                    console.log('Form submission already in progress...');
+                    return;
                 }
 
-                // Create user with email and password
-                window.firebaseAuth.createUserWithEmailPassword(email, password)
-                    .then((userCredential) => {
-                        // Handle successful signup
-                        console.log('User signed up successfully:', userCredential.user);
+                const submitButton = document.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.textContent;
 
-                        // If IMEI was provided, update user profile
-                        if (imei) {
-                            fetch('/api/auth/update-imei', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    firebaseUid: userCredential.user.uid,
-                                    imei: imei
-                                })
-                            });
-                        }
-                    })
-                    .catch((error) => {
-                        // Handle signup errors
-                        console.log('Error signing up:', error);
-                        authError.textContent = error.message;
-                        authError.style.display = 'block';
-                    });
+                try {
+                    isSubmitting = true;
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Creating Account...';
+
+                    const email = emailInput.value.trim();
+                    const password = passwordInput.value;
+                    const imei = imeiInput.value.trim();
+
+                    // Clear any previous error messages
+                    const errorDiv = document.getElementById('auth-error');
+                    if (errorDiv) {
+                        errorDiv.style.display = 'none';
+                    }
+
+                    // Basic validation
+                    if (!email || !password) {
+                        throw new Error('Please fill in all required fields');
+                    }
+
+                    console.log('Submitting signup form for:', email);
+                    // Create user with email and password
+                    window.firebaseAuth.createUserWithEmailPassword(email, password)
+                        .then((userCredential) => {
+                            // Handle successful signup
+                            console.log('User signed up successfully:', userCredential.user);
+
+                            // If IMEI was provided, update user profile
+                            if (imei) {
+                                fetch('/api/auth/update-imei', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        firebaseUid: userCredential.user.uid,
+                                        imei: imei
+                                    })
+                                });
+                            }
+                            // Redirect to dashboard after successful signup
+                            window.location.href = '/dashboard';
+                        })
+                        .catch((error) => {
+                            // Handle signup errors
+                            console.log('Error signing up:', error);
+                            authError.textContent = error.message;
+                            authError.style.display = 'block';
+                        });
+                } catch (error) {
+                    console.error('Form submission error:', error);
+
+                    // Display error message
+                    const errorDiv = document.getElementById('auth-error');
+                    if (errorDiv) {
+                        errorDiv.textContent = error.message || 'An error occurred. Please try again.';
+                        errorDiv.style.display = 'block';
+                    } else {
+                        alert(error.message || 'An error occurred. Please try again.');
+                    }
+
+                } finally {
+                    isSubmitting = false;
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalButtonText;
+                }
             });
 
             // Handle Google sign-in
@@ -237,6 +279,8 @@
                     .then((result) => {
                         // Handle successful Google sign-in
                         console.log('Google sign-in successful:', result.user);
+                        // Redirect to dashboard after successful signup
+                        window.location.href = '/dashboard';
                     })
                     .catch((error) => {
                         // Handle Google sign-in errors
@@ -303,6 +347,8 @@
                         .then((userCredential) => {
                             // Handle successful login
                             console.log('User logged in successfully:', userCredential.user);
+                            // Redirect to dashboard after successful login
+                            window.location.href = '/dashboard';
                         })
                         .catch((error) => {
                             // Handle login errors

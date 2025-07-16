@@ -1,8 +1,7 @@
-
 // Firebase Authentication handler using Firebase SDK v8
 document.addEventListener('DOMContentLoaded', function() {
   console.log("Firebase auth script loading...");
-  
+
   // Firebase configuration
   const firebaseConfig = {
     apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
@@ -21,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function initializeFirebaseAuth() {
     try {
       initAttempts++;
-      
+
       // Check if Firebase is loaded
       if (typeof firebase === 'undefined') {
         if (initAttempts < maxAttempts) {
@@ -60,12 +59,12 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!auth) {
         throw new Error("Firebase Auth not available");
       }
-      
+
       console.log("Firebase Auth initialized successfully");
-      
+
       // Set up auth state listener
       setupAuthStateListener();
-      
+
     } catch (error) {
       console.error("Firebase initialization error:", error);
       if (initAttempts < maxAttempts) {
@@ -78,11 +77,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function showFirebaseUnavailable() {
     console.error("Firebase authentication is not available");
-    
+
     // Update UI to show Firebase is unavailable
     const authContainer = document.getElementById('auth-container');
     const userInfo = document.getElementById('user-info');
-    
+
     if (authContainer) {
       authContainer.innerHTML = `
         <div class="firebase-unavailable-error" style="background: rgba(255, 107, 107, 0.15); border: 1px solid rgba(255, 107, 107, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
@@ -182,21 +181,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
                   // Set initial balance and load it asynchronously
                   currentUserData.dataBalance = 0;
-                  
+
                   // Load balance asynchronously with delay to ensure user is fully registered
                   setTimeout(async () => {
                       try {
                           console.log('Loading user balance after authentication delay...');
                           const balanceResponse = await fetch(`/api/user/data-balance?firebaseUid=${user.uid}`);
                           const balanceData = await balanceResponse.json();
-                          
+
                           if (balanceData.status === 'success') {
                               currentUserData.dataBalance = balanceData.dataBalance || 0;
                               console.log('Balance loaded successfully:', currentUserData.dataBalance);
-                              
+
                               // Update UI with new balance
                               updateBalanceDisplays(currentUserData.dataBalance);
-                              
+
                               // Update localStorage with new balance
                               localStorage.setItem('currentUser', JSON.stringify(currentUserData));
                           } else {
@@ -339,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('demoMode', 'true');
         showDemoData();
         updateAuthUI(null, null);
-        
+
         // Show success message
         const successMessage = document.createElement('div');
         successMessage.style.cssText = `
@@ -357,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         successMessage.textContent = '🎮 Demo Mode Activated! You can now explore the platform.';
         document.body.appendChild(successMessage);
-        
+
         setTimeout(() => {
             if (document.body.contains(successMessage)) {
                 document.body.removeChild(successMessage);
@@ -368,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function disableDemoMode() {
         localStorage.removeItem('demoMode');
         updateAuthUI(null, null);
-        
+
         // Show exit message
         const exitMessage = document.createElement('div');
         exitMessage.style.cssText = `
@@ -386,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         exitMessage.textContent = '👋 Demo Mode Deactivated. Sign in to access your account.';
         document.body.appendChild(exitMessage);
-        
+
         setTimeout(() => {
             if (document.body.contains(exitMessage)) {
                 document.body.removeChild(exitMessage);
@@ -515,6 +514,178 @@ document.addEventListener('DOMContentLoaded', function() {
         return firebase.auth().currentUser;
       }
     };
+
+    // Sign up function
+    window.signUp = async function(email, password, displayName, imei) {
+        try {
+            console.log('Starting Firebase signup process...');
+
+            // Create user with Firebase Auth
+            const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+
+            console.log('Firebase user created:', user.uid);
+
+            // Update user profile with display name
+            if (displayName) {
+                await user.updateProfile({
+                    displayName: displayName
+                });
+            }
+
+            // Register user in our database
+            const registrationData = {
+                firebaseUid: user.uid,
+                email: user.email,
+                displayName: displayName || user.displayName,
+                photoURL: user.photoURL
+            };
+
+            console.log('Registering user in database:', registrationData);
+
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(registrationData)
+            });
+
+            const result = await response.json();
+            console.log('Database registration result:', result);
+
+            if (result.status === 'success') {
+                // Update IMEI if provided
+                if (imei) {
+                    await updateUserIMEI(user.uid, imei);
+                }
+
+                console.log('User successfully registered. User ID:', result.userId);
+                console.log('Stripe Customer ID:', result.stripeCustomerId);
+
+                // Verify user was created in all systems
+                await verifyUserCreation(user.uid);
+
+                console.log('Redirecting to dashboard...');
+                // Use replace to prevent back button issues
+                window.location.replace('/dashboard');
+                return { success: true, user: user };
+            } else {
+                throw new Error(result.error || 'Failed to register user in database');
+            }
+
+        } catch (error) {
+            console.error('Signup error:', error);
+
+            // Show user-friendly error messages
+            let errorMessage = 'An error occurred during signup.';
+
+            if (error.code === 'auth/email-already-in-use') {
+                errorMessage = 'This email address is already registered. Please try logging in instead.';
+                // If user already exists, try to sign them in and redirect
+                try {
+                    const signInResult = await firebase.auth().signInWithEmailAndPassword(email, password);
+                    console.log('User already exists, signed in successfully');
+                    window.location.replace('/dashboard');
+                    return { success: true, user: signInResult.user };
+                } catch (signInError) {
+                    console.error('Failed to sign in existing user:', signInError);
+                    errorMessage += ' Please try logging in with your existing account.';
+                }
+            } else if (error.code === 'auth/weak-password') {
+                errorMessage = 'Password should be at least 6 characters long.';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'Please enter a valid email address.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            // Display error to user
+            const errorDiv = document.getElementById('error-message');
+            if (errorDiv) {
+                errorDiv.textContent = errorMessage;
+                errorDiv.style.display = 'block';
+            } else {
+                alert(errorMessage);
+            }
+
+            return { success: false, error: errorMessage };
+        }
+    };
+
+    // Function to verify user creation in all systems
+    async function verifyUserCreation(firebaseUid) {
+        try {
+            console.log('Verifying user creation in all systems...');
+
+            // Check user in our database
+            const userResponse = await fetch(`/api/auth/current-user?firebaseUid=${firebaseUid}`);
+            const userData = await userResponse.json();
+
+            if (userData.status === 'success') {
+                console.log('✓ User found in database:', {
+                    userId: userData.userId,
+                    email: userData.email,
+                    stripeCustomerId: userData.stripeCustomerId,
+                    oxioUserId: userData.oxioUserId
+                });
+
+                // Verify Stripe customer
+                if (userData.stripeCustomerId) {
+                    console.log('✓ Stripe customer ID recorded:', userData.stripeCustomerId);
+                } else {
+                    console.log('⚠ Stripe customer ID not found');
+                }
+
+                // Verify OXIO user
+                if (userData.oxioUserId) {
+                    console.log('✓ OXIO user ID recorded:', userData.oxioUserId);
+                } else {
+                    console.log('⚠ OXIO user ID not found');
+                }
+
+                return {
+                    database: true,
+                    stripe: !!userData.stripeCustomerId,
+                    oxio: !!userData.oxioUserId
+                };
+            } else {
+                console.log('✗ User not found in database');
+                return { database: false, stripe: false, oxio: false };
+            }
+        } catch (error) {
+            console.error('Error verifying user creation:', error);
+            return { database: false, stripe: false, oxio: false };
+        }
+    }
+
+    async function updateUserIMEI(firebaseUid, imei) {
+      try {
+          const response = await fetch('/api/auth/update-imei', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                  firebaseUid: firebaseUid,
+                  imei: imei
+              })
+          });
+
+          const result = await response.json();
+          console.log('Update IMEI result:', result);
+
+          if (result.status === 'success') {
+              console.log('IMEI updated successfully.');
+              return { success: true };
+          } else {
+              throw new Error(result.error || 'Failed to update IMEI in database');
+          }
+      } catch (error) {
+          console.error('IMEI update error:', error);
+          return { success: false, error: error.message };
+      }
+    }
 
     // Make nested functions globally available
     window.enableDemoMode = enableDemoMode;
