@@ -29,7 +29,6 @@ except Exception as e:
 from datetime import datetime
 import stripe
 import json
-import time
 
 # Initialize Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
@@ -1591,32 +1590,12 @@ def get_subscription_status():
             'user_id': user_id
         })
 
-# Store recent purchases to prevent duplicates (in production, use Redis or database)
-recent_purchases = {}
-
 @app.route('/api/record-global-purchase', methods=['POST'])
 def record_global_purchase():
     data = request.get_json()
     product_id = data.get('productId')
     firebase_uid = data.get('firebaseUid')  # Get Firebase UID from request
     print(f"===== RECORDING PURCHASE FOR PRODUCT: {product_id} with Firebase UID: {firebase_uid} =====")
-
-    # Check for duplicate purchase within last 10 seconds
-    purchase_key = f"{firebase_uid}-{product_id}"
-    current_time = time.time()
-    
-    if purchase_key in recent_purchases:
-        time_diff = current_time - recent_purchases[purchase_key]
-        if time_diff < 10:  # 10 seconds cooldown
-            print(f"Duplicate purchase detected within {time_diff:.1f} seconds, ignoring")
-            return {'status': 'error', 'message': 'Duplicate purchase detected. Please wait before trying again.'}, 429
-    
-    # Record this purchase attempt
-    recent_purchases[purchase_key] = current_time
-    
-    # Clean up old entries (keep only last 60 seconds)
-    cleanup_time = current_time - 60
-    recent_purchases = {k: v for k, v in recent_purchases.items() if v > cleanup_time}
 
     try:
         with get_db_connection() as conn:
@@ -1729,8 +1708,7 @@ def record_global_purchase():
                         "iccid": iccid
                     },
                     "endUser": {
-                        "brandId": oxio_user_id or "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
-                        "email": user_email
+                        "brandId": oxio_user_id or "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
                     },
                     "phoneNumberRequirements": {
                         "preferredAreaCode": "212"
@@ -3204,8 +3182,7 @@ def stripe_webhook():
                                 "iccid": iccid
                             },
                             "endUser": {
-                                "brandId": oxio_user_id or "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
-                                "email": user_email
+                                "brandId": oxio_user_id or "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
                             },
                             "phoneNumberRequirements": {
                                 "preferredAreaCode": "212"

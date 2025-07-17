@@ -155,7 +155,7 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
-
+        
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
@@ -1002,8 +1002,7 @@ function createUserCard(invite) {
     const userCard = document.createElement('div');
     userCard.className = 'dashboard-content user-card accepted-user';
     userCard.setAttribute('data-data-percentage', dataPercentage);
-    userCard.```text
-setAttribute('data-time-percentage', timePercentage);
+    userCard.setAttribute('data-time-percentage', timePercentage);
     userCard.setAttribute('data-dollar-amount', dollarAmount);
     userCard.setAttribute('data-score', scoreNumber);
 
@@ -2899,7 +2898,7 @@ function updateBetaStatus(status, message) {
                 resendLink.textContent = 'Resend';
                 resendLink.style.color = '#007bff';
                 resendLink.style.textDecoration = 'underline';
-                resendLink.addEventListener('function(e) {
+                resendLink.addEventListener('click', function(e) {
                     e.preventDefault();
                     send_esim_ready_email();
                 });
@@ -2916,93 +2915,5 @@ function updateBetaStatus(status, message) {
             betaStatus.style.display = 'block';
             betaStatusText.textContent = message || 'Beta enrollment complete';
             break;
-    }
-}
-
-// Global purchase function for marketplace with request deduplication
-let pendingPurchases = new Set();
-
-async function makePurchase(productId) {
-    console.log(`Making purchase for product: ${productId}`);
-
-    if (!currentUser || !currentUser.uid) {
-        console.error('User not authenticated');
-        showNotification('Please log in to make a purchase', 'error');
-        return;
-    }
-
-    // Create a unique key for this purchase request
-    const purchaseKey = `${currentUser.uid}-${productId}`;
-
-    // Check if this purchase is already in progress
-    if (pendingPurchases.has(purchaseKey)) {
-        console.log('Purchase already in progress, ignoring duplicate request');
-        showNotification('Purchase is already in progress...', 'info');
-        return;
-    }
-
-    // Mark this purchase as pending
-    pendingPurchases.add(purchaseKey);
-
-    // Disable the purchase button if it exists
-    const purchaseButton = document.querySelector(`[onclick*="${productId}"]`);
-    if (purchaseButton) {
-        purchaseButton.disabled = true;
-        const originalText = purchaseButton.textContent;
-        purchaseButton.textContent = 'Processing...';
-
-        // Re-enable button after 3 seconds as failsafe
-        setTimeout(() => {
-            purchaseButton.disabled = false;
-            purchaseButton.textContent = originalText;
-        }, 3000);
-    }
-
-    try {
-        const response = await fetch('/api/record-global-purchase', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                productId: productId,
-                firebaseUid: currentUser.uid
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.status === 'success') {
-            console.log('Purchase successful:', data);
-            showNotification(`Purchase successful! Purchase ID: ${data.purchaseId}`, 'success');
-
-            // Refresh data balance and subscription status after purchase
-            if (typeof loadDataBalance === 'function') {
-                loadDataBalance();
-            }
-            if (typeof loadSubscriptionStatus === 'function') {
-                loadSubscriptionStatus();
-            }
-
-            // Add to recent purchases if on dashboard
-            if (window.location.pathname === '/dashboard') {
-                addRecentPurchase(productId, data.purchaseId);
-            }
-        } else {
-            console.error('Purchase failed:', data);
-            showNotification('Purchase failed. Please try again.', 'error');
-        }
-    } catch (error) {
-        console.error('Error making purchase:', error);
-        showNotification('Network error. Please try again.', 'error');
-    } finally {
-        // Remove from pending purchases
-        pendingPurchases.delete(purchaseKey);
-
-        // Re-enable the purchase button
-        if (purchaseButton) {
-            purchaseButton.disabled = false;
-            purchaseButton.textContent = purchaseButton.textContent.replace('Processing...', 'Purchase');
-        }
     }
 }
