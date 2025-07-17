@@ -1708,7 +1708,8 @@ def record_global_purchase():
                         "iccid": iccid
                     },
                     "endUser": {
-                        "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
+                        "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
+                        "email": user_email
                     },
                     "phoneNumberRequirements": {
                         "preferredAreaCode": "212"
@@ -1717,13 +1718,9 @@ def record_global_purchase():
                     "activateOnAttach": True
                 }
                 
-                # Use endUserId if we have OXIO user ID, otherwise use email
+                # Add endUserId if we have an OXIO user ID
                 if oxio_user_id:
                     oxio_activation_payload["endUser"]["endUserId"] = oxio_user_id
-                    print(f"Using OXIO user ID for line activation: {oxio_user_id}")
-                else:
-                    oxio_activation_payload["endUser"]["email"] = user_email
-                    print(f"Using email for line activation: {user_email}")
                 
                 print(f"OXIO activation payload: {oxio_activation_payload}")
                 
@@ -2000,66 +1997,6 @@ class FoundingToken(Resource):
         except Exception as e:
             print(f"Error assigning founding token: {str(e)}")
             return {'error': str(e)}, 500
-
-@app.route('/api/debug/user-record/<firebase_uid>', methods=['GET'])
-def debug_user_record(firebase_uid):
-    """Debug endpoint to check user's database record"""
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Get user record
-                    cur.execute("""
-                        SELECT id, email, display_name, stripe_customer_id, 
-                               created_at, ethereum_address, metamask_address, 
-                               oxio_user_id, imei, founder_status
-                        FROM users 
-                        WHERE firebase_uid = %s
-                    """, (firebase_uid,))
-                    
-                    user = cur.fetchone()
-                    
-                    if user:
-                        user_data = {
-                            'user_id': user[0],
-                            'email': user[1],
-                            'display_name': user[2],
-                            'stripe_customer_id': user[3],
-                            'created_at': user[4].isoformat() if user[4] else None,
-                            'ethereum_address': user[5],
-                            'metamask_address': user[6],
-                            'oxio_user_id': user[7],
-                            'imei': user[8],
-                            'founder_status': user[9]
-                        }
-                        
-                        return jsonify({
-                            'success': True,
-                            'firebase_uid': firebase_uid,
-                            'user_data': user_data,
-                            'has_oxio_user_id': bool(user[7]),
-                            'has_ethereum_address': bool(user[5]),
-                            'has_metamask_address': bool(user[6])
-                        })
-                    else:
-                        return jsonify({
-                            'success': False,
-                            'message': 'User not found',
-                            'firebase_uid': firebase_uid
-                        })
-        
-        return jsonify({
-            'success': False,
-            'message': 'Database connection error'
-        }), 500
-        
-    except Exception as e:
-        print(f"Error in debug user record endpoint: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        }), 500
-
 
 @token_ns.route('/create-test-wallet')
 class CreateTestWallet(Resource):
@@ -3250,7 +3187,8 @@ def stripe_webhook():
                                 "iccid": iccid
                             },
                             "endUser": {
-                                "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
+                                "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
+                                "email": user_email
                             },
                             "phoneNumberRequirements": {
                                 "preferredAreaCode": "212"
@@ -3259,13 +3197,9 @@ def stripe_webhook():
                             "activateOnAttach": True
                         }
                         
-                        # Use endUserId if we have OXIO user ID, otherwise use email
+                        # Add endUserId if we have an OXIO user ID
                         if oxio_user_id:
                             oxio_activation_payload["endUser"]["endUserId"] = oxio_user_id
-                            print(f"Stripe: Using OXIO user ID for line activation: {oxio_user_id}")
-                        else:
-                            oxio_activation_payload["endUser"]["email"] = user_email
-                            print(f"Stripe: Using email for line activation: {user_email}")
                         
                         print(f"Stripe OXIO activation payload: {oxio_activation_payload}")
                         
