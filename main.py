@@ -1708,7 +1708,8 @@ def record_global_purchase():
                         "iccid": iccid
                     },
                     "endUser": {
-                        "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
+                        "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
+                        "email": user_email
                     },
                     "phoneNumberRequirements": {
                         "preferredAreaCode": "212"
@@ -3186,7 +3187,8 @@ def stripe_webhook():
                                 "iccid": iccid
                             },
                             "endUser": {
-                                "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
+                                "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
+                                "email": user_email
                             },
                             "phoneNumberRequirements": {
                                 "preferredAreaCode": "212"
