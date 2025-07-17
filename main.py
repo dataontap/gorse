@@ -1708,8 +1708,7 @@ def record_global_purchase():
                         "iccid": iccid
                     },
                     "endUser": {
-                        "brandId": oxio_user_id or "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
-                        "email": user_email
+                        "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
                     },
                     "phoneNumberRequirements": {
                         "preferredAreaCode": "212"
@@ -1717,6 +1716,10 @@ def record_global_purchase():
                     "countryCode": "US",
                     "activateOnAttach": True
                 }
+                
+                # Add endUserId if we have an OXIO user ID
+                if oxio_user_id:
+                    oxio_activation_payload["endUser"]["endUserId"] = oxio_user_id
                 
                 print(f"OXIO activation payload: {oxio_activation_payload}")
                 
@@ -3183,8 +3186,7 @@ def stripe_webhook():
                                 "iccid": iccid
                             },
                             "endUser": {
-                                "brandId": oxio_user_id or "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
-                                "email": user_email
+                                "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
                             },
                             "phoneNumberRequirements": {
                                 "preferredAreaCode": "212"
@@ -3192,6 +3194,10 @@ def stripe_webhook():
                             "countryCode": "US",
                             "activateOnAttach": True
                         }
+                        
+                        # Add endUserId if we have an OXIO user ID
+                        if oxio_user_id:
+                            oxio_activation_payload["endUser"]["endUserId"] = oxio_user_id
                         
                         print(f"Stripe OXIO activation payload: {oxio_activation_payload}")
                         
