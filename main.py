@@ -1321,15 +1321,39 @@ def get_user_data_balance():
                 with conn.cursor() as cur:
                     # Get all data-related purchases for this user - using correct column names
                     try:
+                        # First, verify the table structure to ensure we're using correct column names
                         cur.execute("""
+                            SELECT column_name FROM information_schema.columns 
+                            WHERE table_name = 'purchases' 
+                            ORDER BY ordinal_position
+                        """)
+                        columns = [row[0].lower() for row in cur.fetchall()]
+                        print(f"Debug: Available columns in purchases table: {columns}")
+                        
+                        # Use the correct column names based on what's actually in the table
+                        if 'stripeproductid' in columns:
+                            product_col = 'StripeProductID'
+                            amount_col = 'TotalAmount'
+                            user_col = 'UserID'
+                            firebase_col = 'FirebaseUID'
+                        else:
+                            # Fallback to other possible column names
+                            product_col = 'stripe_product_id'
+                            amount_col = 'total_amount'  
+                            user_col = 'user_id'
+                            firebase_col = 'firebase_uid'
+                        
+                        # Execute the query with proper column names
+                        query = f"""
                             SELECT 
-                                COALESCE(SUM(CASE WHEN StripeProductID = 'global_data_10gb' THEN TotalAmount ELSE 0 END), 0) as global_data_cents,
-                                COALESCE(SUM(CASE WHEN StripeProductID LIKE '%data%' OR StripeProductID = 'beta_esim_data' THEN TotalAmount ELSE 0 END), 0) as total_data_cents,
+                                COALESCE(SUM(CASE WHEN {product_col} = 'global_data_10gb' THEN {amount_col} ELSE 0 END), 0) as global_data_cents,
+                                COALESCE(SUM(CASE WHEN {product_col} LIKE '%data%' OR {product_col} = 'beta_esim_data' THEN {amount_col} ELSE 0 END), 0) as total_data_cents,
                                 COUNT(*) as total_purchases
                             FROM purchases 
-                            WHERE UserID = %s OR FirebaseUID = %s
-                        """, (user_id, firebase_uid))
-
+                            WHERE {user_col} = %s OR {firebase_col} = %s
+                        """
+                        
+                        cur.execute(query, (user_id, firebase_uid))
                         result = cur.fetchone()
                         print(f"Debug: SQL result = {result}")
                         
@@ -1351,6 +1375,7 @@ def get_user_data_balance():
                             total_purchases = 0
                     except Exception as sql_err:
                         print(f"SQL query error: {sql_err}")
+                        # Set safe defaults
                         global_data_cents = 0
                         total_data_cents = 0
                         total_purchases = 0
