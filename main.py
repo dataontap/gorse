@@ -1248,11 +1248,14 @@ def get_user_by_firebase_uid(firebase_uid):
                 with conn.cursor() as cur:
                     cur.execute(
                         """SELECT id, email, firebase_uid, stripe_customer_id, display_name, 
-                                  photo_url, imei, eth_address, oxio_user_id 
+                                  photo_url, imei, oxio_user_id, eth_address 
                         FROM users WHERE firebase_uid = %s""",
                         (firebase_uid,)
                     )
-                    return cur.fetchone()
+                    user_data = cur.fetchone()
+                    if user_data:
+                        print(f"get_user_by_firebase_uid debug: Found user {user_data[0]} with oxio_user_id: {user_data[7]}, eth_address: {user_data[8]}")
+                    return user_data
         return None
     except Exception as e:
         print(f"Error getting user by Firebase UID: {str(e)}")
@@ -1690,7 +1693,10 @@ def record_global_purchase():
                 
                 # Get user details for OXIO activation
                 user_email = user_data[1] if len(user_data) > 1 else "unknown@example.com"
+                # Make sure we get the OXIO user ID (column 7) not the ETH address (column 8)
                 oxio_user_id = user_data[7] if len(user_data) > 7 else None
+                eth_address = user_data[8] if len(user_data) > 8 else None
+                print(f"Debug: Retrieved user data - email: {user_email}, oxio_user_id: {oxio_user_id}, eth_address: {eth_address}")
                 
                 # Use environment variable for ICCID or generate a demo one
                 iccid = os.environ.get('EUICCID1', f'8910650420001{user_id % 1000000:06d}F')
@@ -1713,12 +1719,12 @@ def record_global_purchase():
                     "activateOnAttach": True
                 }
                 
-                # Only add endUserId if we have a valid OXIO user ID (not an Ethereum address)
-                if oxio_user_id and not oxio_user_id.startswith('0x'):
+                # Only add endUserId if we have a valid OXIO user ID (UUID format, not an Ethereum address)
+                if oxio_user_id and oxio_user_id != eth_address and len(oxio_user_id) > 10 and '-' in oxio_user_id:
                     oxio_activation_payload["endUser"]["endUserId"] = oxio_user_id
-                    print(f"Using OXIO user ID: {oxio_user_id}")
+                    print(f"Using valid OXIO user ID: {oxio_user_id}")
                 else:
-                    print(f"No valid OXIO user ID found (oxio_user_id: {oxio_user_id}), using email-based identification")
+                    print(f"No valid OXIO user ID found (oxio_user_id: {oxio_user_id}, eth_address: {eth_address}), using email-based identification")
                 
                 print(f"OXIO activation payload: {oxio_activation_payload}")
                 
@@ -3170,7 +3176,10 @@ def stripe_webhook():
                     if user_data:
                         user_id = user_data[0]
                         user_email = user_data[1]
+                        # Make sure we get the OXIO user ID (column 7) not the ETH address (column 8)
                         oxio_user_id = user_data[7] if len(user_data) > 7 else None
+                        eth_address = user_data[8] if len(user_data) > 8 else None
+                        print(f"Stripe webhook debug: Retrieved user data - email: {user_email}, oxio_user_id: {oxio_user_id}, eth_address: {eth_address}")
                         
                         print(f"Activating OXIO line for Stripe Basic Membership purchase by user {user_id}")
                         
@@ -3195,12 +3204,12 @@ def stripe_webhook():
                             "activateOnAttach": True
                         }
                         
-                        # Only add endUserId if we have a valid OXIO user ID (not an Ethereum address)
-                        if oxio_user_id and not oxio_user_id.startswith('0x'):
+                        # Only add endUserId if we have a valid OXIO user ID (UUID format, not an Ethereum address)
+                        if oxio_user_id and oxio_user_id != eth_address and len(oxio_user_id) > 10 and '-' in oxio_user_id:
                             oxio_activation_payload["endUser"]["endUserId"] = oxio_user_id
-                            print(f"Stripe webhook: Using OXIO user ID: {oxio_user_id}")
+                            print(f"Stripe webhook: Using valid OXIO user ID: {oxio_user_id}")
                         else:
-                            print(f"Stripe webhook: No valid OXIO user ID found (oxio_user_id: {oxio_user_id}), using email-based identification")
+                            print(f"Stripe webhook: No valid OXIO user ID found (oxio_user_id: {oxio_user_id}, eth_address: {eth_address}), using email-based identification")
                         
                         print(f"Stripe OXIO activation payload: {oxio_activation_payload}")
                         
