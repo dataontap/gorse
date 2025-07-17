@@ -325,6 +325,105 @@ class OXIOService:
                 'firebase_uid': firebase_uid
             }
 
+    def get_user_lines(self, oxio_user_id: str) -> Dict[str, Any]:
+        """
+        Get existing lines for an OXIO user
+
+        Args:
+            oxio_user_id: OXIO user ID to check lines for
+
+        Returns:
+            API response as dictionary with user's existing lines
+        """
+        try:
+            url = f"{self.base_url}/v3/end-users/{oxio_user_id}/lines"
+            headers = self.get_headers()
+
+            print(f"OXIO Get User Lines URL: {url}")
+            print(f"OXIO Get User Lines Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
+
+            response = requests.get(
+                url,
+                headers=headers,
+                timeout=30
+            )
+
+            print(f"OXIO Get User Lines Response Status: {response.status_code}")
+            print(f"OXIO Get User Lines Response Headers: {dict(response.headers)}")
+
+            # Get response text first
+            response_text = response.text
+            print(f"Raw response body: {response_text}")
+
+            # Check if response is JSON
+            content_type = response.headers.get('content-type', '').lower()
+
+            if 'application/json' in content_type:
+                try:
+                    response_data = response.json() if response.content else {}
+                    print(f"OXIO Get User Lines Response Body (parsed): {json.dumps(response_data, indent=2)}")
+                except json.JSONDecodeError as json_err:
+                    print(f"Failed to parse JSON response: {str(json_err)}")
+                    response_data = {
+                        'error': 'Invalid JSON response',
+                        'json_error': str(json_err),
+                        'raw_response': response_text[:1000]
+                    }
+            else:
+                print(f"Non-JSON response received (Content-Type: {content_type})")
+                response_data = {
+                    'error': 'Non-JSON response',
+                    'content_type': content_type,
+                    'raw_response': response_text[:1000]
+                }
+
+            if response.status_code >= 200 and response.status_code < 300:
+                return {
+                    'success': True,
+                    'status_code': response.status_code,
+                    'data': response_data,
+                    'message': 'User lines retrieved successfully',
+                    'oxio_user_id': oxio_user_id
+                }
+            else:
+                return {
+                    'success': False,
+                    'status_code': response.status_code,
+                    'data': response_data,
+                    'error': f'OXIO API error: {response.status_code}',
+                    'message': response_data.get('message', f'HTTP {response.status_code} error'),
+                    'oxio_user_id': oxio_user_id
+                }
+
+        except requests.exceptions.Timeout:
+            return {
+                'success': False,
+                'error': 'Request timeout',
+                'message': 'OXIO API request timed out after 30 seconds',
+                'oxio_user_id': oxio_user_id
+            }
+        except requests.exceptions.ConnectionError as conn_err:
+            return {
+                'success': False,
+                'error': 'Connection error',
+                'message': f'Could not connect to OXIO API: {str(conn_err)}',
+                'oxio_user_id': oxio_user_id
+            }
+        except requests.exceptions.RequestException as req_err:
+            return {
+                'success': False,
+                'error': 'Request error',
+                'message': f'Request failed: {str(req_err)}',
+                'oxio_user_id': oxio_user_id
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': 'Unexpected error',
+                'message': f'Unexpected error: {str(e)}',
+                'oxio_user_id': oxio_user_id
+            }
+
     def create_custom_plan(self, user_email, plan_name, duration_seconds, data_limit_kb):
         """Create a custom plan for beta users"""
         if not self.api_key:
