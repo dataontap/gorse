@@ -1333,19 +1333,19 @@ def get_user_data_balance():
                         result = cur.fetchone()
                         print(f"Debug: SQL result = {result}")
                         
-                        # Safely extract values with proper validation
-                        if result and len(result) >= 3:
+                        # Safely extract values with proper validation and handle None results
+                        if result and result[0] is not None:
                             global_data_cents = int(result[0]) if result[0] is not None else 0
                             total_data_cents = int(result[1]) if result[1] is not None else 0
                             total_purchases = int(result[2]) if result[2] is not None else 0
                         else:
-                            print(f"Invalid SQL result: {result}")
+                            print(f"No purchases found or invalid SQL result: {result}")
                             global_data_cents = 0
                             total_data_cents = 0
                             total_purchases = 0
                     except Exception as sql_err:
                         print(f"SQL query error: {sql_err}")
-                        # Set safe defaults
+                        # Set safe defaults when query fails
                         global_data_cents = 0
                         total_data_cents = 0
                         total_purchases = 0
@@ -1713,9 +1713,12 @@ def record_global_purchase():
                     "activateOnAttach": True
                 }
                 
-                # Add endUserId if we have an OXIO user ID
-                if oxio_user_id:
+                # Only add endUserId if we have a valid OXIO user ID (not an Ethereum address)
+                if oxio_user_id and not oxio_user_id.startswith('0x'):
                     oxio_activation_payload["endUser"]["endUserId"] = oxio_user_id
+                    print(f"Using OXIO user ID: {oxio_user_id}")
+                else:
+                    print(f"No valid OXIO user ID found (oxio_user_id: {oxio_user_id}), using email-based identification")
                 
                 print(f"OXIO activation payload: {oxio_activation_payload}")
                 
@@ -3192,9 +3195,12 @@ def stripe_webhook():
                             "activateOnAttach": True
                         }
                         
-                        # Add endUserId if we have an OXIO user ID
-                        if oxio_user_id:
+                        # Only add endUserId if we have a valid OXIO user ID (not an Ethereum address)
+                        if oxio_user_id and not oxio_user_id.startswith('0x'):
                             oxio_activation_payload["endUser"]["endUserId"] = oxio_user_id
+                            print(f"Stripe webhook: Using OXIO user ID: {oxio_user_id}")
+                        else:
+                            print(f"Stripe webhook: No valid OXIO user ID found (oxio_user_id: {oxio_user_id}), using email-based identification")
                         
                         print(f"Stripe OXIO activation payload: {oxio_activation_payload}")
                         
