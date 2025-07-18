@@ -98,6 +98,10 @@ class OXIOService:
                     'payload_received': payload
                 }
 
+            # Strip hyphens from brandId and endUserId if present
+            if 'endUser' in payload and 'brandId' in payload['endUser']:
+                payload['endUser']['brandId'] = payload['endUser']['brandId'].replace('-', '')
+
             response = requests.post(
                 url,
                 headers=headers,
