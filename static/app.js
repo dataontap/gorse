@@ -2068,8 +2068,8 @@ function populateOfferCards() {
     const allOffers = [
         {
             id: 'global_data',
-            title: 'GLOBAL DATA',
-            description: ['10000MB no expiry data for $10', 'Priority fast 5G+ when available', 'Share infinitely with any member', 'Works in most of the world'],
+            title: 'TRULY GLOBAL DATA',
+            description: ['10000MB no expiry data for $10', 'Priority fast 5G+ when available', 'Share infinitely with any member', 'Works on all planet Earth and beyond.'],
             price: '$10',
             buttonText: 'Buy',
             buttonClass: 'btn-primary',
