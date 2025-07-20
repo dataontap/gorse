@@ -99,8 +99,11 @@ class OXIOService:
                 }
 
             # Strip hyphens from brandId and endUserId if present
-            if 'endUser' in payload and 'brandId' in payload['endUser']:
-                payload['endUser']['brandId'] = payload['endUser']['brandId'].replace('-', '')
+            if 'endUser' in payload:
+                if 'brandId' in payload['endUser']:
+                    payload['endUser']['brandId'] = payload['endUser']['brandId'].replace('-', '')
+                if 'endUserId' in payload['endUser']:
+                    payload['endUser']['endUserId'] = payload['endUser']['endUserId'].replace('-', '')
 
             response = requests.post(
                 url,
@@ -274,12 +277,17 @@ class OXIOService:
                 }
 
             if response.status_code >= 200 and response.status_code < 300:
+                # Strip hyphens from OXIO user ID before returning
+                oxio_user_id = response_data.get('endUserId') or response_data.get('id')
+                if oxio_user_id:
+                    oxio_user_id = oxio_user_id.replace('-', '')
+                
                 return {
                     'success': True,
                     'status_code': response.status_code,
                     'data': response_data,
                     'message': 'OXIO user created successfully',
-                    'oxio_user_id': response_data.get('endUserId') or response_data.get('id'),
+                    'oxio_user_id': oxio_user_id,
                     'request_payload': payload,
                     'firebase_uid': firebase_uid
                 }
