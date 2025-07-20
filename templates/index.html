@@ -74,34 +74,6 @@
                 <div class="service-provider" style="margin-top: 30px; text-align: center; color: #CCCCFF; font-size: 11px;">
                     <p style="margin: 0; line-height: 1.4;">Service Provided by Data On Tap Inc. Licensed Full MVNO. Network 302 100.<br>Parkdale, ON, CANADA</p>
                 </div>
-
-                <!-- Demo Button -->
-                <div class="demo-button-container" style="
-                    margin-top: 40px; 
-                    text-align: center;
-                    position: relative;
-                    z-index: 10000;
-                ">
-                    <button onclick="startDemoMode()" class="demo-btn" style="
-                        background: rgba(255, 255, 255, 0.1);
-                        border: 1px solid rgba(255, 255, 255, 0.3);
-                        border-radius: 25px;
-                        padding: 12px 24px;
-                        color: rgba(255, 255, 255, 0.8);
-                        font-size: 14px;
-                        cursor: pointer;
-                        backdrop-filter: blur(10px);
-                        transition: all 0.3s ease;
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 8px;
-                        position: relative;
-                        z-index: 10001;
-                    " onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.color='white';" 
-                       onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.color='rgba(255, 255, 255, 0.8)';">
-                        🎮 Try Demo Mode
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -121,11 +93,6 @@
             }
         });
 
-        // Demo mode function
-        function startDemoMode() {
-            localStorage.setItem('demoMode', 'true');
-            window.location.href = '/dashboard';
-        }
 
     </script>
 </body>
