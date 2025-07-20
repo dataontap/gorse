@@ -133,7 +133,7 @@ body.light-mode {
 /* Wallet value pill styling */
 .wallet-value-pill {
     display: inline-block;
-    background-color: transparent;
+    background-color: rgba(0, 102, 255, 0.1);
     color: #0066ff;
     padding: 6px 12px;
     border-radius: 16px;
@@ -149,13 +149,13 @@ body.light-mode {
 }
 
 .dark-mode .wallet-value-pill {
-    background-color: transparent;
+    background-color: rgba(0, 102, 255, 0.2);
     color: #66a3ff;
     border-color: rgba(0, 102, 255, 0.3);
 }
 
 .wallet-value-pill:hover {
-    background-color: rgba(0, 102, 255, 0.1);
+    background-color: rgba(0, 102, 255, 0.2);
     text-decoration: none;
     color: #0066ff;
     transform: scale(1.02);
@@ -163,7 +163,7 @@ body.light-mode {
 }
 
 .dark-mode .wallet-value-pill:hover {
-    background-color: rgba(0, 102, 255, 0.2);
+    background-color: rgba(0, 102, 255, 0.3);
     color: #99ccff;
     box-shadow: 0 2px 4px rgba(0, 102, 255, 0.3);
 }
