@@ -155,7 +155,7 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
-        
+
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
@@ -1965,7 +1965,7 @@ async function loadDOTMBalance() {
     try {
         // Check if MetaMask is available and connected
         if (typeof window.ethereum !== 'undefined') {
-            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' });```javascript
             if (accounts.length > 0) {
                 const address = accounts[0];
 
@@ -2939,3 +2939,72 @@ function updateBetaStatus(status, message) {
             break;
     }
 }
+
+// Function to show notifications
+function showNotification(message, type = 'info', duration = 5000) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 10000000;
+        max-width: 350px;
+        word-wrap: break-word;
+        font-size: 14px;
+        line-height: 1.4;
+        animation: slideInRight 0.3s ease-out;
+    `;
+
+    notification.textContent = message;
+
+    // Add close button
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.cssText = `
+        background: none;
+        border: none;
+        color: white;
+        float: right;
+        font-size: 18px;
+        cursor: pointer;
+        margin-left: 10px;
+        padding: 0;
+        line-height: 1;
+    `;
+
+    closeBtn.onclick = () => {
+        notification.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    };
+
+    notification.appendChild(closeBtn);
+    document.body.appendChild(notification);
+
+    // Auto remove after duration
+    if (duration > 0) {
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }
+        }, duration);
+    }
+}
+
+// Make functions globally available
+window.showNotification = showNotification;
