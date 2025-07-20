@@ -155,7 +155,7 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
-
+        
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
@@ -2904,7 +2904,6 @@ function updateBetaStatus(status, message) {
             break;
         case 'esim_ready':
             betaEnrollBtn.style.display = 'none';
-            ```text
             betaStatus.style.display = 'block';
             betaStatusText.textContent = 'Your eSIM is ready to download';
             betaStatusText.style.color = '#28a745';
@@ -2940,34 +2939,3 @@ function updateBetaStatus(status, message) {
             break;
     }
 }
-
-        function createDemoUser() {
-            const timestamp = Date.now();
-            const demoEmail = `demo${timestamp}@example.com`;
-
-            // Show success message
-            const successMessage = document.createElement('div');
-            successMessage.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(81, 207, 102, 0.2);
-            border: 1px solid #51cf66;
-            color: #51cf66;
-            padding: 12px 20px;
-            border-radius: 8px;
-            z-index: 999999;
-            font-size: 14px;
-        `;
-            successMessage.textContent = '🎮 Demo Mode Activated! Redirecting to dashboard...';
-            document.body.appendChild(successMessage);
-
-            setTimeout(() => {
-                if (document.body.contains(successMessage)) {
-                    document.body.removeChild(successMessage);
-                }
-                // Redirect to dashboard in demo mode
-                window.location.href = '/dashboard';
-            }, 2000);
-        }
