@@ -235,8 +235,8 @@ def oxio_test_sample_activation():
         }), 500
 
 # Now initialize Flask-RESTX AFTER the OXIO routes are defined
-api = Api(app, version='1.0', title='IMEI API',
-    description='Get android phone IMEI API with telephony permissions for eSIM activation',
+api = Api(app, version='3.0', title='dot.',
+    description='GLOBAL DATA',
     doc='/api', 
     prefix='/api')  # Move all API endpoints under /api path
 
