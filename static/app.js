@@ -2030,13 +2030,35 @@ let currentSubscriptionStatus = null;
 function initializeCarousel() {
     console.log('Card stack initialized');
 
+    // Check if we're on the dashboard page
+    if (!window.location.pathname.includes('/dashboard')) {
+        console.log('Not on dashboard page, skipping offers initialization');
+        return;
+    }
+
     // Check if offers section exists, if not wait a bit
     const offersSection = document.querySelector('.offers-section');
     if (!offersSection) {
         console.log('Offers section not found, waiting...');
-        setTimeout(() => {
-            initializeCarousel();
-        }, 500);
+        // Try again with longer intervals to avoid spam
+        let attempts = 0;
+        const maxAttempts = 10;
+        const checkInterval = setInterval(() => {
+            attempts++;
+            const section = document.querySelector('.offers-section');
+            if (section || attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                if (section) {
+                    console.log('Offers section found after', attempts, 'attempts');
+                    populateOfferCards();
+                    setTimeout(() => {
+                        initializeCardStack();
+                    }, 200);
+                } else {
+                    console.log('Offers section not found after maximum attempts');
+                }
+            }
+        }, 1000);
         return;
     }
 
