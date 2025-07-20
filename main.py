@@ -1372,9 +1372,7 @@ def get_user_data_balance():
                     
                     final_balance = total_data_balance + subscription_data
 
-                    print(f"Data balance calculation: user_id={user_id}, purchases={total_purchases}, "
-                          f"global_data={global_data_gb}GB, other_data={other_data_gb}GB, "
-                          f"subscription={subscription_data}GB, total={final_balance}GB")
+                    
 
                     return jsonify({
                         'status': 'success',
