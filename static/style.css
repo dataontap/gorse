@@ -194,7 +194,7 @@ body.light-mode {
     padding-right: 40px;
     padding-bottom: 40px;
     padding-left: 40px;
-    z-index: 999999;
+    z-index: 999998;
     margin: 0;
     pointer-events: none;
     display: flex;
