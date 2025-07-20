@@ -4270,6 +4270,84 @@ def update_personal_message():
         print(f"Error updating personal message: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/api/export-docs', methods=['GET'])
+def export_api_docs():
+    """Export API documentation as static files"""
+    try:
+        import os
+        import json
+        
+        # Create docs directory if it doesn't exist
+        docs_dir = 'api_docs'
+        if not os.path.exists(docs_dir):
+            os.makedirs(docs_dir)
+        
+        # Get OpenAPI spec
+        spec = api.__schema__
+        
+        # Save OpenAPI spec as JSON
+        with open(f'{docs_dir}/openapi.json', 'w') as f:
+            json.dump(spec, f, indent=2)
+        
+        # Create a simple HTML page with Swagger UI
+        html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>{spec.get('info', {}).get('title', 'API Documentation')}</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3.25.0/swagger-ui.css" />
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@3.25.0/swagger-ui-bundle.js"></script>
+    <script>
+        SwaggerUIBundle({{
+            url: './openapi.json',
+            dom_id: '#swagger-ui',
+            presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIBundle.presets.standalone
+            ]
+        }});
+    </script>
+</body>
+</html>"""
+        
+        with open(f'{docs_dir}/index.html', 'w') as f:
+            f.write(html_content)
+        
+        # Create README
+        readme_content = f"""# {spec.get('info', {}).get('title', 'API Documentation')}
+
+{spec.get('info', {}).get('description', 'API documentation for this service')}
+
+## Files
+
+- `index.html` - Interactive Swagger UI documentation
+- `openapi.json` - OpenAPI 3.0 specification
+
+## Usage
+
+Open `index.html` in a web browser to view the interactive documentation.
+
+## API Version
+{spec.get('info', {}).get('version', '1.0')}
+"""
+        
+        with open(f'{docs_dir}/README.md', 'w') as f:
+            f.write(readme_content)
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'API documentation exported to {docs_dir}/',
+            'files': ['index.html', 'openapi.json', 'README.md']
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Failed to export docs: {str(e)}'
+        }), 500
+
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
     print("\n=== Registered Flask Routes ===")
