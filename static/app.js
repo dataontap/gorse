@@ -2949,7 +2949,7 @@ function updateBetaStatus(status, message) {
             const successMessage = document.createElement('div');
             successMessage.style.cssText = `
             position: fixed;
-            top: -100px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(81, 207, 102, 0.2);
@@ -2959,16 +2959,9 @@ function updateBetaStatus(status, message) {
             border-radius: 8px;
             z-index: 999999;
             font-size: 14px;
-            transition: all 2s ease-out;
         `;
             successMessage.textContent = '🎮 Demo Mode Activated! Redirecting to dashboard...';
             document.body.appendChild(successMessage);
-
-            // Trigger animation after a brief delay to ensure element is rendered
-            setTimeout(() => {
-                successMessage.style.top = '20px';
-                successMessage.style.zIndex = '10000';
-            }, 50);
 
             setTimeout(() => {
                 if (document.body.contains(successMessage)) {
