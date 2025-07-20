@@ -2069,7 +2069,7 @@ function populateOfferCards() {
         {
             id: 'global_data',
             title: 'TRULY GLOBAL DATA',
-            description: ['10000MB no expiry data for $10', 'Priority fast 5G+ when available', 'Share infinitely with any member', 'Works on all planet Earth and beyond.'],
+            description: ['10000MB no expiry data for $10', 'Priority fast 5G+ when available', 'Share infinitely with any member', 'Works on most of planet Earth and 10km+ above it.'],
             price: '$10',
             buttonText: 'Buy',
             buttonClass: 'btn-primary',
