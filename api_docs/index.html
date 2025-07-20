@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>dot.</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3.25.0/swagger-ui.css" />
+    <style>
+        .github-banner {
+            background: #24292e;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .github-banner a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        .platform-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e1e4e8;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="github-banner">
+        📚 <a href="https://github.com/dataontap/gorse" target="_blank">View on GitHub</a> | 
+        🌐 <a href="/docs">Platform Documentation</a> | 
+        🔧 <a href="/db-test">System Status</a>
+    </div>
+    <div class="platform-info">
+        <h2>🌐 GORSE Platform API</h2>
+        <p>Global Connectivity Service and Network API Access</p>
+        <p><strong>Live API:</strong> <a href="/api">/api</a> | <strong>Version:</strong> 3.0</p>
+    </div>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@3.25.0/swagger-ui-bundle.js"></script>
+    <script>
+        SwaggerUIBundle({
+            url: './openapi.json',
+            dom_id: '#swagger-ui',
+            presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIBundle.presets.standalone
+            ],
+            layout: "StandaloneLayout",
+            deepLinking: true,
+            showExtensions: true,
+            showCommonExtensions: true
+        });
+    </script>
+</body>
+</html>
