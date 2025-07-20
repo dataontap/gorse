@@ -204,18 +204,11 @@ def oxio_test_sample_activation():
         print("=== OXIO TEST SAMPLE ACTIVATION CALLED ===")
         sample_payload = {
             "lineType": "LINE_TYPE_MOBILITY",
-            "sim": {
-                "simType": "EMBEDDED",
-                "iccid": os.environ.get('EUICCID1', '8910650420001501340F')
-            },
-            "endUser": {
-                "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
-            },
-            "phoneNumberRequirements": {
-                "preferredAreaCode": "212"
-            },
             "countryCode": "US",
-            "activateOnAttach": False
+            "sim": {
+                "simType": "EMBEDDED"
+            },
+            "endUserId": "sample-oxio-user-id"
         }
 
         data = request.get_json()

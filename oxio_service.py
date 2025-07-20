@@ -54,8 +54,8 @@ class OXIOService:
             print(f"OXIO API Request Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
             print(f"OXIO API Request Payload: {json.dumps(payload, indent=2)}")
 
-            # Validate payload structure before sending
-            required_fields = ['lineType', 'sim', 'endUser', 'countryCode']
+            # Validate simplified payload structure - only require basic fields
+            required_fields = ['lineType', 'countryCode', 'sim', 'endUserId']
             missing_fields = [field for field in required_fields if field not in payload]
             if missing_fields:
                 return {
@@ -66,10 +66,10 @@ class OXIOService:
                     'payload_received': payload
                 }
 
-            # Additional payload validation
+            # Additional payload validation for simplified structure
             validation_errors = []
 
-            # Validate sim structure
+            # Validate sim structure - only require simType
             if 'sim' in payload:
                 sim = payload['sim']
                 if not isinstance(sim, dict):
@@ -77,17 +77,10 @@ class OXIOService:
                 else:
                     if 'simType' not in sim:
                         validation_errors.append("'sim.simType' is required")
-                    if 'iccid' not in sim:
-                        validation_errors.append("'sim.iccid' is required")
 
-            # Validate endUser structure
-            if 'endUser' in payload:
-                endUser = payload['endUser']
-                if not isinstance(endUser, dict):
-                    validation_errors.append("'endUser' must be an object")
-                else:
-                    if 'brandId' not in endUser:
-                        validation_errors.append("'endUser.brandId' is required")
+            # Validate endUserId is present
+            if 'endUserId' not in payload or not payload['endUserId']:
+                validation_errors.append("'endUserId' is required")
 
             if validation_errors:
                 return {
@@ -98,12 +91,36 @@ class OXIOService:
                     'payload_received': payload
                 }
 
+            # Auto-add required fields that OXIO needs internally
+            # Add ICCID automatically if not provided
+            if 'sim' in payload and 'iccid' not in payload['sim']:
+                # Use environment ICCID or generate a demo one
+                auto_iccid = os.environ.get('EUICCID1', '8910650420001501340F')
+                payload['sim']['iccid'] = auto_iccid
+                print(f"Auto-added ICCID: {auto_iccid}")
+
+            # Auto-add brandId and endUser structure if not provided
+            if 'endUser' not in payload:
+                payload['endUser'] = {}
+            
+            if 'brandId' not in payload['endUser']:
+                # Use default brandId
+                payload['endUser']['brandId'] = '91f70e2e-d7a8-4e9c-afc6-30acc019ed67'
+                print("Auto-added default brandId")
+
+            # Move endUserId to endUser structure if needed
+            if 'endUserId' in payload:
+                payload['endUser']['endUserId'] = payload['endUserId']
+                del payload['endUserId']
+
             # Strip hyphens from brandId and endUserId if present
             if 'endUser' in payload:
                 if 'brandId' in payload['endUser']:
                     payload['endUser']['brandId'] = payload['endUser']['brandId'].replace('-', '')
                 if 'endUserId' in payload['endUser']:
                     payload['endUser']['endUserId'] = payload['endUser']['endUserId'].replace('-', '')
+
+            print(f"Auto-configured payload: {json.dumps(payload, indent=2)}")
 
             response = requests.post(
                 url,
