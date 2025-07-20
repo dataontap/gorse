@@ -1246,8 +1246,6 @@ def get_user_by_firebase_uid(firebase_uid):
                         (firebase_uid,)
                     )
                     user_data = cur.fetchone()
-                    if user_data:
-                        print(f"get_user_by_firebase_uid debug: Found user {user_data[0]} with oxio_user_id: {user_data[7]}, eth_address: {user_data[8]}")
                     return user_data
         return None
     except Exception as e:
