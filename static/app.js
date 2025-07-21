@@ -70,29 +70,29 @@ window.toggleTheme = toggleTheme;
 // Global menu toggle functionality
 function toggleMenu(element) {
     console.log('toggleMenu called with element:', element);
-
+    
     // Find the dropdown within the clicked element
     let dropdown = element.querySelector('.menu-dropdown');
-
+    
     // If not found within the element, try finding it as a sibling
     if (!dropdown) {
         dropdown = element.parentElement.querySelector('.menu-dropdown');
     }
-
+    
     // If still not found, try finding it globally
     if (!dropdown) {
         dropdown = document.querySelector('.menu-dropdown');
     }
-
+    
     console.log('Found dropdown:', dropdown);
-
+    
     if (dropdown) {
         const isVisible = dropdown.classList.contains('visible') || 
                         dropdown.style.display === 'block' || 
                         getComputedStyle(dropdown).display === 'block';
-
+        
         console.log('Dropdown is currently visible:', isVisible);
-
+        
         if (isVisible) {
             dropdown.classList.remove('visible');
             dropdown.style.display = 'none';
@@ -1960,7 +1960,7 @@ function initializeUsageChart(chartContainer) {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-                        legend: {
+            legend: {
                 display: true,
                 position: 'top'
             }
@@ -1997,7 +1997,7 @@ async function loadDOTMBalance() {
     try {
         // Check if MetaMask is available and connected
         if (typeof window.ethereum !== 'undefined') {
-            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' });```javascript
             if (accounts.length > 0) {
                 const address = accounts[0];
 
@@ -2012,8 +2012,7 @@ async function loadDOTMBalance() {
                     // Display balance in the format "100.33 DOTM"
                     tokenBalancePill.textContent = `${data.balance.toFixed(2)} DOTM`;
                 }
-            } else {
-                tokenBalancePill.textContent = 'Connect Wallet';
+            } else {                tokenBalancePill.textContent = 'Connect Wallet';
             }
         } else {
             tokenBalancePill.textContent = 'MetaMask Required';
@@ -2023,59 +2022,6 @@ async function loadDOTMBalance() {
         tokenBalancePill.textContent = '0.00 DOTM';
     }
 }
-
-// Debug test OXIO line creation function
-function debugTestOxioLineCreation() {
-    console.log('🧪 Debug: Testing OXIO line creation...');
-
-    const firebaseUid = localStorage.getItem('userId');
-    if (!firebaseUid) {
-        alert('❌ No Firebase UID found. Please sign in first.');
-        return;
-    }
-
-    // Show loading state
-    const debugBtn = document.querySelector('[onclick="debugTestOxioLineCreation()"]');
-    if (debugBtn) {
-        debugBtn.textContent = '⏳ Creating OXIO Line...';
-        debugBtn.disabled = true;
-    }
-
-    fetch('/api/create-oxio-user', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            firebaseUid: firebaseUid,
-            force: true // Force creation even if user already has OXIO UID
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('🔍 OXIO line creation result:', data);
-
-        if (data.success) {
-            alert(`✅ OXIO Line Created Successfully!\n\nOXIO UID: ${data.oxio_uid || 'Generated'}\n\nCheck console for full details.`);
-        } else {
-            alert(`❌ OXIO Line Creation Failed!\n\nError: ${data.message || 'Unknown error'}\n\nCheck console for details.`);
-        }
-    })
-    .catch(error => {
-        console.error('❌ Error creating OXIO line:', error);
-        alert('❌ Network error during OXIO line creation. Check console for details.');
-    })
-    .finally(() => {
-        // Reset button state
-        if (debugBtn) {
-            debugBtn.textContent = '🧪 Debug Test OXIO Line Creation';
-            debugBtn.disabled = false;
-        }
-    });
-}
-
-// Make debug functions globally available
-window.debugTestOxioLineCreation = debugTestOxioLineCreation;
 
 // Make functions globally available
 window.showAddUserPopup = showAddUserPopup;
