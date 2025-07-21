@@ -1,11 +1,9 @@
 // Firebase Authentication handler using Firebase SDK v8
-// Global flag to prevent duplicate initialization with stronger checks
-if (window.firebaseAuthLoaded || window.firebaseAuthLoading) {
-  console.log("Firebase auth script already loaded or loading, skipping...");
-  return;
+// Global flag to prevent duplicate initialization
+if (window.firebaseAuthLoaded) {
+  console.log("Firebase auth script already loaded, skipping...");
 } else {
-  window.firebaseAuthLoaded = true;
-  window.firebaseAuthLoading = true;
+window.firebaseAuthLoaded = true;
 
 document.addEventListener('DOMContentLoaded', function() {
   // Wait for Firebase to be initialized
