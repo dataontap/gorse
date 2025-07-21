@@ -546,7 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
           localStorage.removeItem('userEmail');
           localStorage.removeItem('databaseUserId');
           localStorage.removeItem('currentUser');
-          window.location.href = '/';
+          window.location.replace('/');
           return Promise.resolve();
         }
 
@@ -560,7 +560,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('User signed out successfully');
 
             // Redirect to home page after logout  
-            window.location.href = '/';
+            window.location.replace('/');
           })
           .catch((error) => {
             console.error('Error during sign out:', error);
@@ -569,7 +569,7 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.removeItem('userEmail');
             localStorage.removeItem('databaseUserId');
             localStorage.removeItem('currentUser');
-            window.location.href = '/';
+            window.location.replace('/');
           });
       },
 
@@ -778,7 +778,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       signOut: function() {
         localStorage.clear();
-        window.location.href = '/';
+        window.location.replace('/');
         return Promise.resolve();
       },
 
@@ -855,7 +855,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       console.error('Firebase auth not available');
       localStorage.clear();
-      window.location.href = '/';
+      window.location.replace('/');
     }
   };
 

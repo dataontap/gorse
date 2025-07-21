@@ -9,15 +9,27 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
 
-    <!-- Firebase SDK v8 -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    <!-- Firebase v8 SDK (Backward Compatible) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
 
-  <!-- Custom Scripts - Load in correct order -->
-  <script src="/static/firebase-auth.js"></script>
-  <script src="/static/firebase-init.js"></script>
-  <script src="/static/app.js"></script>
+    <!-- Firebase Configuration (load only once) -->
+    <script>
+    if (!window.firebaseScriptsLoaded) {
+        window.firebaseScriptsLoaded = true;
+        const firebaseInitScript = document.createElement('script');
+        firebaseInitScript.src = '/static/firebase-init.js';
+        document.head.appendChild(firebaseInitScript);
+
+        const firebaseAuthScript = document.createElement('script');
+        firebaseAuthScript.src = '/static/firebase-auth.js';
+        firebaseAuthScript.onload = function() {
+            console.log('Firebase auth script loaded');
+        };
+        document.head.appendChild(firebaseAuthScript);
+    }
+    </script>
     <script>
       window.CURRENT_KEY = "{{ current_key }}";
     </script>

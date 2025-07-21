@@ -1283,13 +1283,26 @@ def get_user_data_balance():
     try:
         user_id = None
         
+        # Validate Firebase UID format (must be non-empty string)
+        if firebase_uid and len(firebase_uid.strip()) < 10:
+            print(f"Invalid Firebase UID format: {firebase_uid}")
+            return jsonify({
+                'error': 'Invalid Firebase UID format',
+                'firebaseUid': firebase_uid,
+                'dataBalance': 0,
+                'unit': 'GB'
+            }), 400
+        
         # If Firebase UID is provided, look up the internal user ID
         if firebase_uid:
+            print(f"Looking up user for Firebase UID: {firebase_uid}")
             user_data = get_user_by_firebase_uid(firebase_uid)
             if user_data:
                 user_id = user_data[0]  # Get the actual internal user ID (integer)
                 stripe_customer_id = user_data[3]  # Get Stripe customer ID
+                print(f"Found user {user_id} for Firebase UID {firebase_uid}")
             else:
+                print(f"No user found for Firebase UID: {firebase_uid}")
                 return jsonify({
                     'error': 'User not found for Firebase UID',
                     'firebaseUid': firebase_uid,
@@ -1301,6 +1314,7 @@ def get_user_data_balance():
             user_id = int(user_id_param)
             print(f"Using provided numeric user_id: {user_id}")
         else:
+            print("No valid Firebase UID or user ID provided")
             return jsonify({
                 'error': 'Firebase UID or user ID required',
                 'dataBalance': 0,

@@ -1,8 +1,7 @@
 // Prevent duplicate Firebase init loading
 if (window.firebaseInitLoaded) {
   console.log("Firebase init script already loaded, skipping...");
-  return;
-}
+} else {
 window.firebaseInitLoaded = true;
 
 document.addEventListener('DOMContentLoaded', async function() {
@@ -144,7 +143,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   }
 });
-}
+} // Close Firebase init conditional
 
 // Register FCM token with server (with deduplication)
 async function registerFCMToken(token) {
