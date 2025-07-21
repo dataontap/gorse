@@ -1148,6 +1148,21 @@ function initializeDashboard() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('App.js loaded successfully');
     initializeDashboard();
+    
+    // Force offers initialization after a delay
+    setTimeout(() => {
+        console.log('Force initializing offers...');
+        initializeCarousel();
+    }, 1000);
+    
+    // Try again after 3 seconds if still not visible
+    setTimeout(() => {
+        const offersSection = document.querySelector('.offers-section');
+        if (!offersSection || offersSection.children.length === 0) {
+            console.log('Offers still not visible, trying again...');
+            initializeCarousel();
+        }
+    }, 3000);
 });
 
 // Add User Popup Functions
@@ -1930,6 +1945,8 @@ function initializeCarousel() {
 
     if (offersSection) {
         console.log('Offers section found, populating cards...');
+        // Clear localStorage dismissed offers to ensure cards show
+        localStorage.removeItem('dismissedOffers');
         populateOfferCards();
         setTimeout(() => {
             initializeCardStack();
@@ -1942,7 +1959,16 @@ function initializeCarousel() {
 // Create offers section if it doesn't exist
 function createOffersSection() {
     console.log('Creating offers section...');
-    const container = document.querySelector('.container');
+    
+    // Try multiple container selectors
+    let container = document.querySelector('.container');
+    if (!container) {
+        container = document.querySelector('main');
+    }
+    if (!container) {
+        container = document.querySelector('body');
+    }
+    
     if (container) {
         // Try to find a good insertion point
         let insertAfter = container.querySelector('.dot-container');
@@ -1952,6 +1978,11 @@ function createOffersSection() {
             insertAfter = container.querySelector('.subscription-status');
         }
         
+        // If no subscription status, try dashboard header
+        if (!insertAfter) {
+            insertAfter = container.querySelector('.dashboard-header');
+        }
+        
         // If still nothing, try to insert after the first element
         if (!insertAfter && container.children.length > 0) {
             insertAfter = container.children[0];
@@ -1959,6 +1990,14 @@ function createOffersSection() {
         
         const offersSection = document.createElement('div');
         offersSection.className = 'offers-section';
+        offersSection.style.cssText = `
+            margin: 20px auto;
+            max-width: 500px;
+            padding: 0 20px;
+            display: block;
+            visibility: visible;
+            opacity: 1;
+        `;
         
         if (insertAfter && insertAfter.parentNode) {
             insertAfter.parentNode.insertBefore(offersSection, insertAfter.nextSibling);
@@ -1967,9 +2006,9 @@ function createOffersSection() {
             container.appendChild(offersSection);
         }
         
-        console.log('Offers section created and inserted');
+        console.log('Offers section created and inserted into:', container.tagName);
     } else {
-        console.error('Container not found for offers section');
+        console.error('No suitable container found for offers section');
     }
 }
 
@@ -2024,7 +2063,7 @@ function populateOfferCards() {
         }
     ];
 
-    // Always show all offers (ignore dismissals for now)
+    // Always show all offers - ignore any dismissals
     const availableOffers = allOffers;
 
     console.log('Available offers:', availableOffers.length);
