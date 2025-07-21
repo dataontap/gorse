@@ -2078,11 +2078,12 @@ function populateOfferCards() {
         },
         {
             id: 'basic_membership',
-            title: 'Basic Service',
+            title: 'Become a Member',
             description: [
-                'Access GLOBAL DATA @ $1 a GIG',
-                'Works in roaming in 160+ countries',
-                'Pay for data 10X less than 4 big telcos'
+                'Access available connectivity services globally',
+                'Priority (QCI 8) fast 5G+ in most (100+) places',
+                'Link multi-accounts with one payment method',
+                'Yearly, leave anytime, refundable unused data'
             ],
             price: '$24/year',
             buttonText: 'Subscribe',
