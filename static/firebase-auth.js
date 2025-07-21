@@ -285,6 +285,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                   // Update UI with real user data
                   updateAuthUI(user, currentUserData);
+
+                  // Initialize Firebase messaging for authenticated user
+                  if (window.initializeFirebaseMessaging) {
+                    setTimeout(() => {
+                      window.initializeFirebaseMessaging();
+                    }, 1000); // Small delay to ensure UI is updated first
+                  }
               } else {
                   console.error('Failed to get user data:', userData);
                   // Fallback to basic Firebase data

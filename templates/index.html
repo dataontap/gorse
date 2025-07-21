@@ -37,21 +37,6 @@
           document.head.appendChild(authScript);
         };
         document.head.appendChild(initScript);
-        
-        // Register service worker only once
-        if ('serviceWorker' in navigator && !window.serviceWorkerRegistered) {
-          window.serviceWorkerRegistered = true;
-          navigator.serviceWorker.register('/firebase-messaging-sw.js')
-            .then(function(registration) {
-              // Pass API key to service worker
-              if (registration.active) {
-                registration.active.postMessage({
-                  type: 'FIREBASE_CONFIG',
-                  apiKey: "{{ firebase_api_key }}"
-                });
-              }
-            });
-        }
       }
     </script>
 

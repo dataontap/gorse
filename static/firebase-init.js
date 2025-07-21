@@ -41,12 +41,35 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.error("Firebase SDK not loaded");
   }
 
+  // Firebase messaging will be initialized only after user authentication
+  console.log('Firebase core initialized. Messaging will be set up after login.');
+});
+} // Close Firebase init conditional
+
+// Initialize Firebase messaging for authenticated users only
+async function initializeFirebaseMessaging() {
+  if (window.messagingInitialized) {
+    console.log('Firebase messaging already initialized');
+    return;
+  }
+
   try {
-    // Initialize Firebase Cloud Messaging only if supported
+    // Initialize Firebase Cloud Messaging only if supported and user is authenticated
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       // Dynamically import Firebase modules
       const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
       const { getMessaging, getToken, onMessage } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js');
+
+      // Get Firebase config
+      const firebaseConfig = {
+        apiKey: window.CURRENT_KEY || "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
+        authDomain: "gorse-24e76.firebaseapp.com",
+        projectId: "gorse-24e76",
+        storageBucket: "gorse-24e76.appspot.com",
+        messagingSenderId: "212829848250",
+        appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
+        measurementId: "G-WHW3XT925P"
+      };
 
       // Initialize Firebase
       const app = initializeApp(firebaseConfig);
@@ -57,7 +80,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         scope: '/'
       });
 
-      console.log('Service worker registered successfully');
+      console.log('Service worker registered successfully for authenticated user');
 
       // Wait for service worker to be ready
       await navigator.serviceWorker.ready;
@@ -73,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
 
         if (currentToken) {
-          console.log('FCM token:', currentToken);
+          console.log('FCM token for authenticated user:', currentToken);
           // Send token to server for targeting this device
           registerFCMToken(currentToken);
           // Show success message to user
@@ -83,9 +106,10 @@ document.addEventListener('DOMContentLoaded', async function() {
           showNotificationStatus('Failed to get notification token. Please try again.');
         }
       } else {
-        throw new Error('Notification permission denied');
+        console.log('Notification permission denied');
       }
-        // Handle foreground messages
+
+      // Handle foreground messages
       onMessage(messaging, (payload) => {
         console.log('Message received in foreground: ', payload);
 
@@ -122,6 +146,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         showInAppNotification(title, body);
       });
 
+      window.messagingInitialized = true;
+      console.log('Firebase messaging initialized successfully for authenticated user');
+
     } else {
       console.log('Firebase messaging not supported in this browser');
       showNotificationStatus('Push notifications are not supported in this browser.');
@@ -144,12 +171,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     } else {
       showNotificationStatus('Error setting up notifications: ' + err.message);
     }
-  } finally {
-      // Mark initialization as complete
-      window.firebaseInitializing = false;
-    }
-});
-} // Close Firebase init conditional
+  }
+}
+
+// Make this function globally available
+window.initializeFirebaseMessaging = initializeFirebaseMessaging;
 
 // Register FCM token with server (with deduplication)
 async function registerFCMToken(token) {
