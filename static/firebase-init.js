@@ -144,7 +144,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     } else {
       showNotificationStatus('Error setting up notifications: ' + err.message);
     }
-  }
+  } finally {
+      // Mark initialization as complete
+      window.firebaseInitializing = false;
+    }
 });
 } // Close Firebase init conditional
 
@@ -157,7 +160,7 @@ async function registerFCMToken(token) {
     }
 
     window.fcmTokenRegistering = true;
-    
+
     // Add timestamp to prevent rapid duplicate calls
     const now = Date.now();
     if (window.lastTokenRequest && (now - window.lastTokenRequest) < 5000) {
