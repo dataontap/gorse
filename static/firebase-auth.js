@@ -60,11 +60,19 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       // Initialize Firebase if not already initialized
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-        console.log("Firebase App initialized successfully");
-      } else {
-        console.log("Firebase App already initialized");
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+          console.log("Firebase App initialized successfully");
+        } else {
+          console.log("Firebase App already initialized");
+        }
+      } catch (error) {
+        if (error.code === 'app/duplicate-app') {
+          console.log("Firebase app already exists, using existing instance");
+        } else {
+          console.error("Firebase App initialization error:", error);
+        }
       }
 
       // Test Firebase Auth availability

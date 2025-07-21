@@ -17,14 +17,23 @@ document.addEventListener('DOMContentLoaded', async function() {
     measurementId: "G-WHW3XT925P"
   };
 
-  // Initialize Firebase
+  // Initialize Firebase with better deduplication
   if (typeof firebase !== 'undefined') {
     try {
-      const app = firebase.initializeApp(firebaseConfig);
+      // Check if Firebase is already initialized
+      if (firebase.apps.length === 0) {
+        const app = firebase.initializeApp(firebaseConfig);
+        console.log("Firebase initialized successfully");
+      } else {
+        console.log("Firebase already initialized, using existing app");
+      }
       const auth = firebase.auth();
-      console.log("Firebase initialized successfully");
     } catch (error) {
-      console.error("Firebase initialization error:", error);
+      if (error.code === 'app/duplicate-app') {
+        console.log("Firebase app already exists, using existing instance");
+      } else {
+        console.error("Firebase initialization error:", error);
+      }
     }
   } else {
     console.error("Firebase SDK not loaded");
