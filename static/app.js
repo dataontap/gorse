@@ -2062,11 +2062,8 @@ let currentSubscriptionStatus = null;
 function initializeCarousel() {
     console.log('Card stack initialized');
 
-    // Check if we're on the dashboard page
-    if (!window.location.pathname.includes('/dashboard')) {
-        console.log('Not on dashboard page, skipping offers initialization');
-        return;
-    }
+    // Initialize offers on all pages that have an offers section
+    console.log('Initializing offers carousel');
 
     // Check if offers section exists, if not wait a bit
     const offersSection = document.querySelector('.offers-section');
@@ -2160,28 +2157,14 @@ function populateOfferCards() {
     // Get dismissed offers from localStorage
     const dismissedOffers = JSON.parse(localStorage.getItem('dismissedOffers') || '[]');
 
-    // Filter offers based on conditions and dismissal status
-    const availableOffers = allOffers.filter(offer => {
-        // Check if offer is dismissed
-        if (dismissedOffers.includes(offer.id)) return false;
-
-        if (offer.alwaysShow) return true;
-        if (offer.showCondition) return offer.showCondition();
-        return true;
-    });
+    // Always show all offers for all users (ignore dismissal and conditions)
+    const availableOffers = allOffers;
 
     console.log('Available offers:', availableOffers.length);
 
-    // Handle case when all offers are dismissed
+    // Always ensure we have offers to display
     if (availableOffers.length === 0) {
-        offersSection.innerHTML = `
-            <div class="no-offers-message" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.7);">
-                <p>All offers have been dismissed.</p>
-                <button onclick="clearDismissedOffers()" style="background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">
-                    Show All Offers Again
-                </button>
-            </div>
-        `;
+        console.log('No offers available, this should not happen');
         return;
     }
 
@@ -2598,22 +2581,7 @@ function clearDismissedOffers() {
 window.clearDismissedOffers = clearDismissedOffers;
 
 function shouldShowBasicMembership() {
-    if (!currentSubscriptionStatus) return true;
-
-    // Don't show if user has active basic membership with more than 7 days remaining
-    if (currentSubscriptionStatus.status === 'active' && 
-        currentSubscriptionStatus.subscription_type === 'basic_membership') {
-
-        const endDate = new Date(currentSubscriptionStatus.end_date);
-        const now = new Date();
-        const daysRemaining = (endDate - now) / (1000 * 60 * 60 * 24);
-
-        if (daysRemaining > 7) {
-            console.log(`Basic membership has ${Math.round(daysRemaining)} days remaining - hiding basic membership offer`);
-            return false;
-        }
-    }
-
+    // Always show basic membership offer for all users
     return true;
 }
 
