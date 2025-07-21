@@ -1283,8 +1283,8 @@ def get_user_data_balance():
     try:
         user_id = None
         
-        # Validate Firebase UID format (must be non-empty string)
-        if firebase_uid and len(firebase_uid.strip()) < 10:
+        # Validate Firebase UID format (must be non-empty string and reasonable length)
+        if firebase_uid and (len(firebase_uid.strip()) < 5 or len(firebase_uid.strip()) > 150):
             print(f"Invalid Firebase UID format: {firebase_uid}")
             return jsonify({
                 'error': 'Invalid Firebase UID format',

@@ -594,7 +594,10 @@
         var userSubscription = null; // Store user's subscription status
 
         function loadUserDataBalance() {
-            var firebaseUid = localStorage.getItem('userId');
+            // Get Firebase UID from currentUser or direct storage
+            var currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            var firebaseUid = currentUser ? currentUser.uid : localStorage.getItem('userId');
+            
             if (firebaseUid) {
                 fetch('/api/user/data-balance?firebaseUid=' + firebaseUid)
                     .then(response => response.json())
@@ -701,7 +704,10 @@
         }
 
         function loadSubscriptionStatus() {
-            var firebaseUid = localStorage.getItem('userId');
+            // Get Firebase UID from currentUser or direct storage
+            var currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            var firebaseUid = currentUser ? currentUser.uid : localStorage.getItem('userId');
+            
             if (firebaseUid) {
                 fetch('/api/subscription-status?firebaseUid=' + firebaseUid)
                     .then(response => response.json())

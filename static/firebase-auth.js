@@ -269,8 +269,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                   console.log('Complete user data loaded:', currentUserData);
 
-                  // Store in localStorage
-                  localStorage.setItem('currentUser', JSON.stringify(currentUserData));
+                  // Store in localStorage with consistent Firebase UID storage
+                        localStorage.setItem('currentUser', JSON.stringify(currentUserData));
+                        localStorage.setItem('userId', user.uid); // Store Firebase UID consistently
 
                   // Update UI with real user data
                   updateAuthUI(user, currentUserData);
@@ -290,6 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
           console.log('User is signed out');
           currentUserData = null;
           localStorage.removeItem('currentUser');
+          localStorage.removeItem('userId');
           window.balanceLoadingInProgress = false;
           isProcessingAuth = false;
           updateAuthUI(null, null);

@@ -276,7 +276,134 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             initializeHelpToggle();
+            loadUserProfile();
         });
+
+        function loadUserProfile() {
+            // Get current user data from localStorage
+            var currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            
+            if (currentUser) {
+                // Update profile display with actual user data
+                var profileUserName = document.getElementById('profileUserName');
+                var profileUserEmail = document.getElementById('profileUserEmail');
+                
+                if (profileUserName) {
+                    var founderBadge = currentUser.founderStatus === 'Y' ? '<span class="founding-shield">Founding Member</span>' : '';
+                    profileUserName.innerHTML = (currentUser.displayName || 'User') + ' ' + founderBadge;
+                }
+                
+                if (profileUserEmail) {
+                    profileUserEmail.textContent = currentUser.email || 'No email';
+                }
+                
+                // Load subscription data
+                loadSubscriptionData(currentUser.uid);
+                
+                // Load OXIO data
+                loadOxioData(currentUser.uid);
+            } else {
+                console.log('No current user data found');
+            }
+        }
+
+        function loadSubscriptionData(firebaseUid) {
+            if (!firebaseUid) return;
+            
+            fetch('/api/subscription-status?firebaseUid=' + firebaseUid)
+                .then(response => response.json())
+                .then(data => {
+                    var subscriptionContainer = document.getElementById('subscriptionContainer');
+                    if (subscriptionContainer) {
+                        if (data.status === 'active') {
+                            var displayName = data.subscription_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            var endDate = new Date(data.end_date);
+                            var formattedDate = endDate.toLocaleDateString();
+                            
+                            subscriptionContainer.innerHTML = `
+                                <div class="address-card p-3 mb-3" style="background: rgba(81, 207, 102, 0.15); border-radius: 8px;">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="address-content">
+                                            <h5>${displayName}</h5>
+                                            <p>Valid until: ${formattedDate}</p>
+                                            <p>Status: Active</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            subscriptionContainer.innerHTML = `
+                                <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                                    <div class="address-content">
+                                        <p>No active subscription</p>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading subscription data:', error);
+                });
+        }
+
+        function loadOxioData(firebaseUid) {
+            if (!firebaseUid) return;
+            
+            fetch('/api/oxio-user-data?firebaseUid=' + firebaseUid)
+                .then(response => response.json())
+                .then(data => {
+                    var oxioContainer = document.getElementById('oxioContainer');
+                    if (oxioContainer) {
+                        if (data.success && data.oxio_data) {
+                            oxioContainer.innerHTML = `
+                                <div class="address-card p-3 mb-3" style="background: rgba(116, 192, 252, 0.15); border-radius: 8px;">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="address-content">
+                                            <h5>OXIO Account Details</h5>
+                                            <p><strong>User ID:</strong> ${data.oxio_data.oxio_user_id || 'Not available'}</p>
+                                            <p><strong>Status:</strong> ${data.oxio_data.status || 'Not activated'}</p>
+                                            ${data.oxio_data.phone_number ? `<p><strong>Phone:</strong> ${data.oxio_data.phone_number}</p>` : ''}
+                                            ${data.oxio_data.line_id ? `<p><strong>Line ID:</strong> ${data.oxio_data.line_id}</p>` : ''}
+                                        </div>
+                                        <i class="fas fa-sync-alt refresh-icon" onclick="refreshOxioData()" title="Refresh OXIO data" style="cursor: pointer; color: #007bff;"></i>
+                                    </div>
+                                </div>
+                            `;
+                            // Show refresh button
+                            var refreshBtn = document.getElementById('oxioRefreshBtn');
+                            if (refreshBtn) refreshBtn.style.display = 'inline';
+                        } else {
+                            oxioContainer.innerHTML = `
+                                <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                                    <div class="address-content">
+                                        <p>No OXIO data available</p>
+                                        <p style="font-size: 14px; color: #999;">OXIO account will be created when you purchase a Basic Membership</p>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading OXIO data:', error);
+                    var oxioContainer = document.getElementById('oxioContainer');
+                    if (oxioContainer) {
+                        oxioContainer.innerHTML = `
+                            <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
+                                <p>Error loading OXIO information</p>
+                            </div>
+                        `;
+                    }
+                });
+        }
+
+        function refreshOxioData() {
+            var currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (currentUser) {
+                loadOxioData(currentUser.uid);
+            }
+        }
 
         window.handleLogout = handleLogout;
         window.toggleProfileDropdown = toggleProfileDropdown;
