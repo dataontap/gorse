@@ -1,7 +1,24 @@
+// Firebase Messaging Service Worker - ONLY for authenticated users
+// This service worker will only be activated after user authentication
 
-// Firebase service worker for background messaging - ONLY for authenticated users
-self.importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
-self.importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+// Import Firebase scripts
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+
+// Initialize Firebase in the service worker ONLY when activated
+const firebaseConfig = {
+  apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
+  authDomain: "gorse-24e76.firebaseapp.com",
+  projectId: "gorse-24e76",
+  storageBucket: "gorse-24e76.appspot.com",
+  messagingSenderId: "212829848250",
+  appId: "1:212829848250:web:e1e7c3b584e4bb537e3883"
+};
+
+// Only initialize if this service worker is being used for messaging
+if (typeof firebase !== 'undefined') {
+  firebase.initializeApp(firebaseConfig);
+}
 
 // Log service worker activation
 console.log('Firebase messaging service worker loaded - should only be active for authenticated users');

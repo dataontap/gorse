@@ -53,11 +53,24 @@ async function initializeFirebaseMessaging() {
     return;
   }
 
-  // CRITICAL: Only proceed if user is authenticated
-  if (!firebase || !firebase.auth || !firebase.auth().currentUser) {
+  // CRITICAL: Multiple checks to ensure user is authenticated
+  if (!firebase) {
+    console.log('Firebase not loaded, skipping FCM initialization');
+    return;
+  }
+  
+  if (!firebase.auth) {
+    console.log('Firebase auth not loaded, skipping FCM initialization');
+    return;
+  }
+  
+  const currentUser = firebase.auth().currentUser;
+  if (!currentUser) {
     console.log('User not authenticated, skipping FCM initialization');
     return;
   }
+  
+  console.log('FCM initialization approved for authenticated user:', currentUser.uid);
 
   try {
     console.log('Starting FCM initialization for authenticated user:', firebase.auth().currentUser.uid);

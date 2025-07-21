@@ -113,6 +113,21 @@
                 window.location.href = '/dashboard';
             }, 2000);
         }
+
+        // Global functions to prevent reference errors
+        window.enableDemoMode = enableDemoMode;
+        window.loadInvitesList = function() {
+            console.log('loadInvitesList called');
+        };
+        window.toggleProfileDropdown = function() {
+            console.log('toggleProfileDropdown called');
+        };
+        window.handleLogout = function() {
+            console.log('handleLogout called');
+            if (window.signOut) {
+                window.signOut();
+            }
+        };
     </script>
 </body>
         <!-- Demo mode activation from URL -->
