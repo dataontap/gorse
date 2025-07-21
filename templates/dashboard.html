@@ -497,8 +497,83 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="/static/translations.js"></script>
+    <script src="/static/help-desk.js"></script>
     <script src="/static/app.js"></script>
+    <script src="/static/translations.js"></script>
+
+    <script>
+        // Global function definitions to prevent reference errors
+        function handleLogout(event) {
+            if (event) event.preventDefault();
+            if (window.signOut) {
+                window.signOut();
+            } else if (window.firebaseAuth && window.firebaseAuth.signOut) {
+                window.firebaseAuth.signOut();
+            } else {
+                // Fallback logout
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = '/';
+            }
+        }
+
+        function toggleProfileDropdown() {
+            const dropdown = document.querySelector('.profile-dropdown');
+            if (dropdown) {
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+
+        function loadInvitesList() {
+            if (window.loadInvitesList) {
+                window.loadInvitesList();
+            } else {
+                console.log('loadInvitesList function not available');
+            }
+        }
+
+        // Help toggle functionality
+        function initializeHelpToggle() {
+            const helpToggle = document.getElementById('helpToggle');
+            const helpSection = document.querySelector('.help-section');
+
+            if (helpToggle && helpSection) {
+                helpToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    if (helpSection.style.display === 'none' || !helpSection.style.display) {
+                        helpSection.style.display = 'block';
+                        helpSection.classList.add('expanded');
+                        helpToggle.classList.add('active');
+
+                        // Start help session if available
+                        if (window.startHelpSession) {
+                            window.startHelpSession();
+                        }
+                    } else {
+                        helpSection.style.display = 'none';
+                        helpSection.classList.remove('expanded');
+                        helpToggle.classList.remove('active');
+
+                        // End help session if available
+                        if (window.endHelpSession) {
+                            window.endHelpSession();
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeHelpToggle();
+        });
+
+        // Make functions globally available
+        window.handleLogout = handleLogout;
+        window.toggleProfileDropdown = toggleProfileDropdown;
+        window.loadInvitesList = loadInvitesList;
+    </script>
     <script>
         // Load user data and display data balance
         document.addEventListener('DOMContentLoaded', function() {

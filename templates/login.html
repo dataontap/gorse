@@ -197,7 +197,7 @@
                     // Firebase not available, show message
                     setTimeout(() => {
                         showAuthError('Authentication service is temporarily unavailable. Please refresh the page and try again.', false);
-                        
+
                         // Restore button state
                         submitBtn.textContent = originalText;
                         submitBtn.disabled = false;
@@ -234,7 +234,7 @@
                     // Firebase not available, show message
                     setTimeout(() => {
                         showAuthError('Authentication service is temporarily unavailable. Please refresh the page and try again.', false);
-                        
+
                         // Restore button state
                         googleSigninBtn.innerHTML = originalText;
                         googleSigninBtn.disabled = false;
@@ -404,9 +404,6 @@
 
         // Demo mode function
         function enableDemoMode() {
-            localStorage.setItem('demoMode', 'true');
-            
-            // Show success message
             const successMessage = document.createElement('div');
             successMessage.style.cssText = `
                 position: fixed;
@@ -428,7 +425,6 @@
                 if (document.body.contains(successMessage)) {
                     document.body.removeChild(successMessage);
                 }
-                // Redirect to dashboard in demo mode
                 window.location.href = '/dashboard';
             }, 2000);
         }
