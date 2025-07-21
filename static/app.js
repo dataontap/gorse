@@ -1153,36 +1153,33 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('App.js loaded successfully');
     initializeDashboard();
     
+    // Force clear any dismissed offers immediately
+    localStorage.removeItem('dismissedOffers');
+    
     // Force offers initialization immediately
     console.log('Force initializing offers immediately...');
-    initializeCarousel();
+    forceCreateOffersSection();
     
-    // Force offers initialization after a delay
+    // Try multiple times with increasing delays
+    setTimeout(() => {
+        console.log('Force initializing offers after 100ms...');
+        forceCreateOffersSection();
+    }, 100);
+    
     setTimeout(() => {
         console.log('Force initializing offers after 500ms...');
-        initializeCarousel();
+        forceCreateOffersSection();
     }, 500);
     
-    // Try again after 1 second
     setTimeout(() => {
         console.log('Force initializing offers after 1s...');
-        const offersSection = document.querySelector('.offers-section');
-        if (!offersSection || offersSection.children.length === 0) {
-            console.log('Offers still not visible, trying again...');
-            initializeCarousel();
-        }
+        forceCreateOffersSection();
     }, 1000);
     
-    // Try again after 3 seconds if still not visible
     setTimeout(() => {
-        const offersSection = document.querySelector('.offers-section');
-        if (!offersSection || offersSection.children.length === 0) {
-            console.log('Offers STILL not visible after 3s, final attempt...');
-            initializeCarousel();
-        } else {
-            console.log('Offers section found with', offersSection.children.length, 'children');
-        }
-    }, 3000);
+        console.log('Force initializing offers after 2s...');
+        forceCreateOffersSection();
+    }, 2000);
 });
 
 // Add User Popup Functions
@@ -1947,73 +1944,71 @@ function trackHelpInteraction(type, data) {
 // Store current subscription status globally
 let currentSubscriptionStatus = null;
 
+// Function to force create offers section - more aggressive approach
+function forceCreateOffersSection() {
+    console.log('Force creating offers section...');
+    
+    // Clear any dismissed offers
+    localStorage.removeItem('dismissedOffers');
+    
+    // Remove any existing offers section first
+    const existingSection = document.querySelector('.offers-section');
+    if (existingSection) {
+        existingSection.remove();
+        console.log('Removed existing offers section');
+    }
+    
+    // Find the best container
+    const container = document.querySelector('.container');
+    if (!container) {
+        console.error('No container found');
+        return;
+    }
+    
+    // Create new offers section
+    const offersSection = document.createElement('div');
+    offersSection.className = 'offers-section';
+    offersSection.style.cssText = `
+        margin: 20px auto !important;
+        max-width: 500px !important;
+        padding: 0 20px !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        z-index: 1 !important;
+    `;
+    
+    // Find insertion point - after membership banner or dot container
+    let insertAfter = document.getElementById('membershipBanner');
+    if (!insertAfter) {
+        insertAfter = document.querySelector('.dot-container');
+    }
+    if (!insertAfter) {
+        insertAfter = document.querySelector('.subscription-status');
+    }
+    
+    if (insertAfter && insertAfter.parentNode) {
+        insertAfter.parentNode.insertBefore(offersSection, insertAfter.nextSibling);
+    } else {
+        container.appendChild(offersSection);
+    }
+    
+    console.log('Created new offers section');
+    
+    // Populate immediately
+    populateOfferCards();
+    
+    // Initialize card stack after a short delay
+    setTimeout(() => {
+        initializeCardStack();
+    }, 100);
+}
+
 // Initialize card stack functionality
 function initializeCarousel() {
     console.log('Card stack initialized');
-
-    // Initialize offers on all pages that have an offers section
-    console.log('Initializing offers carousel');
-
-    // Force removal of any dismissed offers
-    localStorage.removeItem('dismissedOffers');
-    console.log('Cleared dismissed offers');
-
-    // Always create offers section if it doesn't exist
-    let offersSection = document.querySelector('.offers-section');
-    if (!offersSection) {
-        console.log('Offers section not found, creating it...');
-        createOffersSection();
-        // Get the newly created section
-        offersSection = document.querySelector('.offers-section');
-    }
-
-    // Force show the offers section
-    if (offersSection) {
-        offersSection.style.display = 'block';
-        offersSection.style.visibility = 'visible';
-        offersSection.style.opacity = '1';
-        console.log('Offers section found and forced visible, populating cards...');
-        populateOfferCards();
-        setTimeout(() => {
-            initializeCardStack();
-        }, 200);
-    } else {
-        console.error('Failed to create or find offers section');
-        // Force create one more time
-        const container = document.querySelector('.container');
-        if (container) {
-            const newOffersSection = document.createElement('div');
-            newOffersSection.className = 'offers-section';
-            newOffersSection.style.cssText = `
-                margin: 20px auto;
-                max-width: 500px;
-                padding: 0 20px;
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-            `;
-            
-            // Insert after membership banner if it exists
-            const membershipBanner = document.getElementById('membershipBanner');
-            if (membershipBanner) {
-                membershipBanner.parentNode.insertBefore(newOffersSection, membershipBanner.nextSibling);
-            } else {
-                // Insert after dot container
-                const dotContainer = document.querySelector('.dot-container');
-                if (dotContainer) {
-                    dotContainer.parentNode.insertBefore(newOffersSection, dotContainer.nextSibling);
-                } else {
-                    container.appendChild(newOffersSection);
-                }
-            }
-            
-            console.log('Force created offers section');
-            populateOfferCards();
-            setTimeout(() => {
-                initializeCardStack();
-            }, 200);
-        }
-    }
+    forceCreateOffersSection();
 }
 
 // Create offers section if it doesn't exist
@@ -2081,9 +2076,15 @@ let currentX = 0;
 let cardContainer = null;
 
 function populateOfferCards() {
-    const offersSection = document.querySelector('.offers-section');
+    let offersSection = document.querySelector('.offers-section');
     if (!offersSection) {
-        console.log('Offers section not found');
+        console.log('Offers section not found, creating it now...');
+        forceCreateOffersSection();
+        offersSection = document.querySelector('.offers-section');
+    }
+    
+    if (!offersSection) {
+        console.error('Still no offers section after force create');
         return;
     }
 
@@ -2123,26 +2124,20 @@ function populateOfferCards() {
         }
     ];
 
-    // Always show all offers - ignore any dismissals
+    // Always show all offers - completely ignore dismissals
     const availableOffers = allOffers;
 
-    console.log('Available offers:', availableOffers.length);
-
-    // Always ensure we have offers to display
-    if (availableOffers.length === 0) {
-        console.log('No offers available, this should not happen');
-        return;
-    }
+    console.log('Populating', availableOffers.length, 'offers');
 
     // Set the initial card index to the last card
     currentCardIndex = availableOffers.length - 1;
 
     // Create card stack container with proper styling
     offersSection.innerHTML = `
-        <div class="offers-stack-container" id="cardStackContainer" style="position: relative; height: 450px; width: 100%; max-width: 400px; margin: 0 auto;">
+        <div class="offers-stack-container" id="cardStackContainer" style="position: relative !important; height: 450px !important; width: 100% !important; max-width: 400px !important; margin: 0 auto !important; background: rgba(255,255,255,0.05) !important; border-radius: 15px !important; padding: 10px !important;">
             <!-- Cards will be inserted here -->
         </div>
-        <div class="card-indicators" id="cardIndicators">
+        <div class="card-indicators" id="cardIndicators" style="display: flex !important; justify-content: center !important; gap: 10px !important; margin-top: 20px !important;">
             <!-- Indicators will be inserted here -->
         </div>
     `;
@@ -2151,7 +2146,7 @@ function populateOfferCards() {
     const indicatorsContainer = document.getElementById('cardIndicators');
 
     if (!stackContainer || !indicatorsContainer) {
-        console.error('Stack container or indicators container not found');
+        console.error('Stack container or indicators container not found after creation');
         return;
     }
 
@@ -2161,21 +2156,42 @@ function populateOfferCards() {
         const offerCard = document.createElement('div');
         offerCard.className = 'offer-card';
         offerCard.dataset.index = index;
+        offerCard.style.cssText = `
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 400px !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-radius: 15px !important;
+            padding: 25px !important;
+            color: white !important;
+            text-align: center !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(10px) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            cursor: grab !important;
+            user-select: none !important;
+            touch-action: pan-y pinch-zoom !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+        `;
 
-        const descriptions = offer.description.map(desc => `<p>${desc}</p>`).join('');
+        const descriptions = offer.description.map(desc => `<p style="margin: 5px 0; font-size: 0.9rem; line-height: 1.4;">${desc}</p>`).join('');
         const buttonDisabled = offer.disabled ? ' disabled' : '';
 
         offerCard.innerHTML = `
-            <h3>${offer.title}</h3>
-            <div class="offer-description">
+            <h3 style="font-size: 1.6em; margin-bottom: 15px; font-weight: bold; color: #FFF371;">${offer.title}</h3>
+            <div class="offer-description" style="flex-grow: 1;">
                 ${descriptions}
             </div>
-            <div class="price">${offer.price}</div>
+            <div class="price" style="font-size: 1.4rem; font-weight: 700; margin: 15px 0; color: #FFF371;">${offer.price}</div>
             <div style="display: flex; align-items: center; gap: 15px; margin-top: auto; justify-content: space-between; width: 100%;">
-                <button class="dismiss-card-btn" onclick="dismissOfferCard('${offer.id}')" title="Dismiss this offer">
-                    <i class="fas fa-times"></i><br>
+                <button class="dismiss-card-btn" onclick="dismissOfferCard('${offer.id}')" title="Dismiss this offer" style="background: rgba(255, 255, 255, 0.2); border: none; border-radius: 25px; padding: 12px 25px; color: rgba(255, 255, 255, 0.7); cursor: pointer; min-height: 44px; width: 100px;">
+                    <i class="fas fa-times"></i>
                 </button>
-                <button class="offer-button ${offer.buttonClass}"${buttonDisabled} onclick="${offer.action}">
+                <button class="offer-button ${offer.buttonClass}" ${buttonDisabled} onclick="${offer.action}" style="padding: 12px 28px; border-radius: 25px; font-weight: 600; font-size: 0.9rem; border: none; cursor: pointer; min-height: 44px; flex-grow: 1; background: #007bff; color: white;">
                     ${offer.buttonText}
                 </button>
             </div>
@@ -2187,12 +2203,26 @@ function populateOfferCards() {
         const indicator = document.createElement('div');
         indicator.className = 'indicator-dot';
         indicator.dataset.index = index;
+        indicator.style.cssText = `
+            width: 12px !important;
+            height: 12px !important;
+            border-radius: 50% !important;
+            background: #444444 !important;
+            cursor: pointer !important;
+            transition: background-color 0.3s !important;
+        `;
         indicator.addEventListener('click', () => goToCard(index));
         indicatorsContainer.appendChild(indicator);
     });
 
     cardStack = Array.from(stackContainer.querySelectorAll('.offer-card'));
-    console.log('Created card stack with', cardStack.length, 'cards');
+    console.log('Successfully created card stack with', cardStack.length, 'cards');
+    
+    // Force visibility
+    offersSection.style.display = 'block';
+    offersSection.style.visibility = 'visible';
+    offersSection.style.opacity = '1';
+    
     updateCardPositions();
 }
 
