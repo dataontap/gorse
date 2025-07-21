@@ -1131,6 +1131,35 @@ body.light-mode {
     background: rgba(255, 255, 255, 0.1);
 }
 
+/* Dark mode overrides for dropdowns */
+.dark-mode .menu-dropdown,
+.dark-mode .profile-dropdown {
+    background: rgba(40, 40, 40, 1) !important;
+    backdrop-filter: none !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid #555 !important;
+}
+
+.dark-mode .menu-dropdown a,
+.dark-mode .profile-dropdown a {
+    color: #ffffff !important;
+}
+
+.dark-mode .menu-dropdown a i,
+.dark-mode .profile-dropdown a i,
+.dark-mode .menu-dropdown div i,
+.dark-mode .profile-dropdown div i,
+.dark-mode .menu-icon i, 
+.dark-mode .profile-section i,
+.dark-mode .profile-info {
+    color: #cccccc !important;
+}
+
+.dark-mode .menu-dropdown a:hover,
+.dark-mode .profile-dropdown a:hover {
+    background: rgba(70, 70, 70, 1) !important;
+}
+
 /* Light mode overrides */
 .light-mode .dot-indicator {
     background: linear-gradient(135deg, #FFF371 0%, #FFE066 100%);
@@ -1304,7 +1333,7 @@ body.light-mode {
     top: 60px;
     overflow: hidden;
     max-width: 250px;
-    background: rgba(50, 50, 50, 0.95);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(5px);
     border-radius: 8px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
