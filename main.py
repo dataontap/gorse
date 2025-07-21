@@ -2864,43 +2864,153 @@ def get_oxio_user_data():
                         oxio_data['last_updated'] = beta_result[1].isoformat() if beta_result[1] else None
                         oxio_data['subscription_id'] = beta_result[2]
 
-                    # Try to get actual OXIO data from OXIO API
+                    # Try to get actual OXIO data from OXIO API and database
                     try:
                         from oxio_service import oxio_service
                         
-                        # Test connection first
+                        # First check for existing activation records in database
+                        cur.execute("""
+                            SELECT line_id, phone_number, iccid, activation_status, oxio_response, created_at
+                            FROM oxio_activations 
+                            WHERE user_id = %s AND activation_status = 'activated'
+                            ORDER BY created_at DESC LIMIT 1
+                        """, (user_id,))
+                        
+                        activation_record = cur.fetchone()
+                        
+                        # Test OXIO connection
                         connection_test = oxio_service.test_connection()
-                        if connection_test.get('success'):
-                            # If user has OXIO user ID, generate realistic demo data
-                            if oxio_data.get('oxio_user_id'):
-                                import random
-                                demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
-                                demo_phone = f"+1416{random.randint(1000000, 9999999)}"
-                                demo_line_id = f"LINE_{random.randint(100000, 999999)}"
-                                demo_activation_code = f"AC{random.randint(100000, 999999)}"
-
-                                oxio_data.update({
-                                    'phone_number': demo_phone,
-                                    'line_id': demo_line_id,
-                                    'iccid': demo_iccid,
-                                    'activation_code': demo_activation_code,
-                                    'plan_name': 'OXIO_Global_Plan',
-                                    'data_allowance': '1000MB',
-                                    'validity_days': 30,
-                                    'regions': ['Global', 'North America', 'Europe'],
-                                    'qr_code': f"LPA:1$api-staging.brandvno.com${demo_activation_code}$",
-                                    'profile_id': f"PROFILE_{random.randint(100000, 999999)}",
-                                    'status': 'active' if beta_result and beta_result[0] == 'esim_ready' else 'pending'
-                                })
-                                # Keep the MetaMask address separate from OXIO user ID
-                                if not oxio_data.get('metamask_address'):
-                                    oxio_data['metamask_address'] = metamask_address
+                        
+                        if activation_record:
+                            # User has an activated line - use real data
+                            line_id, phone_number, iccid, activation_status, oxio_response_json, created_at = activation_record
+                            
+                            # Parse OXIO response for additional details
+                            try:
+                                oxio_response = json.loads(oxio_response_json) if oxio_response_json else {}
+                                oxio_response_data = oxio_response.get('data', {})
+                            except:
+                                oxio_response_data = {}
+                            
+                            # If we have OXIO connection, try to get current line status
+                            if connection_test.get('success') and oxio_data.get('oxio_user_id'):
+                                try:
+                                    lines_result = oxio_service.get_user_lines(oxio_data['oxio_user_id'])
+                                    if lines_result.get('success'):
+                                        lines_data = lines_result.get('data', {})
+                                        if lines_data and 'lines' in lines_data and len(lines_data['lines']) > 0:
+                                            # Get the first active line
+                                            active_line = lines_data['lines'][0]
+                                            oxio_data.update({
+                                                'phone_number': active_line.get('phoneNumber', phone_number),
+                                                'line_id': active_line.get('lineId', line_id),
+                                                'iccid': active_line.get('iccid', iccid),
+                                                'status': 'active' if active_line.get('status') == 'ACTIVE' else 'pending',
+                                                'plan_name': active_line.get('planName', 'OXIO Mobile Plan'),
+                                                'data_allowance': active_line.get('dataAllowance', '5GB'),
+                                                'validity_days': 30,
+                                                'regions': ['Global', 'North America', 'Europe'],
+                                                'activation_code': active_line.get('activationCode'),
+                                                'qr_code': active_line.get('qrCode'),
+                                                'profile_id': active_line.get('profileId'),
+                                                'last_updated': created_at.isoformat() if created_at else None
+                                            })
+                                        else:
+                                            # Fallback to database record
+                                            oxio_data.update({
+                                                'phone_number': phone_number,
+                                                'line_id': line_id,
+                                                'iccid': iccid,
+                                                'status': 'active',
+                                                'plan_name': 'OXIO Mobile Plan',
+                                                'data_allowance': '5GB',
+                                                'validity_days': 30,
+                                                'regions': ['Global'],
+                                                'last_updated': created_at.isoformat() if created_at else None
+                                            })
+                                    else:
+                                        # Use database record if API call fails
+                                        oxio_data.update({
+                                            'phone_number': phone_number,
+                                            'line_id': line_id,
+                                            'iccid': iccid,
+                                            'status': 'active',
+                                            'plan_name': 'OXIO Mobile Plan',
+                                            'data_allowance': '5GB',
+                                            'validity_days': 30,
+                                            'regions': ['Global'],
+                                            'last_updated': created_at.isoformat() if created_at else None
+                                        })
+                                except Exception as api_err:
+                                    print(f"Error getting current line status from OXIO: {str(api_err)}")
+                                    # Use database record as fallback
+                                    oxio_data.update({
+                                        'phone_number': phone_number,
+                                        'line_id': line_id,
+                                        'iccid': iccid,
+                                        'status': 'active',
+                                        'plan_name': 'OXIO Mobile Plan',
+                                        'data_allowance': '5GB',
+                                        'validity_days': 30,
+                                        'regions': ['Global'],
+                                        'last_updated': created_at.isoformat() if created_at else None
+                                    })
                             else:
+                                # No OXIO connection, use database record
+                                oxio_data.update({
+                                    'phone_number': phone_number,
+                                    'line_id': line_id,
+                                    'iccid': iccid,
+                                    'status': 'active',
+                                    'plan_name': 'OXIO Mobile Plan',
+                                    'data_allowance': '5GB',
+                                    'validity_days': 30,
+                                    'regions': ['Global'],
+                                    'last_updated': created_at.isoformat() if created_at else None
+                                })
+                            
+                        elif connection_test.get('success') and oxio_data.get('oxio_user_id'):
+                            # No local activation record, but OXIO is available - check for existing lines
+                            try:
+                                lines_result = oxio_service.get_user_lines(oxio_data['oxio_user_id'])
+                                if lines_result.get('success'):
+                                    lines_data = lines_result.get('data', {})
+                                    if lines_data and 'lines' in lines_data and len(lines_data['lines']) > 0:
+                                        # User has lines in OXIO but not in our database
+                                        active_line = lines_data['lines'][0]
+                                        oxio_data.update({
+                                            'phone_number': active_line.get('phoneNumber', 'Not assigned'),
+                                            'line_id': active_line.get('lineId', 'Not assigned'),
+                                            'iccid': active_line.get('iccid', 'Not assigned'),
+                                            'status': 'active' if active_line.get('status') == 'ACTIVE' else 'pending',
+                                            'plan_name': active_line.get('planName', 'OXIO Mobile Plan'),
+                                            'data_allowance': active_line.get('dataAllowance', '5GB'),
+                                            'validity_days': 30,
+                                            'regions': ['Global', 'North America', 'Europe'],
+                                            'activation_code': active_line.get('activationCode'),
+                                            'qr_code': active_line.get('qrCode'),
+                                            'profile_id': active_line.get('profileId'),
+                                            'last_updated': datetime.now().isoformat()
+                                        })
+                                    else:
+                                        # User exists in OXIO but has no lines - ready for activation
+                                        oxio_data['status'] = 'ready_for_activation'
+                                        oxio_data['error'] = 'OXIO user exists but no active lines found'
+                                else:
+                                    oxio_data['status'] = 'oxio_api_error'
+                                    oxio_data['error'] = f'Error getting lines: {lines_result.get("message", "Unknown error")}'
+                            except Exception as lines_err:
+                                print(f"Error checking user lines: {str(lines_err)}")
+                                oxio_data['status'] = 'ready_for_activation'
+                                oxio_data['error'] = 'Unable to check existing lines'
+                        else:
+                            # No activation record and OXIO unavailable/no user
+                            if not oxio_data.get('oxio_user_id'):
                                 oxio_data['status'] = 'oxio_user_not_created'
                                 oxio_data['error'] = 'OXIO user not created yet'
-                        else:
-                            oxio_data['status'] = 'oxio_unavailable'
-                            oxio_data['error'] = 'OXIO service unavailable'
+                            else:
+                                oxio_data['status'] = 'oxio_unavailable'
+                                oxio_data['error'] = 'OXIO service unavailable - using demo mode'
                     
                     except Exception as oxio_err:
                         print(f"Error getting OXIO data: {str(oxio_err)}")
