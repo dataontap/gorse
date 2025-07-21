@@ -36,12 +36,12 @@ class OXIOService:
             'User-Agent': 'DOTM-Platform/1.0'
         }
 
-    def activate_line(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def activate_line(self, oxio_user_id: str) -> Dict[str, Any]:
         """
-        Activate a line using OXIO API
+        Activate a line using simplified OXIO API payload
 
         Args:
-            payload: Line activation payload
+            oxio_user_id: OXIO user ID for line activation
 
         Returns:
             API response as dictionary
@@ -50,60 +50,26 @@ class OXIOService:
             url = f"{self.base_url}/v3/lines/line"
             headers = self.get_headers()
 
+            # Create simplified payload as requested
+            payload = {
+                "lineType": "LINE_TYPE_MOBILITY",
+                "countryCode": "US",
+                "sim": { "simType": "EMBEDDED" },
+                "endUserId": oxio_user_id
+            }
+
             print(f"OXIO API Request URL: {url}")
             print(f"OXIO API Request Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
             print(f"OXIO API Request Payload: {json.dumps(payload, indent=2)}")
 
-            # Validate payload structure before sending
-            required_fields = ['lineType', 'sim', 'endUser', 'countryCode']
-            missing_fields = [field for field in required_fields if field not in payload]
-            if missing_fields:
+            # Validate that OXIO user ID is provided
+            if not oxio_user_id:
                 return {
                     'success': False,
-                    'error': 'Missing required fields',
-                    'message': f'Missing required fields: {", ".join(missing_fields)}',
-                    'required_fields': required_fields,
+                    'error': 'Missing OXIO user ID',
+                    'message': 'OXIO user ID is required for line activation',
                     'payload_received': payload
                 }
-
-            # Additional payload validation
-            validation_errors = []
-
-            # Validate sim structure
-            if 'sim' in payload:
-                sim = payload['sim']
-                if not isinstance(sim, dict):
-                    validation_errors.append("'sim' must be an object")
-                else:
-                    if 'simType' not in sim:
-                        validation_errors.append("'sim.simType' is required")
-                    if 'iccid' not in sim:
-                        validation_errors.append("'sim.iccid' is required")
-
-            # Validate endUser structure
-            if 'endUser' in payload:
-                endUser = payload['endUser']
-                if not isinstance(endUser, dict):
-                    validation_errors.append("'endUser' must be an object")
-                else:
-                    if 'brandId' not in endUser:
-                        validation_errors.append("'endUser.brandId' is required")
-
-            if validation_errors:
-                return {
-                    'success': False,
-                    'error': 'Payload validation failed',
-                    'message': 'Payload structure is invalid',
-                    'validation_errors': validation_errors,
-                    'payload_received': payload
-                }
-
-            # Strip hyphens from brandId and endUserId if present
-            if 'endUser' in payload:
-                if 'brandId' in payload['endUser']:
-                    payload['endUser']['brandId'] = payload['endUser']['brandId'].replace('-', '')
-                if 'endUserId' in payload['endUser']:
-                    payload['endUser']['endUserId'] = payload['endUser']['endUserId'].replace('-', '')
 
             response = requests.post(
                 url,
