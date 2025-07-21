@@ -71,7 +71,32 @@ class OXIOService:
             elif isinstance(oxio_user_id_or_payload, dict):
                 # Complex case: full payload provided (legacy support)
                 payload = oxio_user_id_or_payload
-                print(f"Using complex payload for line activation: {payload}")
+                
+                # CRITICAL FIX: If endUserId is provided in the endUser object, 
+                # remove email and other user details to avoid "user already exists" error
+                if payload.get('endUser', {}).get('endUserId'):
+                    oxio_user_id = payload['endUser']['endUserId']
+                    print(f"OXIO user ID found in complex payload: {oxio_user_id}")
+                    print("Removing email and user details since endUserId is provided")
+                    
+                    # Create clean payload with only endUserId - no email or other user details
+                    clean_payload = {
+                        "lineType": payload.get("lineType", "LINE_TYPE_MOBILITY"),
+                        "countryCode": payload.get("countryCode", "US"),
+                        "sim": payload.get("sim", {"simType": "EMBEDDED"}),
+                        "endUserId": oxio_user_id  # Use endUserId directly, not in endUser object
+                    }
+                    
+                    # Add optional fields if they exist
+                    if "phoneNumberRequirements" in payload:
+                        clean_payload["phoneNumberRequirements"] = payload["phoneNumberRequirements"]
+                    if "activateOnAttach" in payload:
+                        clean_payload["activateOnAttach"] = payload["activateOnAttach"]
+                        
+                    payload = clean_payload
+                    print(f"Using cleaned payload with only endUserId: {payload}")
+                else:
+                    print(f"Using complex payload for line activation (no endUserId found): {payload}")
             else:
                 return {
                     'success': False,
