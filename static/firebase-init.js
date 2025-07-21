@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   }
 });
-} // Close the conditional block
+}
 
 // Register FCM token with server (with deduplication)
 async function registerFCMToken(token) {

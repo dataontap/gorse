@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       console.log("Firebase Auth initialized successfully");
-      
+
       // Mark as initialized to prevent duplicates
       window.firebaseInitialized = true;
 
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
           isProcessingAuth = false;
           updateAuthUI(null, null);
       }
-      
+
       // Reset processing flag after successful processing
       if (user) {
           isProcessingAuth = false;
