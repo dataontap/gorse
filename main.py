@@ -385,7 +385,6 @@ def register_firebase_user():
                         # User exists, return the user ID
                         user_id = existing_user[0]
                         stripe_customer_id = existing_user[1]
-                        print(f"Existing Firebase user found: {user_id} with Stripe customer: {stripe_customer_id}")
 
                         # Update user information if needed
                         cur.execute(
@@ -1290,7 +1289,6 @@ def get_user_data_balance():
             if user_data:
                 user_id = user_data[0]  # Get the actual internal user ID (integer)
                 stripe_customer_id = user_data[3]  # Get Stripe customer ID
-                print(f"Found user {user_id} for Firebase UID {firebase_uid} with Stripe customer {stripe_customer_id}")
             else:
                 return jsonify({
                     'error': 'User not found for Firebase UID',

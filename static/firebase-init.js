@@ -1,3 +1,10 @@
+// Prevent duplicate Firebase init loading
+if (window.firebaseInitLoaded) {
+  console.log("Firebase init script already loaded, skipping...");
+  return;
+}
+window.firebaseInitLoaded = true;
+
 document.addEventListener('DOMContentLoaded', async function() {
   // Firebase configuration - using global Firebase object
   const firebaseConfig = {
@@ -133,10 +140,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 // Register FCM token with server (with deduplication)
 async function registerFCMToken(token) {
     // Prevent duplicate registrations of the same token
-    if (window.lastRegisteredToken === token) {
-        console.log('Token already registered, skipping...');
+    if (window.lastRegisteredToken === token || window.fcmTokenRegistering) {
+        console.log('Token already registered or registration in progress, skipping...');
         return;
     }
+
+    window.fcmTokenRegistering = true;
 
     try {
         const response = await fetch('/api/register-fcm-token', {
@@ -156,6 +165,8 @@ async function registerFCMToken(token) {
         window.lastRegisteredToken = token;
     } catch (error) {
         console.error('Error registering token with server:', error);
+    } finally {
+        window.fcmTokenRegistering = false;
     }
 }
 

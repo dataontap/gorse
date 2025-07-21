@@ -1,6 +1,10 @@
 // Firebase Authentication handler using Firebase SDK v8
 // Global flag to prevent duplicate initialization
-window.firebaseInitialized = window.firebaseInitialized || false;
+if (window.firebaseAuthLoaded) {
+  console.log("Firebase auth script already loaded, skipping...");
+  return;
+}
+window.firebaseAuthLoaded = true;
 
 document.addEventListener('DOMContentLoaded', function() {
   // Prevent duplicate initialization
@@ -172,6 +176,18 @@ document.addEventListener('DOMContentLoaded', function() {
           isProcessingAuth = true;
           console.log('User is signed in:', user.uid);
 
+          // Prevent duplicate registration requests for the same user
+          const registrationKey = `registration_${user.uid}`;
+          if (window.pendingRequests && window.pendingRequests[registrationKey]) {
+            console.log('Registration already in progress for this user, skipping...');
+            isProcessingAuth = false;
+            return;
+          }
+
+          // Mark registration as in progress
+          window.pendingRequests = window.pendingRequests || {};
+          window.pendingRequests[registrationKey] = true;
+
           // Register user in backend and get full user data
           try {
               const response = await fetch('/api/auth/register', {
@@ -189,6 +205,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
               const result = await response.json();
               console.log('User registration result:', result);
+
+              // Clear the pending registration
+              delete window.pendingRequests[registrationKey];
 
               // Get full user data including balance
               const userDataResponse = await fetch(`/api/auth/current-user?firebaseUid=${user.uid}`);

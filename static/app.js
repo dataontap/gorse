@@ -1,3 +1,10 @@
+// Prevent re-initialization and duplicate loading
+if (window.appInitialized) {
+    console.log("App already initialized, skipping...");
+    return;
+}
+window.appInitialized = true;
+
 // Standalone logout function
 function handleLogout(event) {
     if (event) {
