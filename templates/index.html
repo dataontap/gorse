@@ -143,25 +143,20 @@
         </script>
     <script>
         function initializeLandingPage() {
-            if (firebase.auth().currentUser) {
-                firebase.auth().onAuthStateChanged(function(user) {
-                    if (user) {
-                        // User is logged in, redirect to dashboard
-                        console.log('User is already signed in:', user.email);
-                        window.location.href = '/dashboard';
-                    }
-                });
-            } else {
-                // Wait for Firebase to load
-                setTimeout(initializeLandingPage, 100);
+            // Simple check without creating new auth state listeners
+            if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                console.log('User is already signed in, redirecting to dashboard');
+                window.location.href = '/dashboard';
             }
         }
 
-        // Start initialization when page loads
+        // Check auth state only once when page loads
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeLandingPage);
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(initializeLandingPage, 2000); // Wait for Firebase to load
+            });
         } else {
-            initializeLandingPage();
+            setTimeout(initializeLandingPage, 2000);
         }
     </script>
 </html>
