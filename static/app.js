@@ -2023,56 +2023,7 @@ async function loadDOTMBalance() {
     }
 }
 
-// Debug function for OXIO line creation testing
-function debugTestOxioLineCreation() {
-    const firebaseUid = localStorage.getItem('userId');
-    if (!firebaseUid) {
-        alert('Please sign in first to test OXIO line creation');
-        return;
-    }
-
-    console.log('Testing OXIO line creation for user:', firebaseUid);
-    
-    // Show loading state
-    const originalText = event.target.textContent;
-    event.target.textContent = 'Testing...';
-    event.target.disabled = true;
-
-    fetch('/api/create-oxio-user', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            firebaseUid: firebaseUid,
-            firstName: 'Debug',
-            lastName: 'User',
-            email: localStorage.getItem('userEmail') || 'debug@test.com'
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('OXIO user creation result:', data);
-        
-        if (data.success) {
-            alert(`✅ OXIO User Created Successfully!\n\nOXIO User ID: ${data.oxio_user_id}\nUser stored in database with ID: ${data.database_user_id}`);
-        } else {
-            alert(`❌ OXIO User Creation Failed\n\nError: ${data.message || 'Unknown error'}\n\nCheck console for details.`);
-        }
-    })
-    .catch(error => {
-        console.error('Error testing OXIO line creation:', error);
-        alert(`❌ Request Failed\n\nError: ${error.message}\n\nCheck console for details.`);
-    })
-    .finally(() => {
-        // Restore button state
-        event.target.textContent = originalText;
-        event.target.disabled = false;
-    });
-}
-
 // Make functions globally available
-window.debugTestOxioLineCreation = debugTestOxioLineCreation;
 window.showAddUserPopup = showAddUserPopup;
 window.hideAddUserPopup = hideAddUserPopup;
 window.loadInvitesList = loadInvitesList;
@@ -2117,23 +2068,13 @@ function initializeCarousel() {
         return;
     }
 
-    console.log('Initializing carousel on dashboard page');
-
-    // Force populate offers immediately
-    populateOfferCards();
-    
-    // Initialize card stack
-    setTimeout(() => {
-        initializeCardStack();
-    }, 300);
-
-    // Also check if offers section exists and retry if needed
+    // Check if offers section exists, if not wait a bit
     const offersSection = document.querySelector('.offers-section');
     if (!offersSection) {
-        console.log('Offers section not found, will retry...');
-        // Try again with shorter intervals
+        console.log('Offers section not found, waiting...');
+        // Try again with longer intervals to avoid spam
         let attempts = 0;
-        const maxAttempts = 5;
+        const maxAttempts = 10;
         const checkInterval = setInterval(() => {
             attempts++;
             const section = document.querySelector('.offers-section');
@@ -2149,8 +2090,17 @@ function initializeCarousel() {
                     console.log('Offers section not found after maximum attempts');
                 }
             }
-        }, 500);
+        }, 1000);
+        return;
     }
+
+    // Wait for subscription status to be loaded
+    setTimeout(() => {
+        populateOfferCards();
+        setTimeout(() => {
+            initializeCardStack();
+        }, 200);
+    }, 100);
 }
 
 // Global variables for card stack
@@ -2167,8 +2117,6 @@ function populateOfferCards() {
         console.log('Offers section not found');
         return;
     }
-
-    console.log('Populating offer cards...');
 
     // Define all possible offers
     const allOffers = [
@@ -2215,25 +2163,14 @@ function populateOfferCards() {
     // Filter offers based on conditions and dismissal status
     const availableOffers = allOffers.filter(offer => {
         // Check if offer is dismissed
-        if (dismissedOffers.includes(offer.id)) {
-            console.log(`Offer ${offer.id} is dismissed`);
-            return false;
-        }
+        if (dismissedOffers.includes(offer.id)) return false;
 
-        if (offer.alwaysShow) {
-            console.log(`Offer ${offer.id} always shows`);
-            return true;
-        }
-        if (offer.showCondition) {
-            const shouldShow = offer.showCondition();
-            console.log(`Offer ${offer.id} condition result:`, shouldShow);
-            return shouldShow;
-        }
-        console.log(`Offer ${offer.id} default show`);
+        if (offer.alwaysShow) return true;
+        if (offer.showCondition) return offer.showCondition();
         return true;
     });
 
-    console.log('Available offers:', availableOffers.length, availableOffers.map(o => o.id));
+    console.log('Available offers:', availableOffers.length);
 
     // Handle case when all offers are dismissed
     if (availableOffers.length === 0) {
@@ -2661,11 +2598,7 @@ function clearDismissedOffers() {
 window.clearDismissedOffers = clearDismissedOffers;
 
 function shouldShowBasicMembership() {
-    // Always show if no subscription data loaded yet
-    if (!currentSubscriptionStatus) {
-        console.log('No subscription status loaded yet - showing basic membership offer');
-        return true;
-    }
+    if (!currentSubscriptionStatus) return true;
 
     // Don't show if user has active basic membership with more than 7 days remaining
     if (currentSubscriptionStatus.status === 'active' && 
@@ -2681,8 +2614,6 @@ function shouldShowBasicMembership() {
         }
     }
 
-    // Show for users with no subscription or expired subscription
-    console.log('User has no active basic membership - showing basic membership offer');
     return true;
 }
 
