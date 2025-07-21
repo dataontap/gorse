@@ -9,21 +9,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
 
-    <!-- Firebase v8 SDK (Backward Compatible) - Load only once -->
-    <script>
-      // Prevent duplicate Firebase SDK loading
-      if (!window.firebaseSDKLoaded) {
-        window.firebaseSDKLoaded = true;
-        document.write('<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"><\/script>');
-        document.write('<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"><\/script>');
-        document.write('<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"><\/script>');
-      }
-    </script>
-
-    <!-- Firebase Configuration Scripts - Load only once -->
+    <!-- Firebase v8 SDK (Backward Compatible) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    
+    <!-- Firebase Configuration Scripts -->
     <script>
       window.CURRENT_KEY = "{{ current_key }}";
       window.FIREBASE_API_KEY = "{{ firebase_api_key }}";
+      window.firebaseSDKLoaded = true;
     </script>
     <script src="/static/firebase-init.js"></script>
     <script src="/static/firebase-auth.js"></script>
@@ -150,12 +144,5 @@
             setTimeout(initializeLandingPage, 2000);
         }
     </script>
-    <!-- Firebase Messaging initialization will happen ONLY after user login -->
-        <script>
-          // Firebase messaging initialization will be handled ONLY after authentication
-          document.addEventListener('DOMContentLoaded', function() {
-            console.log('Page loaded - Firebase messaging will initialize ONLY after login');
-            // Do NOT call any messaging functions here
-          });
-        </script>
+    <!-- Firebase Messaging will initialize ONLY after authentication -->
 </html>

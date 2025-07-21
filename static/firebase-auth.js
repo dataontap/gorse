@@ -2,26 +2,11 @@
 // Global flag to prevent duplicate initialization with stronger checks
 if (window.firebaseAuthLoaded || window.firebaseAuthLoading) {
   console.log("Firebase auth script already loaded or loading, skipping...");
-  return;
 } else {
   window.firebaseAuthLoaded = true;
   window.firebaseAuthLoading = true;
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Wait for Firebase to be initialized
-  if (window.firebaseInitialized === false) {
-    console.log("Waiting for Firebase to initialize...");
-    setTimeout(() => {
-      if (window.firebaseInitialized) {
-        initializeAuth();
-      }
-    }, 1000);
-    return;
-  } else if (window.firebaseInitialized) {
-    initializeAuth();
-    return;
-  }
-
   function initializeAuth() {
 
   console.log("Firebase auth script loading...");
@@ -907,7 +892,19 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   // Start the initialization process
-    initializeFirebaseAuth();
+  initializeFirebaseAuth();
   } // Close initializeAuth function
+
+  // Wait for Firebase to be initialized
+  if (window.firebaseInitialized === false) {
+    console.log("Waiting for Firebase to initialize...");
+    setTimeout(() => {
+      if (window.firebaseInitialized) {
+        initializeAuth();
+      }
+    }, 1000);
+  } else if (window.firebaseInitialized) {
+    initializeAuth();
+  }
 });
 } // Close the conditional block
