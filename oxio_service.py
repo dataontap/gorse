@@ -61,11 +61,11 @@ class OXIOService:
                         'message': 'OXIO user ID is required for line activation'
                     }
 
-                # Create simplified payload with only OXIO user ID
+                # Create simplified payload with only OXIO user ID (no ICCID)
                 payload = {
                     "lineType": "LINE_TYPE_MOBILITY",
                     "countryCode": "US",
-                    "sim": { "simType": "EMBEDDED" },
+                    "sim": { "simType": "EMBEDDED" },  # No ICCID included
                     "endUserId": oxio_user_id
                 }
             elif isinstance(oxio_user_id_or_payload, dict):
@@ -79,19 +79,19 @@ class OXIOService:
                     print(f"OXIO user ID found in complex payload: {oxio_user_id}")
                     print("Removing email and user details since endUserId is provided")
                     
-                    # Create clean payload with only endUserId - no email or other user details
+                    # Create clean payload with only endUserId - no email, ICCID, or area code
                     clean_payload = {
                         "lineType": payload.get("lineType", "LINE_TYPE_MOBILITY"),
                         "countryCode": payload.get("countryCode", "US"),
-                        "sim": payload.get("sim", {"simType": "EMBEDDED"}),
+                        "sim": {"simType": "EMBEDDED"},  # Remove ICCID, keep only simType
                         "endUserId": oxio_user_id  # Use endUserId directly, not in endUser object
                     }
                     
-                    # Add optional fields if they exist
-                    if "phoneNumberRequirements" in payload:
-                        clean_payload["phoneNumberRequirements"] = payload["phoneNumberRequirements"]
+                    # Add optional fields if they exist (but exclude phoneNumberRequirements)
                     if "activateOnAttach" in payload:
                         clean_payload["activateOnAttach"] = payload["activateOnAttach"]
+                    
+                    print(f"Excluded ICCID and preferredAreaCode from payload")
                         
                     payload = clean_payload
                     print(f"Using cleaned payload with only endUserId: {payload}")
