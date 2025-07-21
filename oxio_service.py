@@ -36,12 +36,12 @@ class OXIOService:
             'User-Agent': 'DOTM-Platform/1.0'
         }
 
-    def activate_line(self, oxio_user_id: str) -> Dict[str, Any]:
+    def activate_line(self, oxio_user_id_or_payload) -> Dict[str, Any]:
         """
-        Activate a line using simplified OXIO API payload with only OXIO user ID
+        Activate a line using OXIO API
 
         Args:
-            oxio_user_id: OXIO user ID for line activation
+            oxio_user_id_or_payload: Either a simple OXIO user ID string, or a complex payload dict
 
         Returns:
             API response as dictionary
@@ -50,21 +50,34 @@ class OXIOService:
             url = f"{self.base_url}/v3/lines/line"
             headers = self.get_headers()
 
-            # Validate that OXIO user ID is provided
-            if not oxio_user_id:
+            # Handle both simple OXIO user ID and complex payload
+            if isinstance(oxio_user_id_or_payload, str):
+                # Simple case: just OXIO user ID provided
+                oxio_user_id = oxio_user_id_or_payload
+                if not oxio_user_id:
+                    return {
+                        'success': False,
+                        'error': 'Missing OXIO user ID',
+                        'message': 'OXIO user ID is required for line activation'
+                    }
+
+                # Create simplified payload with only OXIO user ID
+                payload = {
+                    "lineType": "LINE_TYPE_MOBILITY",
+                    "countryCode": "US",
+                    "sim": { "simType": "EMBEDDED" },
+                    "endUserId": oxio_user_id
+                }
+            elif isinstance(oxio_user_id_or_payload, dict):
+                # Complex case: full payload provided (legacy support)
+                payload = oxio_user_id_or_payload
+                print(f"Using complex payload for line activation: {payload}")
+            else:
                 return {
                     'success': False,
-                    'error': 'Missing OXIO user ID',
-                    'message': 'OXIO user ID is required for line activation'
+                    'error': 'Invalid parameter type',
+                    'message': 'Parameter must be either OXIO user ID string or payload dict'
                 }
-
-            # Create simplified payload as requested - only these 4 fields
-            payload = {
-                "lineType": "LINE_TYPE_MOBILITY",
-                "countryCode": "US",
-                "sim": { "simType": "EMBEDDED" },
-                "endUserId": oxio_user_id
-            }
 
             print(f"OXIO API Request URL: {url}")
             print(f"OXIO API Request Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
