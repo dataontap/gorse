@@ -69,16 +69,41 @@ window.toggleTheme = toggleTheme;
 
 // Global menu toggle functionality
 function toggleMenu(element) {
-    const dropdown = element.querySelector('.menu-dropdown');
+    console.log('toggleMenu called with element:', element);
+    
+    // Find the dropdown within the clicked element
+    let dropdown = element.querySelector('.menu-dropdown');
+    
+    // If not found within the element, try finding it as a sibling
+    if (!dropdown) {
+        dropdown = element.parentElement.querySelector('.menu-dropdown');
+    }
+    
+    // If still not found, try finding it globally
+    if (!dropdown) {
+        dropdown = document.querySelector('.menu-dropdown');
+    }
+    
+    console.log('Found dropdown:', dropdown);
+    
     if (dropdown) {
-        // Handle both class-based and display-based toggles
-        if (dropdown.classList.contains('visible') || dropdown.style.display === 'block') {
+        const isVisible = dropdown.classList.contains('visible') || 
+                        dropdown.style.display === 'block' || 
+                        getComputedStyle(dropdown).display === 'block';
+        
+        console.log('Dropdown is currently visible:', isVisible);
+        
+        if (isVisible) {
             dropdown.classList.remove('visible');
             dropdown.style.display = 'none';
+            console.log('Hiding dropdown');
         } else {
             dropdown.classList.add('visible');
             dropdown.style.display = 'block';
+            console.log('Showing dropdown');
         }
+    } else {
+        console.error('Menu dropdown not found');
     }
 }
 
