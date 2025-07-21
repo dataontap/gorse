@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 } // Close Firebase init conditional
 
-// Initialize Firebase messaging for authenticated users only
+// Initialize Firebase messaging for authenticated users only - DO NOT CALL AUTOMATICALLY
 async function initializeFirebaseMessaging() {
   if (window.messagingInitialized) {
     console.log('Firebase messaging already initialized');

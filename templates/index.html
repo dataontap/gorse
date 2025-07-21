@@ -27,7 +27,7 @@
         window.configScriptsLoaded = true;
         window.CURRENT_KEY = "{{ current_key }}";
         window.FIREBASE_API_KEY = "{{ firebase_api_key }}";
-        
+
         // Load Firebase config scripts only once
         var initScript = document.createElement('script');
         initScript.src = '/static/firebase-init.js';
@@ -162,4 +162,12 @@
             setTimeout(initializeLandingPage, 2000);
         }
     </script>
+    <!-- Firebase Messaging initialization will happen ONLY after user login -->
+        <script>
+          // Firebase messaging initialization will be handled ONLY after authentication
+          document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded - Firebase messaging will initialize ONLY after login');
+            // Do NOT call any messaging functions here
+          });
+        </script>
 </html>

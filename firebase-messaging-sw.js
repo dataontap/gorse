@@ -1,7 +1,10 @@
 
-// Firebase service worker for background messaging
+// Firebase service worker for background messaging - ONLY for authenticated users
 self.importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
 self.importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+
+// Log service worker activation
+console.log('Firebase messaging service worker loaded - should only be active for authenticated users');
 
 // Default Firebase configuration (API key will be set via message)
 let firebaseConfig = {
