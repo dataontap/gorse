@@ -1253,8 +1253,6 @@ def get_user_by_firebase_uid(firebase_uid):
                         (firebase_uid,)
                     )
                     user_data = cur.fetchone()
-                    if user_data:
-                        print(f"get_user_by_firebase_uid debug: Found user {user_data[0]} with oxio_user_id: {user_data[7]}, eth_address: {user_data[8]}")
                     return user_data
         return None
     except Exception as e:
@@ -1334,10 +1332,9 @@ def get_user_data_balance():
                         """, (user_id, firebase_uid))
 
                         result = cur.fetchone()
-                        print(f"Debug: SQL result = {result}")
                         
                         # Safely extract values with proper validation and handle None results
-                        if result and result[0] is not None:
+                        if result and len(result) >= 3:
                             global_data_cents = int(result[0]) if result[0] is not None else 0
                             total_data_cents = int(result[1]) if result[1] is not None else 0
                             total_purchases = int(result[2]) if result[2] is not None else 0
