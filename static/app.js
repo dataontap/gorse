@@ -2092,8 +2092,8 @@ function populateOfferCards() {
         },
         {
             id: 'full_membership',
-            title: 'Global Talk + Text Service',
-            description: ['Get the good old voice service and Canadian #', 'Unlimited North America Talk + Text (incl. RCS)', 'Global access to Calling + Texting through Wi-Fi', 'Select brand new or Port own number'],
+            title: 'Unlimited Talk + Text',
+            description: ['North America Talk + Text (SMS + RCS, no MMS)', 'Global access to Calling + Texting through Wi-Fi', 'Select brand new or Port your own CAN number', 'Yearly service (use as is or with the mobile data)'],
             price: '$66/year',
             buttonText: 'Coming Soon',
             buttonClass: 'btn-secondary',
