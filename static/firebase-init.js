@@ -2,7 +2,7 @@
 if (window.firebaseInitLoaded) {
   console.log("Firebase init script already loaded, skipping...");
 } else {
-window.firebaseInitLoaded = true;
+  window.firebaseInitLoaded = true;
 
 document.addEventListener('DOMContentLoaded', async function() {
   // Single Firebase configuration
