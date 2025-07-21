@@ -2092,8 +2092,8 @@ function populateOfferCards() {
         },
         {
             id: 'full_membership',
-            title: 'Full Service',
-            description: ['North America Talk + Text (RCS)', 'Wi-Fi Calling Access Globally', 'Satellite TXT (& E9-1-1)', 'Access GLOBAL DATA @ $1 a GIG'],
+            title: 'Global Talk + Text Service',
+            description: ['Get the good old voice service and Canadian #', 'Unlimited North America Talk + Text (incl. RCS)', 'Global access to Calling + Texting through Wi-Fi', 'Select brand new or Port own number'],
             price: '$66/year',
             buttonText: 'Coming Soon',
             buttonClass: 'btn-secondary',
