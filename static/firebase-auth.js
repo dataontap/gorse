@@ -2,41 +2,32 @@
 // Global flag to prevent duplicate initialization
 if (window.firebaseAuthLoaded) {
   console.log("Firebase auth script already loaded, skipping...");
+  // Exit early by wrapping the rest in a conditional
 } else {
 window.firebaseAuthLoaded = true;
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Wait for Firebase to be initialized
-  if (window.firebaseInitialized === false) {
-    console.log("Waiting for Firebase to initialize...");
-    setTimeout(() => {
-      if (window.firebaseInitialized) {
-        initializeAuth();
-      }
-    }, 1000);
-    return;
-  } else if (window.firebaseInitialized) {
-    initializeAuth();
+  // Prevent duplicate initialization
+  if (window.firebaseInitialized) {
+    console.log("Firebase already initialized, skipping...");
     return;
   }
 
-  function initializeAuth() {
-
   console.log("Firebase auth script loading...");
 
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
-      authDomain: "gorse-24e76.firebaseapp.com",
-      projectId: "gorse-24e76",
-      storageBucket: "gorse-24e76.appspot.com",
-      messagingSenderId: "212829848250",
-      appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
-      measurementId: "G-WHW3XT925P"
-    };
+  // Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
+    authDomain: "gorse-24e76.firebaseapp.com",
+    projectId: "gorse-24e76",
+    storageBucket: "gorse-24e76.appspot.com",
+    messagingSenderId: "212829848250",
+    appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
+    measurementId: "G-WHW3XT925P"
+  };
 
-    let initAttempts = 0;
-    const maxAttempts = 10;
+  let initAttempts = 0;
+  const maxAttempts = 10;
 
   // Wait for Firebase SDK to load with proper error handling
   function initializeFirebaseAuth() {
@@ -890,7 +881,6 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   // Start the initialization process
-    initializeFirebaseAuth();
-  } // Close initializeAuth function
+  initializeFirebaseAuth();
 });
 } // Close the conditional block
