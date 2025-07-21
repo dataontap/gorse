@@ -1304,7 +1304,7 @@ body.light-mode {
     top: 60px;
     overflow: hidden;
     max-width: 250px;
-    background: rgba(50, 50, 50, 0.95);
+    background: rgba(40, 40, 40, 0.95);
     backdrop-filter: blur(5px);
     border-radius: 8px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
