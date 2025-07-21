@@ -161,14 +161,21 @@
         <!-- Custom Activation Test -->
         <div class="test-section">
             <h2>4. Test Custom Line Activation</h2>
-            <p>Test with the new simplified payload format (no brandID or ICCID required):</p>
+            <p>Test line activation with custom payload.</p>
             <textarea id="activation-payload" class="payload-editor" placeholder="Enter JSON payload here...">{
   "lineType": "LINE_TYPE_MOBILITY",
-  "countryCode": "US",
   "sim": {
-    "simType": "EMBEDDED"
+    "simType": "EMBEDDED",
+    "iccid": "8910650420001501340F"
   },
-  "endUserId": "your-oxio-user-id"
+  "endUser": {
+    "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
+  },
+  "phoneNumberRequirements": {
+    "preferredAreaCode": "212"
+  },
+  "countryCode": "US",
+  "activateOnAttach": false
 }</textarea>
             <button class="test-button" onclick="testCustomActivation()">Test Custom Activation</button>
             <div id="custom-result" class="result-box"></div>
