@@ -1997,6 +1997,108 @@ class TokenBalance(Resource):
                 'note': 'Demo mode'
             }
 
+
+@app.route('/api/create-oxio-user', methods=['POST'])
+def create_oxio_user_endpoint():
+    """Create an OXIO user for testing purposes"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid')
+        first_name = data.get('firstName', 'Anonymous')
+        last_name = data.get('lastName', 'User')
+        email = data.get('email')
+
+        if not firebase_uid:
+            return jsonify({
+                'success': False,
+                'message': 'Firebase UID is required'
+            }), 400
+
+        print(f"Creating OXIO user for Firebase UID: {firebase_uid}")
+
+        # Create OXIO user
+        result = oxio_service.create_oxio_user(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            firebase_uid=firebase_uid
+        )
+
+        print(f"OXIO user creation result: {result}")
+
+        if result['success']:
+            # Store the OXIO user ID in our database
+            oxio_user_id = result.get('oxio_user_id')
+            
+            if oxio_user_id:
+                try:
+                    with get_db_connection() as conn:
+                        with conn.cursor() as cur:
+                            # Update the user record with OXIO user ID
+                            cur.execute("""
+                                UPDATE users 
+                                SET oxio_user_id = %s 
+                                WHERE firebase_uid = %s
+                            """, (oxio_user_id, firebase_uid))
+                            
+                            # Get the updated user record
+                            cur.execute("""
+                                SELECT user_id, email, oxio_user_id 
+                                FROM users 
+                                WHERE firebase_uid = %s
+                            """, (firebase_uid,))
+                            
+                            user_record = cur.fetchone()
+                            
+                        conn.commit()
+                        
+                        if user_record:
+                            return jsonify({
+                                'success': True,
+                                'message': 'OXIO user created and stored successfully',
+                                'oxio_user_id': oxio_user_id,
+                                'database_user_id': user_record[0],
+                                'email': user_record[1],
+                                'firebase_uid': firebase_uid,
+                                'oxio_response': result
+                            })
+                        else:
+                            return jsonify({
+                                'success': False,
+                                'message': 'User not found in database',
+                                'oxio_user_id': oxio_user_id,
+                                'oxio_response': result
+                            })
+                            
+                except Exception as db_error:
+                    print(f"Database error storing OXIO user ID: {str(db_error)}")
+                    return jsonify({
+                        'success': False,
+                        'message': f'OXIO user created but failed to store in database: {str(db_error)}',
+                        'oxio_user_id': oxio_user_id,
+                        'oxio_response': result
+                    })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'OXIO user created but no user ID returned',
+                    'oxio_response': result
+                })
+        else:
+            return jsonify({
+                'success': False,
+                'message': result.get('message', 'Failed to create OXIO user'),
+                'error': result.get('error'),
+                'oxio_response': result
+            })
+
+    except Exception as e:
+        print(f"Error in create_oxio_user_endpoint: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Server error: {str(e)}'
+        }), 500
+
 @token_ns.route('/founding-token')
 class FoundingToken(Resource):
     def post(self):
