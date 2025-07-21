@@ -425,11 +425,17 @@ def register_firebase_user():
                         # Create OXIO user first
                         oxio_user_id = None
                         try:
-                            print(f"Creating OXIO user for Firebase UID: {firebase_uid}")
+                            print(f"=== CREATING OXIO USER ===")
+                            print(f"Firebase UID: {firebase_uid}")
+                            print(f"Email: {email}")
+                            print(f"Display Name: {display_name}")
+                            
                             # Parse display_name to get first and last name
                             name_parts = (display_name or "Anonymous Anonymous").split(' ', 1)
                             first_name = name_parts[0] if name_parts else "Anonymous"
                             last_name = name_parts[1] if len(name_parts) > 1 else "Anonymous"
+                            
+                            print(f"Parsed names - First: {first_name}, Last: {last_name}")
                             
                             oxio_result = oxio_service.create_oxio_user(
                                 first_name=first_name,
@@ -440,11 +446,18 @@ def register_firebase_user():
                             
                             if oxio_result.get('success'):
                                 oxio_user_id = oxio_result.get('oxio_user_id')
-                                print(f"Successfully created OXIO user: {oxio_user_id}")
+                                print(f"✅ OXIO USER CREATED SUCCESSFULLY!")
+                                print(f"🆔 OXIO User ID: {oxio_user_id}")
+                                print(f"📧 Email: {email}")
+                                print(f"🔥 Firebase UID: {firebase_uid}")
+                                print(f"========================")
                             else:
-                                print(f"Failed to create OXIO user: {oxio_result.get('message', 'Unknown error')}")
+                                print(f"❌ FAILED to create OXIO user: {oxio_result.get('message', 'Unknown error')}")
+                                print(f"Error details: {oxio_result}")
                         except Exception as oxio_err:
-                            print(f"Error creating OXIO user: {str(oxio_err)}")
+                            print(f"❌ ERROR creating OXIO user: {str(oxio_err)}")
+                            import traceback
+                            traceback.print_exc()
 
                         cur.execute(
                             """INSERT INTO users 
@@ -455,7 +468,15 @@ def register_firebase_user():
                         )
                         user_id = cur.fetchone()[0]
                         conn.commit()
-                        print(f"New Firebase user created: {user_id} with Sepolia wallet: {test_account.address} and OXIO user ID: {oxio_user_id}")
+                        
+                        print(f"🎉 NEW USER CREATED SUCCESSFULLY!")
+                        print(f"👤 User ID: {user_id}")
+                        print(f"📧 Email: {email}")
+                        print(f"🔥 Firebase UID: {firebase_uid}")
+                        print(f"💼 Display Name: {display_name}")
+                        print(f"💰 ETH Address: {test_account.address}")
+                        print(f"🆔 OXIO User ID: {oxio_user_id or 'Not created'}")
+                        print(f"=============================")
 
                         # Award 1 DOTM token to new member
                         try:
@@ -3514,6 +3535,102 @@ def debug_user_creation_status(firebase_uid):
             'status': 'error',
             'message': str(e),
             'firebase_uid': firebase_uid
+        }), 500
+
+@app.route('/api/debug/user-by-email/<email>', methods=['GET'])
+def debug_user_by_email(email):
+    """Debug endpoint to check user data by email address"""
+    try:
+        print(f"=== DEBUG: Checking user data for email: {email} ===")
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get user data by email
+                    cur.execute("""
+                        SELECT id, email, firebase_uid, display_name, stripe_customer_id, 
+                               oxio_user_id, eth_address, created_at
+                        FROM users 
+                        WHERE email = %s
+                    """, (email,))
+                    user_data = cur.fetchone()
+                    
+                    if user_data:
+                        user_info = {
+                            'status': 'found',
+                            'user_id': user_data[0],
+                            'email': user_data[1],
+                            'firebase_uid': user_data[2],
+                            'display_name': user_data[3],
+                            'stripe_customer_id': user_data[4],
+                            'oxio_user_id': user_data[5],
+                            'eth_address': user_data[6],
+                            'created_at': user_data[7].isoformat() if user_data[7] else None
+                        }
+                        
+                        print(f"=== FOUND USER DATA ===")
+                        print(f"User ID: {user_info['user_id']}")
+                        print(f"Email: {user_info['email']}")
+                        print(f"Firebase UID: {user_info['firebase_uid']}")
+                        print(f"OXIO User ID: {user_info['oxio_user_id']}")
+                        print(f"ETH Address: {user_info['eth_address']}")
+                        print(f"======================")
+                        
+                        # Get subscription status
+                        cur.execute("""
+                            SELECT subscription_type, status, start_date, end_date
+                            FROM subscriptions 
+                            WHERE user_id = %s 
+                            ORDER BY created_at DESC LIMIT 1
+                        """, (user_data[0],))
+                        subscription = cur.fetchone()
+                        
+                        if subscription:
+                            user_info['subscription'] = {
+                                'type': subscription[0],
+                                'status': subscription[1],
+                                'start_date': subscription[2].isoformat() if subscription[2] else None,
+                                'end_date': subscription[3].isoformat() if subscription[3] else None
+                            }
+                        else:
+                            user_info['subscription'] = {'status': 'none'}
+                        
+                        # Get recent purchases
+                        cur.execute("""
+                            SELECT StripeProductID, TotalAmount, DateCreated
+                            FROM purchases 
+                            WHERE UserID = %s OR FirebaseUID = %s
+                            ORDER BY DateCreated DESC LIMIT 5
+                        """, (user_data[0], user_data[2]))
+                        purchases = cur.fetchall()
+                        
+                        user_info['recent_purchases'] = []
+                        for purchase in purchases:
+                            user_info['recent_purchases'].append({
+                                'product_id': purchase[0],
+                                'amount': purchase[1],
+                                'date': purchase[2].isoformat() if purchase[2] else None
+                            })
+                        
+                        return jsonify(user_info)
+                    else:
+                        print(f"=== USER NOT FOUND ===")
+                        print(f"Email: {email}")
+                        print(f"=====================")
+                        return jsonify({
+                            'status': 'not_found',
+                            'email': email,
+                            'message': 'User not found with this email'
+                        }), 404
+        
+        return jsonify({'status': 'error', 'message': 'Database connection failed'}), 500
+        
+    except Exception as e:
+        print(f"Error in debug user by email: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'email': email
         }), 500
 
 @app.route('/db-test', methods=['GET'])
