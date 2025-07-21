@@ -2,7 +2,7 @@
 if (window.firebaseInitLoaded) {
   console.log("Firebase init script already loaded, skipping...");
 } else {
-  window.firebaseInitLoaded = true;
+window.firebaseInitLoaded = true;
 
 document.addEventListener('DOMContentLoaded', async function() {
   // Single Firebase configuration
@@ -16,19 +16,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     measurementId: "G-WHW3XT925P"
   };
 
-  // Initialize Firebase only once globally - CORE ONLY
+  // Initialize Firebase only once globally
   if (typeof firebase !== 'undefined' && !window.firebaseInitialized) {
     try {
       // Check if Firebase is already initialized
       if (firebase.apps.length === 0) {
         const app = firebase.initializeApp(firebaseConfig);
-        console.log("Firebase core initialized successfully");
+        console.log("Firebase initialized successfully");
         window.firebaseInitialized = true;
       } else {
         console.log("Firebase already initialized, using existing app");
         window.firebaseInitialized = true;
       }
-      // Only initialize auth, NOT messaging
       const auth = firebase.auth();
     } catch (error) {
       if (error.code === 'app/duplicate-app') {
@@ -42,55 +41,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.error("Firebase SDK not loaded");
   }
 
-  console.log('Firebase core initialized. FCM will ONLY initialize after successful login.');
-});
-} // Close Firebase init conditional
-
-// Initialize Firebase messaging for authenticated users only - DO NOT CALL AUTOMATICALLY
-async function initializeFirebaseMessaging() {
-  if (window.messagingInitialized) {
-    console.log('Firebase messaging already initialized');
-    return;
-  }
-
-  // CRITICAL: Multiple checks to ensure user is authenticated
-  if (!firebase) {
-    console.log('Firebase not loaded, skipping FCM initialization');
-    return;
-  }
-  
-  if (!firebase.auth) {
-    console.log('Firebase auth not loaded, skipping FCM initialization');
-    return;
-  }
-  
-  const currentUser = firebase.auth().currentUser;
-  if (!currentUser) {
-    console.log('User not authenticated, skipping FCM initialization');
-    return;
-  }
-  
-  console.log('FCM initialization approved for authenticated user:', currentUser.uid);
-
   try {
-    console.log('Starting FCM initialization for authenticated user:', firebase.auth().currentUser.uid);
-    
-    // Initialize Firebase Cloud Messaging only if supported and user is authenticated
+    // Initialize Firebase Cloud Messaging only if supported
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       // Dynamically import Firebase modules
       const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
       const { getMessaging, getToken, onMessage } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js');
-
-      // Get Firebase config
-      const firebaseConfig = {
-        apiKey: window.CURRENT_KEY || "AIzaSyA1dLC68va6gRSyCA4kDQqH1ZWjFkyLivY",
-        authDomain: "gorse-24e76.firebaseapp.com",
-        projectId: "gorse-24e76",
-        storageBucket: "gorse-24e76.appspot.com",
-        messagingSenderId: "212829848250",
-        appId: "1:212829848250:web:e1e7c3b584e4bb537e3883",
-        measurementId: "G-WHW3XT925P"
-      };
 
       // Initialize Firebase
       const app = initializeApp(firebaseConfig);
@@ -101,7 +57,7 @@ async function initializeFirebaseMessaging() {
         scope: '/'
       });
 
-      console.log('Service worker registered successfully for authenticated user');
+      console.log('Service worker registered successfully');
 
       // Wait for service worker to be ready
       await navigator.serviceWorker.ready;
@@ -117,7 +73,7 @@ async function initializeFirebaseMessaging() {
         });
 
         if (currentToken) {
-          console.log('FCM token for authenticated user:', currentToken);
+          console.log('FCM token:', currentToken);
           // Send token to server for targeting this device
           registerFCMToken(currentToken);
           // Show success message to user
@@ -127,10 +83,9 @@ async function initializeFirebaseMessaging() {
           showNotificationStatus('Failed to get notification token. Please try again.');
         }
       } else {
-        console.log('Notification permission denied');
+        throw new Error('Notification permission denied');
       }
-
-      // Handle foreground messages
+        // Handle foreground messages
       onMessage(messaging, (payload) => {
         console.log('Message received in foreground: ', payload);
 
@@ -167,9 +122,6 @@ async function initializeFirebaseMessaging() {
         showInAppNotification(title, body);
       });
 
-      window.messagingInitialized = true;
-      console.log('Firebase messaging initialized successfully for authenticated user');
-
     } else {
       console.log('Firebase messaging not supported in this browser');
       showNotificationStatus('Push notifications are not supported in this browser.');
@@ -192,11 +144,12 @@ async function initializeFirebaseMessaging() {
     } else {
       showNotificationStatus('Error setting up notifications: ' + err.message);
     }
-  }
-}
-
-// Make this function globally available
-window.initializeFirebaseMessaging = initializeFirebaseMessaging;
+  } finally {
+      // Mark initialization as complete
+      window.firebaseInitializing = false;
+    }
+});
+} // Close Firebase init conditional
 
 // Register FCM token with server (with deduplication)
 async function registerFCMToken(token) {

@@ -2,11 +2,26 @@
 // Global flag to prevent duplicate initialization with stronger checks
 if (window.firebaseAuthLoaded || window.firebaseAuthLoading) {
   console.log("Firebase auth script already loaded or loading, skipping...");
+  return;
 } else {
   window.firebaseAuthLoaded = true;
   window.firebaseAuthLoading = true;
 
 document.addEventListener('DOMContentLoaded', function() {
+  // Wait for Firebase to be initialized
+  if (window.firebaseInitialized === false) {
+    console.log("Waiting for Firebase to initialize...");
+    setTimeout(() => {
+      if (window.firebaseInitialized) {
+        initializeAuth();
+      }
+    }, 1000);
+    return;
+  } else if (window.firebaseInitialized) {
+    initializeAuth();
+    return;
+  }
+
   function initializeAuth() {
 
   console.log("Firebase auth script loading...");
@@ -151,8 +166,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setupFallbackAuthFunctions();
   }
 
-  // setupAuthStateListener function will be called from the main initialization
-
   function setupAuthStateListener() {
     // Prevent multiple auth state listeners
     if (window.authStateListenerSetup) {
@@ -272,11 +285,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                   // Update UI with real user data
                   updateAuthUI(user, currentUserData);
-
-                 // Initialize Firebase messaging ONLY after successful login - DISABLED for now
-                 // FCM will be enabled later once authentication is fully stable
-                 console.log('FCM initialization skipped - authentication stabilization in progress');
-
               } else {
                   console.error('Failed to get user data:', userData);
                   // Fallback to basic Firebase data
@@ -576,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             console.log('User signed out successfully and all data cleared');
 
-            // Redirect to home page after logout
+            // Redirect to home page after logout  
             window.location.replace('/');
           })
           .catch((error) => {
@@ -867,7 +875,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return window.firebaseAuth.signInWithGoogle();
     } else {
       console.error('Firebase auth not available');
-            alert('Authentication service not available. Please refresh the page and try again.');
+      alert('Authentication service not available. Please refresh the page and try again.');
       return Promise.reject(new Error('Authentication service not available'));
     }
   };
@@ -884,19 +892,7 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   // Start the initialization process
-  initializeFirebaseAuth();
+    initializeFirebaseAuth();
   } // Close initializeAuth function
-
-  // Wait for Firebase to be initialized
-  if (window.firebaseInitialized === false) {
-    console.log("Waiting for Firebase to initialize...");
-    setTimeout(() => {
-      if (window.firebaseInitialized) {
-        initializeAuth();
-      }
-    }, 1000);
-  } else if (window.firebaseInitialized) {
-    initializeAuth();
-  }
 });
 } // Close the conditional block

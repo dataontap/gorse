@@ -9,18 +9,51 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
 
-    <!-- Firebase v8 SDK (Backward Compatible) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    
-    <!-- Firebase Configuration Scripts -->
+    <!-- Firebase v8 SDK (Backward Compatible) - Load only once -->
     <script>
-      window.CURRENT_KEY = "{{ current_key }}";
-      window.FIREBASE_API_KEY = "{{ firebase_api_key }}";
-      window.firebaseSDKLoaded = true;
+      // Prevent duplicate Firebase SDK loading
+      if (!window.firebaseSDKLoaded) {
+        window.firebaseSDKLoaded = true;
+        document.write('<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"><\/script>');
+        document.write('<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"><\/script>');
+        document.write('<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"><\/script>');
+      }
     </script>
-    <script src="/static/firebase-init.js"></script>
-    <script src="/static/firebase-auth.js"></script>
+
+    <!-- Firebase Configuration Scripts - Load only once -->
+    <script>
+      // Prevent duplicate script loading
+      if (!window.configScriptsLoaded) {
+        window.configScriptsLoaded = true;
+        window.CURRENT_KEY = "{{ current_key }}";
+        window.FIREBASE_API_KEY = "{{ firebase_api_key }}";
+        
+        // Load Firebase config scripts only once
+        var initScript = document.createElement('script');
+        initScript.src = '/static/firebase-init.js';
+        initScript.onload = function() {
+          var authScript = document.createElement('script');
+          authScript.src = '/static/firebase-auth.js';
+          document.head.appendChild(authScript);
+        };
+        document.head.appendChild(initScript);
+        
+        // Register service worker only once
+        if ('serviceWorker' in navigator && !window.serviceWorkerRegistered) {
+          window.serviceWorkerRegistered = true;
+          navigator.serviceWorker.register('/firebase-messaging-sw.js')
+            .then(function(registration) {
+              // Pass API key to service worker
+              if (registration.active) {
+                registration.active.postMessage({
+                  type: 'FIREBASE_CONFIG',
+                  apiKey: "{{ firebase_api_key }}"
+                });
+              }
+            });
+        }
+      }
+    </script>
 
     </head>
 <body class="landing-page">
@@ -113,21 +146,6 @@
                 window.location.href = '/dashboard';
             }, 2000);
         }
-
-        // Global functions to prevent reference errors
-        window.enableDemoMode = enableDemoMode;
-        window.loadInvitesList = function() {
-            console.log('loadInvitesList called');
-        };
-        window.toggleProfileDropdown = function() {
-            console.log('toggleProfileDropdown called');
-        };
-        window.handleLogout = function() {
-            console.log('handleLogout called');
-            if (window.signOut) {
-                window.signOut();
-            }
-        };
     </script>
 </body>
         <!-- Demo mode activation from URL -->
@@ -159,5 +177,4 @@
             setTimeout(initializeLandingPage, 2000);
         }
     </script>
-    <!-- NO Firebase Messaging initialization on landing page -->
 </html>

@@ -428,21 +428,6 @@
                 if (document.body.contains(successMessage)) {
                     document.body.removeChild(successMessage);
                 }
-                window.location.href = '/dashboard';
-            }, 2000);
-        } #51cf66;
-                padding: 12px 20px;
-                border-radius: 8px;
-                z-index: 10000;
-                font-size: 14px;
-            `;
-            successMessage.textContent = '🎮 Demo Mode Activated! Redirecting to dashboard...';
-            document.body.appendChild(successMessage);
-
-            setTimeout(() => {
-                if (document.body.contains(successMessage)) {
-                    document.body.removeChild(successMessage);
-                }
                 // Redirect to dashboard in demo mode
                 window.location.href = '/dashboard';
             }, 2000);
