@@ -97,14 +97,6 @@
         localStorage.removeItem('userId');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('databaseUserId');
-        
-        // Check if user is already logged in
-        firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-                // User is already signed in, redirect to dashboard
-                window.location.href = '/dashboard';
-            }
-        });
 
         // Demo mode functions
         function enableDemoMode() {
@@ -149,4 +141,27 @@
                 window.history.replaceState({}, document.title, newUrl);
             }
         </script>
+    <script>
+        function initializeLandingPage() {
+            if (firebase.auth().currentUser) {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        // User is logged in, redirect to dashboard
+                        console.log('User is already signed in:', user.email);
+                        window.location.href = '/dashboard';
+                    }
+                });
+            } else {
+                // Wait for Firebase to load
+                setTimeout(initializeLandingPage, 100);
+            }
+        }
+
+        // Start initialization when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeLandingPage);
+        } else {
+            initializeLandingPage();
+        }
+    </script>
 </html>

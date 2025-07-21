@@ -1,4 +1,30 @@
-// Prevent duplicate Firebase init loading
+// Firebase initialization - prevent duplicates
+if (!window.firebaseInitialized) {
+    // Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyDhkVsrrlItzLbfvUlnc-U8xFJLs6kHp6s",
+        authDomain: "global-data-8d5b9.firebaseapp.com",
+        projectId: "global-data-8d5b9",
+        storageBucket: "global-data-8d5b9.appspot.com",
+        messagingSenderId: "498583862962",
+        appId: "1:498583862962:web:75bd3c2c5b8c5a9a1f8c4d"
+    };
+
+    try {
+        // Initialize Firebase only if not already done
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            console.log('Firebase App initialized successfully');
+        } else {
+            console.log('Firebase App already initialized');
+        }
+        
+        window.firebaseInitialized = true;
+        console.log('Firebase initialized successfully');
+    } catch (error) {
+        console.error('Error initializing Firebase:', error);
+    }
+}
 if (window.firebaseInitLoaded) {
   console.log("Firebase init script already loaded, skipping...");
 } else {

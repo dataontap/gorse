@@ -4493,24 +4493,27 @@ Platform: GORSE (Global Optimized Roaming Service Engine)
         }), 500
 
 if __name__ == '__main__':
-    # Debug: Print all registered routes to verify OXIO endpoints are available
-    print("\n=== Registered Flask Routes ===")
-    for rule in app.url_map.iter_rules():
-        methods = ','.join(rule.methods)
-        print(f"  {rule.rule} [{methods}] -> {rule.endpoint}")
-    print("================================\n")
+    # Check if this is the main process (not a reloader subprocess)
+    import os
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+        # This is the main process, print startup info
+        print("\n=== Registered Flask Routes ===")
+        for rule in app.url_map.iter_rules():
+            methods = ','.join(rule.methods)
+            print(f"  {rule.rule} [{methods}] -> {rule.endpoint}")
+        print("================================\n")
 
-    port = int(os.environ.get('PORT', 5000))
-    print(f"Starting server on http://0.0.0.0:{port}")
-    print(f"OXIO API endpoints should be available at:")
-    print(f"  - GET  /api/oxio/test-connection")
-    print(f"  - GET  /api/oxio/test-plans") 
-    print(f"  - POST /api/oxio/activate-line")
-    print(f"  - POST /api/oxio/test-sample-activation")
+        port = int(os.environ.get('PORT', 5000))
+        print(f"Starting server on http://0.0.0.0:{port}")
+        print(f"OXIO API endpoints should be available at:")
+        print(f"  - GET  /api/oxio/test-connection")
+        print(f"  - GET  /api/oxio/test-plans") 
+        print(f"  - POST /api/oxio/activate-line")
+        print(f"  - POST /api/oxio/test-sample-activation")
 
     try:
-        socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True, allow_unsafe_werkzeug=True)
     except Exception as e:
         print(f"Error starting server: {str(e)}")
         # Fallback to standard Flask run
-        app.run(host='0.0.0.0', port=port, debug=True)
+        app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
