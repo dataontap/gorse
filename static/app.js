@@ -397,155 +397,135 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Use event delegation for all interactive elements
-    document.addEventListener('click', function(e) {
-        // Handle logout functionality
-        if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
-            e.preventDefault();
-            console.log('Logout button clicked');
+    // Use event delegation for all interactive elements - set up once
+document.addEventListener('click', function(e) {
+    // Handle logout functionality
+    if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
+        e.preventDefault();
+        console.log('Logout button clicked');
 
-            // Try multiple logout methods
-            if (window.firebaseAuth && window.firebaseAuth.signOut) {
-                window.firebaseAuth.signOut();
-            } else if (typeof firebase !== 'undefined' && firebase.auth) {
-                firebase.auth().signOut().then(() => {
-                    localStorage.clear();
-                    window.location.href = '/';
-                }).catch((error) => {
-                    console.error('Logout error:', error);
-                    localStorage.clear();
-                    window.location.href = '/';
-                });
-            } else {
-                // Fallback: clear storage and redirect
+        // Try multiple logout methods
+        if (window.firebaseAuth && window.firebaseAuth.signOut) {
+            window.firebaseAuth.signOut();
+        } else if (typeof firebase !== 'undefined' && firebase.auth) {
+            firebase.auth().signOut().then(() => {
                 localStorage.clear();
                 window.location.href = '/';
-            }
-            return;
+            }).catch((error) => {
+                console.error('Logout error:', error);
+                localStorage.clear();
+                window.location.href = '/';
+            });
+        } else {
+            // Fallback: clear storage and redirect
+            localStorage.clear();
+            window.location.href = '/';
         }
-
-        // Close popup
-        if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
-            hideAddUserPopup();
-            return;
-        }
-
-        // Handle invite anyone button
-        if (e.target.id === 'inviteAnyoneBtn') {
-            e.preventDefault();
-            showInviteForm();
-            return;
-        }
-
-        // Handle demo user button
-        if (e.target.id === 'demoUserBtn') {
-            e.preventDefault();
-            createDemoUser();
-            return;
-        }
-
-        // Handle send invitation button
-        if (e.target.id === 'sendInvitationBtn') {
-            e.preventDefault();
-            sendInvitation();
-            return;
-        }
-
-        // Handle cancel invitation button
-        if (e.target.id === 'cancelInviteBtn') {
-            e.preventDefault();
-            hideAddUserPopup();
-            return;
-        }
-    });
-
-    // Add event delegation for confirmation drawer buttons
-    document.addEventListener('click', function(e) {
-        // Handle buy buttons
-        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
-            e.preventDefault();
-            showConfirmationDrawer(10, 10, 'global_data_10gb');
-        }
-
-        // Handle subscribe buttons
-        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
-            e.preventDefault();
-            showConfirmationDrawer(10, 24, 'basic_membership');
-        }
-
-        // Handle drawer cancel/confirm buttons
-        if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
-            e.preventDefault();
-            hideConfirmationDrawer();
-        }
-
-        if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
-            e.preventDefault();
-            confirmPurchase();
-        }
-    });
-
-    // Initialize beta enrollment functionality
-    const betaEnrollBtn = document.getElementById('betaEnrollBtn');
-    if (betaEnrollBtn) {
-        betaEnrollBtn.addEventListener('click', handleBetaEnrollment);
-        checkBetaStatus(); // Check current status on page load
+        return;
     }
 
-    // Handle help toggle functionality using event delegation
-    document.addEventListener('click', function(e) {
-        if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
-            e.preventDefault();
-            e.stopPropagation();
-            showHelpModal();
-        }
-    });
+    // Close popup
+    if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
+        hideAddUserPopup();
+        return;
+    }
 
-    // Initialize settings toggle functionality using event delegation
-    document.addEventListener('click', function(e) {
-        if (e.target.id === 'settingsToggle' || e.target.closest('#settingsToggle')) {
-            e.preventDefault();
-            e.stopPropagation();
+    // Handle invite anyone button
+    if (e.target.id === 'inviteAnyoneBtn') {
+        e.preventDefault();
+        showInviteForm();
+        return;
+    }
 
-            const settingsSubmenu = document.querySelector('.settings-submenu');
-            if (settingsSubmenu) {
-                // Toggle settings submenu visibility
-                if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
-                    settingsSubmenu.style.display = 'block';
-                } else {
-                    settingsSubmenu.style.display = 'none';
-                }
-            }
-        }
+    // Handle demo user button
+    if (e.target.id === 'demoUserBtn') {
+        e.preventDefault();
+        createDemoUser();
+        return;
+    }
 
-        // Handle language selector changes
-        if (e.target.id === 'languageSelect') {
-            const selectedLanguage = e.target.value;
-            if (typeof setLanguage === 'function') {
-                setLanguage(selectedLanguage);
-            }
-        }
+    // Handle send invitation button
+    if (e.target.id === 'sendInvitationBtn') {
+        e.preventDefault();
+        sendInvitation();
+        return;
+    }
 
-        // Close settings submenu when clicking outside
-        if (!e.target.closest('#settingsToggle') && !e.target.closest('.settings-submenu')) {
-            const settingsSubmenu = document.querySelector('.settings-submenu');
-            if (settingsSubmenu && settingsSubmenu.style.display === 'block') {
+    // Handle cancel invitation button
+    if (e.target.id === 'cancelInviteBtn') {
+        e.preventDefault();
+        hideAddUserPopup();
+        return;
+    }
+
+    // Handle buy buttons
+    if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
+        e.preventDefault();
+        showConfirmationDrawer(10, 10, 'global_data_10gb');
+        return;
+    }
+
+    // Handle subscribe buttons
+    if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
+        e.preventDefault();
+        showConfirmationDrawer(10, 24, 'basic_membership');
+        return;
+    }
+
+    // Handle drawer cancel/confirm buttons
+    if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
+        e.preventDefault();
+        hideConfirmationDrawer();
+        return;
+    }
+
+    if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
+        e.preventDefault();
+        confirmPurchase();
+        return;
+    }
+
+    // Handle help toggle functionality
+    if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
+        e.preventDefault();
+        e.stopPropagation();
+        showHelpModal();
+        return;
+    }
+
+    // Handle settings toggle functionality
+    if (e.target.id === 'settingsToggle' || e.target.closest('#settingsToggle')) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const settingsSubmenu = document.querySelector('.settings-submenu');
+        if (settingsSubmenu) {
+            // Toggle settings submenu visibility
+            if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
+                settingsSubmenu.style.display = 'block';
+            } else {
                 settingsSubmenu.style.display = 'none';
             }
         }
-    });
-
-    // Load invites if on dashboard page
-    if (window.location.pathname === '/dashboard') {
-        setTimeout(() => {
-            if (typeof loadInvitesList === 'function') {
-                loadInvitesList();
-            }
-        }, 1000);
+        return;
     }
 
-    // Initialize carousel functionality
-    initializeCarousel();
+    // Handle language selector changes
+    if (e.target.id === 'languageSelect') {
+        const selectedLanguage = e.target.value;
+        if (typeof setLanguage === 'function') {
+            setLanguage(selectedLanguage);
+        }
+        return;
+    }
+
+    // Close settings submenu when clicking outside
+    if (!e.target.closest('#settingsToggle') && !e.target.closest('.settings-submenu')) {
+        const settingsSubmenu = document.querySelector('.settings-submenu');
+        if (settingsSubmenu && settingsSubmenu.style.display === 'block') {
+            settingsSubmenu.style.display = 'none';
+        }
+    }
 });
 
 // Add User Popup Functions
@@ -1093,8 +1073,8 @@ function initializePauseDurationUpdates() {
 }
 
 // Call this when the page loads to handle any existing paused users
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('App.js loaded successfully');
+function initializeDashboard() {
+    console.log('Initializing dashboard...');
 
     // Initialize theme based on localStorage or default to dark
     const savedTheme = localStorage.getItem('darkMode');
@@ -1137,143 +1117,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Use event delegation for all interactive elements
-    document.addEventListener('click', function(e) {
-        // Handle logout functionality
-        if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
-            e.preventDefault();
-            console.log('Logout button clicked');
-
-            // Try multiple logout methods
-            if (window.firebaseAuth && window.firebaseAuth.signOut) {
-                window.firebaseAuth.signOut();
-            } else if (typeof firebase !== 'undefined' && firebase.auth) {
-                firebase.auth().signOut().then(() => {
-                    localStorage.clear();
-                    window.location.href = '/';
-                }).catch((error) => {
-                    console.error('Logout error:', error);
-                    localStorage.clear();
-                    window.location.href = '/';
-                });
-            } else {
-                // Fallback: clear storage and redirect
-                localStorage.clear();
-                window.location.href = '/';
-            }
-            return;
-        }
-
-        // Close popup
-        if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
-            hideAddUserPopup();
-            return;
-        }
-
-        // Handle invite anyone button
-        if (e.target.id === 'inviteAnyoneBtn') {
-            e.preventDefault();
-            showInviteForm();
-            return;
-        }
-
-        // Handle demo user button
-        if (e.target.id === 'demoUserBtn') {
-            e.preventDefault();
-            createDemoUser();
-            return;
-        }
-
-        // Handle send invitation button
-        if (e.target.id === 'sendInvitationBtn') {
-            e.preventDefault();
-            sendInvitation();
-            return;
-        }
-
-        // Handle cancel invitation button
-        if (e.target.id === 'cancelInviteBtn') {
-            e.preventDefault();
-            hideAddUserPopup();
-            return;
-        }
-    });
-
-    // Add event delegation for confirmation drawer buttons
-    document.addEventListener('click', function(e) {
-        // Handle buy buttons
-        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
-            e.preventDefault();
-            showConfirmationDrawer(10, 10, 'global_data_10gb');
-        }
-
-        // Handle subscribe buttons
-        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
-            e.preventDefault();
-            showConfirmationDrawer(10, 24, 'basic_membership');
-        }
-
-        // Handle drawer cancel/confirm buttons
-        if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
-            e.preventDefault();
-            hideConfirmationDrawer();
-        }
-
-        if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
-            e.preventDefault();
-            confirmPurchase();
-        }
-    });
-
     // Initialize beta enrollment functionality
     const betaEnrollBtn = document.getElementById('betaEnrollBtn');
     if (betaEnrollBtn) {
         betaEnrollBtn.addEventListener('click', handleBetaEnrollment);
         checkBetaStatus(); // Check current status on page load
     }
-
-    // Handle help toggle functionality using event delegation
-    document.addEventListener('click', function(e) {
-        if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
-            e.preventDefault();
-            e.stopPropagation();
-            showHelpModal();
-        }
-    });
-
-    // Initialize settings toggle functionality using event delegation
-    document.addEventListener('click', function(e) {
-        if (e.target.id === 'settingsToggle' || e.target.closest('#settingsToggle')) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const settingsSubmenu = document.querySelector('.settings-submenu');
-            if (settingsSubmenu) {
-                // Toggle settings submenu visibility
-                if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
-                    settingsSubmenu.style.display = 'block';
-                } else {
-                    settingsSubmenu.style.display = 'none';
-                }
-            }
-        }
-
-        // Handle language selector changes
-        if (e.target.id === 'languageSelect') {
-            const selectedLanguage = e.target.value;
-            if (typeof setLanguage === 'function') {
-                setLanguage(selectedLanguage);
-            }
-        }
-
-        // Close settings submenu when clicking outside
-        if (!e.target.closest('#settingsToggle') && !e.target.closest('.settings-submenu')) {
-            const settingsSubmenu = document.querySelector('.settings-submenu');
-            if (settingsSubmenu && settingsSubmenu.style.display === 'block') {
-                settingsSubmenu.style.display = 'none';
-            }
-        }
-    });
 
     // Load invites if on dashboard page
     if (window.location.pathname === '/dashboard') {
@@ -1286,6 +1135,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize carousel functionality
     initializeCarousel();
+
+    // Initialize pause duration updates after a short delay to ensure cards are loaded
+    setTimeout(initializePauseDurationUpdates, 1500);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('App.js loaded successfully');
+    initializeDashboard();
 });
 
 // Add User Popup Functions
@@ -1831,14 +1688,6 @@ function initializePauseDurationUpdates() {
     pausedCards.forEach(card => {        updatePauseDuration(card);
     });
 }
-
-// Call this when the page loads to handle any existing paused users
-document.addEventListener('DOMContentLoaded', function() {
-    // Existing DOMContentLoaded code...
-
-    // Initialize pause duration updates after a short delay to ensure cards are loaded
-    setTimeout(initializePauseDurationUpdates, 1500);
-});
 
 function createInviteItem(invite) {
     const inviteItem = document.createElement('div');
@@ -2071,7 +1920,7 @@ function initializeCarousel() {
         console.log('Offers section not found, waiting...');
         // Try again with longer intervals to avoid spam
         let attempts = 0;
-        const maxAttempts = 10;
+        const maxAttempts = 5;
         const checkInterval = setInterval(() => {
             attempts++;
             const section = document.querySelector('.offers-section');
@@ -2085,9 +1934,11 @@ function initializeCarousel() {
                     }, 200);
                 } else {
                     console.log('Offers section not found after maximum attempts');
+                    // Create offers section if it doesn't exist
+                    createOffersSection();
                 }
             }
-        }, 1000);
+        }, 500);
         return;
     }
 
@@ -2098,6 +1949,27 @@ function initializeCarousel() {
             initializeCardStack();
         }, 200);
     }, 100);
+}
+
+// Create offers section if it doesn't exist
+function createOffersSection() {
+    console.log('Creating offers section...');
+    const container = document.querySelector('.container');
+    if (container) {
+        const dotContainer = container.querySelector('.dot-container');
+        if (dotContainer) {
+            const offersSection = document.createElement('div');
+            offersSection.className = 'offers-section';
+            dotContainer.parentNode.insertBefore(offersSection, dotContainer.nextSibling);
+            console.log('Offers section created');
+            
+            // Now populate it
+            populateOfferCards();
+            setTimeout(() => {
+                initializeCardStack();
+            }, 200);
+        }
+    }
 }
 
 // Global variables for card stack
