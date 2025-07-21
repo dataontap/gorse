@@ -273,17 +273,21 @@ document.addEventListener('DOMContentLoaded', function() {
                   // Update UI with real user data
                   updateAuthUI(user, currentUserData);
 
-                 // Initialize Firebase messaging ONLY after successful login
-                 if (window.initializeFirebaseMessaging) {
-                  console.log('Initializing FCM after successful login...');
-                   window.initializeFirebaseMessaging()
-                   .then(() => {
-                     console.log('FCM initialized successfully after login');
-                   })
-                   .catch((error) => {
-                      console.error('Error initializing FCM after login:', error);
-                   });
-                 }
+                 // Initialize Firebase messaging ONLY after successful login with additional safeguards
+                 setTimeout(() => {
+                   if (window.initializeFirebaseMessaging && firebase.auth().currentUser) {
+                     console.log('Initializing FCM after successful login for user:', firebase.auth().currentUser.uid);
+                     window.initializeFirebaseMessaging()
+                     .then(() => {
+                       console.log('FCM initialized successfully after login');
+                     })
+                     .catch((error) => {
+                        console.error('Error initializing FCM after login:', error);
+                     });
+                   } else {
+                     console.log('Skipping FCM initialization - user not authenticated or function not available');
+                   }
+                 }, 1000); // Delay FCM initialization by 1 second after login
 
               } else {
                   console.error('Failed to get user data:', userData);

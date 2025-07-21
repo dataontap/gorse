@@ -16,18 +16,19 @@ document.addEventListener('DOMContentLoaded', async function() {
     measurementId: "G-WHW3XT925P"
   };
 
-  // Initialize Firebase only once globally
+  // Initialize Firebase only once globally - CORE ONLY
   if (typeof firebase !== 'undefined' && !window.firebaseInitialized) {
     try {
       // Check if Firebase is already initialized
       if (firebase.apps.length === 0) {
         const app = firebase.initializeApp(firebaseConfig);
-        console.log("Firebase initialized successfully");
+        console.log("Firebase core initialized successfully");
         window.firebaseInitialized = true;
       } else {
         console.log("Firebase already initialized, using existing app");
         window.firebaseInitialized = true;
       }
+      // Only initialize auth, NOT messaging
       const auth = firebase.auth();
     } catch (error) {
       if (error.code === 'app/duplicate-app') {
@@ -41,8 +42,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.error("Firebase SDK not loaded");
   }
 
-  // Firebase messaging will be initialized only after user authentication
-  console.log('Firebase core initialized. Messaging will be set up after login.');
+  console.log('Firebase core initialized. FCM will ONLY initialize after successful login.');
 });
 } // Close Firebase init conditional
 
@@ -53,7 +53,15 @@ async function initializeFirebaseMessaging() {
     return;
   }
 
+  // CRITICAL: Only proceed if user is authenticated
+  if (!firebase || !firebase.auth || !firebase.auth().currentUser) {
+    console.log('User not authenticated, skipping FCM initialization');
+    return;
+  }
+
   try {
+    console.log('Starting FCM initialization for authenticated user:', firebase.auth().currentUser.uid);
+    
     // Initialize Firebase Cloud Messaging only if supported and user is authenticated
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       // Dynamically import Firebase modules
