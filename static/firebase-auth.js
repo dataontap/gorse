@@ -541,34 +541,55 @@ document.addEventListener('DOMContentLoaded', function() {
       signOut: function() {
         if (!firebase || !firebase.auth) {
           console.error('Firebase auth not available');
-          // Clear localStorage and redirect anyway
-          localStorage.removeItem('userId');
-          localStorage.removeItem('userEmail');
-          localStorage.removeItem('databaseUserId');
-          localStorage.removeItem('currentUser');
+          // Clear all local storage and session data
+          localStorage.clear();
+          sessionStorage.clear();
+
+          // Reset global flags
+          window.firebaseInitialized = false;
+          window.firebaseAuthLoaded = false;
+          window.firebaseInitLoaded = false;
+          window.authStateListenerSetup = false;
+          window.balanceLoadingInProgress = false;
+          window.pendingRequests = {};
+
           window.location.replace('/');
           return Promise.resolve();
         }
 
         return firebase.auth().signOut()
           .then(() => {
-            // Clear all local storage
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userEmail');
-            localStorage.removeItem('databaseUserId');
-            localStorage.removeItem('currentUser');
-            console.log('User signed out successfully');
+            // Clear all local storage and session data
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // Reset global flags to prevent stale state
+            window.firebaseInitialized = false;
+            window.firebaseAuthLoaded = false;
+            window.firebaseInitLoaded = false;
+            window.authStateListenerSetup = false;
+            window.balanceLoadingInProgress = false;
+            window.pendingRequests = {};
+
+            console.log('User signed out successfully and all data cleared');
 
             // Redirect to home page after logout  
             window.location.replace('/');
           })
           .catch((error) => {
             console.error('Error during sign out:', error);
-            // Clear localStorage and redirect anyway
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userEmail');
-            localStorage.removeItem('databaseUserId');
-            localStorage.removeItem('currentUser');
+            // Clear everything anyway
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // Reset global flags
+            window.firebaseInitialized = false;
+            window.firebaseAuthLoaded = false;
+            window.firebaseInitLoaded = false;
+            window.authStateListenerSetup = false;
+            window.balanceLoadingInProgress = false;
+            window.pendingRequests = {};
+
             window.location.replace('/');
           });
       },
