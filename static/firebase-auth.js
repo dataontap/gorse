@@ -2,8 +2,8 @@
 // Global flag to prevent duplicate initialization
 if (window.firebaseAuthLoaded) {
   console.log("Firebase auth script already loaded, skipping...");
-  return;
-}
+  // Exit early by wrapping the rest in a conditional
+} else {
 window.firebaseAuthLoaded = true;
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -854,3 +854,4 @@ document.addEventListener('DOMContentLoaded', function() {
   // Start the initialization process
   initializeFirebaseAuth();
 });
+} // Close the conditional block

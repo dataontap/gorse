@@ -1,8 +1,8 @@
 // Prevent re-initialization and duplicate loading
 if (window.appInitialized) {
     console.log("App already initialized, skipping...");
-    return;
-}
+    // Exit early by wrapping the rest in a conditional
+} else {
 window.appInitialized = true;
 
 // Standalone logout function
@@ -3015,3 +3015,4 @@ function showNotification(message, type = 'info', duration = 5000) {
 
 // Make functions globally available
 window.showNotification = showNotification;
+} // Close the conditional block

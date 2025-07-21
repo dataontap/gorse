@@ -134,8 +134,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       showNotificationStatus('Error setting up notifications: ' + err.message);
     }
   }
-
 });
+} // Close the conditional block
 
 // Register FCM token with server (with deduplication)
 async function registerFCMToken(token) {
