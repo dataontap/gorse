@@ -127,6 +127,8 @@ function toggleTheme(isDarkMode) {
     const darkToggle = document.getElementById('darkModeToggle');
     const lightToggle = document.getElementById('lightModeToggle');
 
+    console.log('toggleTheme called with:', isDarkMode);
+
     if (isDarkMode) {
         // Switch to dark mode
         body.classList.remove('light-mode');
@@ -137,6 +139,7 @@ function toggleTheme(isDarkMode) {
         // Update toggle states
         if (darkToggle) darkToggle.classList.add('active');
         if (lightToggle) lightToggle.classList.remove('active');
+        console.log('Switched to dark mode');
     } else {
         // Switch to light mode
         body.classList.remove('dark-mode');
@@ -147,6 +150,7 @@ function toggleTheme(isDarkMode) {
         // Update toggle states
         if (darkToggle) darkToggle.classList.remove('active');
         if (lightToggle) lightToggle.classList.add('active');
+        console.log('Switched to light mode');
     }
 }
 
@@ -1079,26 +1083,26 @@ function initializeDashboard() {
     // Initialize theme based on localStorage or default to dark
     const savedTheme = localStorage.getItem('darkMode');
     const isDarkMode = savedTheme === null ? true : savedTheme === 'true';
+    console.log('Saved theme:', savedTheme, 'isDarkMode:', isDarkMode);
     toggleTheme(isDarkMode);
 
     // Load DOTM balance if wallet is connected
     loadDOTMBalance();
 
-    // Add event listeners for theme toggles
-    const darkToggle = document.getElementById('darkModeToggle');
-    const lightToggle = document.getElementById('lightModeToggle');
-
-    if (darkToggle) {
-        darkToggle.addEventListener('click', function() {
+    // Add event listeners for theme toggles - use event delegation to avoid conflicts
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'darkModeToggle' || e.target.closest('#darkModeToggle')) {
+            e.preventDefault();
+            console.log('Dark mode toggle clicked');
             toggleTheme(true);
-        });
-    }
-
-    if (lightToggle) {
-        lightToggle.addEventListener('click', function() {
+        }
+        
+        if (e.target.id === 'lightModeToggle' || e.target.closest('#lightModeToggle')) {
+            e.preventDefault();
+            console.log('Light mode toggle clicked');
             toggleTheme(false);
-        });
-    }
+        }
+    });
 
     // Initialize add user functionality with popup
     const addUserBtn = document.getElementById('addUserBtn');
@@ -1149,18 +1153,34 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('App.js loaded successfully');
     initializeDashboard();
     
+    // Force offers initialization immediately
+    console.log('Force initializing offers immediately...');
+    initializeCarousel();
+    
     // Force offers initialization after a delay
     setTimeout(() => {
-        console.log('Force initializing offers...');
+        console.log('Force initializing offers after 500ms...');
         initializeCarousel();
+    }, 500);
+    
+    // Try again after 1 second
+    setTimeout(() => {
+        console.log('Force initializing offers after 1s...');
+        const offersSection = document.querySelector('.offers-section');
+        if (!offersSection || offersSection.children.length === 0) {
+            console.log('Offers still not visible, trying again...');
+            initializeCarousel();
+        }
     }, 1000);
     
     // Try again after 3 seconds if still not visible
     setTimeout(() => {
         const offersSection = document.querySelector('.offers-section');
         if (!offersSection || offersSection.children.length === 0) {
-            console.log('Offers still not visible, trying again...');
+            console.log('Offers STILL not visible after 3s, final attempt...');
             initializeCarousel();
+        } else {
+            console.log('Offers section found with', offersSection.children.length, 'children');
         }
     }, 3000);
 });
@@ -1934,6 +1954,10 @@ function initializeCarousel() {
     // Initialize offers on all pages that have an offers section
     console.log('Initializing offers carousel');
 
+    // Force removal of any dismissed offers
+    localStorage.removeItem('dismissedOffers');
+    console.log('Cleared dismissed offers');
+
     // Always create offers section if it doesn't exist
     let offersSection = document.querySelector('.offers-section');
     if (!offersSection) {
@@ -1943,16 +1967,52 @@ function initializeCarousel() {
         offersSection = document.querySelector('.offers-section');
     }
 
+    // Force show the offers section
     if (offersSection) {
-        console.log('Offers section found, populating cards...');
-        // Clear localStorage dismissed offers to ensure cards show
-        localStorage.removeItem('dismissedOffers');
+        offersSection.style.display = 'block';
+        offersSection.style.visibility = 'visible';
+        offersSection.style.opacity = '1';
+        console.log('Offers section found and forced visible, populating cards...');
         populateOfferCards();
         setTimeout(() => {
             initializeCardStack();
         }, 200);
     } else {
         console.error('Failed to create or find offers section');
+        // Force create one more time
+        const container = document.querySelector('.container');
+        if (container) {
+            const newOffersSection = document.createElement('div');
+            newOffersSection.className = 'offers-section';
+            newOffersSection.style.cssText = `
+                margin: 20px auto;
+                max-width: 500px;
+                padding: 0 20px;
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            `;
+            
+            // Insert after membership banner if it exists
+            const membershipBanner = document.getElementById('membershipBanner');
+            if (membershipBanner) {
+                membershipBanner.parentNode.insertBefore(newOffersSection, membershipBanner.nextSibling);
+            } else {
+                // Insert after dot container
+                const dotContainer = document.querySelector('.dot-container');
+                if (dotContainer) {
+                    dotContainer.parentNode.insertBefore(newOffersSection, dotContainer.nextSibling);
+                } else {
+                    container.appendChild(newOffersSection);
+                }
+            }
+            
+            console.log('Force created offers section');
+            populateOfferCards();
+            setTimeout(() => {
+                initializeCardStack();
+            }, 200);
+        }
     }
 }
 
