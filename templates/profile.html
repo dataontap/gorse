@@ -353,20 +353,45 @@
                     var oxioContainer = document.getElementById('oxioContainer');
                     if (oxioContainer) {
                         if (data.success && data.oxio_data) {
-                            oxioContainer.innerHTML = `
-                                <div class="address-card p-3 mb-3" style="background: rgba(116, 192, 252, 0.15); border-radius: 8px;">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="address-content">
-                                            <h5>OXIO Account Details</h5>
-                                            <p><strong>User ID:</strong> ${data.oxio_data.oxio_user_id || 'Not available'}</p>
-                                            <p><strong>Status:</strong> ${data.oxio_data.status || 'Not activated'}</p>
-                                            ${data.oxio_data.phone_number ? `<p><strong>Phone:</strong> ${data.oxio_data.phone_number}</p>` : ''}
-                                            ${data.oxio_data.line_id ? `<p><strong>Line ID:</strong> ${data.oxio_data.line_id}</p>` : ''}
+                            // Check if we have an OXIO User ID to display
+                            const hasOxioUid = data.oxio_data.oxio_user_id && data.oxio_data.oxio_user_id !== 'Not available';
+                            
+                            if (hasOxioUid) {
+                                oxioContainer.innerHTML = `
+                                    <div class="address-card p-3 mb-3" style="background: rgba(116, 192, 252, 0.15); border-radius: 8px;">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="address-content">
+                                                <h5>OXIO Account Details</h5>
+                                                <p><strong>OXIO User ID:</strong> <span class="text-break">${data.oxio_data.oxio_user_id}</span> 
+                                                   <button class="btn btn-sm btn-outline-primary copy-btn" onclick="copyToClipboard('${data.oxio_data.oxio_user_id}')">
+                                                       <i class="fas fa-copy"></i>
+                                                   </button>
+                                                </p>
+                                                <p><strong>Status:</strong> ${data.oxio_data.status || 'Not activated'}</p>
+                                                ${data.oxio_data.phone_number ? `<p><strong>Phone:</strong> ${data.oxio_data.phone_number}</p>` : ''}
+                                                ${data.oxio_data.line_id ? `<p><strong>Line ID:</strong> ${data.oxio_data.line_id}</p>` : ''}
+                                                ${data.oxio_data.iccid ? `<p><strong>ICCID:</strong> ${data.oxio_data.iccid}</p>` : ''}
+                                                ${data.oxio_data.plan_name ? `<p><strong>Plan:</strong> ${data.oxio_data.plan_name}</p>` : ''}
+                                            </div>
+                                            <i class="fas fa-sync-alt refresh-icon" onclick="refreshOxioData()" title="Refresh OXIO data" style="cursor: pointer; color: #007bff;"></i>
                                         </div>
-                                        <i class="fas fa-sync-alt refresh-icon" onclick="refreshOxioData()" title="Refresh OXIO data" style="cursor: pointer; color: #007bff;"></i>
                                     </div>
-                                </div>
-                            `;
+                                `;
+                            } else {
+                                oxioContainer.innerHTML = `
+                                    <div class="address-card p-3 mb-3" style="background: rgba(116, 192, 252, 0.15); border-radius: 8px;">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="address-content">
+                                                <h5>OXIO Account Details</h5>
+                                                <p><strong>OXIO User ID:</strong> Not available</p>
+                                                <p><strong>Status:</strong> ${data.oxio_data.status || 'Not activated'}</p>
+                                                <p style="font-size: 14px; color: #999;">OXIO account will be created when you purchase a Basic Membership</p>
+                                            </div>
+                                            <i class="fas fa-sync-alt refresh-icon" onclick="refreshOxioData()" title="Refresh OXIO data" style="cursor: pointer; color: #007bff;"></i>
+                                        </div>
+                                    </div>
+                                `;
+                            }
                             // Show refresh button
                             var refreshBtn = document.getElementById('oxioRefreshBtn');
                             if (refreshBtn) refreshBtn.style.display = 'inline';
@@ -400,6 +425,25 @@
             if (currentUser) {
                 loadOxioData(currentUser.uid);
             }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                // Show a temporary success message
+                var button = event.target.closest('.copy-btn');
+                var originalHtml = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i>';
+                button.classList.add('btn-success');
+                button.classList.remove('btn-outline-primary');
+                
+                setTimeout(function() {
+                    button.innerHTML = originalHtml;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-primary');
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+            });
         }
 
         window.handleLogout = handleLogout;
