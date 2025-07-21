@@ -38,7 +38,7 @@ class OXIOService:
 
     def activate_line(self, oxio_user_id: str) -> Dict[str, Any]:
         """
-        Activate a line using simplified OXIO API payload
+        Activate a line using simplified OXIO API payload with only OXIO user ID
 
         Args:
             oxio_user_id: OXIO user ID for line activation
@@ -50,7 +50,15 @@ class OXIOService:
             url = f"{self.base_url}/v3/lines/line"
             headers = self.get_headers()
 
-            # Create simplified payload as requested
+            # Validate that OXIO user ID is provided
+            if not oxio_user_id:
+                return {
+                    'success': False,
+                    'error': 'Missing OXIO user ID',
+                    'message': 'OXIO user ID is required for line activation'
+                }
+
+            # Create simplified payload as requested - only these 4 fields
             payload = {
                 "lineType": "LINE_TYPE_MOBILITY",
                 "countryCode": "US",
@@ -61,15 +69,6 @@ class OXIOService:
             print(f"OXIO API Request URL: {url}")
             print(f"OXIO API Request Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
             print(f"OXIO API Request Payload: {json.dumps(payload, indent=2)}")
-
-            # Validate that OXIO user ID is provided
-            if not oxio_user_id:
-                return {
-                    'success': False,
-                    'error': 'Missing OXIO user ID',
-                    'message': 'OXIO user ID is required for line activation',
-                    'payload_received': payload
-                }
 
             response = requests.post(
                 url,
@@ -243,10 +242,8 @@ class OXIOService:
                 }
 
             if response.status_code >= 200 and response.status_code < 300:
-                # Strip hyphens from OXIO user ID before returning
-                oxio_user_id = response_data.get('endUserId') or response_data.get('id')
-                if oxio_user_id:
-                    oxio_user_id = oxio_user_id.replace('-', '')
+                # Get OXIO user ID from response - try different possible field names
+                oxio_user_id = response_data.get('endUserId') or response_data.get('id') or response_data.get('userId')
                 
                 return {
                     'success': True,
