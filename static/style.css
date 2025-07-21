@@ -194,7 +194,7 @@ body.light-mode {
     padding-right: 40px;
     padding-bottom: 40px;
     padding-left: 40px;
-    z-index: 100;
+    z-index: 999998;
     margin: 0;
     pointer-events: none;
     display: flex;
@@ -1012,7 +1012,8 @@ body.light-mode {
         box-shadow: 0 17.5px 52.5px rgba(255, 243, 113, 0.525), 0 0 35px rgba(255, 243, 113, 0.35);
     }
     100% {
-        box-shadow: 0 20px 60px rgba(255, 243, 113, 0.6), 0 0 40px rgba(255,243, 113, 0.4);    }
+        box-shadow: 0 20px 60px rgba(255, 243, 113, 0.6), 0 0 40px rgba(255,243, 113, 0.4);
+    }
 }
 
 ```
@@ -2489,7 +2490,7 @@ body.light-mode {
     bottom: 60px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(102, 102, 102, 0.8);    padding: 8px 16px;
+    background: rgba(102, 102, 102, 0.8);padding: 8px 16px;
     border-radius: 20px;
     display: none;
     z-index: 1000;
@@ -2597,7 +2598,7 @@ body.light-mode {
     background: none;
     border: none;
     padding: 8px;
-    cursor: pointer;
+cursor: pointer;
     border-radius: 50%;
     transition: background-color 0.2s;
 }

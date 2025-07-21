@@ -1965,7 +1965,7 @@ async function loadDOTMBalance() {
     try {
         // Check if MetaMask is available and connected
         if (typeof window.ethereum !== 'undefined') {
-            const accounts = await window.ethereum.request({ method: 'eth_accounts' });```javascript
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
             if (accounts.length > 0) {
                 const address = accounts[0];
 
@@ -2904,6 +2904,7 @@ function updateBetaStatus(status, message) {
             break;
         case 'esim_ready':
             betaEnrollBtn.style.display = 'none';
+            ```text
             betaStatus.style.display = 'block';
             betaStatusText.textContent = 'Your eSIM is ready to download';
             betaStatusText.style.color = '#28a745';
@@ -2940,71 +2941,33 @@ function updateBetaStatus(status, message) {
     }
 }
 
-// Function to show notifications
-function showNotification(message, type = 'info', duration = 5000) {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff'};
-        color: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        z-index: 10000000;
-        max-width: 350px;
-        word-wrap: break-word;
-        font-size: 14px;
-        line-height: 1.4;
-        animation: slideInRight 0.3s ease-out;
-    `;
+        function createDemoUser() {
+            const timestamp = Date.now();
+            const demoEmail = `demo${timestamp}@example.com`;
 
-    notification.textContent = message;
+            // Show success message
+            const successMessage = document.createElement('div');
+            successMessage.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(81, 207, 102, 0.2);
+            border: 1px solid #51cf66;
+            color: #51cf66;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 999999;
+            font-size: 14px;
+        `;
+            successMessage.textContent = '🎮 Demo Mode Activated! Redirecting to dashboard...';
+            document.body.appendChild(successMessage);
 
-    // Add close button
-    const closeBtn = document.createElement('button');
-    closeBtn.innerHTML = '&times;';
-    closeBtn.style.cssText = `
-        background: none;
-        border: none;
-        color: white;
-        float: right;
-        font-size: 18px;
-        cursor: pointer;
-        margin-left: 10px;
-        padding: 0;
-        line-height: 1;
-    `;
-
-    closeBtn.onclick = () => {
-        notification.style.animation = 'slideOutRight 0.3s ease-in';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    };
-
-    notification.appendChild(closeBtn);
-    document.body.appendChild(notification);
-
-    // Auto remove after duration
-    if (duration > 0) {
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.style.animation = 'slideOutRight 0.3s ease-in';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }
-        }, duration);
-    }
-}
-
-// Make functions globally available
-window.showNotification = showNotification;
+            setTimeout(() => {
+                if (document.body.contains(successMessage)) {
+                    document.body.removeChild(successMessage);
+                }
+                // Redirect to dashboard in demo mode
+                window.location.href = '/dashboard';
+            }, 2000);
+        }
