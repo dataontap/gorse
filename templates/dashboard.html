@@ -336,6 +336,19 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
+        <!-- Debug Section for Testing -->
+        <div style="padding: 10px; background: rgba(255,255,255,0.1); margin: 10px 0; border-radius: 8px; text-align: center;">
+            <button onclick="debugTestOxioLineCreation()" style="background: #ff6b6b; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px;">
+                🧪 Debug Test OXIO Line Creation
+            </button>
+            <button onclick="clearDismissedOffers()" style="background: #4ecdc4; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px;">
+                🔄 Reset Dismissed Offers
+            </button>
+            <button onclick="populateOfferCards(); initializeCardStack();" style="background: #45b7d1; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px;">
+                🎯 Force Refresh Offers
+            </button>
+        </div>
+
         <!-- Offers Section -->
         <div class="offers-section">
                 <!-- Dynamic offer cards will be populated here -->
