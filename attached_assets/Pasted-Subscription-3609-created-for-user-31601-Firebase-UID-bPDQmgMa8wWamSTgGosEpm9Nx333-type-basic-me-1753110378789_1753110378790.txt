@@ -1,0 +1,39 @@
+Subscription 3609 created for user 31601 (Firebase UID: bPDQmgMa8wWamSTgGosEpm9Nx333), type basic_membership, Stripe ID: None, valid until 2026-07-21 21:02:03.691866
+Created subscription for Firebase UID bPDQmgMa8wWamSTgGosEpm9Nx333, product basic_membership, valid until 2026-07-21 21:02:03.691866
+Activating OXIO line for Basic Membership purchase by user 31601
+Debug: Retrieved user data - email: aakstinas+7@oxio.io, oxio_user_id: None, eth_address: 0xf28Ba8ACEb6D5cAFD63a63098357df403E48Ae64
+No valid OXIO user ID found (oxio_user_id: None, eth_address: 0xf28Ba8ACEb6D5cAFD63a63098357df403E48Ae64), using email-based identification
+OXIO activation payload: {'lineType': 'LINE_TYPE_MOBILITY', 'sim': {'simType': 'EMBEDDED', 'iccid': '8910650420001501340F'}, 'endUser': {'brandId': '91f70e2e-d7a8-4e9c-afc6-30acc019ed67', 'email': 'aakstinas+7@oxio.io'}, 'phoneNumberRequirements': {'preferredAreaCode': '212'}, 'countryCode': 'US', 'activateOnAttach': True}
+OXIO API Request URL: https://api-staging.brandvno.com/v3/lines/line
+OXIO API Request Headers (Auth masked): {'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': '***', 'User-Agent': 'DOTM-Platform/1.0'}
+OXIO API Request Payload: {
+  "lineType": "LINE_TYPE_MOBILITY",
+  "countryCode": "US",
+  "sim": {
+    "simType": "EMBEDDED"
+  },
+  "endUserId": {
+    "lineType": "LINE_TYPE_MOBILITY",
+    "sim": {
+      "simType": "EMBEDDED",
+      "iccid": "8910650420001501340F"
+    },
+    "endUser": {
+      "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
+      "email": "aakstinas+7@oxio.io"
+    },
+    "phoneNumberRequirements": {
+      "preferredAreaCode": "212"
+    },
+    "countryCode": "US",
+    "activateOnAttach": true
+  }
+}
+OXIO API Response Status: 400
+OXIO API Response Headers: {'Connection': 'keep-alive', 'Content-Length': '39', 'Access-Control-Allow-Credentials': 'true', 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json', 'Accept-Ranges': 'bytes', 'Date': 'Mon, 21 Jul 2025 15:02:05 GMT', 'Via': '1.1 varnish', 'X-Served-By': 'cache-chi-klot8100137-CHI', 'X-Cache': 'MISS', 'X-Cache-Hits': '0', 'X-Timer': 'S1753110125.221482,VS0,VE172'}
+Raw response body: {"error":"Invalid parameters","code":3}
+OXIO API Response Body (parsed): {
+  "error": "Invalid parameters",
+  "code": 3
+}
+Failed to activate OXIO line: HTTP 400 error
