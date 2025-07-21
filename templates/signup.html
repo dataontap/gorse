@@ -165,15 +165,6 @@
                         <div class="mt-4 text-center">
                             Already have an account? <a href="#" class="signin-link" id="signinLink">Member Login</a>
                         </div>
-
-                        <div class="mt-4 text-center" style="padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
-                            <p style="color: #cccccc; margin-bottom: 15px; font-size: 14px;">
-                                Or explore without signing in:
-                            </p>
-                            <button onclick="enableDemoMode()" class="btn btn-outline-secondary">
-                                🎮 Try Demo Mode
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -405,37 +396,6 @@
                 }
                 document.body.removeChild(textArea);
             }
-        }
-
-        // Demo mode function
-        function enableDemoMode() {
-            localStorage.setItem('demoMode', 'true');
-            
-            // Show success message
-            const successMessage = document.createElement('div');
-            successMessage.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(81, 207, 102, 0.2);
-                border: 1px solid #51cf66;
-                color: #51cf66;
-                padding: 12px 20px;
-                border-radius: 8px;
-                z-index: 999999;
-                font-size: 14px;
-            `;
-            successMessage.textContent = '🎮 Demo Mode Activated! Redirecting to dashboard...';
-            document.body.appendChild(successMessage);
-
-            setTimeout(() => {
-                if (document.body.contains(successMessage)) {
-                    document.body.removeChild(successMessage);
-                }
-                // Redirect to dashboard in demo mode
-                window.location.href = '/dashboard';
-            }, 2000);
         }
     </script>
 </body>

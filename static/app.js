@@ -155,7 +155,7 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
-
+        
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
@@ -2030,35 +2030,13 @@ let currentSubscriptionStatus = null;
 function initializeCarousel() {
     console.log('Card stack initialized');
 
-    // Check if we're on the dashboard page
-    if (!window.location.pathname.includes('/dashboard')) {
-        console.log('Not on dashboard page, skipping offers initialization');
-        return;
-    }
-
     // Check if offers section exists, if not wait a bit
     const offersSection = document.querySelector('.offers-section');
     if (!offersSection) {
         console.log('Offers section not found, waiting...');
-        // Try again with longer intervals to avoid spam
-        let attempts = 0;
-        const maxAttempts = 10;
-        const checkInterval = setInterval(() => {
-            attempts++;
-            const section = document.querySelector('.offers-section');
-            if (section || attempts >= maxAttempts) {
-                clearInterval(checkInterval);
-                if (section) {
-                    console.log('Offers section found after', attempts, 'attempts');
-                    populateOfferCards();
-                    setTimeout(() => {
-                        initializeCardStack();
-                    }, 200);
-                } else {
-                    console.log('Offers section not found after maximum attempts');
-                }
-            }
-        }, 1000);
+        setTimeout(() => {
+            initializeCarousel();
+        }, 500);
         return;
     }
 
@@ -2091,7 +2069,7 @@ function populateOfferCards() {
         {
             id: 'global_data',
             title: 'TRULY GLOBAL DATA',
-            description: ['10000MB no expiry data for $10', 'Priority fast 5G+ when available', 'Share infinitely with any member', 'Works on most of planet Earth +10km above it'],
+            description: ['10000MB no expiry data for $10', 'Priority fast 5G+ when available', 'Share infinitely with any member', 'Works on most of planet Earth and 10km+ above it.'],
             price: '$10',
             buttonText: 'Buy',
             buttonClass: 'btn-primary',
@@ -2904,7 +2882,6 @@ function updateBetaStatus(status, message) {
             break;
         case 'esim_ready':
             betaEnrollBtn.style.display = 'none';
-            ```text
             betaStatus.style.display = 'block';
             betaStatusText.textContent = 'Your eSIM is ready to download';
             betaStatusText.style.color = '#28a745';
@@ -2940,34 +2917,3 @@ function updateBetaStatus(status, message) {
             break;
     }
 }
-
-        function createDemoUser() {
-            const timestamp = Date.now();
-            const demoEmail = `demo${timestamp}@example.com`;
-
-            // Show success message
-            const successMessage = document.createElement('div');
-            successMessage.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(81, 207, 102, 0.2);
-            border: 1px solid #51cf66;
-            color: #51cf66;
-            padding: 12px 20px;
-            border-radius: 8px;
-            z-index: 999999;
-            font-size: 14px;
-        `;
-            successMessage.textContent = '🎮 Demo Mode Activated! Redirecting to dashboard...';
-            document.body.appendChild(successMessage);
-
-            setTimeout(() => {
-                if (document.body.contains(successMessage)) {
-                    document.body.removeChild(successMessage);
-                }
-                // Redirect to dashboard in demo mode
-                window.location.href = '/dashboard';
-            }, 2000);
-        }
