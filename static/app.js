@@ -1,10 +1,3 @@
-// Prevent re-initialization and duplicate loading
-if (window.appInitialized) {
-    console.log("App already initialized, skipping...");
-    // Exit early by wrapping the rest in a conditional
-} else {
-window.appInitialized = true;
-
 // Standalone logout function
 function handleLogout(event) {
     if (event) {
@@ -69,41 +62,16 @@ window.toggleTheme = toggleTheme;
 
 // Global menu toggle functionality
 function toggleMenu(element) {
-    console.log('toggleMenu called with element:', element);
-    
-    // Find the dropdown within the clicked element
-    let dropdown = element.querySelector('.menu-dropdown');
-    
-    // If not found within the element, try finding it as a sibling
-    if (!dropdown) {
-        dropdown = element.parentElement.querySelector('.menu-dropdown');
-    }
-    
-    // If still not found, try finding it globally
-    if (!dropdown) {
-        dropdown = document.querySelector('.menu-dropdown');
-    }
-    
-    console.log('Found dropdown:', dropdown);
-    
+    const dropdown = element.querySelector('.menu-dropdown');
     if (dropdown) {
-        const isVisible = dropdown.classList.contains('visible') || 
-                        dropdown.style.display === 'block' || 
-                        getComputedStyle(dropdown).display === 'block';
-        
-        console.log('Dropdown is currently visible:', isVisible);
-        
-        if (isVisible) {
+        // Handle both class-based and display-based toggles
+        if (dropdown.classList.contains('visible') || dropdown.style.display === 'block') {
             dropdown.classList.remove('visible');
             dropdown.style.display = 'none';
-            console.log('Hiding dropdown');
         } else {
             dropdown.classList.add('visible');
             dropdown.style.display = 'block';
-            console.log('Showing dropdown');
         }
-    } else {
-        console.error('Menu dropdown not found');
     }
 }
 
@@ -127,8 +95,6 @@ function toggleTheme(isDarkMode) {
     const darkToggle = document.getElementById('darkModeToggle');
     const lightToggle = document.getElementById('lightModeToggle');
 
-    console.log('toggleTheme called with:', isDarkMode);
-
     if (isDarkMode) {
         // Switch to dark mode
         body.classList.remove('light-mode');
@@ -139,7 +105,6 @@ function toggleTheme(isDarkMode) {
         // Update toggle states
         if (darkToggle) darkToggle.classList.add('active');
         if (lightToggle) lightToggle.classList.remove('active');
-        console.log('Switched to dark mode');
     } else {
         // Switch to light mode
         body.classList.remove('dark-mode');
@@ -150,7 +115,6 @@ function toggleTheme(isDarkMode) {
         // Update toggle states
         if (darkToggle) darkToggle.classList.remove('active');
         if (lightToggle) lightToggle.classList.add('active');
-        console.log('Switched to light mode');
     }
 }
 
@@ -401,135 +365,155 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Use event delegation for all interactive elements - set up once
-document.addEventListener('click', function(e) {
-    // Handle logout functionality
-    if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
-        e.preventDefault();
-        console.log('Logout button clicked');
+    // Use event delegation for all interactive elements
+    document.addEventListener('click', function(e) {
+        // Handle logout functionality
+        if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
+            e.preventDefault();
+            console.log('Logout button clicked');
 
-        // Try multiple logout methods
-        if (window.firebaseAuth && window.firebaseAuth.signOut) {
-            window.firebaseAuth.signOut();
-        } else if (typeof firebase !== 'undefined' && firebase.auth) {
-            firebase.auth().signOut().then(() => {
-                localStorage.clear();
-                window.location.href = '/';
-            }).catch((error) => {
-                console.error('Logout error:', error);
-                localStorage.clear();
-                window.location.href = '/';
-            });
-        } else {
-            // Fallback: clear storage and redirect
-            localStorage.clear();
-            window.location.href = '/';
-        }
-        return;
-    }
-
-    // Close popup
-    if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
-        hideAddUserPopup();
-        return;
-    }
-
-    // Handle invite anyone button
-    if (e.target.id === 'inviteAnyoneBtn') {
-        e.preventDefault();
-        showInviteForm();
-        return;
-    }
-
-    // Handle demo user button
-    if (e.target.id === 'demoUserBtn') {
-        e.preventDefault();
-        createDemoUser();
-        return;
-    }
-
-    // Handle send invitation button
-    if (e.target.id === 'sendInvitationBtn') {
-        e.preventDefault();
-        sendInvitation();
-        return;
-    }
-
-    // Handle cancel invitation button
-    if (e.target.id === 'cancelInviteBtn') {
-        e.preventDefault();
-        hideAddUserPopup();
-        return;
-    }
-
-    // Handle buy buttons
-    if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
-        e.preventDefault();
-        showConfirmationDrawer(10, 10, 'global_data_10gb');
-        return;
-    }
-
-    // Handle subscribe buttons
-    if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
-        e.preventDefault();
-        showConfirmationDrawer(10, 24, 'basic_membership');
-        return;
-    }
-
-    // Handle drawer cancel/confirm buttons
-    if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
-        e.preventDefault();
-        hideConfirmationDrawer();
-        return;
-    }
-
-    if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
-        e.preventDefault();
-        confirmPurchase();
-        return;
-    }
-
-    // Handle help toggle functionality
-    if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
-        e.preventDefault();
-        e.stopPropagation();
-        showHelpModal();
-        return;
-    }
-
-    // Handle settings toggle functionality
-    if (e.target.id === 'settingsToggle' || e.target.closest('#settingsToggle')) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const settingsSubmenu = document.querySelector('.settings-submenu');
-        if (settingsSubmenu) {
-            // Toggle settings submenu visibility
-            if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
-                settingsSubmenu.style.display = 'block';
+            // Try multiple logout methods
+            if (window.firebaseAuth && window.firebaseAuth.signOut) {
+                window.firebaseAuth.signOut();
+            } else if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().signOut().then(() => {
+                    localStorage.clear();
+                    window.location.href = '/';
+                }).catch((error) => {
+                    console.error('Logout error:', error);
+                    localStorage.clear();
+                    window.location.href = '/';
+                });
             } else {
+                // Fallback: clear storage and redirect
+                localStorage.clear();
+                window.location.href = '/';
+            }
+            return;
+        }
+
+        // Close popup
+        if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
+            hideAddUserPopup();
+            return;
+        }
+
+        // Handle invite anyone button
+        if (e.target.id === 'inviteAnyoneBtn') {
+            e.preventDefault();
+            showInviteForm();
+            return;
+        }
+
+        // Handle demo user button
+        if (e.target.id === 'demoUserBtn') {
+            e.preventDefault();
+            createDemoUser();
+            return;
+        }
+
+        // Handle send invitation button
+        if (e.target.id === 'sendInvitationBtn') {
+            e.preventDefault();
+            sendInvitation();
+            return;
+        }
+
+        // Handle cancel invitation button
+        if (e.target.id === 'cancelInviteBtn') {
+            e.preventDefault();
+            hideAddUserPopup();
+            return;
+        }
+    });
+
+    // Add event delegation for confirmation drawer buttons
+    document.addEventListener('click', function(e) {
+        // Handle buy buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 10, 'global_data_10gb');
+        }
+
+        // Handle subscribe buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 24, 'basic_membership');
+        }
+
+        // Handle drawer cancel/confirm buttons
+        if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            hideConfirmationDrawer();
+        }
+
+        if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            confirmPurchase();
+        }
+    });
+
+    // Initialize beta enrollment functionality
+    const betaEnrollBtn = document.getElementById('betaEnrollBtn');
+    if (betaEnrollBtn) {
+        betaEnrollBtn.addEventListener('click', handleBetaEnrollment);
+        checkBetaStatus(); // Check current status on page load
+    }
+
+    // Handle help toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+            showHelpModal();
+        }
+    });
+
+    // Initialize settings toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'settingsToggle' || e.target.closest('#settingsToggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu) {
+                // Toggle settings submenu visibility
+                if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
+                    settingsSubmenu.style.display = 'block';
+                } else {
+                    settingsSubmenu.style.display = 'none';
+                }
+            }
+        }
+
+        // Handle language selector changes
+        if (e.target.id === 'languageSelect') {
+            const selectedLanguage = e.target.value;
+            if (typeof setLanguage === 'function') {
+                setLanguage(selectedLanguage);
+            }
+        }
+
+        // Close settings submenu when clicking outside
+        if (!e.target.closest('#settingsToggle') && !e.target.closest('.settings-submenu')) {
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu && settingsSubmenu.style.display === 'block') {
                 settingsSubmenu.style.display = 'none';
             }
         }
-        return;
+    });
+
+    // Load invites if on dashboard page
+    if (window.location.pathname === '/dashboard') {
+        setTimeout(() => {
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList();
+            }
+        }, 1000);
     }
 
-    // Handle language selector changes
-    if (e.target.id === 'languageSelect') {
-        const selectedLanguage = e.target.value;
-        if (typeof setLanguage === 'function') {
-            setLanguage(selectedLanguage);
-        }
-        return;
-    }
-
-    // Close settings submenu when clicking outside
-    if (!e.target.closest('#settingsToggle') && !e.target.closest('.settings-submenu')) {
-        const settingsSubmenu = document.querySelector('.settings-submenu');
-        if (settingsSubmenu && settingsSubmenu.style.display === 'block') {
-            settingsSubmenu.style.display = 'none';
-        }
-    }
+    // Initialize carousel functionality
+    initializeCarousel();
 });
 
 // Add User Popup Functions
@@ -1077,32 +1061,32 @@ function initializePauseDurationUpdates() {
 }
 
 // Call this when the page loads to handle any existing paused users
-function initializeDashboard() {
-    console.log('Initializing dashboard...');
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('App.js loaded successfully');
 
     // Initialize theme based on localStorage or default to dark
     const savedTheme = localStorage.getItem('darkMode');
     const isDarkMode = savedTheme === null ? true : savedTheme === 'true';
-    console.log('Saved theme:', savedTheme, 'isDarkMode:', isDarkMode);
     toggleTheme(isDarkMode);
 
     // Load DOTM balance if wallet is connected
     loadDOTMBalance();
 
-    // Add event listeners for theme toggles - use event delegation to avoid conflicts
-    document.addEventListener('click', function(e) {
-        if (e.target.id === 'darkModeToggle' || e.target.closest('#darkModeToggle')) {
-            e.preventDefault();
-            console.log('Dark mode toggle clicked');
+    // Add event listeners for theme toggles
+    const darkToggle = document.getElementById('darkModeToggle');
+    const lightToggle = document.getElementById('lightModeToggle');
+
+    if (darkToggle) {
+        darkToggle.addEventListener('click', function() {
             toggleTheme(true);
-        }
-        
-        if (e.target.id === 'lightModeToggle' || e.target.closest('#lightModeToggle')) {
-            e.preventDefault();
-            console.log('Light mode toggle clicked');
+        });
+    }
+
+    if (lightToggle) {
+        lightToggle.addEventListener('click', function() {
             toggleTheme(false);
-        }
-    });
+        });
+    }
 
     // Initialize add user functionality with popup
     const addUserBtn = document.getElementById('addUserBtn');
@@ -1121,12 +1105,143 @@ function initializeDashboard() {
         });
     });
 
+    // Use event delegation for all interactive elements
+    document.addEventListener('click', function(e) {
+        // Handle logout functionality
+        if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
+            e.preventDefault();
+            console.log('Logout button clicked');
+
+            // Try multiple logout methods
+            if (window.firebaseAuth && window.firebaseAuth.signOut) {
+                window.firebaseAuth.signOut();
+            } else if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().signOut().then(() => {
+                    localStorage.clear();
+                    window.location.href = '/';
+                }).catch((error) => {
+                    console.error('Logout error:', error);
+                    localStorage.clear();
+                    window.location.href = '/';
+                });
+            } else {
+                // Fallback: clear storage and redirect
+                localStorage.clear();
+                window.location.href = '/';
+            }
+            return;
+        }
+
+        // Close popup
+        if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
+            hideAddUserPopup();
+            return;
+        }
+
+        // Handle invite anyone button
+        if (e.target.id === 'inviteAnyoneBtn') {
+            e.preventDefault();
+            showInviteForm();
+            return;
+        }
+
+        // Handle demo user button
+        if (e.target.id === 'demoUserBtn') {
+            e.preventDefault();
+            createDemoUser();
+            return;
+        }
+
+        // Handle send invitation button
+        if (e.target.id === 'sendInvitationBtn') {
+            e.preventDefault();
+            sendInvitation();
+            return;
+        }
+
+        // Handle cancel invitation button
+        if (e.target.id === 'cancelInviteBtn') {
+            e.preventDefault();
+            hideAddUserPopup();
+            return;
+        }
+    });
+
+    // Add event delegation for confirmation drawer buttons
+    document.addEventListener('click', function(e) {
+        // Handle buy buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 10, 'global_data_10gb');
+        }
+
+        // Handle subscribe buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 24, 'basic_membership');
+        }
+
+        // Handle drawer cancel/confirm buttons
+        if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            hideConfirmationDrawer();
+        }
+
+        if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            confirmPurchase();
+        }
+    });
+
     // Initialize beta enrollment functionality
     const betaEnrollBtn = document.getElementById('betaEnrollBtn');
     if (betaEnrollBtn) {
         betaEnrollBtn.addEventListener('click', handleBetaEnrollment);
         checkBetaStatus(); // Check current status on page load
     }
+
+    // Handle help toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+            showHelpModal();
+        }
+    });
+
+    // Initialize settings toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'settingsToggle' || e.target.closest('#settingsToggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu) {
+                // Toggle settings submenu visibility
+                if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
+                    settingsSubmenu.style.display = 'block';
+                } else {
+                    settingsSubmenu.style.display = 'none';
+                }
+            }
+        }
+
+        // Handle language selector changes
+        if (e.target.id === 'languageSelect') {
+            const selectedLanguage = e.target.value;
+            if (typeof setLanguage === 'function') {
+                setLanguage(selectedLanguage);
+            }
+        }
+
+        // Close settings submenu when clicking outside
+        if (!e.target.closest('#settingsToggle') && !e.target.closest('.settings-submenu')) {
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu && settingsSubmenu.style.display === 'block') {
+                settingsSubmenu.style.display = 'none';
+            }
+        }
+    });
 
     // Load invites if on dashboard page
     if (window.location.pathname === '/dashboard') {
@@ -1137,49 +1252,8 @@ function initializeDashboard() {
         }, 1000);
     }
 
-    // Initialize carousel functionality - force it to run
-    setTimeout(() => {
-        initializeCarousel();
-    }, 500);
-
-    // Also initialize immediately
+    // Initialize carousel functionality
     initializeCarousel();
-
-    // Initialize pause duration updates after a short delay to ensure cards are loaded
-    setTimeout(initializePauseDurationUpdates, 1500);
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('App.js loaded successfully');
-    initializeDashboard();
-    
-    // Force clear any dismissed offers immediately
-    localStorage.removeItem('dismissedOffers');
-    
-    // Force offers initialization immediately
-    console.log('Force initializing offers immediately...');
-    forceCreateOffersSection();
-    
-    // Try multiple times with increasing delays
-    setTimeout(() => {
-        console.log('Force initializing offers after 100ms...');
-        forceCreateOffersSection();
-    }, 100);
-    
-    setTimeout(() => {
-        console.log('Force initializing offers after 500ms...');
-        forceCreateOffersSection();
-    }, 500);
-    
-    setTimeout(() => {
-        console.log('Force initializing offers after 1s...');
-        forceCreateOffersSection();
-    }, 1000);
-    
-    setTimeout(() => {
-        console.log('Force initializing offers after 2s...');
-        forceCreateOffersSection();
-    }, 2000);
 });
 
 // Add User Popup Functions
@@ -1726,6 +1800,14 @@ function initializePauseDurationUpdates() {
     });
 }
 
+// Call this when the page loads to handle any existing paused users
+document.addEventListener('DOMContentLoaded', function() {
+    // Existing DOMContentLoaded code...
+
+    // Initialize pause duration updates after a short delay to ensure cards are loaded
+    setTimeout(initializePauseDurationUpdates, 1500);
+});
+
 function createInviteItem(invite) {
     const inviteItem = document.createElement('div');
     inviteItem.className = 'invitation-item';
@@ -1944,127 +2026,49 @@ function trackHelpInteraction(type, data) {
 // Store current subscription status globally
 let currentSubscriptionStatus = null;
 
-// Function to force create offers section - more aggressive approach
-function forceCreateOffersSection() {
-    console.log('Force creating offers section...');
-    
-    // Clear any dismissed offers
-    localStorage.removeItem('dismissedOffers');
-    
-    // Remove any existing offers section first
-    const existingSection = document.querySelector('.offers-section');
-    if (existingSection) {
-        existingSection.remove();
-        console.log('Removed existing offers section');
-    }
-    
-    // Find the best container
-    const container = document.querySelector('.container');
-    if (!container) {
-        console.error('No container found');
-        return;
-    }
-    
-    // Create new offers section
-    const offersSection = document.createElement('div');
-    offersSection.className = 'offers-section';
-    offersSection.style.cssText = `
-        margin: 20px auto !important;
-        max-width: 500px !important;
-        padding: 0 20px !important;
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        position: relative !important;
-        z-index: 1 !important;
-    `;
-    
-    // Find insertion point - after membership banner or dot container
-    let insertAfter = document.getElementById('membershipBanner');
-    if (!insertAfter) {
-        insertAfter = document.querySelector('.dot-container');
-    }
-    if (!insertAfter) {
-        insertAfter = document.querySelector('.subscription-status');
-    }
-    
-    if (insertAfter && insertAfter.parentNode) {
-        insertAfter.parentNode.insertBefore(offersSection, insertAfter.nextSibling);
-    } else {
-        container.appendChild(offersSection);
-    }
-    
-    console.log('Created new offers section');
-    
-    // Populate immediately
-    populateOfferCards();
-    
-    // Initialize card stack after a short delay
-    setTimeout(() => {
-        initializeCardStack();
-    }, 100);
-}
-
 // Initialize card stack functionality
 function initializeCarousel() {
     console.log('Card stack initialized');
-    forceCreateOffersSection();
-}
 
-// Create offers section if it doesn't exist
-function createOffersSection() {
-    console.log('Creating offers section...');
-    
-    // Try multiple container selectors
-    let container = document.querySelector('.container');
-    if (!container) {
-        container = document.querySelector('main');
+    // Check if we're on the dashboard page
+    if (!window.location.pathname.includes('/dashboard')) {
+        console.log('Not on dashboard page, skipping offers initialization');
+        return;
     }
-    if (!container) {
-        container = document.querySelector('body');
+
+    // Check if offers section exists, if not wait a bit
+    const offersSection = document.querySelector('.offers-section');
+    if (!offersSection) {
+        console.log('Offers section not found, waiting...');
+        // Try again with longer intervals to avoid spam
+        let attempts = 0;
+        const maxAttempts = 10;
+        const checkInterval = setInterval(() => {
+            attempts++;
+            const section = document.querySelector('.offers-section');
+            if (section || attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                if (section) {
+                    console.log('Offers section found after', attempts, 'attempts');
+                    populateOfferCards();
+                    setTimeout(() => {
+                        initializeCardStack();
+                    }, 200);
+                } else {
+                    console.log('Offers section not found after maximum attempts');
+                }
+            }
+        }, 1000);
+        return;
     }
-    
-    if (container) {
-        // Try to find a good insertion point
-        let insertAfter = container.querySelector('.dot-container');
-        
-        // If no dot-container, try membership banner
-        if (!insertAfter) {
-            insertAfter = container.querySelector('.subscription-status');
-        }
-        
-        // If no subscription status, try dashboard header
-        if (!insertAfter) {
-            insertAfter = container.querySelector('.dashboard-header');
-        }
-        
-        // If still nothing, try to insert after the first element
-        if (!insertAfter && container.children.length > 0) {
-            insertAfter = container.children[0];
-        }
-        
-        const offersSection = document.createElement('div');
-        offersSection.className = 'offers-section';
-        offersSection.style.cssText = `
-            margin: 20px auto;
-            max-width: 500px;
-            padding: 0 20px;
-            display: block;
-            visibility: visible;
-            opacity: 1;
-        `;
-        
-        if (insertAfter && insertAfter.parentNode) {
-            insertAfter.parentNode.insertBefore(offersSection, insertAfter.nextSibling);
-        } else {
-            // Fallback: append to container
-            container.appendChild(offersSection);
-        }
-        
-        console.log('Offers section created and inserted into:', container.tagName);
-    } else {
-        console.error('No suitable container found for offers section');
-    }
+
+    // Wait for subscription status to be loaded
+    setTimeout(() => {
+        populateOfferCards();
+        setTimeout(() => {
+            initializeCardStack();
+        }, 200);
+    }, 100);
 }
 
 // Global variables for card stack
@@ -2076,19 +2080,13 @@ let currentX = 0;
 let cardContainer = null;
 
 function populateOfferCards() {
-    let offersSection = document.querySelector('.offers-section');
+    const offersSection = document.querySelector('.offers-section');
     if (!offersSection) {
-        console.log('Offers section not found, creating it now...');
-        forceCreateOffersSection();
-        offersSection = document.querySelector('.offers-section');
-    }
-    
-    if (!offersSection) {
-        console.error('Still no offers section after force create');
+        console.log('Offers section not found');
         return;
     }
 
-    // Define all possible offers - always show these
+    // Define all possible offers
     const allOffers = [
         {
             id: 'global_data',
@@ -2097,7 +2095,8 @@ function populateOfferCards() {
             price: '$10',
             buttonText: 'Buy',
             buttonClass: 'btn-primary',
-            action: "showConfirmationDrawer(10, 10, 'global_data_10gb')"
+            action: "showConfirmationDrawer(10, 10, 'global_data_10gb')",
+            alwaysShow: true
         },
         {
             id: 'basic_membership',
@@ -2110,7 +2109,8 @@ function populateOfferCards() {
             price: '$24/year',
             buttonText: 'Subscribe',
             buttonClass: 'btn-primary',
-            action: "showConfirmationDrawer(10, 24, 'basic_membership')"
+            action: "showConfirmationDrawer(10, 24, 'basic_membership')",
+            showCondition: shouldShowBasicMembership
         },
         {
             id: 'full_membership',
@@ -2120,24 +2120,48 @@ function populateOfferCards() {
             buttonText: 'Coming Soon',
             buttonClass: 'btn-secondary',
             action: "sendComingSoonNotification()",
-            disabled: true
+            disabled: true,
+            alwaysShow: true
         }
     ];
 
-    // Always show all offers - completely ignore dismissals
-    const availableOffers = allOffers;
+    // Get dismissed offers from localStorage
+    const dismissedOffers = JSON.parse(localStorage.getItem('dismissedOffers') || '[]');
 
-    console.log('Populating', availableOffers.length, 'offers');
+    // Filter offers based on conditions and dismissal status
+    const availableOffers = allOffers.filter(offer => {
+        // Check if offer is dismissed
+        if (dismissedOffers.includes(offer.id)) return false;
+
+        if (offer.alwaysShow) return true;
+        if (offer.showCondition) return offer.showCondition();
+        return true;
+    });
+
+    console.log('Available offers:', availableOffers.length);
+
+    // Handle case when all offers are dismissed
+    if (availableOffers.length === 0) {
+        offersSection.innerHTML = `
+            <div class="no-offers-message" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.7);">
+                <p>All offers have been dismissed.</p>
+                <button onclick="clearDismissedOffers()" style="background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">
+                    Show All Offers Again
+                </button>
+            </div>
+        `;
+        return;
+    }
 
     // Set the initial card index to the last card
     currentCardIndex = availableOffers.length - 1;
 
     // Create card stack container with proper styling
     offersSection.innerHTML = `
-        <div class="offers-stack-container" id="cardStackContainer" style="position: relative !important; height: 450px !important; width: 100% !important; max-width: 400px !important; margin: 0 auto !important; background: rgba(255,255,255,0.05) !important; border-radius: 15px !important; padding: 10px !important;">
+        <div class="offers-stack-container" id="cardStackContainer" style="position: relative; height: 450px; width: 100%; max-width: 400px; margin: 0 auto;">
             <!-- Cards will be inserted here -->
         </div>
-        <div class="card-indicators" id="cardIndicators" style="display: flex !important; justify-content: center !important; gap: 10px !important; margin-top: 20px !important;">
+        <div class="card-indicators" id="cardIndicators">
             <!-- Indicators will be inserted here -->
         </div>
     `;
@@ -2146,7 +2170,7 @@ function populateOfferCards() {
     const indicatorsContainer = document.getElementById('cardIndicators');
 
     if (!stackContainer || !indicatorsContainer) {
-        console.error('Stack container or indicators container not found after creation');
+        console.error('Stack container or indicators container not found');
         return;
     }
 
@@ -2156,42 +2180,21 @@ function populateOfferCards() {
         const offerCard = document.createElement('div');
         offerCard.className = 'offer-card';
         offerCard.dataset.index = index;
-        offerCard.style.cssText = `
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            height: 400px !important;
-            background: rgba(255, 255, 255, 0.1) !important;
-            border-radius: 15px !important;
-            padding: 25px !important;
-            color: white !important;
-            text-align: center !important;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
-            backdrop-filter: blur(10px) !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
-            cursor: grab !important;
-            user-select: none !important;
-            touch-action: pan-y pinch-zoom !important;
-            border: 1px solid rgba(255,255,255,0.2) !important;
-        `;
 
-        const descriptions = offer.description.map(desc => `<p style="margin: 5px 0; font-size: 0.9rem; line-height: 1.4;">${desc}</p>`).join('');
+        const descriptions = offer.description.map(desc => `<p>${desc}</p>`).join('');
         const buttonDisabled = offer.disabled ? ' disabled' : '';
 
         offerCard.innerHTML = `
-            <h3 style="font-size: 1.6em; margin-bottom: 15px; font-weight: bold; color: #FFF371;">${offer.title}</h3>
-            <div class="offer-description" style="flex-grow: 1;">
+            <h3>${offer.title}</h3>
+            <div class="offer-description">
                 ${descriptions}
             </div>
-            <div class="price" style="font-size: 1.4rem; font-weight: 700; margin: 15px 0; color: #FFF371;">${offer.price}</div>
+            <div class="price">${offer.price}</div>
             <div style="display: flex; align-items: center; gap: 15px; margin-top: auto; justify-content: space-between; width: 100%;">
-                <button class="dismiss-card-btn" onclick="dismissOfferCard('${offer.id}')" title="Dismiss this offer" style="background: rgba(255, 255, 255, 0.2); border: none; border-radius: 25px; padding: 12px 25px; color: rgba(255, 255, 255, 0.7); cursor: pointer; min-height: 44px; width: 100px;">
-                    <i class="fas fa-times"></i>
+                <button class="dismiss-card-btn" onclick="dismissOfferCard('${offer.id}')" title="Dismiss this offer">
+                    <i class="fas fa-times"></i><br>
                 </button>
-                <button class="offer-button ${offer.buttonClass}" ${buttonDisabled} onclick="${offer.action}" style="padding: 12px 28px; border-radius: 25px; font-weight: 600; font-size: 0.9rem; border: none; cursor: pointer; min-height: 44px; flex-grow: 1; background: #007bff; color: white;">
+                <button class="offer-button ${offer.buttonClass}"${buttonDisabled} onclick="${offer.action}">
                     ${offer.buttonText}
                 </button>
             </div>
@@ -2203,26 +2206,12 @@ function populateOfferCards() {
         const indicator = document.createElement('div');
         indicator.className = 'indicator-dot';
         indicator.dataset.index = index;
-        indicator.style.cssText = `
-            width: 12px !important;
-            height: 12px !important;
-            border-radius: 50% !important;
-            background: #444444 !important;
-            cursor: pointer !important;
-            transition: background-color 0.3s !important;
-        `;
         indicator.addEventListener('click', () => goToCard(index));
         indicatorsContainer.appendChild(indicator);
     });
 
     cardStack = Array.from(stackContainer.querySelectorAll('.offer-card'));
-    console.log('Successfully created card stack with', cardStack.length, 'cards');
-    
-    // Force visibility
-    offersSection.style.display = 'block';
-    offersSection.style.visibility = 'visible';
-    offersSection.style.opacity = '1';
-    
+    console.log('Created card stack with', cardStack.length, 'cards');
     updateCardPositions();
 }
 
@@ -2577,7 +2566,22 @@ function clearDismissedOffers() {
 window.clearDismissedOffers = clearDismissedOffers;
 
 function shouldShowBasicMembership() {
-    // Always show basic membership offer for all users
+    if (!currentSubscriptionStatus) return true;
+
+    // Don't show if user has active basic membership with more than 7 days remaining
+    if (currentSubscriptionStatus.status === 'active' && 
+        currentSubscriptionStatus.subscription_type === 'basic_membership') {
+
+        const endDate = new Date(currentSubscriptionStatus.end_date);
+        const now = new Date();
+        const daysRemaining = (endDate - now) / (1000 * 60 * 60 * 24);
+
+        if (daysRemaining > 7) {
+            console.log(`Basic membership has ${Math.round(daysRemaining)} days remaining - hiding basic membership offer`);
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -3004,4 +3008,3 @@ function showNotification(message, type = 'info', duration = 5000) {
 
 // Make functions globally available
 window.showNotification = showNotification;
-} // Close the conditional block

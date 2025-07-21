@@ -64,6 +64,9 @@
                 <a href="/profile"><i class="fas fa-user"></i> Profile</a>
                 <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
                 <a href="/payments"><i class="fas fa-credit-card"></i> Payments</a>
+                <a href="/bitchat" class="nav-link">
+                    🔗 Bitchat
+                </a>
                 <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
                 <div class="settings-submenu" style="display: none;">
                     <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
@@ -105,6 +108,7 @@
                         <div class="user-info-header">
                             <span class="user-name" id="profileUserName">John Doe <span class="founding-shield">Founding Member</span></span>
                             <span class="user-email" id="profileUserEmail">john@example.com</span>
+                            <span class="user-type user-type-admin">Admin Account</span>
                         </div>
                     </div>
                 </div>
@@ -207,247 +211,678 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="/static/app.js"></script>
     <script src="/static/translations.js"></script>
-
+    <script src="/static/app.js"></script>
     <script>
-        // Global function definitions
-        function handleLogout(event) {
-            if (event) event.preventDefault();
-            if (window.signOut) {
-                window.signOut();
-            } else if (window.firebaseAuth && window.firebaseAuth.signOut) {
-                window.firebaseAuth.signOut();
-            } else {
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = '/';
-            }
-        }
-
-        function toggleProfileDropdown() {
-            const dropdown = document.querySelector('.profile-dropdown');
-            if (dropdown) {
-                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-            }
-        }
-
-        function loadInvitesList() {
-            if (window.loadInvitesList) {
-                window.loadInvitesList();
-            } else {
-                console.log('loadInvitesList function not available');
-            }
-        }
-
-        // Help toggle functionality
-        function initializeHelpToggle() {
-            const helpToggle = document.getElementById('helpToggle');
-            const helpSection = document.querySelector('.help-section');
-
-            if (helpToggle && helpSection) {
-                helpToggle.addEventListener('click', function(e) {
-                    e.preventDefault();
-
-                    if (helpSection.style.display === 'none' || !helpSection.style.display) {
-                        helpSection.style.display = 'block';
-                        helpSection.classList.add('expanded');
-                        helpToggle.classList.add('active');
-
-                        if (window.startHelpSession) {
-                            window.startHelpSession();
-                        }
-                    } else {
-                        helpSection.style.display = 'none';
-                        helpSection.classList.remove('expanded');
-                        helpToggle.classList.remove('active');
-
-                        if (window.endHelpSession) {
-                            window.endHelpSession();
-                        }
-                    }
-                });
-            }
-        }
-
+        // Load Firebase user data from localStorage
         document.addEventListener('DOMContentLoaded', function() {
-            initializeHelpToggle();
-            loadUserProfile();
+            loadFirebaseUserData();
+            loadOxioData();
+            loadSubscriptionData();
         });
 
-        function loadUserProfile() {
-            // Get current user data from localStorage
-            var currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-            
-            if (currentUser) {
-                // Update profile display with actual user data
-                var profileUserName = document.getElementById('profileUserName');
-                var profileUserEmail = document.getElementById('profileUserEmail');
-                
-                if (profileUserName) {
-                    var founderBadge = currentUser.founderStatus === 'Y' ? '<span class="founding-shield">Founding Member</span>' : '';
-                    profileUserName.innerHTML = (currentUser.displayName || 'User') + ' ' + founderBadge;
+        function loadFirebaseUserData() {
+            try {
+                // Get current user data from localStorage (set by firebase-auth.js)
+                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+                if (currentUserData) {
+                    // Update email
+                    const emailElement = document.getElementById('profileUserEmail');
+                    if (emailElement && currentUserData.email) {
+                        emailElement.textContent = currentUserData.email;
+                    }
+
+                    // Update display name
+                    const nameElement = document.getElementById('profileUserName');
+                    if (nameElement) {
+                        const displayName = currentUserData.displayName || 'User';
+                        const founderBadge = currentUserData.founderStatus === 'Y' ? 'Founding Member' : 'Member';
+                        nameElement.innerHTML = `${displayName} <span class="founding-shield">${founderBadge}</span>`;
+                    }
+                } else {
+                    // Fallback to old method if currentUser data not available
+                    const userEmail = localStorage.getItem('userEmail');
+                    const userId = localStorage.getItem('userId');
+
+                    if (userEmail) {
+                        const emailElement = document.getElementById('profileUserEmail');
+                        if (emailElement) {
+                            emailElement.textContent = userEmail;
+                        }
+
+                        // Extract name from email as fallback
+                        const nameFromEmail = userEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        const nameElement = document.getElementById('profileUserName');
+                        if (nameElement) {
+                            nameElement.innerHTML = `${nameFromEmail} <span class="founding-shield">Member</span>`;
+                        }
+                    } else {
+                        // Show demo data if nothing is available
+                        const emailElement = document.getElementById('profileUserEmail');
+                        const nameElement = document.getElementById('profileUserName');
+
+                        if (emailElement) {
+                            emailElement.textContent = 'demo@example.com';
+                        }
+                        if (nameElement) {
+                            nameElement.innerHTML = `Demo User <span class="founding-shield">Demo Member</span>`;
+                        }
+                    }
                 }
-                
-                if (profileUserEmail) {
-                    profileUserEmail.textContent = currentUser.email || 'No email';
+            } catch (error) {
+                console.error('Error loading Firebase user data:', error);
+                // Fallback to demo data on error
+                const emailElement = document.getElementById('profileUserEmail');
+                const nameElement = document.getElementById('profileUserName');
+
+                if (emailElement) {
+                    emailElement.textContent = 'demo@example.com';
                 }
-                
-                // Load subscription data
-                loadSubscriptionData(currentUser.uid);
-                
-                // Load OXIO data
-                loadOxioData(currentUser.uid);
-            } else {
-                console.log('No current user data found');
+                if (nameElement) {
+                    nameElement.innerHTML = `Demo User <span class="founding-shield">Demo Member</span>`;
+                }
             }
         }
 
-        function loadSubscriptionData(firebaseUid) {
-            if (!firebaseUid) return;
-            
-            fetch('/api/subscription-status?firebaseUid=' + firebaseUid)
-                .then(response => response.json())
-                .then(data => {
-                    var subscriptionContainer = document.getElementById('subscriptionContainer');
-                    if (subscriptionContainer) {
-                        if (data.status === 'active') {
-                            var displayName = data.subscription_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-                            var endDate = new Date(data.end_date);
-                            var formattedDate = endDate.toLocaleDateString();
-                            
-                            subscriptionContainer.innerHTML = `
-                                <div class="address-card p-3 mb-3" style="background: rgba(81, 207, 102, 0.15); border-radius: 8px;">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="address-content">
-                                            <h5>${displayName}</h5>
-                                            <p>Valid until: ${formattedDate}</p>
-                                            <p>Status: Active</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        } else {
-                            subscriptionContainer.innerHTML = `
-                                <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
-                                    <div class="address-content">
-                                        <p>No active subscription</p>
-                                    </div>
-                                </div>
-                            `;
+        function loadOxioData() {
+            try {
+                // Get current user data from localStorage (set by firebase-auth.js)
+                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+                let firebaseUid = null;
+
+                if (currentUserData) {
+                    firebaseUid = currentUserData.uid;
+                } else {
+                    // Fallback to old localStorage keys
+                    firebaseUid = localStorage.getItem('firebaseUid') || localStorage.getItem('userId');
+                }
+
+                if (!firebaseUid) {
+                    displayNoOxioData();
+                    return;
+                }
+
+                fetch(`/api/oxio-user-data?firebaseUid=${firebaseUid}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
                         }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading subscription data:', error);
-                });
+                        return response.json();
+                    })
+                    .then(data => {
+                        displayOxioData(data);
+                    })
+                    .catch(error => {
+                        console.error('Error loading OXIO data:', error);
+                        displayOxioError(error.message);
+                    });
+            } catch (error) {
+                console.error('Error in loadOxioData:', error);
+                displayOxioError(error.message);
+            }
         }
 
-        function loadOxioData(firebaseUid) {
-            if (!firebaseUid) return;
-            
-            fetch('/api/oxio-user-data?firebaseUid=' + firebaseUid)
-                .then(response => response.json())
-                .then(data => {
-                    var oxioContainer = document.getElementById('oxioContainer');
-                    if (oxioContainer) {
-                        if (data.success && data.oxio_data) {
-                            // Check if we have an OXIO User ID to display
-                            const hasOxioUid = data.oxio_data.oxio_user_id && data.oxio_data.oxio_user_id !== 'Not available';
-                            
-                            if (hasOxioUid) {
-                                oxioContainer.innerHTML = `
-                                    <div class="address-card p-3 mb-3" style="background: rgba(116, 192, 252, 0.15); border-radius: 8px;">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div class="address-content">
-                                                <h5>OXIO Account Details</h5>
-                                                <p><strong>OXIO User ID:</strong> <span class="text-break">${data.oxio_data.oxio_user_id}</span> 
-                                                   <button class="btn btn-sm btn-outline-primary copy-btn" onclick="copyToClipboard('${data.oxio_data.oxio_user_id}')">
-                                                       <i class="fas fa-copy"></i>
-                                                   </button>
-                                                </p>
-                                                <p><strong>Status:</strong> ${data.oxio_data.status || 'Not activated'}</p>
-                                                ${data.oxio_data.phone_number ? `<p><strong>Phone:</strong> ${data.oxio_data.phone_number}</p>` : ''}
-                                                ${data.oxio_data.line_id ? `<p><strong>Line ID:</strong> ${data.oxio_data.line_id}</p>` : ''}
-                                                ${data.oxio_data.iccid ? `<p><strong>ICCID:</strong> ${data.oxio_data.iccid}</p>` : ''}
-                                                ${data.oxio_data.plan_name ? `<p><strong>Plan:</strong> ${data.oxio_data.plan_name}</p>` : ''}
-                                            </div>
-                                            <i class="fas fa-sync-alt refresh-icon" onclick="refreshOxioData()" title="Refresh OXIO data" style="cursor: pointer; color: #007bff;"></i>
-                                        </div>
-                                    </div>
-                                `;
-                            } else {
-                                oxioContainer.innerHTML = `
-                                    <div class="address-card p-3 mb-3" style="background: rgba(116, 192, 252, 0.15); border-radius: 8px;">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div class="address-content">
-                                                <h5>OXIO Account Details</h5>
-                                                <p><strong>OXIO User ID:</strong> Not available</p>
-                                                <p><strong>Status:</strong> ${data.oxio_data.status || 'Not activated'}</p>
-                                                <p style="font-size: 14px; color: #999;">OXIO account will be created when you purchase a Basic Membership</p>
-                                            </div>
-                                            <i class="fas fa-sync-alt refresh-icon" onclick="refreshOxioData()" title="Refresh OXIO data" style="cursor: pointer; color: #007bff;"></i>
-                                        </div>
-                                    </div>
-                                `;
-                            }
-                            // Show refresh button
-                            var refreshBtn = document.getElementById('oxioRefreshBtn');
-                            if (refreshBtn) refreshBtn.style.display = 'inline';
-                        } else {
-                            oxioContainer.innerHTML = `
-                                <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
-                                    <div class="address-content">
-                                        <p>No OXIO data available</p>
-                                        <p style="font-size: 14px; color: #999;">OXIO account will be created when you purchase a Basic Membership</p>
-                                    </div>
+        function displayOxioData(data) {
+            const container = document.getElementById('oxioContainer');
+            const refreshBtn = document.getElementById('oxioRefreshBtn');
+
+            if (data.status === 'success' && data.oxio_data) {
+                const oxioData = data.oxio_data;
+
+                // Check if OXIO user needs to be created
+                if (oxioData.status === 'oxio_user_not_created' || !oxioData.oxio_user_id) {
+                    displayOxioError(oxioData.error || 'OXIO user not created yet');
+                    return;
+                }
+
+                // Show refresh button
+                if (refreshBtn) refreshBtn.style.display = 'block';
+
+                // Format regions
+                const regionsText = oxioData.regions && oxioData.regions.length > 0 
+                    ? oxioData.regions.join(', ') 
+                    : 'Not specified';
+
+                // Status badge color
+                const statusColor = getOxioStatusColor(oxioData.status);
+
+                // Helper function to create copy button
+                const createCopyButton = (value, label) => {
+                    if (!value || value === 'Not created' || value === 'Not assigned' || value === 'N/A') {
+                        return '';
+                    }
+                    return ` <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyToClipboard('${value}', '${label}')" title="Copy ${label}"><i class="fas fa-copy"></i></button>`;
+                };
+
+                container.innerHTML = `
+                    <div class="address-card p-3 mb-3">
+                        <div class="address-content">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-user me-2"></i>User Information</h5>
+                                    <p><strong>MetaMask Address:</strong> <span class="text-break">${oxioData.oxio_user_id || 'Not created'}</span>${createCopyButton(oxioData.oxio_user_id, 'MetaMask Address')}</p>
+                                    <p><strong>DOT User ID:</strong> <span class="text-break">${oxioData.user_id || 'N/A'}</span>${createCopyButton(oxioData.user_id, 'DOT User ID')}</p>
+                                    <p><strong>Email:</strong> <span class="text-break">${oxioData.email || 'N/A'}</span>${createCopyButton(oxioData.email, 'Email')}</p>
+                                    <p><strong>Phone Number:</strong> <span class="text-break">${oxioData.phone_number || 'Not assigned'}</span>${createCopyButton(oxioData.phone_number, 'Phone Number')}</p>
+                                    <p><strong>Line ID:</strong> <span class="text-break">${oxioData.line_id || 'Not assigned'}</span>${createCopyButton(oxioData.line_id, 'Line ID')}</p>
+                                    <p><strong>OXIO User ID:</strong> <span class="text-break">${oxioData.metamask_address || 'Not connected'}</span>${createCopyButton(oxioData.metamask_address, 'OXIO User ID')}</p>
                                 </div>
-                            `;
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading OXIO data:', error);
-                    var oxioContainer = document.getElementById('oxioContainer');
-                    if (oxioContainer) {
-                        oxioContainer.innerHTML = `
-                            <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
-                                <p>Error loading OXIO information</p>
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-sim-card me-2"></i>eSIM Information</h5>
+                                    <p><strong>ICCID:</strong> <span class="text-break">${oxioData.iccid || 'Not assigned'}</span>${createCopyButton(oxioData.iccid, 'ICCID')}</p>
+                                    <p><strong>Activation Code:</strong> <span class="text-break">${oxioData.activation_code || 'Not assigned'}</span>${createCopyButton(oxioData.activation_code, 'Activation Code')}</p>
+                                    <p><strong>Profile ID:</strong> <span class="text-break">${oxioData.profile_id || 'Not assigned'}</span>${createCopyButton(oxioData.profile_id, 'Profile ID')}</p>
+                                    <p><strong>Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${formatOxioStatus(oxioData.status)}</span></p>
+                                    <p><strong>Plan:</strong> ${oxioData.plan_name || 'Not assigned'}</p>
+                                    <p><strong>Data Allowance:</strong> ${oxioData.data_allowance || 'Not specified'}</p>
+                                    <p><strong>Validity:</strong> ${oxioData.validity_days ? oxioData.validity_days + ' days' : 'Not specified'}</p>
+                                    <p><strong>Coverage:</strong> ${regionsText}</p>
+                                    <p><strong>Last Updated:</strong> ${oxioData.last_updated ? new Date(oxioData.last_updated).toLocaleString() : 'Never'}</p>
+                                </div>
                             </div>
-                        `;
-                    }
-                });
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-mobile-alt me-2"></i>Plan Details</h5>
+                                    <p><strong>Plan Name:</strong> ${oxioData.plan_name || 'Not assigned'}</p>
+                                    <p><strong>Data Allowance:</strong> ${oxioData.data_allowance || 'Not specified'}</p>
+                                    <p><strong>Validity:</strong> ${oxioData.validity_days ? oxioData.validity_days + ' days' : 'Not specified'}</p>
+                                    <p><strong>Coverage:</strong> ${regionsText}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-qrcode me-2"></i>Activation</h5>
+                                    ${oxioData.qr_code ? `
+                                        <p><strong>QR Code:</strong> <button class="btn btn-sm btn-outline-primary" onclick="showQRCode('${oxioData.qr_code}')">Show QR</button></p>
+                                    ` : '<p><strong>QR Code:</strong> Not available</p>'}
+                                    <p><strong>Subscription ID:</strong> <span class="text-break">${oxioData.subscription_id || 'Not assigned'}</span>${createCopyButton(oxioData.subscription_id, 'Subscription ID')}</p>
+                                    <p><strong>Last Updated:</strong> ${oxioData.last_updated ? new Date(oxioData.last_updated).toLocaleString() : 'Never'}</p>
+                                </div>
+                            </div>
+                            ${oxioData.error ? `
+                                <div class="alert alert-warning mt-3" role="alert">
+                                    <strong>Note:</strong> ${oxioData.error}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                displayOxioError(data.error);
+            }
+        }
+
+        function displayNoOxioData() {
+            const container = document.getElementById('oxioContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="border-left: 4px solid #6c757d;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="address-content">
+                            <h4>No OXIO Data Available</h4>
+                            <p>Please sign in to view your OXIO information.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayOxioError(error) {
+            const container = document.getElementById('oxioContainer');
+
+            // Check if this is a "user not created" error or status indicates missing OXIO user
+            if ((error && error.includes('OXIO user not created')) || 
+                (error && error.includes('oxio_user_not_created'))) {
+                container.innerHTML = `
+                    <div class="address-card p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <h5><i class="fas fa-info-circle me-2 text-info"></i>OXIO User Setup Required</h5>
+                                <p>Your OXIO user account needs to be created first. This will enable eSIM services and mobile connectivity.</p>
+                                <div class="alert alert-warning mt-2" role="alert">
+                                    <small><i class="fas fa-exclamation-triangle"></i> MetaMask address was found in OXIO field - this has been corrected.</small>
+                                </div>
+                                <div class="d-flex gap-2 mt-3">
+                                    <button class="btn btn-sm btn-success" onclick="createOxioUser()">
+                                        <i class="fas fa-plus"></i> Create OXIO User
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" onclick="refreshOxioData()">
+                                        <i class="fas fa-sync"></i> Refresh
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="address-card p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <h5><i class="fas fa-exclamation-triangle me-2 text-danger"></i>OXIO Service Error</h5>
+                                <p>Unable to load OXIO information: ${error || 'Unknown error'}</p>
+                                <button class="btn btn-sm btn-primary" onclick="refreshOxioData()">
+                                    <i class="fas fa-redo"></i> Retry
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function getOxioStatusColor(status) {
+            switch(status) {
+                case 'active':
+                    return '#28a745';
+                case 'pending':
+                    return '#ffc107';
+                case 'esim_ready':
+                    return '#17a2b8';
+                case 'not_activated':
+                    return '#6c757d';
+                case 'oxio_unavailable':
+                case 'oxio_error':
+                    return '#dc3545';
+                default:
+                    return '#6c757d';
+            }
+        }
+
+        function formatOxioStatus(status) {
+            switch(status) {
+                case 'active':
+                    return 'Active';
+                case 'pending':
+                    return 'Pending';
+                case 'esim_ready':
+                    return 'eSIM Ready';
+                case 'not_activated':
+                    return 'Not Activated';
+                case 'oxio_unavailable':
+                    return 'Service Unavailable';
+                case 'oxio_error':
+                    return 'Service Error';
+                default:
+                    return status;
+            }
         }
 
         function refreshOxioData() {
-            var currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-            if (currentUser) {
-                loadOxioData(currentUser.uid);
+            const container = document.getElementById('oxioContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3">
+                    <div class="d-flex justify-content-center align-items-center" style="min-height: 100px;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span class="ms-3">Refreshing OXIO data...</span>
+                    </div>
+                </div>
+            `;
+
+            // Reload OXIO data
+            loadOxioData();
+        }
+
+        function copyToClipboard(text, label) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function() {
+                    // Create a temporary toast notification
+                    const toast = document.createElement('div');
+                    toast.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: #28a745;
+                        color: white;
+                        padding: 10px 15px;
+                        border-radius: 5px;
+                        z-index: 10000;
+                        font-size: 14px;
+                    `;
+                    toast.textContent = `${label} copied to clipboard!`;
+                    document.body.appendChild(toast);
+
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 2000);
+                }).catch(function() {
+                    fallbackCopyTextToClipboard(text, label);
+                });
+            } else {
+                fallbackCopyTextToClipboard(text, label);
             }
         }
 
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(function() {
-                // Show a temporary success message
-                var button = event.target.closest('.copy-btn');
-                var originalHtml = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-check"></i>';
-                button.classList.add('btn-success');
-                button.classList.remove('btn-outline-primary');
-                
-                setTimeout(function() {
-                    button.innerHTML = originalHtml;
-                    button.classList.remove('btn-success');
-                    button.classList.add('btn-outline-primary');
-                }, 2000);
-            }).catch(function(err) {
-                console.error('Could not copy text: ', err);
+        function fallbackCopyTextToClipboard(text, label) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    const toast = document.createElement('div');
+                    toast.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: #28a745;
+                        color: white;
+                        padding: 10px 15px;
+                        border-radius: 5px;
+                        z-index: 10000;
+                        font-size: 14px;
+                    `;
+                    toast.textContent = `${label} copied to clipboard!`;
+                    document.body.appendChild(toast);
+
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 2000);
+                } else {
+                    alert(`Please manually copy: ${text}`);
+                }
+            } catch (err) {
+                alert(`Please manually copy: ${text}`);
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        function createOxioUser() {
+            const container = document.getElementById('oxioContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3">
+                    <div class="d-flex justify-content-center align-items-center" style="min-height: 100px;">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Creating...</span>
+                        </div>
+                        <span class="ms-3">Creating OXIO user...</span>
+                    </div>
+                </div>
+            `;
+
+            // Get current user data
+            const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+            if (!currentUserData || !currentUserData.uid) {
+                displayOxioError('No user authentication found');
+                return;
+            }
+
+            fetch('/api/create-oxio-user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    firebaseUid: currentUserData.uid
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Success - reload OXIO data
+                    setTimeout(() => {
+                        loadOxioData();
+                    }, 1000);
+                } else {
+                    displayOxioError(data.message || 'Failed to create OXIO user');
+                }
+            })
+            .catch(error => {
+                console.error('Error creating OXIO user:', error);
+                displayOxioError(error.message);
             });
         }
 
-        window.handleLogout = handleLogout;
-        window.toggleProfileDropdown = toggleProfileDropdown;
-        window.loadInvitesList = loadInvitesList;
+        function showQRCode(qrData) {
+            try {
+                // Create modal for QR code display
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.8);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                `;
+
+                modal.innerHTML = `
+                    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; max-width: 90%; max-height: 90%; overflow: auto;">
+                        <h4 style="color: #333;">eSIM Activation QR Code</h4>
+                        <div id="qrCodeDisplay"></div>
+                        <p style="margin: 10px 0; font-family: monospace; word-break: break-all; color: #666; font-size: 12px;">${qrData || 'No QR data available'}</p>
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">Close</button>
+                    </div>
+                `;
+
+                document.body.appendChild(modal);
+
+                // Generate QR code if QRCode library is available
+                if (typeof QRCode !== 'undefined' && qrData) {
+                    try {
+                        new QRCode(document.getElementById("qrCodeDisplay"), {
+                            text: qrData,
+                            width: 200,
+                            height: 200,
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                    } catch (qrError) {
+                        console.error('Error generating QR code:', qrError);
+                        document.getElementById("qrCodeDisplay").innerHTML = '<p style="color: #666;">QR code generation failed</p>';
+                    }
+                } else {
+                    document.getElementById("qrCodeDisplay").innerHTML = '<p style="color: #666;">QR code library not available</p>';
+                }
+
+                // Close modal when clicking outside
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+            } catch (error) {
+                console.error('Error showing QR code:', error);
+                alert('Error displaying QR code');
+            }
+        }
+
+        function loadSubscriptionData() {
+            try {
+                // Get current user data from localStorage (set by firebase-auth.js)
+                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+                let firebaseUid = null;
+                let userId = null;
+
+                if (currentUserData) {
+                    firebaseUid = currentUserData.uid;
+                    userId = currentUserData.userId;
+                } else {
+                    // Fallback to old localStorage keys
+                    firebaseUid = localStorage.getItem('firebaseUid') || localStorage.getItem('userId');
+                    userId = localStorage.getItem('userId');
+                }
+
+                if (!firebaseUid && !userId) {
+                    displayNoSubscription();
+                    return;
+                }
+
+                // Build query parameters
+                let queryParams = new URLSearchParams();
+                if (firebaseUid) {
+                    queryParams.append('firebaseUid', firebaseUid);
+                } else if (userId) {
+                    queryParams.append('userId', userId);
+                }
+
+                fetch(`/api/subscription-status?${queryParams.toString()}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        displaySubscriptionData(data);
+                    })
+                    .catch(error => {
+                        console.error('Error loading subscription data:', error);
+                        displayNoSubscription();
+                    });
+            } catch (error) {
+                console.error('Error in loadSubscriptionData:', error);
+                displayNoSubscription();
+            }
+        }
+
+        function displaySubscriptionData(data) {
+            const container = document.getElementById('subscriptionContainer');
+
+            if (data.status === 'active') {
+                const subscriptionName = getSubscriptionDisplayName(data.subscription_type);
+                const price = getSubscriptionPrice(data.subscription_type);
+                const endDate = new Date(data.end_date).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+
+                container.innerHTML = `
+                    <div class="address-card p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <h4>${subscriptionName}</h4>
+                                <p>${price}</p>
+                                <p class="text-success">Active until ${endDate}</p>
+                            </div>
+                            <i class="fas fa-edit edit-icon" onclick="editSubscription(this)"></i>
+                        </div>
+                    </div>
+                `;
+            } else if (data.status === 'expired') {
+                const subscriptionName = getSubscriptionDisplayName(data.last_subscription_type);
+                const expiredDate = new Date(data.expired_date).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+
+                container.innerHTML = `
+                    <div class="address-card p-3 mb-3" style="border-left: 4px solid #dc3545;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <h4>${subscriptionName}</h4>
+                                <p class="text-danger">Expired on ${expiredDate}</p>
+                                <p><a href="/marketplace" class="btn btn-primary btn-sm">Renew Subscription</a></p>
+                            </div>
+                            <i class="fas fa-edit edit-icon" onclick="editSubscription(this)"></i>
+                        </div>
+                    </div>
+                `;
+            } else {
+                displayNoSubscription();
+            }
+        }
+
+        function displayNoSubscription() {
+            const container = document.getElementById('subscriptionContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="border-left: 4px solid #6c757d;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="address-content">
+                            <h4>No Active Subscription</h4>
+                            <p>You don't have any active subscriptions</p>
+                            <p><a href="/marketplace" class="btn btn-primary btn-sm">Browse Plans</a></p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getSubscriptionDisplayName(subscriptionType) {
+            switch(subscriptionType) {
+                case 'basic_membership':
+                    return 'Basic Membership';
+                case 'full_membership':
+                    return 'Full Membership';
+                default:
+                    return 'Subscription';
+            }
+        }
+
+        function getSubscriptionPrice(subscriptionType) {
+            switch(subscriptionType) {
+                case 'basic_membership':
+                    return '$24/Year';
+                case 'full_membership':
+                    return '$66/Year';
+                default:
+                    return 'Contact Support';
+            }
+        }
+
+        function editAddress(element) {
+            // For now, just show an alert - you can implement actual editing later
+            alert('Address editing feature coming soon!');
+        }
+
+        function editSubscription(element) {
+            // Navigate to marketplace for subscription management
+            window.location.href = '/marketplace';
+        }
+
+        function toggleQRCode(event) {
+            event.stopPropagation();
+            const popup = document.getElementById('qrCodePopup');
+
+            if (popup.style.display === 'block') {
+                popup.style.display = 'none';
+            } else {
+                popup.style.display = 'block';
+
+                // Generate QR code if it doesn't exist yet
+                if (!document.querySelector('#qrcode canvas')) {
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: "https://gorse.dotmobile.app",
+                        width: 150,
+                        height: 150,
+                        colorDark: "#333333",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
+            }
+        }
+
+        function generateRandomLinkCode() {
+            return Math.random().toString(36).substring(2, 12);
+        }
+
+        // Close QR code popup when clicking outside
+        document.addEventListener('click', function(e) {
+            const popup = document.getElementById('qrCodePopup');
+            const icon = document.querySelector('.qr-code-icon');
+
+            if (popup && popup.style.display === 'block' && !popup.contains(e.target) && e.target !== icon) {
+                popup.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>

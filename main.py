@@ -385,6 +385,7 @@ def register_firebase_user():
                         # User exists, return the user ID
                         user_id = existing_user[0]
                         stripe_customer_id = existing_user[1]
+                        print(f"Existing Firebase user found: {user_id} with Stripe customer: {stripe_customer_id}")
 
                         # Update user information if needed
                         cur.execute(
@@ -1245,6 +1246,8 @@ def get_user_by_firebase_uid(firebase_uid):
                         (firebase_uid,)
                     )
                     user_data = cur.fetchone()
+                    if user_data:
+                        print(f"get_user_by_firebase_uid debug: Found user {user_data[0]} with oxio_user_id: {user_data[7]}, eth_address: {user_data[8]}")
                     return user_data
         return None
     except Exception as e:
@@ -1283,26 +1286,14 @@ def get_user_data_balance():
     try:
         user_id = None
         
-        # Validate Firebase UID format (must be non-empty string and reasonable length)
-        if firebase_uid and (len(firebase_uid.strip()) < 5 or len(firebase_uid.strip()) > 150):
-            print(f"Invalid Firebase UID format: {firebase_uid}")
-            return jsonify({
-                'error': 'Invalid Firebase UID format',
-                'firebaseUid': firebase_uid,
-                'dataBalance': 0,
-                'unit': 'GB'
-            }), 400
-        
         # If Firebase UID is provided, look up the internal user ID
         if firebase_uid:
-            print(f"Looking up user for Firebase UID: {firebase_uid}")
             user_data = get_user_by_firebase_uid(firebase_uid)
             if user_data:
                 user_id = user_data[0]  # Get the actual internal user ID (integer)
                 stripe_customer_id = user_data[3]  # Get Stripe customer ID
-                print(f"Found user {user_id} for Firebase UID {firebase_uid}")
+                print(f"Found user {user_id} for Firebase UID {firebase_uid} with Stripe customer {stripe_customer_id}")
             else:
-                print(f"No user found for Firebase UID: {firebase_uid}")
                 return jsonify({
                     'error': 'User not found for Firebase UID',
                     'firebaseUid': firebase_uid,
@@ -1314,7 +1305,6 @@ def get_user_data_balance():
             user_id = int(user_id_param)
             print(f"Using provided numeric user_id: {user_id}")
         else:
-            print("No valid Firebase UID or user ID provided")
             return jsonify({
                 'error': 'Firebase UID or user ID required',
                 'dataBalance': 0,
@@ -1337,9 +1327,10 @@ def get_user_data_balance():
                         """, (user_id, firebase_uid))
 
                         result = cur.fetchone()
+                        print(f"Debug: SQL result = {result}")
                         
                         # Safely extract values with proper validation and handle None results
-                        if result and len(result) >= 3:
+                        if result and result[0] is not None:
                             global_data_cents = int(result[0]) if result[0] is not None else 0
                             total_data_cents = int(result[1]) if result[1] is not None else 0
                             total_purchases = int(result[2]) if result[2] is not None else 0
@@ -1384,7 +1375,9 @@ def get_user_data_balance():
                     
                     final_balance = total_data_balance + subscription_data
 
-                    
+                    print(f"Data balance calculation: user_id={user_id}, purchases={total_purchases}, "
+                          f"global_data={global_data_gb}GB, other_data={other_data_gb}GB, "
+                          f"subscription={subscription_data}GB, total={final_balance}GB")
 
                     return jsonify({
                         'status': 'success',
@@ -4493,27 +4486,24 @@ Platform: GORSE (Global Optimized Roaming Service Engine)
         }), 500
 
 if __name__ == '__main__':
-    # Check if this is the main process (not a reloader subprocess)
-    import os
-    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-        # This is the main process, print startup info
-        print("\n=== Registered Flask Routes ===")
-        for rule in app.url_map.iter_rules():
-            methods = ','.join(rule.methods)
-            print(f"  {rule.rule} [{methods}] -> {rule.endpoint}")
-        print("================================\n")
+    # Debug: Print all registered routes to verify OXIO endpoints are available
+    print("\n=== Registered Flask Routes ===")
+    for rule in app.url_map.iter_rules():
+        methods = ','.join(rule.methods)
+        print(f"  {rule.rule} [{methods}] -> {rule.endpoint}")
+    print("================================\n")
 
-        port = int(os.environ.get('PORT', 5000))
-        print(f"Starting server on http://0.0.0.0:{port}")
-        print(f"OXIO API endpoints should be available at:")
-        print(f"  - GET  /api/oxio/test-connection")
-        print(f"  - GET  /api/oxio/test-plans") 
-        print(f"  - POST /api/oxio/activate-line")
-        print(f"  - POST /api/oxio/test-sample-activation")
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Starting server on http://0.0.0.0:{port}")
+    print(f"OXIO API endpoints should be available at:")
+    print(f"  - GET  /api/oxio/test-connection")
+    print(f"  - GET  /api/oxio/test-plans") 
+    print(f"  - POST /api/oxio/activate-line")
+    print(f"  - POST /api/oxio/test-sample-activation")
 
     try:
-        socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
     except Exception as e:
         print(f"Error starting server: {str(e)}")
         # Fallback to standard Flask run
-        app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
+        app.run(host='0.0.0.0', port=port, debug=True)

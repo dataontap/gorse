@@ -1,18 +1,5 @@
 // Firebase Authentication handler using Firebase SDK v8
-// Global flag to prevent duplicate initialization
-if (window.firebaseAuthLoaded) {
-  console.log("Firebase auth script already loaded, skipping...");
-  // Exit early by wrapping the rest in a conditional
-} else {
-window.firebaseAuthLoaded = true;
-
 document.addEventListener('DOMContentLoaded', function() {
-  // Prevent duplicate initialization
-  if (window.firebaseInitialized) {
-    console.log("Firebase already initialized, skipping...");
-    return;
-  }
-
   console.log("Firebase auth script loading...");
 
   // Firebase configuration
@@ -60,19 +47,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       // Initialize Firebase if not already initialized
-      try {
-        if (!firebase.apps.length) {
-          firebase.initializeApp(firebaseConfig);
-          console.log("Firebase App initialized successfully");
-        } else {
-          console.log("Firebase App already initialized");
-        }
-      } catch (error) {
-        if (error.code === 'app/duplicate-app') {
-          console.log("Firebase app already exists, using existing instance");
-        } else {
-          console.error("Firebase App initialization error:", error);
-        }
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+        console.log("Firebase App initialized successfully");
+      } else {
+        console.log("Firebase App already initialized");
       }
 
       // Test Firebase Auth availability
@@ -83,10 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       console.log("Firebase Auth initialized successfully");
 
-      // Mark as initialized to prevent duplicates
-      window.firebaseInitialized = true;
-
-      // Set up auth state listener only once
+      // Set up auth state listener
       setupAuthStateListener();
 
     } catch (error) {
@@ -156,45 +132,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function setupAuthStateListener() {
-    // Prevent multiple auth state listeners
-    if (window.authStateListenerSetup) {
-      console.log("Auth state listener already set up, skipping...");
-      return;
-    }
-    window.authStateListenerSetup = true;
-
     // Configure Google auth provider
     const googleProvider = new firebase.auth.GoogleAuthProvider();
 
     // Global user data
     let currentUserData = null;
-    let isProcessingAuth = false;
 
     // Auth state observer
     firebase.auth().onAuthStateChanged(async (user) => {
-      // Prevent concurrent processing of auth state changes
-      if (isProcessingAuth) {
-        console.log('Auth state change already being processed, skipping...');
-        return;
-      }
-
       console.log('Auth state changed:', user ? 'signed in' : 'signed out');
 
       if (user) {
-          isProcessingAuth = true;
           console.log('User is signed in:', user.uid);
-
-          // Prevent duplicate registration requests for the same user
-          const registrationKey = `registration_${user.uid}`;
-          if (window.pendingRequests && window.pendingRequests[registrationKey]) {
-            console.log('Registration already in progress for this user, skipping...');
-            isProcessingAuth = false;
-            return;
-          }
-
-          // Mark registration as in progress
-          window.pendingRequests = window.pendingRequests || {};
-          window.pendingRequests[registrationKey] = true;
 
           // Register user in backend and get full user data
           try {
@@ -213,9 +162,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
               const result = await response.json();
               console.log('User registration result:', result);
-
-              // Clear the pending registration
-              delete window.pendingRequests[registrationKey];
 
               // Get full user data including balance
               const userDataResponse = await fetch(`/api/auth/current-user?firebaseUid=${user.uid}`);
@@ -236,42 +182,36 @@ document.addEventListener('DOMContentLoaded', function() {
                   // Set initial balance and load it asynchronously
                   currentUserData.dataBalance = 0;
 
-                  // Load balance asynchronously with delay and deduplication
-                  if (!window.balanceLoadingInProgress) {
-                      window.balanceLoadingInProgress = true;
-                      setTimeout(async () => {
-                          try {
-                              console.log('Loading user balance after authentication delay...');
-                              const balanceResponse = await fetch(`/api/user/data-balance?firebaseUid=${user.uid}`);
-                              const balanceData = await balanceResponse.json();
+                  // Load balance asynchronously with delay to ensure user is fully registered
+                  setTimeout(async () => {
+                      try {
+                          console.log('Loading user balance after authentication delay...');
+                          const balanceResponse = await fetch(`/api/user/data-balance?firebaseUid=${user.uid}`);
+                          const balanceData = await balanceResponse.json();
 
-                              if (balanceData.status === 'success') {
-                                  currentUserData.dataBalance = balanceData.dataBalance || 0;
-                                  console.log('Balance loaded successfully:', currentUserData.dataBalance);
+                          if (balanceData.status === 'success') {
+                              currentUserData.dataBalance = balanceData.dataBalance || 0;
+                              console.log('Balance loaded successfully:', currentUserData.dataBalance);
 
-                                  // Update UI with new balance
-                                  updateBalanceDisplays(currentUserData.dataBalance);
+                              // Update UI with new balance
+                              updateBalanceDisplays(currentUserData.dataBalance);
 
-                                  // Update localStorage with new balance
-                                  localStorage.setItem('currentUser', JSON.stringify(currentUserData));
-                              } else {
-                                  console.error('Balance API error:', balanceData);
-                                  currentUserData.dataBalance = 0;
-                              }
-                          } catch (balanceError) {
-                              console.error('Error fetching balance after delay:', balanceError);
+                              // Update localStorage with new balance
+                              localStorage.setItem('currentUser', JSON.stringify(currentUserData));
+                          } else {
+                              console.error('Balance API error:', balanceData);
                               currentUserData.dataBalance = 0;
-                          } finally {
-                              window.balanceLoadingInProgress = false;
                           }
-                      }, 2000); // Wait 2 seconds after authentication before loading balance
-                  }
+                      } catch (balanceError) {
+                          console.error('Error fetching balance after delay:', balanceError);
+                          currentUserData.dataBalance = 0;
+                      }
+                  }, 2000); // Wait 2 seconds after authentication before loading balance
 
                   console.log('Complete user data loaded:', currentUserData);
 
-                  // Store in localStorage with consistent Firebase UID storage
-                        localStorage.setItem('currentUser', JSON.stringify(currentUserData));
-                        localStorage.setItem('userId', user.uid); // Store Firebase UID consistently
+                  // Store in localStorage
+                  localStorage.setItem('currentUser', JSON.stringify(currentUserData));
 
                   // Update UI with real user data
                   updateAuthUI(user, currentUserData);
@@ -291,15 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
           console.log('User is signed out');
           currentUserData = null;
           localStorage.removeItem('currentUser');
-          localStorage.removeItem('userId');
-          window.balanceLoadingInProgress = false;
-          isProcessingAuth = false;
           updateAuthUI(null, null);
-      }
-
-      // Reset processing flag after successful processing
-      if (user) {
-          isProcessingAuth = false;
       }
     });
 
@@ -543,56 +475,35 @@ document.addEventListener('DOMContentLoaded', function() {
       signOut: function() {
         if (!firebase || !firebase.auth) {
           console.error('Firebase auth not available');
-          // Clear all local storage and session data
-          localStorage.clear();
-          sessionStorage.clear();
-
-          // Reset global flags
-          window.firebaseInitialized = false;
-          window.firebaseAuthLoaded = false;
-          window.firebaseInitLoaded = false;
-          window.authStateListenerSetup = false;
-          window.balanceLoadingInProgress = false;
-          window.pendingRequests = {};
-
-          window.location.replace('/');
+          // Clear localStorage and redirect anyway
+          localStorage.removeItem('userId');
+          localStorage.removeItem('userEmail');
+          localStorage.removeItem('databaseUserId');
+          localStorage.removeItem('currentUser');
+          window.location.href = '/';
           return Promise.resolve();
         }
 
         return firebase.auth().signOut()
           .then(() => {
-            // Clear all local storage and session data
-            localStorage.clear();
-            sessionStorage.clear();
-
-            // Reset global flags to prevent stale state
-            window.firebaseInitialized = false;
-            window.firebaseAuthLoaded = false;
-            window.firebaseInitLoaded = false;
-            window.authStateListenerSetup = false;
-            window.balanceLoadingInProgress = false;
-            window.pendingRequests = {};
-
-            console.log('User signed out successfully and all data cleared');
+            // Clear all local storage
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('databaseUserId');
+            localStorage.removeItem('currentUser');
+            console.log('User signed out successfully');
 
             // Redirect to home page after logout  
-            window.location.replace('/');
+            window.location.href = '/';
           })
           .catch((error) => {
             console.error('Error during sign out:', error);
-            // Clear everything anyway
-            localStorage.clear();
-            sessionStorage.clear();
-
-            // Reset global flags
-            window.firebaseInitialized = false;
-            window.firebaseAuthLoaded = false;
-            window.firebaseInitLoaded = false;
-            window.authStateListenerSetup = false;
-            window.balanceLoadingInProgress = false;
-            window.pendingRequests = {};
-
-            window.location.replace('/');
+            // Clear localStorage and redirect anyway
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('databaseUserId');
+            localStorage.removeItem('currentUser');
+            window.location.href = '/';
           });
       },
 
@@ -801,7 +712,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       signOut: function() {
         localStorage.clear();
-        window.location.replace('/');
+        window.location.href = '/';
         return Promise.resolve();
       },
 
@@ -878,11 +789,10 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       console.error('Firebase auth not available');
       localStorage.clear();
-      window.location.replace('/');
+      window.location.href = '/';
     }
   };
 
   // Start the initialization process
   initializeFirebaseAuth();
 });
-} // Close the conditional block

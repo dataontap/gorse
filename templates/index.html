@@ -9,14 +9,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
 
-    <!-- Firebase v8 SDK (Backward Compatible) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
 
-    <!-- Firebase Configuration Scripts -->
-    <script src="/static/firebase-init.js"></script>
-    <script src="/static/firebase-auth.js"></script>
+  <!-- Custom Scripts - Load in correct order -->
+  <script src="/static/firebase-auth.js"></script>
+  <script src="/static/firebase-init.js"></script>
+  <script src="/static/app.js"></script>
     <script>
       window.CURRENT_KEY = "{{ current_key }}";
     </script>
@@ -92,16 +93,18 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Clear any cached authentication data when visiting landing page
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('userEmail');
-        localStorage.removeItem('databaseUserId');
+        // Check if user is already logged in
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                // User is already signed in, redirect to dashboard
+                window.location.href = '/dashboard';
+            }
+        });
 
         // Demo mode functions
         function enableDemoMode() {
             localStorage.setItem('demoMode', 'true');
-
+            
             // Show success message
             const successMessage = document.createElement('div');
             successMessage.style.cssText = `
@@ -141,27 +144,4 @@
                 window.history.replaceState({}, document.title, newUrl);
             }
         </script>
-    <script>
-        function initializeLandingPage() {
-            if (firebase.auth().currentUser) {
-                firebase.auth().onAuthStateChanged(function(user) {
-                    if (user) {
-                        // User is logged in, redirect to dashboard
-                        console.log('User is already signed in:', user.email);
-                        window.location.href = '/dashboard';
-                    }
-                });
-            } else {
-                // Wait for Firebase to load
-                setTimeout(initializeLandingPage, 100);
-            }
-        }
-
-        // Start initialization when page loads
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeLandingPage);
-        } else {
-            initializeLandingPage();
-        }
-    </script>
 </html>

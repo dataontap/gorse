@@ -1,35 +1,3 @@
-// Firebase initialization - prevent duplicates
-if (!window.firebaseInitialized) {
-    // Firebase configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyDhkVsrrlItzLbfvUlnc-U8xFJLs6kHp6s",
-        authDomain: "global-data-8d5b9.firebaseapp.com",
-        projectId: "global-data-8d5b9",
-        storageBucket: "global-data-8d5b9.appspot.com",
-        messagingSenderId: "498583862962",
-        appId: "1:498583862962:web:75bd3c2c5b8c5a9a1f8c4d"
-    };
-
-    try {
-        // Initialize Firebase only if not already done
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-            console.log('Firebase App initialized successfully');
-        } else {
-            console.log('Firebase App already initialized');
-        }
-        
-        window.firebaseInitialized = true;
-        console.log('Firebase initialized successfully');
-    } catch (error) {
-        console.error('Error initializing Firebase:', error);
-    }
-}
-if (window.firebaseInitLoaded) {
-  console.log("Firebase init script already loaded, skipping...");
-} else {
-window.firebaseInitLoaded = true;
-
 document.addEventListener('DOMContentLoaded', async function() {
   // Firebase configuration - using global Firebase object
   const firebaseConfig = {
@@ -42,23 +10,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     measurementId: "G-WHW3XT925P"
   };
 
-  // Initialize Firebase with better deduplication
+  // Initialize Firebase
   if (typeof firebase !== 'undefined') {
     try {
-      // Check if Firebase is already initialized
-      if (firebase.apps.length === 0) {
-        const app = firebase.initializeApp(firebaseConfig);
-        console.log("Firebase initialized successfully");
-      } else {
-        console.log("Firebase already initialized, using existing app");
-      }
+      const app = firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
+      console.log("Firebase initialized successfully");
     } catch (error) {
-      if (error.code === 'app/duplicate-app') {
-        console.log("Firebase app already exists, using existing instance");
-      } else {
-        console.error("Firebase initialization error:", error);
-      }
+      console.error("Firebase initialization error:", error);
     }
   } else {
     console.error("Firebase SDK not loaded");
@@ -98,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (currentToken) {
           console.log('FCM token:', currentToken);
           // Send token to server for targeting this device
-          registerFCMToken(currentToken);
+          sendTokenToServer(currentToken);
           // Show success message to user
           showNotificationStatus('Notifications enabled successfully!');
         } else {
@@ -168,41 +127,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       showNotificationStatus('Error setting up notifications: ' + err.message);
     }
   }
+   
 });
-} // Close Firebase init conditional
-
-// Register FCM token with server (with deduplication)
-async function registerFCMToken(token) {
-    // Prevent duplicate registrations of the same token
-    if (window.lastRegisteredToken === token || window.fcmTokenRegistering) {
-        console.log('Token already registered or registration in progress, skipping...');
-        return;
-    }
-
-    window.fcmTokenRegistering = true;
-
-    try {
-        const response = await fetch('/api/register-fcm-token', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                token: token
-            })
-        });
-
-        const result = await response.json();
-        console.log('Token registered with server:', result);
-
-        // Store the registered token to prevent duplicates
-        window.lastRegisteredToken = token;
-    } catch (error) {
-        console.error('Error registering token with server:', error);
-    } finally {
-        window.fcmTokenRegistering = false;
-    }
-}
 
 // Send token to your server
 function sendTokenToServer(token) {
