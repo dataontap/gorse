@@ -1133,7 +1133,12 @@ function initializeDashboard() {
         }, 1000);
     }
 
-    // Initialize carousel functionality
+    // Initialize carousel functionality - force it to run
+    setTimeout(() => {
+        initializeCarousel();
+    }, 500);
+
+    // Also initialize immediately
     initializeCarousel();
 
     // Initialize pause duration updates after a short delay to ensure cards are loaded
@@ -1914,41 +1919,24 @@ function initializeCarousel() {
     // Initialize offers on all pages that have an offers section
     console.log('Initializing offers carousel');
 
-    // Check if offers section exists, if not wait a bit
-    const offersSection = document.querySelector('.offers-section');
+    // Always create offers section if it doesn't exist
+    let offersSection = document.querySelector('.offers-section');
     if (!offersSection) {
-        console.log('Offers section not found, waiting...');
-        // Try again with longer intervals to avoid spam
-        let attempts = 0;
-        const maxAttempts = 5;
-        const checkInterval = setInterval(() => {
-            attempts++;
-            const section = document.querySelector('.offers-section');
-            if (section || attempts >= maxAttempts) {
-                clearInterval(checkInterval);
-                if (section) {
-                    console.log('Offers section found after', attempts, 'attempts');
-                    populateOfferCards();
-                    setTimeout(() => {
-                        initializeCardStack();
-                    }, 200);
-                } else {
-                    console.log('Offers section not found after maximum attempts');
-                    // Create offers section if it doesn't exist
-                    createOffersSection();
-                }
-            }
-        }, 500);
-        return;
+        console.log('Offers section not found, creating it...');
+        createOffersSection();
+        // Get the newly created section
+        offersSection = document.querySelector('.offers-section');
     }
 
-    // Wait for subscription status to be loaded
-    setTimeout(() => {
+    if (offersSection) {
+        console.log('Offers section found, populating cards...');
         populateOfferCards();
         setTimeout(() => {
             initializeCardStack();
         }, 200);
-    }, 100);
+    } else {
+        console.error('Failed to create or find offers section');
+    }
 }
 
 // Create offers section if it doesn't exist
@@ -1956,19 +1944,32 @@ function createOffersSection() {
     console.log('Creating offers section...');
     const container = document.querySelector('.container');
     if (container) {
-        const dotContainer = container.querySelector('.dot-container');
-        if (dotContainer) {
-            const offersSection = document.createElement('div');
-            offersSection.className = 'offers-section';
-            dotContainer.parentNode.insertBefore(offersSection, dotContainer.nextSibling);
-            console.log('Offers section created');
-            
-            // Now populate it
-            populateOfferCards();
-            setTimeout(() => {
-                initializeCardStack();
-            }, 200);
+        // Try to find a good insertion point
+        let insertAfter = container.querySelector('.dot-container');
+        
+        // If no dot-container, try membership banner
+        if (!insertAfter) {
+            insertAfter = container.querySelector('.subscription-status');
         }
+        
+        // If still nothing, try to insert after the first element
+        if (!insertAfter && container.children.length > 0) {
+            insertAfter = container.children[0];
+        }
+        
+        const offersSection = document.createElement('div');
+        offersSection.className = 'offers-section';
+        
+        if (insertAfter && insertAfter.parentNode) {
+            insertAfter.parentNode.insertBefore(offersSection, insertAfter.nextSibling);
+        } else {
+            // Fallback: append to container
+            container.appendChild(offersSection);
+        }
+        
+        console.log('Offers section created and inserted');
+    } else {
+        console.error('Container not found for offers section');
     }
 }
 
@@ -1987,7 +1988,7 @@ function populateOfferCards() {
         return;
     }
 
-    // Define all possible offers
+    // Define all possible offers - always show these
     const allOffers = [
         {
             id: 'global_data',
@@ -1996,8 +1997,7 @@ function populateOfferCards() {
             price: '$10',
             buttonText: 'Buy',
             buttonClass: 'btn-primary',
-            action: "showConfirmationDrawer(10, 10, 'global_data_10gb')",
-            alwaysShow: true
+            action: "showConfirmationDrawer(10, 10, 'global_data_10gb')"
         },
         {
             id: 'basic_membership',
@@ -2010,8 +2010,7 @@ function populateOfferCards() {
             price: '$24/year',
             buttonText: 'Subscribe',
             buttonClass: 'btn-primary',
-            action: "showConfirmationDrawer(10, 24, 'basic_membership')",
-            showCondition: shouldShowBasicMembership
+            action: "showConfirmationDrawer(10, 24, 'basic_membership')"
         },
         {
             id: 'full_membership',
@@ -2021,15 +2020,11 @@ function populateOfferCards() {
             buttonText: 'Coming Soon',
             buttonClass: 'btn-secondary',
             action: "sendComingSoonNotification()",
-            disabled: true,
-            alwaysShow: true
+            disabled: true
         }
     ];
 
-    // Get dismissed offers from localStorage
-    const dismissedOffers = JSON.parse(localStorage.getItem('dismissedOffers') || '[]');
-
-    // Always show all offers for all users (ignore dismissal and conditions)
+    // Always show all offers (ignore dismissals for now)
     const availableOffers = allOffers;
 
     console.log('Available offers:', availableOffers.length);
