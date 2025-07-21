@@ -1,5 +1,14 @@
 // Firebase Authentication handler using Firebase SDK v8
+// Global flag to prevent duplicate initialization
+window.firebaseInitialized = window.firebaseInitialized || false;
+
 document.addEventListener('DOMContentLoaded', function() {
+  // Prevent duplicate initialization
+  if (window.firebaseInitialized) {
+    console.log("Firebase already initialized, skipping...");
+    return;
+  }
+
   console.log("Firebase auth script loading...");
 
   // Firebase configuration
@@ -61,8 +70,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       console.log("Firebase Auth initialized successfully");
+      
+      // Mark as initialized to prevent duplicates
+      window.firebaseInitialized = true;
 
-      // Set up auth state listener
+      // Set up auth state listener only once
       setupAuthStateListener();
 
     } catch (error) {
@@ -132,17 +144,32 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function setupAuthStateListener() {
+    // Prevent multiple auth state listeners
+    if (window.authStateListenerSetup) {
+      console.log("Auth state listener already set up, skipping...");
+      return;
+    }
+    window.authStateListenerSetup = true;
+
     // Configure Google auth provider
     const googleProvider = new firebase.auth.GoogleAuthProvider();
 
     // Global user data
     let currentUserData = null;
+    let isProcessingAuth = false;
 
     // Auth state observer
     firebase.auth().onAuthStateChanged(async (user) => {
+      // Prevent concurrent processing of auth state changes
+      if (isProcessingAuth) {
+        console.log('Auth state change already being processed, skipping...');
+        return;
+      }
+
       console.log('Auth state changed:', user ? 'signed in' : 'signed out');
 
       if (user) {
+          isProcessingAuth = true;
           console.log('User is signed in:', user.uid);
 
           // Register user in backend and get full user data
@@ -182,31 +209,36 @@ document.addEventListener('DOMContentLoaded', function() {
                   // Set initial balance and load it asynchronously
                   currentUserData.dataBalance = 0;
 
-                  // Load balance asynchronously with delay to ensure user is fully registered
-                  setTimeout(async () => {
-                      try {
-                          console.log('Loading user balance after authentication delay...');
-                          const balanceResponse = await fetch(`/api/user/data-balance?firebaseUid=${user.uid}`);
-                          const balanceData = await balanceResponse.json();
+                  // Load balance asynchronously with delay and deduplication
+                  if (!window.balanceLoadingInProgress) {
+                      window.balanceLoadingInProgress = true;
+                      setTimeout(async () => {
+                          try {
+                              console.log('Loading user balance after authentication delay...');
+                              const balanceResponse = await fetch(`/api/user/data-balance?firebaseUid=${user.uid}`);
+                              const balanceData = await balanceResponse.json();
 
-                          if (balanceData.status === 'success') {
-                              currentUserData.dataBalance = balanceData.dataBalance || 0;
-                              console.log('Balance loaded successfully:', currentUserData.dataBalance);
+                              if (balanceData.status === 'success') {
+                                  currentUserData.dataBalance = balanceData.dataBalance || 0;
+                                  console.log('Balance loaded successfully:', currentUserData.dataBalance);
 
-                              // Update UI with new balance
-                              updateBalanceDisplays(currentUserData.dataBalance);
+                                  // Update UI with new balance
+                                  updateBalanceDisplays(currentUserData.dataBalance);
 
-                              // Update localStorage with new balance
-                              localStorage.setItem('currentUser', JSON.stringify(currentUserData));
-                          } else {
-                              console.error('Balance API error:', balanceData);
+                                  // Update localStorage with new balance
+                                  localStorage.setItem('currentUser', JSON.stringify(currentUserData));
+                              } else {
+                                  console.error('Balance API error:', balanceData);
+                                  currentUserData.dataBalance = 0;
+                              }
+                          } catch (balanceError) {
+                              console.error('Error fetching balance after delay:', balanceError);
                               currentUserData.dataBalance = 0;
+                          } finally {
+                              window.balanceLoadingInProgress = false;
                           }
-                      } catch (balanceError) {
-                          console.error('Error fetching balance after delay:', balanceError);
-                          currentUserData.dataBalance = 0;
-                      }
-                  }, 2000); // Wait 2 seconds after authentication before loading balance
+                      }, 2000); // Wait 2 seconds after authentication before loading balance
+                  }
 
                   console.log('Complete user data loaded:', currentUserData);
 
@@ -231,7 +263,14 @@ document.addEventListener('DOMContentLoaded', function() {
           console.log('User is signed out');
           currentUserData = null;
           localStorage.removeItem('currentUser');
+          window.balanceLoadingInProgress = false;
+          isProcessingAuth = false;
           updateAuthUI(null, null);
+      }
+      
+      // Reset processing flag after successful processing
+      if (user) {
+          isProcessingAuth = false;
       }
     });
 

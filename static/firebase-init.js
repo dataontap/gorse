@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (currentToken) {
           console.log('FCM token:', currentToken);
           // Send token to server for targeting this device
-          sendTokenToServer(currentToken);
+          registerFCMToken(currentToken);
           // Show success message to user
           showNotificationStatus('Notifications enabled successfully!');
         } else {
@@ -127,8 +127,37 @@ document.addEventListener('DOMContentLoaded', async function() {
       showNotificationStatus('Error setting up notifications: ' + err.message);
     }
   }
-   
+
 });
+
+// Register FCM token with server (with deduplication)
+async function registerFCMToken(token) {
+    // Prevent duplicate registrations of the same token
+    if (window.lastRegisteredToken === token) {
+        console.log('Token already registered, skipping...');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/register-fcm-token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                token: token
+            })
+        });
+
+        const result = await response.json();
+        console.log('Token registered with server:', result);
+
+        // Store the registered token to prevent duplicates
+        window.lastRegisteredToken = token;
+    } catch (error) {
+        console.error('Error registering token with server:', error);
+    }
+}
 
 // Send token to your server
 function sendTokenToServer(token) {
