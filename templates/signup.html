@@ -459,8 +459,19 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // IMEI Compatibility Checker
-            const imeiInput = document.getElementById('imei');
+            // Check if we should start in login mode
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+
+            // Get form elements
+            const signupForm = document.getElementById('signup-form');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const imeiInputElement = document.getElementById('imei');
+            const authError = document.getElementById('auth-error');
+            const googleSigninBtn = document.getElementById('google-signin');
+
+            // IMEI Compatibility Checker variables
             const checkButton = document.getElementById('check-compatibility');
             const compatibilityStatus = document.getElementById('compatibility-status');
             const overlay = document.getElementById('compatibility-overlay');
@@ -472,37 +483,43 @@
             let deviceCompatible = false;
 
             // Show/hide check button based on IMEI input
-            imeiInput.addEventListener('input', function() {
-                const imei = this.value.replace(/\D/g, ''); // Remove non-digits
-                this.value = imei; // Update input with clean value
-                
-                if (imei.length === 15) {
-                    checkButton.style.display = 'block';
-                    compatibilityStatus.style.display = 'none';
-                } else {
-                    checkButton.style.display = 'none';
-                    compatibilityStatus.style.display = 'none';
-                    compatibilityChecked = false;
-                }
-            });
+            if (imeiInputElement) {
+                imeiInputElement.addEventListener('input', function() {
+                    const imei = this.value.replace(/\D/g, ''); // Remove non-digits
+                    this.value = imei; // Update input with clean value
+                    
+                    if (imei.length === 15) {
+                        checkButton.style.display = 'block';
+                        compatibilityStatus.style.display = 'none';
+                    } else {
+                        checkButton.style.display = 'none';
+                        compatibilityStatus.style.display = 'none';
+                        compatibilityChecked = false;
+                    }
+                });
+            }
 
             // Check compatibility when button is clicked
-            checkButton.addEventListener('click', function() {
-                const imei = imeiInput.value;
-                if (imei.length === 15) {
-                    checkDeviceCompatibility(imei);
-                }
-            });
+            if (checkButton) {
+                checkButton.addEventListener('click', function() {
+                    const imei = imeiInputElement.value;
+                    if (imei.length === 15) {
+                        checkDeviceCompatibility(imei);
+                    }
+                });
+            }
 
             // Close overlay
-            closeBtn.addEventListener('click', closeOverlay);
-            cancelBtn.addEventListener('click', closeOverlay);
+            if (closeBtn) closeBtn.addEventListener('click', closeOverlay);
+            if (cancelBtn) cancelBtn.addEventListener('click', closeOverlay);
 
             // Proceed with signup after compatibility check
-            proceedBtn.addEventListener('click', function() {
-                closeOverlay();
-                // The normal signup process will continue
-            });
+            if (proceedBtn) {
+                proceedBtn.addEventListener('click', function() {
+                    closeOverlay();
+                    // The normal signup process will continue
+                });
+            }
 
             function checkDeviceCompatibility(imei) {
                 // Show overlay with loading state
@@ -571,17 +588,19 @@
 
             function updateCapabilityStatus(capability, supported) {
                 const statusElement = document.getElementById(capability + '-status');
-                statusElement.className = 'capability-status';
-                
-                if (supported === true) {
-                    statusElement.textContent = '✅ Yes';
-                    statusElement.classList.add('supported');
-                } else if (supported === 'supported' || supported === 'limited') {
-                    statusElement.textContent = supported === 'limited' ? '⚠️ Limited' : '✅ Yes';
-                    statusElement.classList.add(supported === 'limited' ? 'limited' : 'supported');
-                } else {
-                    statusElement.textContent = '❌ No';
-                    statusElement.classList.add('not-supported');
+                if (statusElement) {
+                    statusElement.className = 'capability-status';
+                    
+                    if (supported === true) {
+                        statusElement.textContent = '✅ Yes';
+                        statusElement.classList.add('supported');
+                    } else if (supported === 'supported' || supported === 'limited') {
+                        statusElement.textContent = supported === 'limited' ? '⚠️ Limited' : '✅ Yes';
+                        statusElement.classList.add(supported === 'limited' ? 'limited' : 'supported');
+                    } else {
+                        statusElement.textContent = '❌ No';
+                        statusElement.classList.add('not-supported');
+                    }
                 }
             }
 
@@ -597,117 +616,109 @@
                 const verdictText = document.getElementById('verdict-text');
                 const recommendationText = document.getElementById('recommendation-text');
 
-                verdictElement.className = 'verdict';
+                if (verdictElement) verdictElement.className = 'verdict';
                 
                 if (compatible) {
                     if (capabilities.fiveG && capabilities.volte) {
-                        verdictElement.classList.add('compatible');
-                        verdictIcon.textContent = '✅';
-                        verdictText.textContent = 'Excellent Compatibility!';
-                        recommendationText.textContent = 'Your device supports all modern features including 5G and VoLTE for the best eSIM experience.';
+                        if (verdictElement) verdictElement.classList.add('compatible');
+                        if (verdictIcon) verdictIcon.textContent = '✅';
+                        if (verdictText) verdictText.textContent = 'Excellent Compatibility!';
+                        if (recommendationText) recommendationText.textContent = 'Your device supports all modern features including 5G and VoLTE for the best eSIM experience.';
                     } else {
-                        verdictElement.classList.add('limited');
-                        verdictIcon.textContent = '⚠️';
-                        verdictText.textContent = 'Good Compatibility';
-                        recommendationText.textContent = 'Your device supports 4G and will work well with our eSIM service. Some advanced features may be limited.';
+                        if (verdictElement) verdictElement.classList.add('limited');
+                        if (verdictIcon) verdictIcon.textContent = '⚠️';
+                        if (verdictText) verdictText.textContent = 'Good Compatibility';
+                        if (recommendationText) recommendationText.textContent = 'Your device supports 4G and will work well with our eSIM service. Some advanced features may be limited.';
                     }
                 } else {
-                    verdictElement.classList.add('incompatible');
-                    verdictIcon.textContent = '❌';
-                    verdictText.textContent = 'Limited Compatibility';
-                    recommendationText.textContent = 'Your device may have limited compatibility. Please contact support for assistance with eSIM activation.';
+                    if (verdictElement) verdictElement.classList.add('incompatible');
+                    if (verdictIcon) verdictIcon.textContent = '❌';
+                    if (verdictText) verdictText.textContent = 'Limited Compatibility';
+                    if (recommendationText) recommendationText.textContent = 'Your device may have limited compatibility. Please contact support for assistance with eSIM activation.';
                 }
             }
 
             function updateStatusIndicator(compatible, device) {
-                compatibilityStatus.style.display = 'block';
-                compatibilityStatus.innerHTML = compatible
-                    ? `<small class="text-success">✅ ${device.make} ${device.model} is compatible!</small>`
-                    : `<small class="text-warning">⚠️ ${device.make} ${device.model} has limited compatibility</small>`;
+                if (compatibilityStatus) {
+                    compatibilityStatus.style.display = 'block';
+                    compatibilityStatus.innerHTML = compatible
+                        ? `<small class="text-success">✅ ${device.make} ${device.model} is compatible!</small>`
+                        : `<small class="text-warning">⚠️ ${device.make} ${device.model} has limited compatibility</small>`;
+                }
             }
 
             function showCompatibilityError(errorMessage) {
-                document.getElementById('error-message').textContent = errorMessage;
-                document.getElementById('compatibility-error').style.display = 'block';
-                proceedBtn.style.display = 'block';
-                proceedBtn.textContent = '⚠️ Continue Anyway';
+                const errorElement = document.getElementById('error-message');
+                if (errorElement) errorElement.textContent = errorMessage;
+                
+                const errorDiv = document.getElementById('compatibility-error');
+                if (errorDiv) errorDiv.style.display = 'block';
+                
+                if (proceedBtn) {
+                    proceedBtn.style.display = 'block';
+                    proceedBtn.textContent = '⚠️ Continue Anyway';
+                }
             }
 
             function closeOverlay() {
-                overlay.style.display = 'none';
+                if (overlay) overlay.style.display = 'none';
             }
 
             // Intercept form submission to check IMEI compatibility first
-            const originalSubmitHandler = signupForm.onsubmit;
-            signupForm.onsubmit = function(e) {
-                const imei = imeiInput.value.trim();
-                
-                // If IMEI is provided but not checked, check it first
-                if (imei.length === 15 && !compatibilityChecked) {
+            if (signupForm) {
+                signupForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    checkDeviceCompatibility(imei);
-                    return false;
-                }
-                
-                // If IMEI was checked and device is not compatible, show warning
-                if (compatibilityChecked && !deviceCompatible) {
-                    const proceed = confirm('Your device has limited compatibility. Do you want to continue with signup? You may need additional support for eSIM activation.');
-                    if (!proceed) {
-                        e.preventDefault();
+
+                    const imei = imeiInputElement ? imeiInputElement.value.trim() : '';
+                    
+                    // If IMEI is provided but not checked, check it first
+                    if (imei.length === 15 && !compatibilityChecked) {
+                        checkDeviceCompatibility(imei);
                         return false;
                     }
-                }
-                
-                // Continue with original form submission
-                if (originalSubmitHandler) {
-                    return originalSubmitHandler.call(this, e);
-                }
-            };
-            // Check if we should start in login mode
-            const urlParams = new URLSearchParams(window.location.search);
-            const mode = urlParams.get('mode');
+                    
+                    // If IMEI was checked and device is not compatible, show warning
+                    if (compatibilityChecked && !deviceCompatible) {
+                        const proceed = confirm('Your device has limited compatibility. Do you want to continue with signup? You may need additional support for eSIM activation.');
+                        if (!proceed) {
+                            return false;
+                        }
+                    }
 
-            // Get form elements
-            const signupForm = document.getElementById('signup-form');
-            const emailInput = document.getElementById('email');
-            const passwordInput = document.getElementById('password');
-            const imeiInput = document.getElementById('imei');
-            const authError = document.getElementById('auth-error');
-            const googleSigninBtn = document.getElementById('google-signin');
+                    // Proceed with normal signup
+                    handleSignupSubmission(e);
+                });
+            }
 
             // If mode=login, automatically switch to login form
             if (mode === 'login') {
                 switchToLoginMode();
             }
 
-            // Handle form submission
-            let isSubmitting = false;
-
-            signupForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-
+            function handleSignupSubmission(e) {
                 // Prevent double submission
-                if (isSubmitting) {
+                if (window.isSubmitting) {
                     console.log('Form submission already in progress...');
                     return;
                 }
 
                 const submitButton = document.querySelector('button[type="submit"]');
-                const originalButtonText = submitButton.textContent;
+                const originalButtonText = submitButton ? submitButton.textContent : 'Sign Up';
 
                 try {
-                    isSubmitting = true;
-                    submitButton.disabled = true;
-                    submitButton.textContent = 'Creating Account...';
+                    window.isSubmitting = true;
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.textContent = 'Creating Account...';
+                    }
 
                     const email = emailInput.value.trim();
                     const password = passwordInput.value;
-                    const imei = imeiInput.value.trim();
+                    const imei = imeiInputElement ? imeiInputElement.value.trim() : '';
 
                     // Clear any previous error messages
-                    const errorDiv = document.getElementById('auth-error');
-                    if (errorDiv) {
-                        errorDiv.style.display = 'none';
+                    if (authError) {
+                        authError.style.display = 'none';
                     }
 
                     // Basic validation
@@ -716,69 +727,98 @@
                     }
 
                     console.log('Submitting signup form for:', email);
-                    // Create user with email and password
-                    window.firebaseAuth.createUserWithEmailPassword(email, password)
-                        .then((userCredential) => {
-                            // Handle successful signup
-                            console.log('User signed up successfully:', userCredential.user);
+                    
+                    // Check if Firebase auth is available
+                    if (window.firebaseAuth && window.firebaseAuth.createUserWithEmailPassword) {
+                        // Create user with email and password
+                        window.firebaseAuth.createUserWithEmailPassword(email, password)
+                            .then((userCredential) => {
+                                // Handle successful signup
+                                console.log('User signed up successfully:', userCredential.user);
 
-                            // If IMEI was provided, update user profile
-                            if (imei) {
-                                fetch('/api/auth/update-imei', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                        firebaseUid: userCredential.user.uid,
-                                        imei: imei
-                                    })
-                                });
-                            }
-                            // Redirect to dashboard after successful signup
-                            window.location.href = '/dashboard';
-                        })
-                        .catch((error) => {
-                            // Handle signup errors
-                            console.log('Error signing up:', error);
-                            authError.textContent = error.message;
-                            authError.style.display = 'block';
-                        });
+                                // If IMEI was provided, update user profile
+                                if (imei) {
+                                    fetch('/api/auth/update-imei', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                            firebaseUid: userCredential.user.uid,
+                                            imei: imei
+                                        })
+                                    }).catch(error => {
+                                        console.error('Error updating IMEI:', error);
+                                    });
+                                }
+                                // Redirect to dashboard after successful signup
+                                window.location.href = '/dashboard';
+                            })
+                            .catch((error) => {
+                                // Handle signup errors
+                                console.log('Error signing up:', error);
+                                if (authError) {
+                                    authError.textContent = error.message;
+                                    authError.style.display = 'block';
+                                }
+                            })
+                            .finally(() => {
+                                window.isSubmitting = false;
+                                if (submitButton) {
+                                    submitButton.disabled = false;
+                                    submitButton.textContent = originalButtonText;
+                                }
+                            });
+                    } else {
+                        throw new Error('Authentication service is not available. Please refresh the page and try again.');
+                    }
+
                 } catch (error) {
                     console.error('Form submission error:', error);
 
                     // Display error message
-                    const errorDiv = document.getElementById('auth-error');
-                    if (errorDiv) {
-                        errorDiv.textContent = error.message || 'An error occurred. Please try again.';
-                        errorDiv.style.display = 'block';
+                    if (authError) {
+                        authError.textContent = error.message || 'An error occurred. Please try again.';
+                        authError.style.display = 'block';
                     } else {
                         alert(error.message || 'An error occurred. Please try again.');
                     }
 
-                } finally {
-                    isSubmitting = false;
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalButtonText;
+                    window.isSubmitting = false;
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalButtonText;
+                    }
                 }
-            });
+            }
 
             // Handle Google sign-in
-            googleSigninBtn.addEventListener('click', function() {
-                window.firebaseAuth.signInWithGoogle()
-                    .then((result) => {
-                        // Handle successful Google sign-in
-                        console.log('Google sign-in successful:', result.user);
-                        // Redirect to dashboard after successful signup
-                        window.location.href = '/dashboard';
-                    })
-                    .catch((error) => {
-                        // Handle Google sign-in errors
-                        console.error('Error with Google sign-in:', error);
-                        authError.textContent = error.message;
-                        authError.style.display = 'block';
-                    });
-            });
+            if (googleSigninBtn) {
+                googleSigninBtn.addEventListener('click', function() {
+                    if (window.firebaseAuth && window.firebaseAuth.signInWithGoogle) {
+                        window.firebaseAuth.signInWithGoogle()
+                            .then((result) => {
+                                // Handle successful Google sign-in
+                                console.log('Google sign-in successful:', result.user);
+                                // Redirect to dashboard after successful signup
+                                window.location.href = '/dashboard';
+                            })
+                            .catch((error) => {
+                                // Handle Google sign-in errors
+                                console.error('Error with Google sign-in:', error);
+                                if (authError) {
+                                    authError.textContent = error.message;
+                                    authError.style.display = 'block';
+                                }
+                            });
+                    } else {
+                        if (authError) {
+                            authError.textContent = 'Authentication service is not available. Please refresh the page and try again.';
+                            authError.style.display = 'block';
+                        }
+                    }
+                });
+            }
 
             // Save IMEI if user is already signed in and has a pending IMEI
             firebase.auth().onAuthStateChanged(function(user) {
