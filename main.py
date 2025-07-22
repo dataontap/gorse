@@ -235,9 +235,9 @@ def oxio_test_sample_activation():
         }), 500
 
 # Now initialize Flask-RESTX AFTER the OXIO routes are defined
-api = Api(app, version='1.0', title='IMEI API',
-    description='Get android phone IMEI API with telephony permissions for eSIM activation',
-    doc='/api', 
+api = Api(app, version='3.0', title='dot.',
+    description='DOT GLOBAL CONNECTIVITY',
+    doc='/api/', 
     prefix='/api')  # Move all API endpoints under /api path
 
 ns = api.namespace('imei', description='IMEI operations')
@@ -2497,6 +2497,123 @@ def populate_token_pings():
                     import random
                     import time
                     from datetime import datetime, timedelta
+
+
+# Add route to handle API documentation with and without trailing slash
+@app.route('/api/')
+def api_docs_with_slash():
+    """Redirect to API documentation"""
+    return redirect('/api')
+
+@app.route('/api/export-docs')
+def export_api_docs():
+    """Export static API documentation"""
+    try:
+        # Generate a simple HTML page with API endpoints
+        api_docs_html = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>dot. API Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        h2 { color: #666; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .endpoint { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 5px; }
+        .method { font-weight: bold; color: #007acc; }
+        .path { font-family: monospace; }
+        .description { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>dot. - DOT GLOBAL CONNECTIVITY API</h1>
+    <p><strong>Version:</strong> 3.0</p>
+    <p><strong>Description:</strong> DOT GLOBAL CONNECTIVITY</p>
+    
+    <h2>Authentication Endpoints</h2>
+    <div class="endpoint">
+        <div><span class="method">POST</span> <span class="path">/api/auth/register</span></div>
+        <div class="description">Register Firebase user</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method">GET</span> <span class="path">/api/auth/current-user</span></div>
+        <div class="description">Get current user data</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method">POST</span> <span class="path">/api/auth/update-imei</span></div>
+        <div class="description">Update user IMEI</div>
+    </div>
+    
+    <h2>OXIO eSIM Services</h2>
+    <div class="endpoint">
+        <div><span class="method">GET</span> <span class="path">/api/oxio/test-connection</span></div>
+        <div class="description">Test OXIO API connection</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method">POST</span> <span class="path">/api/oxio/activate-line</span></div>
+        <div class="description">Activate eSIM line</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method">GET</span> <span class="path">/api/oxio-user-data</span></div>
+        <div class="description">Get user OXIO data</div>
+    </div>
+    
+    <h2>Payments & Subscriptions</h2>
+    <div class="endpoint">
+        <div><span class="method">POST</span> <span class="path">/api/record-global-purchase</span></div>
+        <div class="description">Record marketplace purchase</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method">GET</span> <span class="path">/api/subscription-status</span></div>
+        <div class="description">Get user subscription status</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method">GET</span> <span class="path">/api/user/data-balance</span></div>
+        <div class="description">Get user data balance</div>
+    </div>
+    
+    <h2>DOTM Tokens</h2>
+    <div class="endpoint">
+        <div><span class="method">GET</span> <span class="path">/api/token/price</span></div>
+        <div class="description">Get current token price</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method">GET</span> <span class="path">/api/token/balance/&lt;address&gt;</span></div>
+        <div class="description">Get token balance</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method">POST</span> <span class="path">/api/token/founding-token</span></div>
+        <div class="description">Assign founding member token</div>
+    </div>
+    
+    <h2>Network Features</h2>
+    <div class="endpoint">
+        <div><span class="method">GET</span> <span class="path">/api/network-features/&lt;firebase_uid&gt;</span></div>
+        <div class="description">Get user network features</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method">PUT</span> <span class="path">/api/network-features/&lt;firebase_uid&gt;/&lt;product_id&gt;</span></div>
+        <div class="description">Toggle network feature</div>
+    </div>
+    
+    <h2>Beta Program</h2>
+    <div class="endpoint">
+        <div><span class="method">POST</span> <span class="path">/api/beta-enrollment</span></div>
+        <div class="description">Enroll in beta program</div>
+    </div>
+    <div class="endpoint">
+        <div><span class="method">GET</span> <span class="path">/api/beta-status</span></div>
+        <div class="description">Get beta enrollment status</div>
+    </div>
+    
+    <p><em>For interactive API documentation, visit <a href="/api">/api</a></em></p>
+</body>
+</html>
+        """
+        return api_docs_html
+    except Exception as e:
+        return f"Error generating API docs: {str(e)}", 500
+
 
                     print("Inserting sample ping data...")
 
