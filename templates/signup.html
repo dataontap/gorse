@@ -151,10 +151,14 @@
 
                             <div class="mb-3">
                                 <label for="imei" class="form-label">IMEI Number (optional)</label>
-                                <input type="text" class="form-control" id="imei" placeholder="You can add this later in your profile">
+                                <input type="text" class="form-control" id="imei" placeholder="Enter 15-digit IMEI to check compatibility" maxlength="15">
                                 <small class="form-text text-muted">
                                     Find your IMEI: Dial <span class="dialer-pill" onclick="openDialer('*#06#')">*#06#</span> on your phone and press call. Works on iPhone and Android.
                                 </small>
+                                <button type="button" id="check-compatibility" class="btn btn-outline-info mt-2" style="display: none;">
+                                    📱 Check Device Compatibility
+                                </button>
+                                <div id="compatibility-status" class="mt-2" style="display: none;"></div>
                             </div>
 
                             <div class="d-grid d-flex justify-content-center">
@@ -171,8 +175,494 @@
         </div>
     </div>
 
+    <!-- IMEI Compatibility Check Overlay -->
+    <div id="compatibility-overlay" class="compatibility-overlay" style="display: none;">
+        <div class="compatibility-popup">
+            <div class="compatibility-header">
+                <h3>📱 Device Compatibility Check</h3>
+                <button id="close-compatibility" class="close-btn">&times;</button>
+            </div>
+            <div class="compatibility-content">
+                <div id="compatibility-loading" class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Checking your device compatibility...</p>
+                    <small>This may take up to 15 seconds</small>
+                </div>
+                <div id="compatibility-results" class="results-state" style="display: none;">
+                    <div class="device-info">
+                        <h4 id="device-name">Device Information</h4>
+                        <div class="device-details">
+                            <p><strong>Make:</strong> <span id="device-make">-</span></p>
+                            <p><strong>Model:</strong> <span id="device-model">-</span></p>
+                            <p><strong>Year:</strong> <span id="device-year">-</span></p>
+                        </div>
+                    </div>
+                    <div class="capabilities-info">
+                        <h4>Network Capabilities</h4>
+                        <div class="capability-grid">
+                            <div class="capability-item">
+                                <span class="capability-icon" id="fourG-icon">📶</span>
+                                <span class="capability-label">4G LTE</span>
+                                <span class="capability-status" id="fourG-status">-</span>
+                            </div>
+                            <div class="capability-item">
+                                <span class="capability-icon" id="fiveG-icon">🚀</span>
+                                <span class="capability-label">5G</span>
+                                <span class="capability-status" id="fiveG-status">-</span>
+                            </div>
+                            <div class="capability-item">
+                                <span class="capability-icon" id="volte-icon">📞</span>
+                                <span class="capability-label">VoLTE</span>
+                                <span class="capability-status" id="volte-status">-</span>
+                            </div>
+                            <div class="capability-item">
+                                <span class="capability-icon" id="wifi-icon">📶</span>
+                                <span class="capability-label">WiFi Calling</span>
+                                <span class="capability-status" id="wifi-status">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="compatibility-recommendation">
+                        <div id="compatibility-verdict" class="verdict">
+                            <span id="verdict-icon">✅</span>
+                            <span id="verdict-text">Your device is compatible!</span>
+                        </div>
+                        <p id="recommendation-text">Your device supports all required features for our eSIM service.</p>
+                    </div>
+                </div>
+                <div id="compatibility-error" class="error-state" style="display: none;">
+                    <div class="error-icon">⚠️</div>
+                    <h4>Compatibility Check Failed</h4>
+                    <p id="error-message">Unable to verify device compatibility at this time.</p>
+                    <small>You can still proceed with signup - compatibility will be verified during eSIM activation.</small>
+                </div>
+            </div>
+            <div class="compatibility-actions">
+                <button id="proceed-signup" class="btn btn-primary" style="display: none;">
+                    ✅ Proceed with Signup
+                </button>
+                <button id="cancel-signup" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .compatibility-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+
+        .compatibility-popup {
+            background: rgba(40, 40, 40, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: #ffffff;
+        }
+
+        .compatibility-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .compatibility-header h3 {
+            margin: 0;
+            color: #74c0fc;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #ff6b6b;
+        }
+
+        .compatibility-content {
+            padding: 25px;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #74c0fc;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .device-info, .capabilities-info {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .device-info h4, .capabilities-info h4 {
+            margin: 0 0 10px 0;
+            color: #74c0fc;
+            font-size: 16px;
+        }
+
+        .device-details p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .capability-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .capability-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .capability-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .capability-status {
+            margin-left: auto;
+            font-weight: bold;
+        }
+
+        .capability-status.supported {
+            color: #51cf66;
+        }
+
+        .capability-status.limited {
+            color: #ffd43b;
+        }
+
+        .capability-status.not-supported {
+            color: #ff6b6b;
+        }
+
+        .compatibility-recommendation {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .verdict {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .verdict.compatible {
+            color: #51cf66;
+        }
+
+        .verdict.limited {
+            color: #ffd43b;
+        }
+
+        .verdict.incompatible {
+            color: #ff6b6b;
+        }
+
+        .error-state {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .error-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .compatibility-actions {
+            padding: 20px 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .compatibility-actions .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .compatibility-actions .btn-primary {
+            background: #74c0fc;
+            color: #000;
+        }
+
+        .compatibility-actions .btn-primary:hover {
+            background: #5ca0d8;
+        }
+
+        .compatibility-actions .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        .compatibility-actions .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // IMEI Compatibility Checker
+            const imeiInput = document.getElementById('imei');
+            const checkButton = document.getElementById('check-compatibility');
+            const compatibilityStatus = document.getElementById('compatibility-status');
+            const overlay = document.getElementById('compatibility-overlay');
+            const closeBtn = document.getElementById('close-compatibility');
+            const proceedBtn = document.getElementById('proceed-signup');
+            const cancelBtn = document.getElementById('cancel-signup');
+
+            let compatibilityChecked = false;
+            let deviceCompatible = false;
+
+            // Show/hide check button based on IMEI input
+            imeiInput.addEventListener('input', function() {
+                const imei = this.value.replace(/\D/g, ''); // Remove non-digits
+                this.value = imei; // Update input with clean value
+                
+                if (imei.length === 15) {
+                    checkButton.style.display = 'block';
+                    compatibilityStatus.style.display = 'none';
+                } else {
+                    checkButton.style.display = 'none';
+                    compatibilityStatus.style.display = 'none';
+                    compatibilityChecked = false;
+                }
+            });
+
+            // Check compatibility when button is clicked
+            checkButton.addEventListener('click', function() {
+                const imei = imeiInput.value;
+                if (imei.length === 15) {
+                    checkDeviceCompatibility(imei);
+                }
+            });
+
+            // Close overlay
+            closeBtn.addEventListener('click', closeOverlay);
+            cancelBtn.addEventListener('click', closeOverlay);
+
+            // Proceed with signup after compatibility check
+            proceedBtn.addEventListener('click', function() {
+                closeOverlay();
+                // The normal signup process will continue
+            });
+
+            function checkDeviceCompatibility(imei) {
+                // Show overlay with loading state
+                overlay.style.display = 'flex';
+                document.getElementById('compatibility-loading').style.display = 'block';
+                document.getElementById('compatibility-results').style.display = 'none';
+                document.getElementById('compatibility-error').style.display = 'none';
+                proceedBtn.style.display = 'none';
+
+                // Call the IMEI checker API
+                fetch('/api/check-imei-compatibility', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        imei: imei,
+                        location: 'Global', // Default location
+                        network: 'OXIO'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('compatibility-loading').style.display = 'none';
+                    
+                    if (data.success) {
+                        showCompatibilityResults(data);
+                        compatibilityChecked = true;
+                        deviceCompatible = isDeviceCompatible(data);
+                    } else {
+                        showCompatibilityError(data.error || 'Unknown error occurred');
+                    }
+                })
+                .catch(error => {
+                    console.error('Compatibility check error:', error);
+                    document.getElementById('compatibility-loading').style.display = 'none';
+                    showCompatibilityError('Network error - please check your connection');
+                });
+            }
+
+            function showCompatibilityResults(data) {
+                const device = data.device || {};
+                const capabilities = data.capabilities || {};
+
+                // Update device info
+                document.getElementById('device-make').textContent = device.make || 'Unknown';
+                document.getElementById('device-model').textContent = device.model || 'Unknown';
+                document.getElementById('device-year').textContent = device.year || 'Unknown';
+
+                // Update capabilities
+                updateCapabilityStatus('fourG', capabilities.fourG);
+                updateCapabilityStatus('fiveG', capabilities.fiveG);
+                updateCapabilityStatus('volte', capabilities.volte);
+                updateCapabilityStatus('wifi', capabilities.wifiCalling);
+
+                // Determine overall compatibility
+                const compatible = isDeviceCompatible(data);
+                updateCompatibilityVerdict(compatible, capabilities);
+
+                document.getElementById('compatibility-results').style.display = 'block';
+                proceedBtn.style.display = 'block';
+
+                // Update status indicator
+                updateStatusIndicator(compatible, device);
+            }
+
+            function updateCapabilityStatus(capability, supported) {
+                const statusElement = document.getElementById(capability + '-status');
+                statusElement.className = 'capability-status';
+                
+                if (supported === true) {
+                    statusElement.textContent = '✅ Yes';
+                    statusElement.classList.add('supported');
+                } else if (supported === 'supported' || supported === 'limited') {
+                    statusElement.textContent = supported === 'limited' ? '⚠️ Limited' : '✅ Yes';
+                    statusElement.classList.add(supported === 'limited' ? 'limited' : 'supported');
+                } else {
+                    statusElement.textContent = '❌ No';
+                    statusElement.classList.add('not-supported');
+                }
+            }
+
+            function isDeviceCompatible(data) {
+                const capabilities = data.capabilities || {};
+                // Device is compatible if it has at least 4G support
+                return capabilities.fourG === true;
+            }
+
+            function updateCompatibilityVerdict(compatible, capabilities) {
+                const verdictElement = document.getElementById('compatibility-verdict');
+                const verdictIcon = document.getElementById('verdict-icon');
+                const verdictText = document.getElementById('verdict-text');
+                const recommendationText = document.getElementById('recommendation-text');
+
+                verdictElement.className = 'verdict';
+                
+                if (compatible) {
+                    if (capabilities.fiveG && capabilities.volte) {
+                        verdictElement.classList.add('compatible');
+                        verdictIcon.textContent = '✅';
+                        verdictText.textContent = 'Excellent Compatibility!';
+                        recommendationText.textContent = 'Your device supports all modern features including 5G and VoLTE for the best eSIM experience.';
+                    } else {
+                        verdictElement.classList.add('limited');
+                        verdictIcon.textContent = '⚠️';
+                        verdictText.textContent = 'Good Compatibility';
+                        recommendationText.textContent = 'Your device supports 4G and will work well with our eSIM service. Some advanced features may be limited.';
+                    }
+                } else {
+                    verdictElement.classList.add('incompatible');
+                    verdictIcon.textContent = '❌';
+                    verdictText.textContent = 'Limited Compatibility';
+                    recommendationText.textContent = 'Your device may have limited compatibility. Please contact support for assistance with eSIM activation.';
+                }
+            }
+
+            function updateStatusIndicator(compatible, device) {
+                compatibilityStatus.style.display = 'block';
+                compatibilityStatus.innerHTML = compatible
+                    ? `<small class="text-success">✅ ${device.make} ${device.model} is compatible!</small>`
+                    : `<small class="text-warning">⚠️ ${device.make} ${device.model} has limited compatibility</small>`;
+            }
+
+            function showCompatibilityError(errorMessage) {
+                document.getElementById('error-message').textContent = errorMessage;
+                document.getElementById('compatibility-error').style.display = 'block';
+                proceedBtn.style.display = 'block';
+                proceedBtn.textContent = '⚠️ Continue Anyway';
+            }
+
+            function closeOverlay() {
+                overlay.style.display = 'none';
+            }
+
+            // Intercept form submission to check IMEI compatibility first
+            const originalSubmitHandler = signupForm.onsubmit;
+            signupForm.onsubmit = function(e) {
+                const imei = imeiInput.value.trim();
+                
+                // If IMEI is provided but not checked, check it first
+                if (imei.length === 15 && !compatibilityChecked) {
+                    e.preventDefault();
+                    checkDeviceCompatibility(imei);
+                    return false;
+                }
+                
+                // If IMEI was checked and device is not compatible, show warning
+                if (compatibilityChecked && !deviceCompatible) {
+                    const proceed = confirm('Your device has limited compatibility. Do you want to continue with signup? You may need additional support for eSIM activation.');
+                    if (!proceed) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+                
+                // Continue with original form submission
+                if (originalSubmitHandler) {
+                    return originalSubmitHandler.call(this, e);
+                }
+            };
             // Check if we should start in login mode
             const urlParams = new URLSearchParams(window.location.search);
             const mode = urlParams.get('mode');
