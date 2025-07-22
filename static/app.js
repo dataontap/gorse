@@ -2949,69 +2949,65 @@ let dataBalanceLoading = false;
                 return;
             }
 
-            // Check if user is authenticated AND this is a fresh session
+            // Check if user is authenticated AND this is a manual request
             var currentUser = getCurrentUser();
             if (!currentUser || !currentUser.uid) {
                 console.log('User not authenticated, skipping data balance load');
                 return;
             }
 
-            // Only load if Firebase auth state indicates active session
-            if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
-                var firebaseUid = currentUser.uid;
-                if (firebaseUid) {
-                    dataBalanceLoading = true;
-                    console.log('Loading data balance for authenticated user:', firebaseUid);
-                    fetch('/api/user/data-balance?firebaseUid=' + firebaseUid)
-                        .then(response => response.json())
-                        .then(data => {
+            // Only load if explicitly requested (not automatic)
+            var firebaseUid = currentUser.uid;
+            if (firebaseUid) {
+                dataBalanceLoading = true;
+                console.log('Loading data balance for authenticated user (manual request):', firebaseUid);
+                fetch('/api/user/data-balance?firebaseUid=' + firebaseUid)
+                    .then(response => response.json())
+                    .then(data => {
 
-                            var dataDisplay = document.getElementById('dataDisplay');
-                            var globalStatus = document.getElementById('globalStatus');
+                        var dataDisplay = document.getElementById('dataDisplay');
+                        var globalStatus = document.getElementById('globalStatus');
 
-                            if (data.status === 'success') {
-                                dataBalanceValue = data.dataBalance;
-                                updateDataDisplay();
-                                dataDisplay.style.display = 'block';
-                                startAlternatingDisplay();
-                            } else {
-                                // Show default values
-                                console.error('Error getting user data balance:', data.message);
-                                dataBalanceValue = 0;
-                                updateDataDisplay();
-                                dataDisplay.style.display = 'block';
-                                startAlternatingDisplay();
-                            }
-
-                            if (globalStatus) {
-                                globalStatus.style.display = 'block';
-                                globalStatus.innerHTML = '<i class="fas fa-globe"></i> GLOBAL DATA';
-                            }
-                        })
-.catch(error => {
-                            console.error('Error loading data balance:', error);
+                        if (data.status === 'success') {
+                            dataBalanceValue = data.dataBalance;
+                            updateDataDisplay();
+                            dataDisplay.style.display = 'block';
+                            startAlternatingDisplay();
+                        } else {
                             // Show default values
-                            var dataDisplay = document.getElementById('dataDisplay');
-                            var globalStatus = document.getElementById('globalStatus');
+                            console.error('Error getting user data balance:', data.message);
+                            dataBalanceValue = 0;
+                            updateDataDisplay();
+                            dataDisplay.style.display = 'block';
+                            startAlternatingDisplay();
+                        }
 
-                            if (dataDisplay) {
-                                dataBalanceValue = 0;
-                                updateDataDisplay();
-                                dataDisplay.style.display = 'block';
-                                startAlternatingDisplay();
-                            }
+                        if (globalStatus) {
+                            globalStatus.style.display = 'block';
+                            globalStatus.innerHTML = '<i class="fas fa-globe"></i> GLOBAL DATA';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading data balance:', error);
+                        // Show default values
+                        var dataDisplay = document.getElementById('dataDisplay');
+                        var globalStatus = document.getElementById('globalStatus');
 
-                            if (globalStatus) {
-                                globalStatus.style.display = 'block';
-                                globalStatus.innerHTML = '<i class="fas fa-globe"></i> GLOBAL DATA';
-                            }
-                        })
-                        .finally(() => {
-                            dataBalanceLoading = false;
-                        });
-                }
-            } else {
-                console.log('No active Firebase auth session, skipping data balance load');
+                        if (dataDisplay) {
+                            dataBalanceValue = 0;
+                            updateDataDisplay();
+                            dataDisplay.style.display = 'block';
+                            startAlternatingDisplay();
+                        }
+
+                        if (globalStatus) {
+                            globalStatus.style.display = 'block';
+                            globalStatus.innerHTML = '<i class="fas fa-globe"></i> GLOBAL DATA';
+                        }
+                    })
+                    .finally(() => {
+                        dataBalanceLoading = false;
+                    });
             }
         }
 
@@ -3057,8 +3053,7 @@ let subscriptionStatusLoading = false;
 
     // Load invites if on dashboard page
     if (window.location.pathname === '/dashboard') {
-        loadUserDataBalance();
-        loadSubscriptionStatus();
+        // Only load data if user is authenticated and this is a fresh session
         setTimeout(() => {
             if (typeof loadInvitesList === 'function') {
                 loadInvitesList();
