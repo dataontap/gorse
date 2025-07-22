@@ -1964,8 +1964,7 @@ function initializeUsageChart(chartContainer) {
             x: {
                 title: {
                     display: true,
-                    text: 'Day of Week'
-```python
+                    text: 'Day of Week'```
                 }
             }
         }
@@ -2697,6 +2696,7 @@ function updateBetaStatus(status, message) {
             betaEnrollBtn.style.display = 'none';
             betaStatus.style.display = 'block';
             betaStatusText.textContent = 'Your eSIM is ready to download';
+
             betaStatusText.style.color = '#28a745';
 
             // Show resend link
@@ -2906,8 +2906,8 @@ function updateBetaStatus(status, message) {
             betaEnrollBtn.style.display = 'none';
             betaStatus.style.display = 'block';
             betaStatusText.textContent = 'Your eSIM is ready to download';
-```python
 
+            ```javascript
             betaStatusText.style.color = '#28a745';
 
             // Show resend link
@@ -2960,8 +2960,28 @@ let dataBalanceLoading = false;
             var firebaseUid = currentUser.uid;
             if (firebaseUid) {
                 dataBalanceLoading = true;
-                console.log('Loading data balance for authenticated user (manual request):', firebaseUid);
-                fetch('/api/user/data-balance?firebaseUid=' + firebaseUid)
+                console.log('Loading data balance for user interaction:', firebaseUid);
+
+                // Get Firebase ID token for authentication
+                const getAuthHeaders = async () => {
+                    try {
+                        if (window.currentFirebaseUser) {
+                            const idToken = await window.currentFirebaseUser.getIdToken();
+                            return {
+                                'Authorization': `Bearer ${idToken}`,
+                                'Content-Type': 'application/json'
+                            };
+                        }
+                    } catch (error) {
+                        console.error('Error getting Firebase ID token:', error);
+                    }
+                    return {};
+                };
+
+                getAuthHeaders().then(headers => {
+                    fetch('/api/user/data-balance?firebaseUid=' + firebaseUid, {
+                        headers: headers
+                    })
                     .then(response => response.json())
                     .then(data => {
 
@@ -3008,6 +3028,7 @@ let dataBalanceLoading = false;
                     .finally(() => {
                         dataBalanceLoading = false;
                     });
+                });
             }
         }
 

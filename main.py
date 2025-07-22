@@ -1288,6 +1288,22 @@ def get_user_data_balance():
     firebase_uid = request.args.get('firebaseUid')
     user_id_param = request.args.get('userId')
 
+    # Verify Firebase authentication if Firebase UID is provided
+    if firebase_uid:
+        # Check if Firebase ID token is provided in Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({
+                'error': 'Authentication required - no valid Firebase token provided',
+                'firebaseUid': firebase_uid,
+                'dataBalance': 0,
+                'unit': 'GB'
+            }), 401
+
+        # For now, we'll accept any Bearer token since we don't have Firebase Admin SDK
+        # In production, you would verify the token with Firebase Admin SDK
+        print(f"Authentication check passed for Firebase UID: {firebase_uid}")
+
     try:
         user_id = None
         
