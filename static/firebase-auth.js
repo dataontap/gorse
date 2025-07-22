@@ -182,33 +182,37 @@ document.addEventListener('DOMContentLoaded', function() {
                   // Set initial balance and load it asynchronously
                   currentUserData.dataBalance = 0;
 
-                  // Load balance asynchronously with delay to ensure user is fully registered
-                  setTimeout(async () => {
-                      try {
-                          console.log('Loading user balance after authentication delay...');
-                          const balanceResponse = await fetch(`/api/user/data-balance?firebaseUid=${user.uid}`);
-                          const balanceData = await balanceResponse.json();
+                  // Only load balance after fresh authentication (not from cached data)
+                  // Check if this is a fresh login by verifying user state change
+                  const isUserSignedIn = firebase.auth().currentUser !== null;
+                  if (isUserSignedIn) {
+                      setTimeout(async () => {
+                          try {
+                              console.log('Loading user balance after fresh authentication...');
+                              const balanceResponse = await fetch(`/api/user/data-balance?firebaseUid=${user.uid}`);
+                              const balanceData = await balanceResponse.json();
 
-                          if (balanceData.status === 'success') {
-                              currentUserData.dataBalance = balanceData.dataBalance || 0;
-                              console.log('Balance loaded successfully:', currentUserData.dataBalance);
+                              if (balanceData.status === 'success') {
+                                  currentUserData.dataBalance = balanceData.dataBalance || 0;
+                                  console.log('Balance loaded successfully after authentication:', currentUserData.dataBalance);
 
-                              // Update localStorage with new balance
-                              localStorage.setItem('currentUser', JSON.stringify(currentUserData));
+                                  // Update localStorage with new balance
+                                  localStorage.setItem('currentUser', JSON.stringify(currentUserData));
 
-                              // Update UI with new balance if on dashboard
-                              if (window.location.pathname === '/dashboard') {
-                                  updateBalanceDisplays(currentUserData);
+                                  // Update UI with new balance if on dashboard
+                                  if (window.location.pathname === '/dashboard') {
+                                      updateBalanceDisplays(currentUserData);
+                                  }
+                              } else {
+                                  console.error('Balance API error:', balanceData);
+                                  currentUserData.dataBalance = 0;
                               }
-                          } else {
-                              console.error('Balance API error:', balanceData);
+                          } catch (balanceError) {
+                              console.error('Error fetching balance after authentication:', balanceError);
                               currentUserData.dataBalance = 0;
                           }
-                      } catch (balanceError) {
-                          console.error('Error fetching balance after delay:', balanceError);
-                          currentUserData.dataBalance = 0;
-                      }
-                  }, 3000); // Wait 3 seconds after authentication before loading balance
+                      }, 3000); // Wait 3 seconds after authentication before loading balance
+                  }
 
                   console.log('Complete user data loaded:', currentUserData);
 

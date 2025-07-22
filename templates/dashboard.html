@@ -500,17 +500,28 @@
     <script src="/static/translations.js"></script>
     <script src="/static/app.js"></script>
     <script>
-        // Load user data and display data balance
+        // Load user data and display data balance only after authentication
         document.addEventListener('DOMContentLoaded', function() {
-            loadUserDataBalance();
+            // Don't automatically load data balance on page load
+            // It will be loaded via Firebase auth state change
             loadMemberCount();
-            loadSubscriptionStatus();
 
             // Check if banner was previously dismissed
             checkBannerDismissedState();
 
             // Load DOTM balance
             loadDotmBalance();
+
+            // Only load data if user is actively authenticated
+            setTimeout(() => {
+                if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                    console.log('User authenticated via Firebase, loading data...');
+                    loadUserDataBalance();
+                    loadSubscriptionStatus();
+                } else {
+                    console.log('No active Firebase session, waiting for authentication...');
+                }
+            }, 2000);
         });
 
         var dataBalanceValue = 0;
