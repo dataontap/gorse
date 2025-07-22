@@ -519,7 +519,14 @@
         var userSubscription = null; // Store user's subscription status
 
         function loadUserDataBalance() {
-            var firebaseUid = localStorage.getItem('userId');
+            // Check if user is authenticated first
+            var currentUser = getCurrentUser();
+            if (!currentUser || !currentUser.uid) {
+                console.log('User not authenticated, skipping data balance load');
+                return;
+            }
+
+            var firebaseUid = currentUser.uid;
             if (firebaseUid) {
                 fetch('/api/user/data-balance?firebaseUid=' + firebaseUid)
                     .then(response => response.json())

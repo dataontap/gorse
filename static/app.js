@@ -2949,7 +2949,14 @@ let dataBalanceLoading = false;
                 return;
             }
 
-            var firebaseUid = localStorage.getItem('userId');
+            // Check if user is authenticated first
+            var currentUser = getCurrentUser();
+            if (!currentUser || !currentUser.uid) {
+                console.log('User not authenticated, skipping data balance load');
+                return;
+            }
+
+            var firebaseUid = currentUser.uid;
             if (firebaseUid) {
                 dataBalanceLoading = true;
                 fetch('/api/user/data-balance?firebaseUid=' + firebaseUid)
@@ -2959,8 +2966,8 @@ let dataBalanceLoading = false;
                         var dataDisplay = document.getElementById('dataDisplay');
                         var globalStatus = document.getElementById('globalStatus');
 
-                        if (data.success) {
-                            dataBalanceValue = data.data_balance;
+                        if (data.status === 'success') {
+                            dataBalanceValue = data.dataBalance;
                             updateDataDisplay();
                             dataDisplay.style.display = 'block';
                             startAlternatingDisplay();
@@ -3009,7 +3016,14 @@ let subscriptionStatusLoading = false;
                 return;
             }
 
-            var firebaseUid = localStorage.getItem('userId');
+            // Check if user is authenticated first
+            var currentUser = getCurrentUser();
+            if (!currentUser || !currentUser.uid) {
+                console.log('User not authenticated, skipping subscription status load');
+                return;
+            }
+
+            var firebaseUid = currentUser.uid;
             if (firebaseUid) {
                 subscriptionStatusLoading = true;
                 fetch('/api/subscription-status?firebaseUid=' + firebaseUid)

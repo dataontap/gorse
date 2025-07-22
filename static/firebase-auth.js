@@ -193,11 +193,13 @@ document.addEventListener('DOMContentLoaded', function() {
                               currentUserData.dataBalance = balanceData.dataBalance || 0;
                               console.log('Balance loaded successfully:', currentUserData.dataBalance);
 
-                              // Update UI with new balance
-                              updateBalanceDisplays(currentUserData.dataBalance);
-
                               // Update localStorage with new balance
                               localStorage.setItem('currentUser', JSON.stringify(currentUserData));
+
+                              // Update UI with new balance if on dashboard
+                              if (window.location.pathname === '/dashboard') {
+                                  updateBalanceDisplays(currentUserData);
+                              }
                           } else {
                               console.error('Balance API error:', balanceData);
                               currentUserData.dataBalance = 0;
@@ -206,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
                           console.error('Error fetching balance after delay:', balanceError);
                           currentUserData.dataBalance = 0;
                       }
-                  }, 2000); // Wait 2 seconds after authentication before loading balance
+                  }, 3000); // Wait 3 seconds after authentication before loading balance
 
                   console.log('Complete user data loaded:', currentUserData);
 
