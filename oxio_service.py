@@ -338,6 +338,128 @@ class OXIOService:
                 'firebase_uid': firebase_uid
             }
 
+    def create_line_group(self, name: str, firebase_uid: str, description: str = "Share data with other members") -> Dict[str, Any]:
+        """
+        Create a Line Group using OXIO API
+
+        Args:
+            name: Name of the group (e.g., "My Datashare")
+            firebase_uid: Firebase UID to use as groupExternalId
+            description: Description of the group
+
+        Returns:
+            API response as dictionary
+        """
+        try:
+            url = f"{self.base_url}/v2/groups"
+            headers = self.get_headers()
+
+            payload = {
+                "name": name,
+                "groupType": "GROUP_TYPE_SHARED",
+                "groupExternalId": firebase_uid,
+                "description": description
+            }
+
+            print(f"OXIO Create Line Group URL: {url}")
+            print(f"OXIO Create Line Group Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
+            print(f"OXIO Create Line Group Payload: {json.dumps(payload, indent=2)}")
+
+            response = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=30
+            )
+
+            print(f"OXIO Create Line Group Response Status: {response.status_code}")
+            print(f"OXIO Create Line Group Response Headers: {dict(response.headers)}")
+
+            # Get response text first
+            response_text = response.text
+            print(f"Raw response body: {response_text}")
+
+            # Check if response is JSON
+            content_type = response.headers.get('content-type', '').lower()
+
+            if 'application/json' in content_type:
+                try:
+                    response_data = response.json() if response.content else {}
+                    print(f"OXIO Create Line Group Response Body (parsed): {json.dumps(response_data, indent=2)}")
+                except json.JSONDecodeError as json_err:
+                    print(f"Failed to parse JSON response: {str(json_err)}")
+                    response_data = {
+                        'error': 'Invalid JSON response',
+                        'json_error': str(json_err),
+                        'raw_response': response_text[:1000]
+                    }
+            else:
+                print(f"Non-JSON response received (Content-Type: {content_type})")
+                response_data = {
+                    'error': 'Non-JSON response',
+                    'content_type': content_type,
+                    'raw_response': response_text[:1000]
+                }
+
+            if response.status_code >= 200 and response.status_code < 300:
+                # Get group ID from response - try different possible field names
+                group_id = response_data.get('groupId') or response_data.get('id') or response_data.get('group_id')
+                
+                return {
+                    'success': True,
+                    'status_code': response.status_code,
+                    'data': response_data,
+                    'message': 'OXIO Line Group created successfully',
+                    'group_id': group_id,
+                    'request_payload': payload,
+                    'firebase_uid': firebase_uid
+                }
+            else:
+                error_details = {
+                    'success': False,
+                    'status_code': response.status_code,
+                    'data': response_data,
+                    'error': f'OXIO API error: {response.status_code}',
+                    'message': response_data.get('message', f'HTTP {response.status_code} error'),
+                    'request_payload': payload,
+                    'firebase_uid': firebase_uid
+                }
+
+                return error_details
+
+        except requests.exceptions.Timeout:
+            return {
+                'success': False,
+                'error': 'Request timeout',
+                'message': 'OXIO API request timed out after 30 seconds',
+                'request_payload': payload,
+                'firebase_uid': firebase_uid
+            }
+        except requests.exceptions.ConnectionError as conn_err:
+            return {
+                'success': False,
+                'error': 'Connection error',
+                'message': f'Could not connect to OXIO API: {str(conn_err)}',
+                'request_payload': payload,
+                'firebase_uid': firebase_uid
+            }
+        except requests.exceptions.RequestException as req_err:
+            return {
+                'success': False,
+                'error': 'Request error',
+                'message': f'Request failed: {str(req_err)}',
+                'request_payload': payload,
+                'firebase_uid': firebase_uid
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': 'Unexpected error',
+                'message': f'Unexpected error: {str(e)}',
+                'request_payload': payload,
+                'firebase_uid': firebase_uid
+            }
+
     def get_user_lines(self, oxio_user_id: str) -> Dict[str, Any]:
         """
         Get existing lines for an OXIO user

@@ -352,6 +352,7 @@ def register_firebase_user():
                                 imei VARCHAR(100),
                                 eth_address VARCHAR(42),
                                 oxio_user_id VARCHAR(100),
+                                oxio_group_id VARCHAR(100),
                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                             )
                         """)
@@ -383,6 +384,19 @@ def register_firebase_user():
                             cur.execute("ALTER TABLE users ADD COLUMN eth_address VARCHAR(42)")
                             conn.commit()
                             print("ETH address column added successfully")
+
+                        # Ensure oxio_group_id column exists
+                        cur.execute("""
+                            SELECT column_name FROM information_schema.columns 
+                            WHERE table_name = 'users' AND column_name = 'oxio_group_id'
+                        """)
+                        group_column_exists = cur.fetchone()
+
+                        if not group_column_exists:
+                            print("Adding oxio_group_id column to users table...")
+                            cur.execute("ALTER TABLE users ADD COLUMN oxio_group_id VARCHAR(100)")
+                            conn.commit()
+                            print("OXIO group ID column added successfully")
 
                     # Check if user already exists by Firebase UID
                     cur.execute("SELECT id, stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
@@ -432,6 +446,7 @@ def register_firebase_user():
 
                         # Create OXIO user first
                         oxio_user_id = None
+                        oxio_group_id = None
                         try:
                             print(f"Creating OXIO user for Firebase UID: {firebase_uid}")
                             # Parse display_name to get first and last name
@@ -449,6 +464,23 @@ def register_firebase_user():
                             if oxio_result.get('success'):
                                 oxio_user_id = oxio_result.get('oxio_user_id')
                                 print(f"Successfully created OXIO user: {oxio_user_id}")
+                                
+                                # Create OXIO Line Group for the user
+                                try:
+                                    print(f"Creating OXIO Line Group for user: {oxio_user_id}")
+                                    group_result = oxio_service.create_line_group(
+                                        name="My Datashare",
+                                        firebase_uid=firebase_uid,
+                                        description="Share data with other members"
+                                    )
+                                    
+                                    if group_result.get('success'):
+                                        oxio_group_id = group_result.get('group_id')
+                                        print(f"Successfully created OXIO Line Group: {oxio_group_id}")
+                                    else:
+                                        print(f"Failed to create OXIO Line Group: {group_result.get('message', 'Unknown error')}")
+                                except Exception as group_err:
+                                    print(f"Error creating OXIO Line Group: {str(group_err)}")
                             else:
                                 print(f"Failed to create OXIO user: {oxio_result.get('message', 'Unknown error')}")
                         except Exception as oxio_err:
@@ -456,10 +488,10 @@ def register_firebase_user():
 
                         cur.execute(
                             """INSERT INTO users 
-                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id) 
-                            VALUES (%s, %s, %s, %s, %s, %s) 
+                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id, oxio_group_id) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s) 
                             RETURNING id""",
-                            (email, firebase_uid, display_name, photo_url, test_account.address, oxio_user_id)
+                            (email, firebase_uid, display_name, photo_url, test_account.address, oxio_user_id, oxio_group_id)
                         )
                         user_id = cur.fetchone()[0]
                         conn.commit()
@@ -556,10 +588,10 @@ def get_current_user():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Get user data including founder status, OXIO user ID, and ETH address
+                    # Get user data including founder status, OXIO user ID, OXIO group ID, and ETH address
                     cur.execute(
                         """SELECT u.id, u.email, u.display_name, u.photo_url, u.imei, u.stripe_customer_id,
-                                  COALESCE(f.founder, 'N') as founder_status, u.oxio_user_id, u.eth_address
+                                  COALESCE(f.founder, 'N') as founder_status, u.oxio_user_id, u.eth_address, u.oxio_group_id
                         FROM users u
                         LEFT JOIN founders f ON u.firebase_uid = f.firebase_uid
                         WHERE u.firebase_uid = %s""",
@@ -578,7 +610,8 @@ def get_current_user():
                             'stripeCustomerId': user[5],
                             'founderStatus': user[6],
                             'oxioUserId': user[7],
-                            'metamaskAddress': user[8] if len(user) > 8 else None
+                            'metamaskAddress': user[8] if len(user) > 8 else None,
+                            'oxioGroupId': user[9] if len(user) > 9 else None
                         })
 
                     return jsonify({'error': 'User not found'}), 404
@@ -1248,7 +1281,7 @@ def get_user_by_firebase_uid(firebase_uid):
                 with conn.cursor() as cur:
                     cur.execute(
                         """SELECT id, email, firebase_uid, stripe_customer_id, display_name, 
-                                  photo_url, imei, oxio_user_id, eth_address 
+                                  photo_url, imei, oxio_user_id, eth_address, oxio_group_id 
                         FROM users WHERE firebase_uid = %s""",
                         (firebase_uid,)
                     )
@@ -2804,12 +2837,14 @@ def get_oxio_user_data():
         # Extract additional fields from user_data tuple
         oxio_user_id = user_data[7] if len(user_data) > 7 else None
         eth_address = user_data[8] if len(user_data) > 8 else None
+        oxio_group_id = user_data[9] if len(user_data) > 9 else None
 
         # Get OXIO data from database and API
         oxio_data = {
             'user_id': user_id,
             'email': user_email,
             'oxio_user_id': oxio_user_id,  # OXIO user ID from oxio_user_id column
+            'oxio_group_id': oxio_group_id,  # OXIO group ID from oxio_group_id column
             'metamask_address': eth_address,  # MetaMask address from eth_address column
             'phone_number': None,
             'line_id': None,
