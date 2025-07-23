@@ -753,6 +753,23 @@ body.dark-mode .agent-status {
     padding-left: 26px;
 }
 
+.help-option-content .chat-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    transition: background 0.3s;
+}
+
+.help-option-content .chat-btn:hover {
+    background: #0056b3;
+}
+
 .agent-status {
     margin-bottom: 12px;
 }
