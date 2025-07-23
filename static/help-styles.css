@@ -463,24 +463,24 @@ body.dark-mode .agent-status {
         width: 95%;
         margin: 20px;
     }
-    
+
     .help-modal-header {
         padding: 20px;
     }
-    
+
     .help-modal-header h2 {
         font-size: 20px;
     }
-    
+
     .help-modal-body {
         padding: 20px;
     }
-    
+
     .help-options-grid {
         grid-template-columns: 1fr;
         gap: 16px;
     }
-    
+
     .help-option-card {
         padding: 20px;
     }
@@ -763,6 +763,7 @@ body.dark-mode .agent-status {
     cursor: pointer;
     margin-right: 8px;
     margin-bottom: 8px;
+    margin-top: 8px;
     width: 100%;
     max-width: 500px;
     transition: background 0.3s;
