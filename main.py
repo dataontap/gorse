@@ -1253,6 +1253,8 @@ def get_user_by_firebase_uid(firebase_uid):
                         (firebase_uid,)
                     )
                     user_data = cur.fetchone()
+                    if user_data:
+                        print(f"get_user_by_firebase_uid debug: Found user {user_data[0]} with oxio_user_id: {user_data[7]}, eth_address: {user_data[8]}")
                     return user_data
         return None
     except Exception as e:
@@ -1287,22 +1289,6 @@ def get_user_data_balance():
     """Get the current data balance for a member"""
     firebase_uid = request.args.get('firebaseUid')
     user_id_param = request.args.get('userId')
-
-    # Verify Firebase authentication if Firebase UID is provided
-    if firebase_uid:
-        # Check if Firebase ID token is provided in Authorization header
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({
-                'error': 'Authentication required - no valid Firebase token provided',
-                'firebaseUid': firebase_uid,
-                'dataBalance': 0,
-                'unit': 'GB'
-            }), 401
-
-        # For now, we'll accept any Bearer token since we don't have Firebase Admin SDK
-        # In production, you would verify the token with Firebase Admin SDK
-        print(f"Authentication check passed for Firebase UID: {firebase_uid}")
 
     try:
         user_id = None
@@ -1348,9 +1334,10 @@ def get_user_data_balance():
                         """, (user_id, firebase_uid))
 
                         result = cur.fetchone()
+                        print(f"Debug: SQL result = {result}")
                         
                         # Safely extract values with proper validation and handle None results
-                        if result and len(result) >= 3:
+                        if result and result[0] is not None:
                             global_data_cents = int(result[0]) if result[0] is not None else 0
                             total_data_cents = int(result[1]) if result[1] is not None else 0
                             total_purchases = int(result[2]) if result[2] is not None else 0
@@ -4373,118 +4360,6 @@ def get_oxio_activation_status():
     except Exception as e:
         print(f"Error getting OXIO activation status: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
-@app.route('/api/check-imei-compatibility', methods=['POST'])
-def check_imei_compatibility():
-    """Check IMEI device compatibility using external IMEI checker API"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'error': 'No data provided'}), 400
-
-        imei = data.get('imei')
-        location = data.get('location', 'Global')
-        network = data.get('network', 'OXIO')
-
-        if not imei:
-            return jsonify({'success': False, 'error': 'IMEI is required'}), 400
-
-        # Validate IMEI format (15 digits)
-        if not imei.isdigit() or len(imei) != 15:
-            return jsonify({'success': False, 'error': 'Invalid IMEI format. Must be 15 digits.'}), 400
-
-        # Get API key from environment
-        api_key = os.environ.get('IMEI_COMPATIBILITY_KEY')
-        if not api_key:
-            return jsonify({
-                'success': False, 
-                'error': 'IMEI compatibility service not configured'
-            }), 500
-
-        # Call external IMEI checker API
-        import requests
-        
-        api_url = 'https://will-my-phone-work.replit.app/api/v1/check'
-        headers = {
-            'Authorization': f'Bearer {api_key}',
-            'Content-Type': 'application/json'
-        }
-        
-        payload = {
-            'imei': imei,
-            'location': location,
-            'network': network
-        }
-
-        print(f"Checking IMEI compatibility for {imei} with {network} in {location}")
-
-        response = requests.post(api_url, json=payload, headers=headers, timeout=30)
-        
-        if response.status_code == 200:
-            api_data = response.json()
-            
-            if api_data.get('success'):
-                # Extract and format the response
-                device_info = api_data.get('device', {})
-                capabilities = api_data.get('capabilities', {})
-                search_id = api_data.get('searchId')
-
-                formatted_response = {
-                    'success': True,
-                    'device': {
-                        'make': device_info.get('make', 'Unknown'),
-                        'model': device_info.get('model', 'Unknown'),
-                        'year': device_info.get('year', 'Unknown'),
-                        'imei': device_info.get('imei', imei)
-                    },
-                    'capabilities': {
-                        'fourG': capabilities.get('fourG', False),
-                        'fiveG': capabilities.get('fiveG', False),
-                        'volte': capabilities.get('volte', False),
-                        'wifiCalling': capabilities.get('wifiCalling', 'unknown')
-                    },
-                    'searchId': search_id,
-                    'network': network,
-                    'location': location
-                }
-
-                print(f"IMEI compatibility check successful: {formatted_response}")
-                return jsonify(formatted_response)
-            else:
-                return jsonify({
-                    'success': False,
-                    'error': api_data.get('error', 'Unknown error from compatibility service')
-                }), 400
-        else:
-            error_msg = f"API request failed with status {response.status_code}"
-            try:
-                error_data = response.json()
-                if 'error' in error_data:
-                    error_msg = error_data['error']
-            except:
-                pass
-
-            return jsonify({
-                'success': False,
-                'error': error_msg
-            }), response.status_code
-
-    except requests.exceptions.Timeout:
-        return jsonify({
-            'success': False,
-            'error': 'Compatibility check timed out. Please try again.'
-        }), 408
-    except requests.exceptions.ConnectionError:
-        return jsonify({
-            'success': False,
-            'error': 'Unable to connect to compatibility service. Please try again later.'
-        }), 503
-    except Exception as e:
-        print(f"Error checking IMEI compatibility: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'Internal server error during compatibility check'
-        }), 500
 
 @app.route('/api/update-personal-message', methods=['POST'])
 def update_personal_message():

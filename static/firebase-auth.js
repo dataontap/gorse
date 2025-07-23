@@ -182,23 +182,31 @@ document.addEventListener('DOMContentLoaded', function() {
                   // Set initial balance and load it asynchronously
                   currentUserData.dataBalance = 0;
 
-                  // Never automatically load balance on authentication state changes
-                  // Balance will only be loaded when explicitly requested by user actions
-                  console.log('User authenticated - balance will be loaded on demand only');
+                  // Load balance asynchronously with delay to ensure user is fully registered
+                  setTimeout(async () => {
+                      try {
+                          console.log('Loading user balance after authentication delay...');
+                          const balanceResponse = await fetch(`/api/user/data-balance?firebaseUid=${user.uid}`);
+                          const balanceData = await balanceResponse.json();
 
-                  // Check if this is a fresh login (not cached session)
-                  const isFreshLogin = !sessionStorage.getItem('firebaseSessionActive');
+                          if (balanceData.status === 'success') {
+                              currentUserData.dataBalance = balanceData.dataBalance || 0;
+                              console.log('Balance loaded successfully:', currentUserData.dataBalance);
 
-                  if (isFreshLogin) {
-                      // Mark session as active but don't auto-load balance
-                      sessionStorage.setItem('firebaseSessionActive', 'true');
-                      console.log('Fresh authentication detected - session marked as active');
-                  } else {
-                      console.log('Cached Firebase session detected - no automatic API calls');
-                  }
+                              // Update UI with new balance
+                              updateBalanceDisplays(currentUserData.dataBalance);
 
-                  // Store the Firebase user object for token access
-                  window.currentFirebaseUser = user;
+                              // Update localStorage with new balance
+                              localStorage.setItem('currentUser', JSON.stringify(currentUserData));
+                          } else {
+                              console.error('Balance API error:', balanceData);
+                              currentUserData.dataBalance = 0;
+                          }
+                      } catch (balanceError) {
+                          console.error('Error fetching balance after delay:', balanceError);
+                          currentUserData.dataBalance = 0;
+                      }
+                  }, 2000); // Wait 2 seconds after authentication before loading balance
 
                   console.log('Complete user data loaded:', currentUserData);
 
@@ -467,24 +475,22 @@ document.addEventListener('DOMContentLoaded', function() {
       signOut: function() {
         if (!firebase || !firebase.auth) {
           console.error('Firebase auth not available');
-          // Clear localStorage and sessionStorage and redirect anyway
+          // Clear localStorage and redirect anyway
           localStorage.removeItem('userId');
           localStorage.removeItem('userEmail');
           localStorage.removeItem('databaseUserId');
           localStorage.removeItem('currentUser');
-          sessionStorage.removeItem('firebaseSessionActive');
           window.location.href = '/';
           return Promise.resolve();
         }
 
         return firebase.auth().signOut()
           .then(() => {
-            // Clear all local storage and session storage
+            // Clear all local storage
             localStorage.removeItem('userId');
             localStorage.removeItem('userEmail');
             localStorage.removeItem('databaseUserId');
             localStorage.removeItem('currentUser');
-            sessionStorage.removeItem('firebaseSessionActive');
             console.log('User signed out successfully');
 
             // Redirect to home page after logout  
@@ -492,12 +498,11 @@ document.addEventListener('DOMContentLoaded', function() {
           })
           .catch((error) => {
             console.error('Error during sign out:', error);
-            // Clear localStorage, sessionStorage and redirect anyway
+            // Clear localStorage and redirect anyway
             localStorage.removeItem('userId');
             localStorage.removeItem('userEmail');
             localStorage.removeItem('databaseUserId');
             localStorage.removeItem('currentUser');
-            sessionStorage.removeItem('firebaseSessionActive');
             window.location.href = '/';
           });
       },
@@ -707,7 +712,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
       signOut: function() {
         localStorage.clear();
-        sessionStorage.removeItem('firebaseSessionActive');
         window.location.href = '/';
         return Promise.resolve();
       },

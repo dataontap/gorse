@@ -1964,7 +1964,8 @@ function initializeUsageChart(chartContainer) {
             x: {
                 title: {
                     display: true,
-                    text: 'Day of Week'```
+                    text: 'Day of Week'
+```python
                 }
             }
         }
@@ -2696,7 +2697,6 @@ function updateBetaStatus(status, message) {
             betaEnrollBtn.style.display = 'none';
             betaStatus.style.display = 'block';
             betaStatusText.textContent = 'Your eSIM is ready to download';
-
             betaStatusText.style.color = '#28a745';
 
             // Show resend link
@@ -2906,8 +2906,8 @@ function updateBetaStatus(status, message) {
             betaEnrollBtn.style.display = 'none';
             betaStatus.style.display = 'block';
             betaStatusText.textContent = 'Your eSIM is ready to download';
+```python
 
-            ```javascript
             betaStatusText.style.color = '#28a745';
 
             // Show resend link
@@ -2949,47 +2949,18 @@ let dataBalanceLoading = false;
                 return;
             }
 
-            // Check if user is authenticated AND this is a manual request
-            var currentUser = getCurrentUser();
-            if (!currentUser || !currentUser.uid) {
-                console.log('User not authenticated, skipping data balance load');
-                return;
-            }
-
-            // Only load if explicitly requested (not automatic)
-            var firebaseUid = currentUser.uid;
+            var firebaseUid = localStorage.getItem('userId');
             if (firebaseUid) {
                 dataBalanceLoading = true;
-                console.log('Loading data balance for user interaction:', firebaseUid);
-
-                // Get Firebase ID token for authentication
-                const getAuthHeaders = async () => {
-                    try {
-                        if (window.currentFirebaseUser) {
-                            const idToken = await window.currentFirebaseUser.getIdToken();
-                            return {
-                                'Authorization': `Bearer ${idToken}`,
-                                'Content-Type': 'application/json'
-                            };
-                        }
-                    } catch (error) {
-                        console.error('Error getting Firebase ID token:', error);
-                    }
-                    return {};
-                };
-
-                getAuthHeaders().then(headers => {
-                    fetch('/api/user/data-balance?firebaseUid=' + firebaseUid, {
-                        headers: headers
-                    })
+                fetch('/api/user/data-balance?firebaseUid=' + firebaseUid)
                     .then(response => response.json())
                     .then(data => {
 
                         var dataDisplay = document.getElementById('dataDisplay');
                         var globalStatus = document.getElementById('globalStatus');
 
-                        if (data.status === 'success') {
-                            dataBalanceValue = data.dataBalance;
+                        if (data.success) {
+                            dataBalanceValue = data.data_balance;
                             updateDataDisplay();
                             dataDisplay.style.display = 'block';
                             startAlternatingDisplay();
@@ -3007,7 +2978,7 @@ let dataBalanceLoading = false;
                             globalStatus.innerHTML = '<i class="fas fa-globe"></i> GLOBAL DATA';
                         }
                     })
-                    .catch(error => {
+.catch(error => {
                         console.error('Error loading data balance:', error);
                         // Show default values
                         var dataDisplay = document.getElementById('dataDisplay');
@@ -3028,7 +2999,6 @@ let dataBalanceLoading = false;
                     .finally(() => {
                         dataBalanceLoading = false;
                     });
-                });
             }
         }
 
@@ -3039,14 +3009,7 @@ let subscriptionStatusLoading = false;
                 return;
             }
 
-            // Check if user is authenticated first
-            var currentUser = getCurrentUser();
-            if (!currentUser || !currentUser.uid) {
-                console.log('User not authenticated, skipping subscription status load');
-                return;
-            }
-
-            var firebaseUid = currentUser.uid;
+            var firebaseUid = localStorage.getItem('userId');
             if (firebaseUid) {
                 subscriptionStatusLoading = true;
                 fetch('/api/subscription-status?firebaseUid=' + firebaseUid)
@@ -3074,7 +3037,8 @@ let subscriptionStatusLoading = false;
 
     // Load invites if on dashboard page
     if (window.location.pathname === '/dashboard') {
-        // Only load data if user is authenticated and this is a fresh session
+        loadUserDataBalance();
+        loadSubscriptionStatus();
         setTimeout(() => {
             if (typeof loadInvitesList === 'function') {
                 loadInvitesList();
