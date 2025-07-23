@@ -77,6 +77,17 @@ function toggleMenu(element) {
     }
 }
 
+// Alternative menu toggle for event delegation
+function handleMenuToggle(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const menuIcon = event.currentTarget.closest('.menu-icon');
+    if (menuIcon) {
+        toggleMenu(menuIcon);
+    }
+}
+
 // Global profile dropdown functionality
 function toggleProfileDropdown() {
     const dropdown = document.querySelector('.profile-dropdown');
@@ -2056,23 +2067,11 @@ let currentSubscriptionStatus = null;
 function initializeCarousel() {
     console.log('Card stack initialized');
 
-    // Check if offers section exists, if not wait a bit
-    const offersSection = document.querySelector('.offers-section');
-    if (!offersSection) {
-        console.log('Offers section not found, waiting...');
-        setTimeout(() => {
-            initializeCarousel();
-        }, 500);
-        return;
-    }
-
-    // Wait for subscription status to be loaded
+    // Don't wait for existing section, just create/populate offers
+    populateOfferCards();
     setTimeout(() => {
-        populateOfferCards();
-        setTimeout(() => {
-            initializeCardStack();
-        }, 200);
-    }, 100);
+        initializeCardStack();
+    }, 200);
 }
 
 // Global variables for card stack
@@ -2084,10 +2083,27 @@ let currentX = 0;
 let cardContainer = null;
 
 function populateOfferCards() {
-    const offersSection = document.querySelector('.offers-section');
+    let offersSection = document.querySelector('.offers-section');
+    
+    // If offers section doesn't exist, create it
     if (!offersSection) {
-        console.log('Offers section not found');
-        return;
+        console.log('Creating offers section');
+        const container = document.querySelector('.container');
+        const membershipBanner = document.getElementById('membershipBanner');
+        
+        offersSection = document.createElement('div');
+        offersSection.className = 'offers-section';
+        
+        if (membershipBanner && membershipBanner.nextSibling) {
+            container.insertBefore(offersSection, membershipBanner.nextSibling);
+        } else {
+            const dotContainer = document.querySelector('.dot-container');
+            if (dotContainer && dotContainer.nextSibling) {
+                container.insertBefore(offersSection, dotContainer.nextSibling);
+            } else {
+                container.appendChild(offersSection);
+            }
+        }
     }
 
     // Define all possible offers
