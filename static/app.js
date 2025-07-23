@@ -2768,7 +2768,7 @@ function showHelpModal() {
             </div>
             <div class="help-option-content">
                 <div class="agent-status">
-                    <span class="agent-availability">Super agent available in <span class="countdown-timer" style="color: #28a745; font-weight: bold;">4:20</span></span>
+                    <span class="agent-availability">Super Agent available in <span class="countdown-timer" style="color: #28a745; font-weight: bold;">4:20</span></span>
                 </div>
                 <button id="chatWithAgentBtn" class="chat-btn" data-translate="chatWithAgent">Chat with a Person</button>
                 <button id="orderCallbackBtn" class="callback-btn" data-translate="orderCallback">Order callback</button>
