@@ -788,7 +788,7 @@ class OXIOService:
             if response.status_code == 200:
                 try:
                     response_data = response.json()
-                    return {```text
+                    return {
                         'success': True,
                         'message': 'OXIO plans endpoint accessible - API connection working',
                         'status_code': response.status_code,
