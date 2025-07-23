@@ -2067,11 +2067,38 @@ let currentSubscriptionStatus = null;
 function initializeCarousel() {
     console.log('Card stack initialized');
 
-    // Don't wait for existing section, just create/populate offers
-    populateOfferCards();
+    // Check if offers section exists, if not wait a bit
+    const offersSection = document.querySelector('.offers-section');
+    if (!offersSection) {
+        console.log('Offers section not found, creating it...');
+        // Create the offers section if it doesn't exist
+        const container = document.querySelector('.container');
+        const membershipBanner = document.getElementById('membershipBanner');
+        
+        if (container) {
+            const newOffersSection = document.createElement('div');
+            newOffersSection.className = 'offers-section';
+            
+            if (membershipBanner && membershipBanner.nextSibling) {
+                container.insertBefore(newOffersSection, membershipBanner.nextSibling);
+            } else {
+                const dotContainer = document.querySelector('.dot-container');
+                if (dotContainer && dotContainer.nextSibling) {
+                    container.insertBefore(newOffersSection, dotContainer.nextSibling);
+                } else {
+                    container.appendChild(newOffersSection);
+                }
+            }
+        }
+    }
+
+    // Wait for subscription status to be loaded
     setTimeout(() => {
-        initializeCardStack();
-    }, 200);
+        populateOfferCards();
+        setTimeout(() => {
+            initializeCardStack();
+        }, 200);
+    }, 100);
 }
 
 // Global variables for card stack
@@ -2083,27 +2110,10 @@ let currentX = 0;
 let cardContainer = null;
 
 function populateOfferCards() {
-    let offersSection = document.querySelector('.offers-section');
-    
-    // If offers section doesn't exist, create it
+    const offersSection = document.querySelector('.offers-section');
     if (!offersSection) {
-        console.log('Creating offers section');
-        const container = document.querySelector('.container');
-        const membershipBanner = document.getElementById('membershipBanner');
-        
-        offersSection = document.createElement('div');
-        offersSection.className = 'offers-section';
-        
-        if (membershipBanner && membershipBanner.nextSibling) {
-            container.insertBefore(offersSection, membershipBanner.nextSibling);
-        } else {
-            const dotContainer = document.querySelector('.dot-container');
-            if (dotContainer && dotContainer.nextSibling) {
-                container.insertBefore(offersSection, dotContainer.nextSibling);
-            } else {
-                container.appendChild(offersSection);
-            }
-        }
+        console.log('Offers section not found during populate');
+        return;
     }
 
     // Define all possible offers
