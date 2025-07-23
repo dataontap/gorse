@@ -33,6 +33,8 @@ window.handleLogout = handleLogout;
 
 // Global variables
 let currentUser = null;
+let authInitialized = false;
+let purchaseCooldown = false;
 
 // Initialize user data
 function initializeUser() {
@@ -119,24 +121,34 @@ function toggleTheme(isDarkMode) {
 }
 
 // Global dashboard functions for offer cards and user data
-function showConfirmationDrawer(dataAmount, price, productId) {
-    console.log('Showing confirmation drawer for:', productId, dataAmount, price);
-    var drawer = document.getElementById('confirmationDrawer');
-    if (drawer) {
-        var dataAmountElement = document.getElementById('confirmDataAmount');
-        var priceElement = document.getElementById('confirmPrice');
+function showConfirmationDrawer(productId, dataAmount, priceAmount) {
+    console.log('Showing confirmation drawer for:', productId, dataAmount, priceAmount);
 
-        if (dataAmountElement) {
-            dataAmountElement.textContent = dataAmount + 'GB';
-        }
-        if (priceElement) {
-            priceElement.textContent = '$' + price;
-        }
-
-        drawer.classList.add('show');
-        drawer.style.display = 'block';
-        drawer.dataset.productId = productId;
+    // Check if cooldown is active
+    if (purchaseCooldown) {
+        console.log('Purchase cooldown active, cannot show confirmation drawer');
+        return;
     }
+
+    const drawer = document.getElementById('confirmationDrawer');
+    const productName = document.getElementById('confirmProductName');
+    const productData = document.getElementById('confirmProductData');
+    const productPrice = document.getElementById('confirmProductPrice');
+    const confirmBtn = document.getElementById('confirmPurchaseBtn');
+
+    // Set product details
+    productName.textContent = productId.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    productData.textContent = `${dataAmount}GB`;
+    productPrice.textContent = `$${priceAmount}`;
+
+    // Set up confirmation button
+    confirmBtn.onclick = () => {
+        confirmPurchase(productId, dataAmount, priceAmount);
+        hideConfirmationDrawer();
+    };
+
+    // Show drawer
+    drawer.classList.add('show');
 }
 
 function hideConfirmationDrawer() {
@@ -147,34 +159,35 @@ function hideConfirmationDrawer() {
     }
 }
 
-function confirmPurchase() {
-    var drawer = document.getElementById('confirmationDrawer');
-    if (drawer && drawer.dataset.productId) {
-        var productId = drawer.dataset.productId;
-        console.log('Confirming purchase for:', productId);
+function confirmPurchase(productId, dataAmount, priceAmount) {
+    console.log('Confirming purchase for:', productId);
 
-        // Get Firebase UID from multiple possible sources
-        var firebaseUid = null;
-        
-        // First try to get current user data
-        var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-        if (currentUserData && currentUserData.uid) {
-            firebaseUid = currentUserData.uid;
-            console.log('Using Firebase UID from currentUser:', firebaseUid);
-        } else {
-            // Fallback to other localStorage keys
-            firebaseUid = localStorage.getItem('firebaseUid') || 
-                         localStorage.getItem('userId') || null;
-            console.log('Using Firebase UID from fallback:', firebaseUid);
-        }
+    // Check cooldown to prevent rapid multiple purchases
+    if (purchaseCooldown) {
+        console.log('Purchase cooldown active, ignoring request');
+        return;
+    }
 
-        if (!firebaseUid) {
-            alert('Please log in to make a purchase.');
-            return;
-        }
+    // Activate cooldown for 10 seconds
+    purchaseCooldown = true;
+    setTimeout(() => {
+        purchaseCooldown = false;
+        console.log('Purchase cooldown lifted');
+    }, 10000);
 
-        // Make API call to record purchase
-        fetch('/api/record-global-purchase', {
+    console.log('Purchase cooldown activated for 10 seconds');
+
+    // Get Firebase UID
+    let firebaseUid = null;
+    if (currentUser && currentUser.uid) {
+        firebaseUid = currentUser.uid;
+        console.log('Using Firebase UID from currentUser:', firebaseUid);
+    } else {
+        console.log('No current user available, proceeding without Firebase UID');
+    }
+
+    // Record the purchase
+    fetch('/api/record-global-purchase', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -199,7 +212,6 @@ function confirmPurchase() {
             console.error('Error recording purchase:', error);
             alert('Error processing purchase. Please try again.');
         });
-    }
 }
 
 function sendComingSoonNotification() {

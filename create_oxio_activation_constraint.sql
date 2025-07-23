@@ -11,6 +11,15 @@ BEGIN
         ALTER TABLE oxio_activations 
         ADD CONSTRAINT unique_user_oxio_activation UNIQUE (user_id);
     END IF;
+    
+    -- Add unique constraint for firebase_uid if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'unique_firebase_oxio_activation'
+    ) THEN
+        ALTER TABLE oxio_activations 
+        ADD CONSTRAINT unique_firebase_oxio_activation UNIQUE (firebase_uid);
+    END IF;
 END $$;
 
 -- Add unique constraint to prevent duplicate purchases within a short timeframe

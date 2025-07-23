@@ -3358,25 +3358,40 @@ def stripe_webhook():
                         
                         print(f"Stripe OXIO activation payload: {oxio_activation_payload}")
                         
-                        # STRICT DATABASE CHECK: Prevent ANY activation if user already has ANY line
+                        # CRITICAL DATABASE CHECK: Use transaction-level locking to prevent race conditions
                         with get_db_connection() as conn:
                             if conn:
                                 with conn.cursor() as cur:
-                                    # Check for ANY existing activation for this user (not just recent ones)
+                                    # Start transaction with row-level locking
+                                    cur.execute("BEGIN")
+                                    
+                                    # Lock the user row to prevent concurrent activations
+                                    cur.execute("""
+                                        SELECT id FROM users 
+                                        WHERE id = %s OR firebase_uid = %s 
+                                        FOR UPDATE
+                                    """, (user_id, firebase_uid))
+                                    
+                                    # Check for ANY existing activation for this user (with lock)
                                     cur.execute("""
                                         SELECT line_id, activation_status, created_at, oxio_user_id
                                         FROM oxio_activations 
                                         WHERE user_id = %s OR firebase_uid = %s
                                         ORDER BY created_at DESC
+                                        FOR UPDATE
                                     """, (user_id, firebase_uid))
                                     
                                     existing_activations = cur.fetchall()
                                     if existing_activations:
-                                        print(f"BLOCKING: User {user_id} (Firebase: {firebase_uid}) already has {len(existing_activations)} activation record(s)")
+                                        print(f"TRANSACTION BLOCKING: User {user_id} (Firebase: {firebase_uid}) already has {len(existing_activations)} activation record(s)")
                                         for i, activation in enumerate(existing_activations):
                                             print(f"  Activation {i+1}: Line {activation[0]} ({activation[1]}) at {activation[2]}")
-                                        print("Enforcing one-line-per-user policy - skipping activation")
+                                        print("Enforcing one-line-per-user policy with transaction locking - skipping activation")
+                                        cur.execute("ROLLBACK")
                                         return  # Skip this activation
+                                    
+                                    # Continue with activation only if no existing records found
+                                    cur.execute("COMMIT")
                         
                         # STRICT DATABASE CHECK: Prevent ANY Stripe activation if user already has ANY line
                         with get_db_connection() as conn:

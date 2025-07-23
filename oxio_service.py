@@ -47,7 +47,7 @@ class OXIOService:
             API response as dictionary
         """
         try:
-            # Check for existing lines first to prevent duplicates
+            # Extract OXIO user ID for deduplication checks
             oxio_user_id = None
             if isinstance(oxio_user_id_or_payload, str):
                 oxio_user_id = oxio_user_id_or_payload
@@ -57,19 +57,56 @@ class OXIOService:
                 elif oxio_user_id_or_payload.get('endUserId'):
                     oxio_user_id = oxio_user_id_or_payload['endUserId']
 
-            # Check for existing lines if we have a user ID
+            # CRITICAL: Database-level deduplication check first (prevents race conditions)
             if oxio_user_id:
-                print(f"Checking for existing lines for user: {oxio_user_id}")
+                print(f"DATABASE CHECK: Verifying no existing activations for OXIO user: {oxio_user_id}")
+                try:
+                    import psycopg2
+                    import os
+                    database_url = os.environ.get('DATABASE_URL')
+                    if database_url:
+                        conn = psycopg2.connect(database_url)
+                        with conn.cursor() as cur:
+                            # Check database for ANY existing activations for this OXIO user
+                            cur.execute("""
+                                SELECT line_id, activation_status, created_at 
+                                FROM oxio_activations 
+                                WHERE oxio_response::text LIKE %s
+                                ORDER BY created_at DESC
+                            """, (f'%"endUserId":"{oxio_user_id}"%',))
+                            
+                            existing_db_activations = cur.fetchall()
+                            if existing_db_activations:
+                                print(f"DATABASE BLOCK: Found {len(existing_db_activations)} existing database activation(s) for OXIO user {oxio_user_id}")
+                                for i, activation in enumerate(existing_db_activations):
+                                    print(f"  DB Activation {i+1}: Line {activation[0]} ({activation[1]}) at {activation[2]}")
+                                conn.close()
+                                return {
+                                    'success': False,
+                                    'error': 'User already has database activations',
+                                    'message': f'OXIO user {oxio_user_id} already has {len(existing_db_activations)} activation(s) in database. No additional lines allowed.',
+                                    'existing_db_activations': len(existing_db_activations),
+                                    'prevention_reason': 'database_duplicate_prevention',
+                                    'policy': 'One line per OXIO user maximum - database enforced'
+                                }
+                            else:
+                                print(f"DATABASE CLEAR: No existing database activations found for OXIO user {oxio_user_id}")
+                        conn.close()
+                except Exception as db_err:
+                    print(f"Warning: Database deduplication check failed: {str(db_err)}")
+                    # Continue with API check as fallback
+
+            # API-level deduplication check (secondary prevention)
+            if oxio_user_id:
+                print(f"API CHECK: Checking for existing lines for user: {oxio_user_id}")
                 existing_lines = self.get_user_lines(oxio_user_id)
                 if existing_lines.get('success') and existing_lines.get('data', {}).get('lines'):
                     lines = existing_lines['data']['lines']
                     print(f"Found {len(lines)} existing lines for user {oxio_user_id}")
                     
                     # STRICT DUPLICATE PREVENTION: Block ANY line creation if user has ANY existing lines
-                    # This prevents the issue where 3 lines got created for the same user
                     if lines and len(lines) > 0:
-                        print(f"User {oxio_user_id} already has {len(lines)} existing line(s). Blocking any new line creation.")
-                        print("Already have an active line")
+                        print(f"API BLOCK: User {oxio_user_id} already has {len(lines)} existing line(s). Blocking any new line creation.")
                         
                         # Log all existing lines for debugging
                         for i, line in enumerate(lines):
@@ -83,13 +120,13 @@ class OXIOService:
                             'message': f'User {oxio_user_id} already has {len(lines)} line(s). No additional lines allowed per user.',
                             'existing_lines': lines,
                             'total_existing_lines': len(lines),
-                            'prevention_reason': 'strict_duplicate_prevention',
-                            'policy': 'One line per OXIO user maximum'
+                            'prevention_reason': 'api_duplicate_prevention',
+                            'policy': 'One line per OXIO user maximum - API enforced'
                         }
                     else:
-                        print(f"No existing lines found for user {oxio_user_id}. Allowing first line creation.")
+                        print(f"API CLEAR: No existing lines found for user {oxio_user_id}. Allowing first line creation.")
                 else:
-                    print(f"No existing lines found for user {oxio_user_id} or API call failed")
+                    print(f"API CLEAR: No existing lines found for user {oxio_user_id} or API call failed")
             url = f"{self.base_url}/v3/lines/line"
             headers = self.get_headers()
 
