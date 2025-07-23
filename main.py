@@ -1749,7 +1749,7 @@ def record_global_purchase():
                         "preferredAreaCode": "212"
                     },
                     "countryCode": "US",
-                    "activateOnAttach": True
+                    "activateOnAttach": False
                 }
                 
                 # Only add endUserId if we have a valid OXIO user ID (UUID format, not an Ethereum address)
@@ -3346,7 +3346,7 @@ def stripe_webhook():
                                 "preferredAreaCode": "212"
                             },
                             "countryCode": "US",
-                            "activateOnAttach": True
+                            "activateOnAttach": False
                         }
                         
                         # Only add endUserId if we have a valid OXIO user ID (UUID format, not an Ethereum address)

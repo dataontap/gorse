@@ -47,6 +47,30 @@ class OXIOService:
             API response as dictionary
         """
         try:
+            # Check for existing lines first to prevent duplicates
+            oxio_user_id = None
+            if isinstance(oxio_user_id_or_payload, str):
+                oxio_user_id = oxio_user_id_or_payload
+            elif isinstance(oxio_user_id_or_payload, dict):
+                if oxio_user_id_or_payload.get('endUser', {}).get('endUserId'):
+                    oxio_user_id = oxio_user_id_or_payload['endUser']['endUserId']
+                elif oxio_user_id_or_payload.get('endUserId'):
+                    oxio_user_id = oxio_user_id_or_payload['endUserId']
+
+            # Check for existing lines if we have a user ID
+            if oxio_user_id:
+                print(f"Checking for existing lines for user: {oxio_user_id}")
+                existing_lines = self.get_user_lines(oxio_user_id)
+                if existing_lines.get('success') and existing_lines.get('data', {}).get('lines'):
+                    lines = existing_lines['data']['lines']
+                    if lines and len(lines) > 0:
+                        print(f"User already has {len(lines)} existing line(s). Skipping activation.")
+                        return {
+                            'success': False,
+                            'error': 'User already has active lines',
+                            'message': f'User {oxio_user_id} already has {len(lines)} line(s). Cannot create duplicate.',
+                            'existing_lines': lines
+                        }
             url = f"{self.base_url}/v3/lines/line"
             headers = self.get_headers()
 
@@ -66,7 +90,8 @@ class OXIOService:
                     "lineType": "LINE_TYPE_MOBILITY",
                     "countryCode": "US",
                     "sim": { "simType": "EMBEDDED" },  # No ICCID included
-                    "endUserId": oxio_user_id
+                    "endUserId": oxio_user_id,
+                    "activateOnAttach": false
                 }
             elif isinstance(oxio_user_id_or_payload, dict):
                 # Complex case: full payload provided (legacy support)
@@ -88,8 +113,7 @@ class OXIOService:
                     }
                     
                     # Add optional fields if they exist (but exclude phoneNumberRequirements)
-                    if "activateOnAttach" in payload:
-                        clean_payload["activateOnAttach"] = payload["activateOnAttach"]
+                    clean_payload["activateOnAttach"] = False
                     
                     print(f"Excluded ICCID and preferredAreaCode from payload")
                         
