@@ -3358,44 +3358,44 @@ def stripe_webhook():
                         
                         print(f"Stripe OXIO activation payload: {oxio_activation_payload}")
                         
-                        # Check database for recent activation attempts to prevent duplicates
+                        # STRICT DATABASE CHECK: Prevent ANY activation if user already has ANY line
                         with get_db_connection() as conn:
                             if conn:
                                 with conn.cursor() as cur:
-                                    # Check for recent activation attempts (within last 5 minutes)
+                                    # Check for ANY existing activation for this user (not just recent ones)
                                     cur.execute("""
-                                        SELECT line_id, activation_status, created_at 
+                                        SELECT line_id, activation_status, created_at, oxio_user_id
                                         FROM oxio_activations 
-                                        WHERE user_id = %s 
-                                        AND activation_status IN ('activated', 'pending') 
-                                        AND created_at > CURRENT_TIMESTAMP - INTERVAL '5 minutes'
+                                        WHERE user_id = %s OR firebase_uid = %s
                                         ORDER BY created_at DESC
-                                    """, (user_id,))
+                                    """, (user_id, firebase_uid))
                                     
-                                    recent_activation = cur.fetchone()
-                                    if recent_activation:
-                                        print(f"Recent activation found for user {user_id}: {recent_activation[0]} at {recent_activation[2]}")
-                                        print("Skipping duplicate activation attempt")
+                                    existing_activations = cur.fetchall()
+                                    if existing_activations:
+                                        print(f"BLOCKING: User {user_id} (Firebase: {firebase_uid}) already has {len(existing_activations)} activation record(s)")
+                                        for i, activation in enumerate(existing_activations):
+                                            print(f"  Activation {i+1}: Line {activation[0]} ({activation[1]}) at {activation[2]}")
+                                        print("Enforcing one-line-per-user policy - skipping activation")
                                         return  # Skip this activation
                         
-                        # Check database for recent activation attempts to prevent duplicates
+                        # STRICT DATABASE CHECK: Prevent ANY Stripe activation if user already has ANY line
                         with get_db_connection() as conn:
                             if conn:
                                 with conn.cursor() as cur:
-                                    # Check for recent activation attempts (within last 5 minutes)
+                                    # Check for ANY existing activation for this user
                                     cur.execute("""
-                                        SELECT line_id, activation_status, created_at 
+                                        SELECT line_id, activation_status, created_at, oxio_user_id
                                         FROM oxio_activations 
-                                        WHERE user_id = %s 
-                                        AND activation_status IN ('activated', 'pending') 
-                                        AND created_at > CURRENT_TIMESTAMP - INTERVAL '5 minutes'
+                                        WHERE user_id = %s OR firebase_uid = %s
                                         ORDER BY created_at DESC
-                                    """, (user_id,))
+                                    """, (user_id, firebase_uid))
                                     
-                                    recent_activation = cur.fetchone()
-                                    if recent_activation:
-                                        print(f"Stripe webhook: Recent activation found for user {user_id}: {recent_activation[0]} at {recent_activation[2]}")
-                                        print("Skipping duplicate Stripe activation attempt")
+                                    existing_activations = cur.fetchall()
+                                    if existing_activations:
+                                        print(f"STRIPE WEBHOOK BLOCKING: User {user_id} (Firebase: {firebase_uid}) already has {len(existing_activations)} activation record(s)")
+                                        for i, activation in enumerate(existing_activations):
+                                            print(f"  Stripe Check - Activation {i+1}: Line {activation[0]} ({activation[1]}) at {activation[2]}")
+                                        print("Enforcing one-line-per-user policy - skipping Stripe activation")
                                         return  # Skip this activation
                         
                         # Call OXIO line activation
