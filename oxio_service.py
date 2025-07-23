@@ -402,8 +402,13 @@ class OXIOService:
                 }
 
             if response.status_code >= 200 and response.status_code < 300:
-                # Get group ID from response - try different possible field names
-                group_id = response_data.get('groupId') or response_data.get('id') or response_data.get('group_id')
+                # Get group ID from response - check nested group object first
+                group_id = None
+                if 'group' in response_data and 'groupId' in response_data['group']:
+                    group_id = response_data['group']['groupId']
+                else:
+                    # Fallback to other possible field names
+                    group_id = response_data.get('groupId') or response_data.get('id') or response_data.get('group_id')
                 
                 return {
                     'success': True,
