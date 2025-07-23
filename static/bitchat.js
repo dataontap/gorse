@@ -219,6 +219,9 @@ class BitchatClient {
             default:
                 statusText.textContent = 'Bluetooth Disconnected';
         }
+
+        // Sync status to localStorage for dashboard menu
+        localStorage.setItem('bitchatStatus', status);
     }
 
     startPeerDiscovery() {
@@ -274,6 +277,9 @@ class BitchatClient {
     updateMeshStatus() {
         const peersCount = document.querySelector('.peers-count');
         peersCount.textContent = this.peers.size;
+
+        // Sync peer count to localStorage for dashboard menu
+        localStorage.setItem('bitchatPeers', this.peers.size.toString());
     }
 
     sendMessage() {

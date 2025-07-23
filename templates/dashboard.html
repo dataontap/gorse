@@ -232,6 +232,48 @@
         .offer-card .btn:hover {
             background-color: #0056b3;
         }
+
+        /* Bitchat menu status indicator */
+        .bitchat-menu-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 6px;
+            font-size: 0.75em;
+            opacity: 0.7;
+        }
+
+        .bitchat-status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ff0040;
+            box-shadow: 0 0 4px currentColor;
+            transition: all 0.3s ease;
+        }
+
+        .bitchat-status-dot.online {
+            background: #00ff40;
+            box-shadow: 0 0 6px #00ff40;
+        }
+
+        .bitchat-status-dot.connecting {
+            background: #ffaa00;
+            box-shadow: 0 0 6px #ffaa00;
+            animation: bitchat-pulse 1.5s ease-in-out infinite;
+        }
+
+        .bitchat-peer-count {
+            color: inherit;
+            font-weight: 500;
+            min-width: 8px;
+            text-align: center;
+        }
+
+        @keyframes bitchat-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
     </style>
 </head>
 <body class="landing-page">
@@ -278,6 +320,10 @@
                 <a href="/payments"><i class="fas fa-credit-card"></i> Payments</a>
                 <a href="/bitchat" class="nav-link">
                     🔗 Bitchat
+                    <span id="bitchatMenuStatus" class="bitchat-menu-indicator">
+                        <span class="bitchat-status-dot offline"></span>
+                        <span class="bitchat-peer-count">0</span>
+                    </span>
                 </a>
                 <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
                 <div class="settings-submenu" style="display: none;">
@@ -835,6 +881,38 @@
                 tokenBalancePill.textContent = '100.33 DOTM'; // Hardcoded DOTM balance as requested
             }
         }
+
+        // Bitchat status synchronization
+        function updateBitchatMenuStatus() {
+            const menuStatus = document.getElementById('bitchatMenuStatus');
+            if (!menuStatus) return;
+
+            const statusDot = menuStatus.querySelector('.bitchat-status-dot');
+            const peerCount = menuStatus.querySelector('.bitchat-peer-count');
+
+            // Get status from localStorage (set by Bitchat page)
+            const bitchatStatus = localStorage.getItem('bitchatStatus') || 'offline';
+            const bitchatPeers = localStorage.getItem('bitchatPeers') || '0';
+
+            // Update status dot
+            statusDot.className = `bitchat-status-dot ${bitchatStatus}`;
+            
+            // Update peer count
+            peerCount.textContent = bitchatPeers;
+        }
+
+        // Listen for storage changes from Bitchat page
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'bitchatStatus' || e.key === 'bitchatPeers') {
+                updateBitchatMenuStatus();
+            }
+        });
+
+        // Update status on page load and periodically
+        document.addEventListener('DOMContentLoaded', function() {
+            updateBitchatMenuStatus();
+            setInterval(updateBitchatMenuStatus, 2000); // Check every 2 seconds
+        });
     </script>
     <script>
                     // Refresh invites list function
