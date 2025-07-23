@@ -653,84 +653,27 @@
 
             if (subscriptionData.status === 'active') {
                 var subscriptionType = subscriptionData.subscription_type || 'basic_membership';
-                var displayName = 'Global Data Access Membership'; // Updated to match request
+                var displayName = subscriptionType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-                // Get Stripe subscription data if available
-                if (subscriptionData.stripe_subscription_id) {
-                    fetchStripeSubscriptionDetails(subscriptionData.stripe_subscription_id, function(stripeData) {
-                        updateBannerWithStripeData(membershipBanner, displayName, stripeData);
-                    });
-                } else {
-                    // Fallback to local subscription data
-                    updateBannerWithLocalData(membershipBanner, displayName, subscriptionData);
+                // Format the end date
+                var endDate = new Date(subscriptionData.end_date);
+                var formattedDate = formatMembershipDate(endDate);
+
+                // Calculate days remaining
+                var now = new Date();
+                var daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+
+                var subscriptionInfo = membershipBanner.querySelector('.subscription-info');
+                if (subscriptionInfo) {
+                    subscriptionInfo.innerHTML = `
+                        <div class="subscription-type">${displayName}</div>
+                        <div class="subscription-validity">Valid for ${daysRemaining} more days until ${formattedDate}</div>
+                    `;
                 }
 
                 membershipBanner.style.display = 'flex';
             } else {
                 membershipBanner.style.display = 'none';
-            }
-        }
-
-        function fetchStripeSubscriptionDetails(stripeSubscriptionId, callback) {
-            var firebaseUid = localStorage.getItem('userId');
-            if (!firebaseUid) {
-                console.log('No Firebase UID for Stripe subscription fetch');
-                return;
-            }
-
-            fetch('/api/stripe-subscription-details', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    firebaseUid: firebaseUid,
-                    stripeSubscriptionId: stripeSubscriptionId
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.subscription) {
-                    callback(data.subscription);
-                } else {
-                    console.log('Failed to fetch Stripe subscription details');
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching Stripe subscription:', error);
-            });
-        }
-
-        function updateBannerWithStripeData(banner, displayName, stripeData) {
-            var subscriptionInfo = banner.querySelector('.subscription-info');
-            if (subscriptionInfo && stripeData) {
-                // Use Stripe's current_period_end for accurate billing cycle
-                var endDate = new Date(stripeData.current_period_end * 1000);
-                var formattedDate = formatMembershipDate(endDate);
-
-                // Calculate days remaining from Stripe data
-                var now = new Date();
-                var daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
-
-                subscriptionInfo.innerHTML = `
-                    <div class="subscription-type">${displayName}</div>
-                    <div class="subscription-validity">Valid for ${daysRemaining} more days</div>
-                `;
-            }
-        }
-
-        function updateBannerWithLocalData(banner, displayName, subscriptionData) {
-            var subscriptionInfo = banner.querySelector('.subscription-info');
-            if (subscriptionInfo) {
-                // Fallback to local database data
-                var endDate = new Date(subscriptionData.end_date);
-                var now = new Date();
-                var daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
-
-                subscriptionInfo.innerHTML = `
-                    <div class="subscription-type">${displayName}</div>
-                    <div class="subscription-validity">Valid for ${daysRemaining} more days</div>
-                `;
             }
         }
 

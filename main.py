@@ -1588,58 +1588,6 @@ def get_subscription_status():
             'user_id': user_id
         })
 
-@app.route('/api/stripe-subscription-details', methods=['POST'])
-def get_stripe_subscription_details():
-    """Get detailed subscription information from Stripe"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'message': 'No data provided'}), 400
-
-        firebase_uid = data.get('firebaseUid')
-        stripe_subscription_id = data.get('stripeSubscriptionId')
-
-        if not firebase_uid or not stripe_subscription_id:
-            return jsonify({'success': False, 'message': 'Firebase UID and Stripe subscription ID required'}), 400
-
-        # Verify user exists and owns this subscription
-        user_data = get_user_by_firebase_uid(firebase_uid)
-        if not user_data:
-            return jsonify({'success': False, 'message': 'User not found'}), 404
-
-        # Fetch subscription details from Stripe
-        if stripe.api_key:
-            try:
-                subscription = stripe.Subscription.retrieve(stripe_subscription_id)
-                
-                # Verify this subscription belongs to the user
-                user_stripe_customer_id = user_data[3]  # Stripe customer ID is at index 3
-                if subscription.customer != user_stripe_customer_id:
-                    return jsonify({'success': False, 'message': 'Subscription does not belong to user'}), 403
-
-                return jsonify({
-                    'success': True,
-                    'subscription': {
-                        'id': subscription.id,
-                        'status': subscription.status,
-                        'current_period_start': subscription.current_period_start,
-                        'current_period_end': subscription.current_period_end,
-                        'cancel_at_period_end': subscription.cancel_at_period_end,
-                        'customer': subscription.customer,
-                        'billing_cycle': subscription.items.data[0].price.recurring.interval if subscription.items.data else None
-                    }
-                })
-
-            except stripe.error.StripeError as e:
-                print(f"Stripe error fetching subscription: {str(e)}")
-                return jsonify({'success': False, 'message': 'Failed to fetch subscription from Stripe'}), 500
-        else:
-            return jsonify({'success': False, 'message': 'Stripe not configured'}), 500
-
-    except Exception as e:
-        print(f"Error getting Stripe subscription details: {str(e)}")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
 @app.route('/api/record-global-purchase', methods=['POST'])
 def record_global_purchase():
     data = request.get_json()

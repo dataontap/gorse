@@ -155,7 +155,7 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
-
+        
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
@@ -706,17 +706,10 @@ function createDemoUser() {
 }
 
 // Invites List Functions
-let invitesListLoading = false;
 function loadInvitesList() {
-    if (invitesListLoading) {
-        console.log('Invites list already loading, skipping...');
-        return;
-    }
-
     const firebaseUid = localStorage.getItem('userId');
     if (!firebaseUid) return;
 
-    invitesListLoading = true;
     fetch(`/api/invites?firebaseUid=${firebaseUid}&limit=10`)
     .then(response => response.json())
     .then(data => {
@@ -728,9 +721,6 @@ function loadInvitesList() {
     })
     .catch(error => {
         console.error('Error loading invites:', error);
-    })
-    .finally(() => {
-        invitesListLoading = false;
     });
 }
 
@@ -1456,17 +1446,10 @@ function createDemoUser() {
 }
 
 // Invites List Functions
-let invitesListLoading = false;
 function loadInvitesList() {
-    if (invitesListLoading) {
-        console.log('Invites list already loading, skipping...');
-        return;
-    }
-
     const firebaseUid = localStorage.getItem('userId');
     if (!firebaseUid) return;
 
-    invitesListLoading = true;
     fetch(`/api/invites?firebaseUid=${firebaseUid}&limit=10`)
     .then(response => response.json())
     .then(data => {
@@ -1478,9 +1461,6 @@ function loadInvitesList() {
     })
     .catch(error => {
         console.error('Error loading invites:', error);
-    })
-    .finally(() => {
-        invitesListLoading = false;
     });
 }
 
@@ -1965,7 +1945,6 @@ function initializeUsageChart(chartContainer) {
                 title: {
                     display: true,
                     text: 'Day of Week'
-```python
                 }
             }
         }
@@ -2906,8 +2885,6 @@ function updateBetaStatus(status, message) {
             betaEnrollBtn.style.display = 'none';
             betaStatus.style.display = 'block';
             betaStatusText.textContent = 'Your eSIM is ready to download';
-```python
-
             betaStatusText.style.color = '#28a745';
 
             // Show resend link
@@ -2939,144 +2916,5 @@ function updateBetaStatus(status, message) {
             betaStatus.style.display = 'block';
             betaStatusText.textContent = message || 'Beta enrollment complete';
             break;
-    }
-}
-
-let dataBalanceLoading = false;
-        function loadUserDataBalance() {
-            if (dataBalanceLoading) {
-                console.log('Data balance already loading, skipping...');
-                return;
-            }
-
-            var firebaseUid = localStorage.getItem('userId');
-            if (firebaseUid) {
-                dataBalanceLoading = true;
-                fetch('/api/user/data-balance?firebaseUid=' + firebaseUid)
-                    .then(response => response.json())
-                    .then(data => {
-
-                        var dataDisplay = document.getElementById('dataDisplay');
-                        var globalStatus = document.getElementById('globalStatus');
-
-                        if (data.success) {
-                            dataBalanceValue = data.data_balance;
-                            updateDataDisplay();
-                            dataDisplay.style.display = 'block';
-                            startAlternatingDisplay();
-                        } else {
-                            // Show default values
-                            console.error('Error getting user data balance:', data.message);
-                            dataBalanceValue = 0;
-                            updateDataDisplay();
-                            dataDisplay.style.display = 'block';
-                            startAlternatingDisplay();
-                        }
-
-                        if (globalStatus) {
-                            globalStatus.style.display = 'block';
-                            globalStatus.innerHTML = '<i class="fas fa-globe"></i> GLOBAL DATA';
-                        }
-                    })
-.catch(error => {
-                        console.error('Error loading data balance:', error);
-                        // Show default values
-                        var dataDisplay = document.getElementById('dataDisplay');
-                        var globalStatus = document.getElementById('globalStatus');
-
-                        if (dataDisplay) {
-                            dataBalanceValue = 0;
-                            updateDataDisplay();
-                            dataDisplay.style.display = 'block';
-                            startAlternatingDisplay();
-                        }
-
-                        if (globalStatus) {
-                            globalStatus.style.display = 'block';
-                            globalStatus.innerHTML = '<i class="fas fa-globe"></i> GLOBAL DATA';
-                        }
-                    })
-                    .finally(() => {
-                        dataBalanceLoading = false;
-                    });
-            }
-        }
-
-let subscriptionStatusLoading = false;
-        function loadSubscriptionStatus() {
-            if (subscriptionStatusLoading) {
-                console.log('Subscription status already loading, skipping...');
-                return;
-            }
-
-            var firebaseUid = localStorage.getItem('userId');
-            if (firebaseUid) {
-                subscriptionStatusLoading = true;
-                fetch('/api/subscription-status?firebaseUid=' + firebaseUid)
-                    .then(response => response.json())
-                    .then(data => {
-                        updateSubscriptionStatus(data);
-                    })
-.catch(error => {
-                        console.error('Error loading subscription status:', error);
-                    })
-                    .finally(() => {
-                        subscriptionStatusLoading = false;
-                    });
-            }
-        }
-
-// Initialize add user functionality with popup
-    const addUserBtn = document.getElementById('addUserBtn');
-    if (addUserBtn) {
-        addUserBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            showAddUserPopup();
-        });
-    }
-
-    // Load invites if on dashboard page
-    if (window.location.pathname === '/dashboard') {
-        loadUserDataBalance();
-        loadSubscriptionStatus();
-        setTimeout(() => {
-            if (typeof loadInvitesList === 'function') {
-                loadInvitesList();
-            }
-        }, 1000);
-    }
-
-// DOTM Balance Functions
-async function loadDOTMBalance() {
-    const tokenBalancePill = document.getElementById('tokenBalancePill');
-    if (!tokenBalancePill) return;
-
-    try {
-        // Check if MetaMask is available and connected
-        if (typeof window.ethereum !== 'undefined') {
-            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-            if (accounts.length > 0) {
-                const address = accounts[0];
-
-                // Fetch balance from our API
-                const response = await fetch(`/api/token/balance/${address}`);
-                const data = await response.json();
-
-                if (data.error) {
-                    console.error('Error fetching DOTM balance:', data.error);
-                    tokenBalancePill.textContent = '0.00 DOTM';
-                } else {
-                    // Display balance in the format "100.33 DOTM"
-                    tokenBalancePill.textContent = `${data.balance.toFixed(2)} DOTM`;
-                }
-            } else {
-                tokenBalancePill.textContent = 'Connect Wallet';
-            }
-        } else {
-            tokenBalancePill.textContent = 'MetaMask Required';
-        }
-    } catch (error) {
-        console.error('Error loading DOTM balance:', error);
-        tokenBalancePill.textContent = '0.00 DOTM';
     }
 }
