@@ -155,7 +155,7 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
-
+        
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
@@ -1005,8 +1005,7 @@ function updatePauseDuration(card) {
 function createUserCard(invite) {
     // Generate random data for demo users
     const isDemo = invite.email.includes('example.com');
-    const dataPercentage = Math.floor(Math.random() * 100)```text
- + 1;
+    const dataPercentage = Math.floor(Math.random() * 100) + 1;
     const timePercentage = Math.floor(Math.random() * 100) + 1;
     const dollarAmount = Math.floor(Math.random() * 25) + 1;
     const scoreNumber = Math.floor(Math.random() * 10) + 1;
@@ -1951,8 +1950,7 @@ function initializeUsageChart(chartContainer) {
         scales: {
             y: {
                 beginAtZero: true,
-```text
-title: {
+                title: {
                     display: true,
                     text: 'Usage (MB)'
                 }
@@ -2898,7 +2896,6 @@ function updateBetaStatus(status, message) {
         case 'payment_pending':
             betaEnrollBtn.style.display = 'none';
             betaStatus.style.display = 'block';
-
             betaStatusText.textContent = 'Check for eSIM invite in your email.';
             break;
         case 'esim_ready':
@@ -2937,92 +2934,4 @@ function updateBetaStatus(status, message) {
             betaStatusText.textContent = message || 'Beta enrollment complete';
             break;
     }
-}
-
-// Purchase functions with deduplication
-let pendingPurchases = new Set(); // Track pending purchases
-
-async function purchaseProduct(productId) {
-    // Prevent duplicate purchases
-    const purchaseKey = `${window.currentUser?.uid || 'anonymous'}_${productId}`;
-
-    if (pendingPurchases.has(purchaseKey)) {
-        console.log(`Purchase already in progress for ${productId}, ignoring duplicate request`);
-        return;
-    }
-
-    pendingPurchases.add(purchaseKey);
-
-    console.log(`Purchasing product: ${productId}`);
-    showLoadingState(true);
-
-    try {
-        const response = await fetch('/api/record-global-purchase', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                productId: productId,
-                firebaseUid: window.currentUser?.uid || null
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.status === 'success') {
-            showPurchaseSuccess(productId, result.purchaseId);
-            // Refresh balance after purchase
-            setTimeout(() => {
-                if (window.currentUser) {
-                    loadUserBalance(window.currentUser.uid);
-                }
-            }, 1000);
-        } else if (result.status === 'duplicate') {
-            console.log('Duplicate purchase prevented:', result.message);
-            showPurchaseSuccess(productId, 'duplicate', 'Purchase already processed');
-        } else {
-            showPurchaseError(result.message || 'Purchase failed');
-        }
-    } catch (error) {
-        console.error('Purchase error:', error);
-        showPurchaseError('Network error during purchase');
-    } finally {
-        showLoadingState(false);
-        // Clean up pending purchase tracking
-        pendingPurchases.delete(purchaseKey);
-    }
-}
-
-function showPurchaseSuccess(productId, purchaseId, customMessage = null) {
-    console.log(`Purchase successful for ${productId}: ${purchaseId}`);
-
-    // Create success message
-    const message = document.createElement('div');
-    message.className = 'purchase-success';
-
-    if (customMessage) {
-        message.innerHTML = `
-            <div class="success-content">
-                <h3>✅ ${customMessage}</h3>
-                <p>Product: ${productId}</p>
-            </div>
-        `;
-    } else {
-        message.innerHTML = `
-            <div class="success-content">
-                <h3>✅ Purchase Successful!</h3>
-                <p>Product: ${productId}</p>
-                <p>Purchase ID: ${purchaseId}</p>
-            </div>
-        `;
-    }
-
-    // Add to page
-    document.body.appendChild(message);
-
-    // Remove after 5 seconds
-    setTimeout(() => {
-        message.remove();
-    }, 5000);
 }
