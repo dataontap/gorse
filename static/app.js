@@ -2770,8 +2770,8 @@ function showHelpModal() {
                 <div class="agent-status">
                     <span class="agent-availability">AA is available in <span class="countdown-timer" style="color: #28a745; font-weight: bold;">4:20</span></span>
                 </div>
-                <button id="chatWithAgentBtn" class="chat-btn" data-translate="chatWithAgent">Chat with a Person</button>
                 <button id="orderCallbackBtn" class="callback-btn" data-translate="orderCallback">Order Callback</button>
+                <button id="chatWithAgentBtn" class="chat-btn" data-translate="chatWithAgent">Open Chat</button>
             </div>
         </div>
 
