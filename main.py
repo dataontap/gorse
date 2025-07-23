@@ -3358,6 +3358,46 @@ def stripe_webhook():
                         
                         print(f"Stripe OXIO activation payload: {oxio_activation_payload}")
                         
+                        # Check database for recent activation attempts to prevent duplicates
+                        with get_db_connection() as conn:
+                            if conn:
+                                with conn.cursor() as cur:
+                                    # Check for recent activation attempts (within last 5 minutes)
+                                    cur.execute("""
+                                        SELECT line_id, activation_status, created_at 
+                                        FROM oxio_activations 
+                                        WHERE user_id = %s 
+                                        AND activation_status IN ('activated', 'pending') 
+                                        AND created_at > CURRENT_TIMESTAMP - INTERVAL '5 minutes'
+                                        ORDER BY created_at DESC
+                                    """, (user_id,))
+                                    
+                                    recent_activation = cur.fetchone()
+                                    if recent_activation:
+                                        print(f"Recent activation found for user {user_id}: {recent_activation[0]} at {recent_activation[2]}")
+                                        print("Skipping duplicate activation attempt")
+                                        continue  # Skip this activation
+                        
+                        # Check database for recent activation attempts to prevent duplicates
+                        with get_db_connection() as conn:
+                            if conn:
+                                with conn.cursor() as cur:
+                                    # Check for recent activation attempts (within last 5 minutes)
+                                    cur.execute("""
+                                        SELECT line_id, activation_status, created_at 
+                                        FROM oxio_activations 
+                                        WHERE user_id = %s 
+                                        AND activation_status IN ('activated', 'pending') 
+                                        AND created_at > CURRENT_TIMESTAMP - INTERVAL '5 minutes'
+                                        ORDER BY created_at DESC
+                                    """, (user_id,))
+                                    
+                                    recent_activation = cur.fetchone()
+                                    if recent_activation:
+                                        print(f"Stripe webhook: Recent activation found for user {user_id}: {recent_activation[0]} at {recent_activation[2]}")
+                                        print("Skipping duplicate Stripe activation attempt")
+                                        return  # Skip this activation
+                        
                         # Call OXIO line activation
                         oxio_result = oxio_service.activate_line(oxio_activation_payload)
                         

@@ -63,16 +63,35 @@ class OXIOService:
                 existing_lines = self.get_user_lines(oxio_user_id)
                 if existing_lines.get('success') and existing_lines.get('data', {}).get('lines'):
                     lines = existing_lines['data']['lines']
-                    # Check for lines with status ACTIVE, ACTIVATED, or PENDING
+                    print(f"Found {len(lines)} existing lines for user {oxio_user_id}")
+                    
+                    # Check for lines with any active status (using both 'status' and 'lineStatus' fields)
+                    active_statuses = ['ACTIVE', 'ACTIVATED', 'PENDING', 'PROVISIONED', 'IN_SERVICE']
+                    active_lines = []
+                    
                     for line in lines:
-                        if line.get('lineStatus') in ['ACTIVE', 'ACTIVATED', 'PENDING']:
-                            print(f"User already has an active, activated, or pending line. Skipping activation.")
-                            return {
-                                'success': False,
-                                'error': 'User already has active, activated, or pending lines',
-                                'message': f'User {oxio_user_id} already has an active, activated, or pending line. Cannot create duplicate.',
-                                'existing_lines': lines
-                            }
+                        line_status = line.get('status') or line.get('lineStatus')
+                        line_id = line.get('lineId', 'unknown')
+                        print(f"Line {line_id} has status: {line_status}")
+                        
+                        if line_status in active_statuses:
+                            active_lines.append(line)
+                    
+                    if active_lines:
+                        print(f"User already has {len(active_lines)} active line(s). Preventing duplicate activation.")
+                        print("Already have an active line")
+                        return {
+                            'success': False,
+                            'error': 'User already has active lines',
+                            'message': f'User {oxio_user_id} already has {len(active_lines)} active line(s). Cannot create duplicate.',
+                            'existing_lines': active_lines,
+                            'all_lines': lines,
+                            'prevention_reason': 'duplicate_prevention'
+                        }
+                    else:
+                        print(f"No active lines found for user {oxio_user_id}. Proceeding with activation.")
+                else:
+                    print(f"No existing lines found for user {oxio_user_id} or API call failed")
             url = f"{self.base_url}/v3/lines/line"
             headers = self.get_headers()
 
