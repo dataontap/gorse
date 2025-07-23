@@ -3376,7 +3376,7 @@ def stripe_webhook():
                                     if recent_activation:
                                         print(f"Recent activation found for user {user_id}: {recent_activation[0]} at {recent_activation[2]}")
                                         print("Skipping duplicate activation attempt")
-                                        continue  # Skip this activation
+                                        return  # Skip this activation
                         
                         # Check database for recent activation attempts to prevent duplicates
                         with get_db_connection() as conn:
