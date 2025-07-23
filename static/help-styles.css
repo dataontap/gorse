@@ -757,12 +757,14 @@ body.dark-mode .agent-status {
     background: #007bff;
     color: white;
     border: none;
-    padding: 8px 16px;
+    padding: 12px 24px;
     border-radius: 5px;
     font-size: 14px;
     cursor: pointer;
     margin-right: 8px;
     margin-bottom: 8px;
+    width: 100%;
+    max-width: 500px;
     transition: background 0.3s;
 }
 
@@ -788,10 +790,12 @@ body.dark-mode .agent-status {
     background: #007bff;
     color: white;
     border: none;
-    padding: 8px 16px;
+    padding: 12px 24px;
     border-radius: 5px;
     font-size: 14px;
     cursor: pointer;
+    width: 100%;
+    max-width: 500px;
     transition: background 0.3s;
 }
 
