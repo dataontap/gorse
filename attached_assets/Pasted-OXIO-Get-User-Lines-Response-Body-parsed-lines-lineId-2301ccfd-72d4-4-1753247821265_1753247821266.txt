@@ -1,0 +1,70 @@
+OXIO Get User Lines Response Body (parsed): {
+  "lines": [
+    {
+      "lineId": "2301ccfd-72d4-4db0-af00-ac68de367236",
+      "status": "PENDING",
+      "lineType": "LINE_TYPE_MOBILITY",
+      "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
+      "createdTs": "2025-07-23T04:59:05Z",
+      "modifiedTs": "2025-07-23T04:59:12Z",
+      "endUserAssignedTs": "2025-07-23T04:59:05Z",
+      "endUserId": "e1190017-f365-41fa-a709-9d516164504b",
+      "activateOnAttach": true,
+      "sim": {
+        "simType": "EMBEDDED",
+        "iccid": "8910650420001501381F",
+        "activationCode": "1$consumer.e-sim.global$OX202409056149001501381",
+        "activationUrl": "LPA:1$consumer.e-sim.global$OX202409056149001501381",
+        "countryCode": "US"
+      },
+      "phoneNumbers": [
+        {}
+      ],
+      "ocsType": "OCSTYPE_MATRIXX"
+    },
+    {
+      "lineId": "44b48af9-b9a1-40a3-a927-3e61a5481e72",
+      "status": "PENDING",
+      "lineType": "LINE_TYPE_MOBILITY",
+      "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
+      "createdTs": "2025-07-23T04:59:07Z",
+      "modifiedTs": "2025-07-23T04:59:11Z",
+      "endUserAssignedTs": "2025-07-23T04:59:07Z",
+      "endUserId": "e1190017-f365-41fa-a709-9d516164504b",
+      "activateOnAttach": true,
+      "sim": {
+        "simType": "EMBEDDED",
+        "iccid": "8910650420001501399F",
+        "activationCode": "1$consumer.e-sim.global$OX202409053928001501399",
+        "activationUrl": "LPA:1$consumer.e-sim.global$OX202409053928001501399",
+        "countryCode": "US"
+      },
+      "phoneNumbers": [
+        {}
+      ],
+      "ocsType": "OCSTYPE_MATRIXX"
+    },
+    {
+      "lineId": "c9d2eb2c-23e4-4ade-b05c-8ee857c82864",
+      "status": "PENDING",
+      "lineType": "LINE_TYPE_MOBILITY",
+      "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
+      "createdTs": "2025-07-23T04:59:04Z",
+      "modifiedTs": "2025-07-23T04:59:09Z",
+      "endUserAssignedTs": "2025-07-23T04:59:04Z",
+      "endUserId": "e1190017-f365-41fa-a709-9d516164504b",
+      "activateOnAttach": true,
+      "sim": {
+        "simType": "EMBEDDED",
+        "iccid": "8910650420001501373F",
+        "activationCode": "1$consumer.e-sim.global$OX202409055899001501373",
+        "activationUrl": "LPA:1$consumer.e-sim.global$OX202409055899001501373",
+        "countryCode": "US"
+      },
+      "phoneNumbers": [
+        {}
+      ],
+      "ocsType": "OCSTYPE_MATRIXX"
+    }
+  ]
+}
