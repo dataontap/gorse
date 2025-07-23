@@ -763,6 +763,7 @@ body.dark-mode .agent-status {
     cursor: pointer;
     margin-right: 8px;
     margin-bottom: 8px;
+    margin-top: 12px;
     width: 100%;
     max-width: 500px;
     transition: background 0.3s;
@@ -796,6 +797,7 @@ body.dark-mode .agent-status {
     cursor: pointer;
     width: 100%;
     max-width: 500px;
+    margin-bottom: 12px;
     transition: background 0.3s;
 }
 

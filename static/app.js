@@ -2808,6 +2808,9 @@ function showHelpModal() {
     // Append the modal to the body
     document.body.appendChild(modalOverlay);
 
+    // Start the countdown immediately
+    startAgentCountdown();
+
     // Add event listener for the order callback button (event delegation)
     modalOverlay.addEventListener('click', function(e) {
         if (e.target.id === 'orderCallbackBtn') {
