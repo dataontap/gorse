@@ -1,4 +1,3 @@
-
 // Translation system for multi-language support
 const translations = {
     en: {
@@ -9,23 +8,23 @@ const translations = {
         settings: "Settings",
         logout: "Logout",
         help: "Help",
-        
+
         // Dashboard
         dashboard: "Dashboard",
         dataBalance: "Data Balance",
         subscription: "Subscription", 
         offers: "Offers",
         invitations: "Invitations",
-        
+
         // Settings
         darkMode: "Dark Mode",
         language: "Language",
-        
+
         // Language options
         english: "English",
         spanish: "Español",
         french: "Français",
-        
+
         // Common
         cancel: "Cancel",
         confirm: "Confirm",
@@ -34,23 +33,23 @@ const translations = {
         buy: "Buy",
         subscribe: "Subscribe",
         comingSoon: "Coming Soon",
-        
+
         // Offers
         globalPriorityData: "Global Priority Data",
         basicMembership: "Basic Membership", 
         fullMembership: "Full Membership",
-        
+
         // Help
         humanHelp: "Human help:",
         useAiHelp: "Use AI help:",
-        orderCallback: "Order callback",
-        chatWithAgent: "Chat with Agent",
-        
+        orderCallback: "Order Callback",
+        chatWithAgent: "Open Chat Now",
+
         // Beta
         requestBetaAccess: "Request BETA access ($1 eSIM)",
         betaEnrollment: "Beta Enrollment"
     },
-    
+
     es: {
         // Navigation
         profile: "Perfil",
@@ -59,23 +58,23 @@ const translations = {
         settings: "Configuración",
         logout: "Cerrar Sesión",
         help: "Ayuda",
-        
+
         // Dashboard
         dashboard: "Panel",
         dataBalance: "Saldo de Datos",
         subscription: "Suscripción",
         offers: "Ofertas", 
         invitations: "Invitaciones",
-        
+
         // Settings
         darkMode: "Modo Oscuro",
         language: "Idioma",
-        
+
         // Language options
         english: "English",
         spanish: "Español", 
-        french: "Français",
-        
+        french: "Francés",
+
         // Common
         cancel: "Cancelar",
         confirm: "Confirmar",
@@ -84,23 +83,23 @@ const translations = {
         buy: "Comprar",
         subscribe: "Suscribirse",
         comingSoon: "Próximamente",
-        
+
         // Offers
         globalPriorityData: "Datos Globales Prioritarios",
         basicMembership: "Membresía Básica",
         fullMembership: "Membresía Completa",
-        
+
         // Help
         humanHelp: "Ayuda humana:",
         useAiHelp: "Usar ayuda IA:",
-        orderCallback: "Solicitar llamada",
-        chatWithAgent: "Chat con Agente",
-        
+        orderCallback: "Order Callback",
+        chatWithAgent: "Open Chat Now",
+
         // Beta
         requestBetaAccess: "Solicitar acceso BETA ($1 eSIM)",
         betaEnrollment: "Inscripción Beta"
     },
-    
+
     fr: {
         // Navigation
         profile: "Profil",
@@ -109,23 +108,23 @@ const translations = {
         settings: "Paramètres", 
         logout: "Déconnexion",
         help: "Aide",
-        
+
         // Dashboard
         dashboard: "Tableau de Bord",
         dataBalance: "Solde de Données",
         subscription: "Abonnement",
         offers: "Offres",
         invitations: "Invitations",
-        
+
         // Settings
         darkMode: "Mode Sombre",
         language: "Langue",
-        
+
         // Language options
         english: "English",
         spanish: "Español",
         french: "Français",
-        
+
         // Common
         cancel: "Annuler",
         confirm: "Confirmer", 
@@ -134,18 +133,18 @@ const translations = {
         buy: "Acheter",
         subscribe: "S'abonner",
         comingSoon: "Bientôt Disponible",
-        
+
         // Offers
         globalPriorityData: "Données Globales Prioritaires",
         basicMembership: "Adhésion de Base",
         fullMembership: "Adhésion Complète",
-        
+
         // Help
         humanHelp: "Aide humaine:",
         useAiHelp: "Utiliser l'aide IA:",
-        orderCallback: "Demander un rappel",
-        chatWithAgent: "Chat avec Agent",
-        
+        orderCallback: "Order Callback",
+        chatWithAgent: "Open Chat Now",
+
         // Beta
         requestBetaAccess: "Demander l'accès BETA (1$ eSIM)",
         betaEnrollment: "Inscription Bêta"
@@ -173,7 +172,7 @@ function updatePageTranslations() {
     elementsToTranslate.forEach(element => {
         const key = element.getAttribute('data-translate');
         const translatedText = t(key);
-        
+
         if (element.tagName === 'INPUT' && (element.type === 'button' || element.type === 'submit')) {
             element.value = translatedText;
         } else if (element.hasAttribute('placeholder')) {
@@ -186,7 +185,7 @@ function updatePageTranslations() {
                     textNodes.push(node);
                 }
             });
-            
+
             if (textNodes.length > 0) {
                 textNodes[0].textContent = translatedText;
             } else {
@@ -194,7 +193,7 @@ function updatePageTranslations() {
             }
         }
     });
-    
+
     // Update specific elements by ID
     updateSpecificElements();
 }
@@ -205,7 +204,7 @@ function updateSpecificElements() {
     if (languageSelect) {
         languageSelect.value = currentLanguage;
     }
-    
+
     // Update any dynamically generated content
     if (window.location.pathname === '/dashboard') {
         updateDashboardTranslations();
@@ -218,7 +217,7 @@ function updateDashboardTranslations() {
     offerCards.forEach(card => {
         const title = card.querySelector('h3');
         const button = card.querySelector('.offer-button');
-        
+
         if (title && title.textContent.includes('Global Priority Data')) {
             title.textContent = t('globalPriorityData');
         } else if (title && title.textContent.includes('Basic Membership')) {
@@ -226,7 +225,7 @@ function updateDashboardTranslations() {
         } else if (title && title.textContent.includes('Full Membership')) {
             title.textContent = t('fullMembership');
         }
-        
+
         if (button) {
             if (button.textContent === 'Buy') {
                 button.textContent = t('buy');
