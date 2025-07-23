@@ -233,12 +233,12 @@
                         emailElement.textContent = currentUserData.email;
                     }
 
-                    // Update display name
+                    // Update display name - Member badge will be updated based on OXIO status
                     const nameElement = document.getElementById('profileUserName');
                     if (nameElement) {
                         const displayName = currentUserData.displayName || 'User';
-                        const founderBadge = currentUserData.founderStatus === 'Y' ? 'Founding Member' : 'Member';
-                        nameElement.innerHTML = `${displayName} <span class="founding-shield">${founderBadge}</span>`;
+                        // Default to User status - will be updated when OXIO data loads
+                        nameElement.innerHTML = `${displayName} <span class="founding-shield user-status">User</span>`;
                     }
                 } else {
                     // Fallback to old method if currentUser data not available
@@ -255,7 +255,7 @@
                         const nameFromEmail = userEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                         const nameElement = document.getElementById('profileUserName');
                         if (nameElement) {
-                            nameElement.innerHTML = `${nameFromEmail} <span class="founding-shield">Member</span>`;
+                            nameElement.innerHTML = `${nameFromEmail} <span class="founding-shield user-status">User</span>`;
                         }
                     } else {
                         // Show demo data if nothing is available
@@ -266,7 +266,7 @@
                             emailElement.textContent = 'demo@example.com';
                         }
                         if (nameElement) {
-                            nameElement.innerHTML = `Demo User <span class="founding-shield">Demo Member</span>`;
+                            nameElement.innerHTML = `Demo User <span class="founding-shield user-status">User</span>`;
                         }
                     }
                 }
@@ -280,7 +280,7 @@
                     emailElement.textContent = 'demo@example.com';
                 }
                 if (nameElement) {
-                    nameElement.innerHTML = `Demo User <span class="founding-shield">Demo Member</span>`;
+                    nameElement.innerHTML = `Demo User <span class="founding-shield user-status">User</span>`;
                 }
             }
         }
@@ -324,12 +324,39 @@
             }
         }
 
+        function updateMemberStatus(oxioData) {
+            const nameElement = document.getElementById('profileUserName');
+            if (!nameElement) return;
+
+            const currentText = nameElement.textContent;
+            const displayName = currentText.split(' ')[0] || 'User';
+            
+            // Check if user has active OXIO service
+            const hasActiveService = oxioData && 
+                                   oxioData.line_id && 
+                                   oxioData.line_id !== 'Not assigned' && 
+                                   oxioData.phone_number && 
+                                   oxioData.phone_number !== 'Not assigned' &&
+                                   (oxioData.status === 'active' || oxioData.status === 'esim_ready');
+
+            if (hasActiveService) {
+                // Show Member badge for active service
+                nameElement.innerHTML = `${displayName} <span class="founding-shield member-status">★ Member</span>`;
+            } else {
+                // Show User status for inactive/no service
+                nameElement.innerHTML = `${displayName} <span class="founding-shield user-status">User</span>`;
+            }
+        }
+
         function displayOxioData(data) {
             const container = document.getElementById('oxioContainer');
             const refreshBtn = document.getElementById('oxioRefreshBtn');
 
             if (data.status === 'success' && data.oxio_data) {
                 const oxioData = data.oxio_data;
+                
+                // Update member status based on OXIO service status
+                updateMemberStatus(oxioData);
 
                 // Check if OXIO user needs to be created
                 if (oxioData.status === 'oxio_user_not_created' || !oxioData.oxio_user_id) {
@@ -468,6 +495,9 @@
 
         function displayOxioError(error) {
             const container = document.getElementById('oxioContainer');
+            
+            // Update member status to User when there's an error (no active service)
+            updateMemberStatus(null);
 
             // Check if this is a "user not created" error or status indicates missing OXIO user
             if ((error && error.includes('OXIO user not created')) || 

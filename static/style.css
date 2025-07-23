@@ -2626,7 +2626,6 @@ cursor: pointer;
     align-items: center;
     margin-left: 8px;
     padding: 4px 8px;
-    background: linear-gradient(45deg, #FFD700, #FFA500);
     border-radius: 4px;
     position: relative;
     font-size: 12px;
@@ -2639,7 +2638,15 @@ cursor: pointer;
         0 2px 4px rgba(0,0,0,0.2);
 }
 
-.founding-shield:before {
+.founding-shield.member-status {
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+}
+
+.founding-shield.user-status {
+    background: linear-gradient(45deg, #6c757d, #495057);
+}
+
+.founding-shield.member-status:before {
     content: '★';
     margin-right: 4px;
     font-size: 14px;
