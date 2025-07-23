@@ -352,7 +352,6 @@ def register_firebase_user():
                                 imei VARCHAR(100),
                                 eth_address VARCHAR(42),
                                 oxio_user_id VARCHAR(100),
-                                oxio_group_id VARCHAR(100),
                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                             )
                         """)
@@ -384,19 +383,6 @@ def register_firebase_user():
                             cur.execute("ALTER TABLE users ADD COLUMN eth_address VARCHAR(42)")
                             conn.commit()
                             print("ETH address column added successfully")
-
-                        # Ensure oxio_group_id column exists
-                        cur.execute("""
-                            SELECT column_name FROM information_schema.columns 
-                            WHERE table_name = 'users' AND column_name = 'oxio_group_id'
-                        """)
-                        group_column_exists = cur.fetchone()
-
-                        if not group_column_exists:
-                            print("Adding oxio_group_id column to users table...")
-                            cur.execute("ALTER TABLE users ADD COLUMN oxio_group_id VARCHAR(100)")
-                            conn.commit()
-                            print("OXIO group ID column added successfully")
 
                     # Check if user already exists by Firebase UID
                     cur.execute("SELECT id, stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
@@ -446,7 +432,6 @@ def register_firebase_user():
 
                         # Create OXIO user first
                         oxio_user_id = None
-                        oxio_group_id = None
                         try:
                             print(f"Creating OXIO user for Firebase UID: {firebase_uid}")
                             # Parse display_name to get first and last name
@@ -464,23 +449,6 @@ def register_firebase_user():
                             if oxio_result.get('success'):
                                 oxio_user_id = oxio_result.get('oxio_user_id')
                                 print(f"Successfully created OXIO user: {oxio_user_id}")
-                                
-                                # Create OXIO Line Group for the user
-                                try:
-                                    print(f"Creating OXIO Line Group for user: {oxio_user_id}")
-                                    group_result = oxio_service.create_line_group(
-                                        name="My Datashare",
-                                        firebase_uid=firebase_uid,
-                                        description="Share data with other members"
-                                    )
-                                    
-                                    if group_result.get('success'):
-                                        oxio_group_id = group_result.get('group_id')
-                                        print(f"Successfully created OXIO Line Group: {oxio_group_id}")
-                                    else:
-                                        print(f"Failed to create OXIO Line Group: {group_result.get('message', 'Unknown error')}")
-                                except Exception as group_err:
-                                    print(f"Error creating OXIO Line Group: {str(group_err)}")
                             else:
                                 print(f"Failed to create OXIO user: {oxio_result.get('message', 'Unknown error')}")
                         except Exception as oxio_err:
@@ -488,10 +456,10 @@ def register_firebase_user():
 
                         cur.execute(
                             """INSERT INTO users 
-                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id, oxio_group_id) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s) 
+                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id) 
+                            VALUES (%s, %s, %s, %s, %s, %s) 
                             RETURNING id""",
-                            (email, firebase_uid, display_name, photo_url, test_account.address, oxio_user_id, oxio_group_id)
+                            (email, firebase_uid, display_name, photo_url, test_account.address, oxio_user_id)
                         )
                         user_id = cur.fetchone()[0]
                         conn.commit()
@@ -588,10 +556,10 @@ def get_current_user():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Get user data including founder status, OXIO user ID, OXIO group ID, and ETH address
+                    # Get user data including founder status, OXIO user ID, and ETH address
                     cur.execute(
                         """SELECT u.id, u.email, u.display_name, u.photo_url, u.imei, u.stripe_customer_id,
-                                  COALESCE(f.founder, 'N') as founder_status, u.oxio_user_id, u.eth_address, u.oxio_group_id
+                                  COALESCE(f.founder, 'N') as founder_status, u.oxio_user_id, u.eth_address
                         FROM users u
                         LEFT JOIN founders f ON u.firebase_uid = f.firebase_uid
                         WHERE u.firebase_uid = %s""",
@@ -610,8 +578,7 @@ def get_current_user():
                             'stripeCustomerId': user[5],
                             'founderStatus': user[6],
                             'oxioUserId': user[7],
-                            'metamaskAddress': user[8] if len(user) > 8 else None,
-                            'oxioGroupId': user[9] if len(user) > 9 else None
+                            'metamaskAddress': user[8] if len(user) > 8 else None
                         })
 
                     return jsonify({'error': 'User not found'}), 404
@@ -1281,7 +1248,7 @@ def get_user_by_firebase_uid(firebase_uid):
                 with conn.cursor() as cur:
                     cur.execute(
                         """SELECT id, email, firebase_uid, stripe_customer_id, display_name, 
-                                  photo_url, imei, oxio_user_id, eth_address, oxio_group_id 
+                                  photo_url, imei, oxio_user_id, eth_address 
                         FROM users WHERE firebase_uid = %s""",
                         (firebase_uid,)
                     )
@@ -1749,7 +1716,7 @@ def record_global_purchase():
                         "preferredAreaCode": "212"
                     },
                     "countryCode": "US",
-                    "activateOnAttach": False
+                    "activateOnAttach": True
                 }
                 
                 # Only add endUserId if we have a valid OXIO user ID (UUID format, not an Ethereum address)
@@ -2837,14 +2804,12 @@ def get_oxio_user_data():
         # Extract additional fields from user_data tuple
         oxio_user_id = user_data[7] if len(user_data) > 7 else None
         eth_address = user_data[8] if len(user_data) > 8 else None
-        oxio_group_id = user_data[9] if len(user_data) > 9 else None
 
         # Get OXIO data from database and API
         oxio_data = {
             'user_id': user_id,
             'email': user_email,
             'oxio_user_id': oxio_user_id,  # OXIO user ID from oxio_user_id column
-            'oxio_group_id': oxio_group_id,  # OXIO group ID from oxio_group_id column
             'metamask_address': eth_address,  # MetaMask address from eth_address column
             'phone_number': None,
             'line_id': None,
@@ -3346,7 +3311,7 @@ def stripe_webhook():
                                 "preferredAreaCode": "212"
                             },
                             "countryCode": "US",
-                            "activateOnAttach": False
+                            "activateOnAttach": True
                         }
                         
                         # Only add endUserId if we have a valid OXIO user ID (UUID format, not an Ethereum address)
@@ -3357,61 +3322,6 @@ def stripe_webhook():
                             print(f"Stripe webhook: No valid OXIO user ID found (oxio_user_id: {oxio_user_id}, eth_address: {eth_address}), using email-based identification")
                         
                         print(f"Stripe OXIO activation payload: {oxio_activation_payload}")
-                        
-                        # CRITICAL DATABASE CHECK: Use transaction-level locking to prevent race conditions
-                        with get_db_connection() as conn:
-                            if conn:
-                                with conn.cursor() as cur:
-                                    # Start transaction with row-level locking
-                                    cur.execute("BEGIN")
-                                    
-                                    # Lock the user row to prevent concurrent activations
-                                    cur.execute("""
-                                        SELECT id FROM users 
-                                        WHERE id = %s OR firebase_uid = %s 
-                                        FOR UPDATE
-                                    """, (user_id, firebase_uid))
-                                    
-                                    # Check for ANY existing activation for this user (with lock)
-                                    cur.execute("""
-                                        SELECT line_id, activation_status, created_at, oxio_user_id
-                                        FROM oxio_activations 
-                                        WHERE user_id = %s OR firebase_uid = %s
-                                        ORDER BY created_at DESC
-                                        FOR UPDATE
-                                    """, (user_id, firebase_uid))
-                                    
-                                    existing_activations = cur.fetchall()
-                                    if existing_activations:
-                                        print(f"TRANSACTION BLOCKING: User {user_id} (Firebase: {firebase_uid}) already has {len(existing_activations)} activation record(s)")
-                                        for i, activation in enumerate(existing_activations):
-                                            print(f"  Activation {i+1}: Line {activation[0]} ({activation[1]}) at {activation[2]}")
-                                        print("Enforcing one-line-per-user policy with transaction locking - skipping activation")
-                                        cur.execute("ROLLBACK")
-                                        return  # Skip this activation
-                                    
-                                    # Continue with activation only if no existing records found
-                                    cur.execute("COMMIT")
-                        
-                        # STRICT DATABASE CHECK: Prevent ANY Stripe activation if user already has ANY line
-                        with get_db_connection() as conn:
-                            if conn:
-                                with conn.cursor() as cur:
-                                    # Check for ANY existing activation for this user
-                                    cur.execute("""
-                                        SELECT line_id, activation_status, created_at, oxio_user_id
-                                        FROM oxio_activations 
-                                        WHERE user_id = %s OR firebase_uid = %s
-                                        ORDER BY created_at DESC
-                                    """, (user_id, firebase_uid))
-                                    
-                                    existing_activations = cur.fetchall()
-                                    if existing_activations:
-                                        print(f"STRIPE WEBHOOK BLOCKING: User {user_id} (Firebase: {firebase_uid}) already has {len(existing_activations)} activation record(s)")
-                                        for i, activation in enumerate(existing_activations):
-                                            print(f"  Stripe Check - Activation {i+1}: Line {activation[0]} ({activation[1]}) at {activation[2]}")
-                                        print("Enforcing one-line-per-user policy - skipping Stripe activation")
-                                        return  # Skip this activation
                         
                         # Call OXIO line activation
                         oxio_result = oxio_service.activate_line(oxio_activation_payload)

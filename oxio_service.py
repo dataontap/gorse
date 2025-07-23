@@ -47,86 +47,6 @@ class OXIOService:
             API response as dictionary
         """
         try:
-            # Extract OXIO user ID for deduplication checks
-            oxio_user_id = None
-            if isinstance(oxio_user_id_or_payload, str):
-                oxio_user_id = oxio_user_id_or_payload
-            elif isinstance(oxio_user_id_or_payload, dict):
-                if oxio_user_id_or_payload.get('endUser', {}).get('endUserId'):
-                    oxio_user_id = oxio_user_id_or_payload['endUser']['endUserId']
-                elif oxio_user_id_or_payload.get('endUserId'):
-                    oxio_user_id = oxio_user_id_or_payload['endUserId']
-
-            # CRITICAL: Database-level deduplication check first (prevents race conditions)
-            if oxio_user_id:
-                print(f"DATABASE CHECK: Verifying no existing activations for OXIO user: {oxio_user_id}")
-                try:
-                    import psycopg2
-                    import os
-                    database_url = os.environ.get('DATABASE_URL')
-                    if database_url:
-                        conn = psycopg2.connect(database_url)
-                        with conn.cursor() as cur:
-                            # Check database for ANY existing activations for this OXIO user
-                            cur.execute("""
-                                SELECT line_id, activation_status, created_at 
-                                FROM oxio_activations 
-                                WHERE oxio_response::text LIKE %s
-                                ORDER BY created_at DESC
-                            """, (f'%"endUserId":"{oxio_user_id}"%',))
-
-                            existing_db_activations = cur.fetchall()
-                            if existing_db_activations:
-                                print(f"DATABASE BLOCK: Found {len(existing_db_activations)} existing database activation(s) for OXIO user {oxio_user_id}")
-                                for i, activation in enumerate(existing_db_activations):
-                                    print(f"  DB Activation {i+1}: Line {activation[0]} ({activation[1]}) at {activation[2]}")
-                                conn.close()
-                                return {
-                                    'success': False,
-                                    'error': 'User already has database activations',
-                                    'message': f'OXIO user {oxio_user_id} already has {len(existing_db_activations)} activation(s) in database. No additional lines allowed.',
-                                    'existing_db_activations': len(existing_db_activations),
-                                    'prevention_reason': 'database_duplicate_prevention',
-                                    'policy': 'One line per OXIO user maximum - database enforced'
-                                }
-                            else:
-                                print(f"DATABASE CLEAR: No existing database activations found for OXIO user {oxio_user_id}")
-                        conn.close()
-                except Exception as db_err:
-                    print(f"Warning: Database deduplication check failed: {str(db_err)}")
-                    # Continue with API check as fallback
-
-            # API-level deduplication check (secondary prevention)
-            if oxio_user_id:
-                print(f"API CHECK: Checking for existing lines for user: {oxio_user_id}")
-                existing_lines = self.get_user_lines(oxio_user_id)
-                if existing_lines.get('success') and existing_lines.get('data', {}).get('lines'):
-                    lines = existing_lines['data']['lines']
-                    print(f"Found {len(lines)} existing lines for user {oxio_user_id}")
-
-                    # STRICT DUPLICATE PREVENTION: Block ANY line creation if user has ANY existing lines
-                    if lines and len(lines) > 0:
-                        print(f"API BLOCK: User {oxio_user_id} already has {len(lines)} existing line(s). Blocking any new line creation.")
-
-                        # Log all existing lines for debugging
-                        for i, line in enumerate(lines):
-                            line_status = line.get('status') or line.get('lineStatus', 'UNKNOWN')
-                            line_id = line.get('lineId', 'unknown')
-                            print(f"  Existing Line {i+1}: {line_id} (Status: {line_status})")
-
-                        return {
-                            'success': False,
-                            'error': 'User already has existing lines',
-                            'message': f'User {oxio_user_id} already has {len(lines)} line(s). No additional lines allowed per user.',
-                            'existing_lines': lines,
-                            'total_existing_lines': len(lines),
-                            'prevention_reason': 'api_duplicate_prevention',
-                            'policy': 'One line per OXIO user maximum - API enforced'
-                        }
-                    else:
-                        print(f"API CLEAR: No existing lines found for user {oxio_user_id}. Allowing first line creation.")
-                else:
-                    print(f"API CLEAR: No existing lines found for user {oxio_user_id} or API call failed")
             url = f"{self.base_url}/v3/lines/line"
             headers = self.get_headers()
 
@@ -146,20 +66,19 @@ class OXIOService:
                     "lineType": "LINE_TYPE_MOBILITY",
                     "countryCode": "US",
                     "sim": { "simType": "EMBEDDED" },  # No ICCID included
-                    "endUserId": oxio_user_id,
-                    "activateOnAttach": False
+                    "endUserId": oxio_user_id
                 }
             elif isinstance(oxio_user_id_or_payload, dict):
                 # Complex case: full payload provided (legacy support)
                 payload = oxio_user_id_or_payload
-
+                
                 # CRITICAL FIX: If endUserId is provided in the endUser object, 
                 # remove email and other user details to avoid "user already exists" error
                 if payload.get('endUser', {}).get('endUserId'):
                     oxio_user_id = payload['endUser']['endUserId']
                     print(f"OXIO user ID found in complex payload: {oxio_user_id}")
                     print("Removing email and user details since endUserId is provided")
-
+                    
                     # Create clean payload with only endUserId - no email, ICCID, or area code
                     clean_payload = {
                         "lineType": payload.get("lineType", "LINE_TYPE_MOBILITY"),
@@ -167,12 +86,13 @@ class OXIOService:
                         "sim": {"simType": "EMBEDDED"},  # Remove ICCID, keep only simType
                         "endUserId": oxio_user_id  # Use endUserId directly, not in endUser object
                     }
-
+                    
                     # Add optional fields if they exist (but exclude phoneNumberRequirements)
-                    clean_payload["activateOnAttach"] = False
-
+                    if "activateOnAttach" in payload:
+                        clean_payload["activateOnAttach"] = payload["activateOnAttach"]
+                    
                     print(f"Excluded ICCID and preferredAreaCode from payload")
-
+                        
                     payload = clean_payload
                     print(f"Using cleaned payload with only endUserId: {payload}")
                 else:
@@ -362,140 +282,13 @@ class OXIOService:
             if response.status_code >= 200 and response.status_code < 300:
                 # Get OXIO user ID from response - try different possible field names
                 oxio_user_id = response_data.get('endUserId') or response_data.get('id') or response_data.get('userId')
-
+                
                 return {
                     'success': True,
                     'status_code': response.status_code,
                     'data': response_data,
                     'message': 'OXIO user created successfully',
                     'oxio_user_id': oxio_user_id,
-                    'request_payload': payload,
-                    'firebase_uid': firebase_uid
-                }
-            else:
-                error_details = {
-                    'success': False,
-                    'status_code': response.status_code,
-                    'data': response_data,
-                    'error': f'OXIO API error: {response.status_code}',
-                    'message': response_data.get('message', f'HTTP {response.status_code} error'),
-                    'request_payload': payload,
-                    'firebase_uid': firebase_uid
-                }
-
-                return error_details
-
-        except requests.exceptions.Timeout:
-            return {
-                'success': False,
-                'error': 'Request timeout',
-                'message': 'OXIO API request timed out after 30 seconds',
-                'request_payload': payload,
-                'firebase_uid': firebase_uid
-            }
-        except requests.exceptions.ConnectionError as conn_err:
-            return {
-                'success': False,
-                'error': 'Connection error',
-                'message': f'Could not connect to OXIO API: {str(conn_err)}',
-                'request_payload': payload,
-                'firebase_uid': firebase_uid
-            }
-        except requests.exceptions.RequestException as req_err:
-            return {
-                'success': False,
-                'error': 'Request error',
-                'message': f'Request failed: {str(req_err)}',
-                'request_payload': payload,
-                'firebase_uid': firebase_uid
-            }
-        except Exception as e:
-            return {
-                'success': False,
-                'error': 'Unexpected error',
-                'message': f'Unexpected error: {str(e)}',
-                'request_payload': payload,
-                'firebase_uid': firebase_uid
-            }
-
-    def create_line_group(self, name: str, firebase_uid: str, description: str = "Share data with other members") -> Dict[str, Any]:
-        """
-        Create a Line Group using OXIO API
-
-        Args:
-            name: Name of the group (e.g., "My Datashare")
-            firebase_uid: Firebase UID to use as groupExternalId
-            description: Description of the group
-
-        Returns:
-            API response as dictionary
-        """
-        try:
-            url = f"{self.base_url}/v2/groups"
-            headers = self.get_headers()
-
-            payload = {
-                "name": name,
-                "groupType": "GROUP_TYPE_SHARED",
-                "groupExternalId": firebase_uid,
-                "description": description
-            }
-
-            print(f"OXIO Create Line Group URL: {url}")
-            print(f"OXIO Create Line Group Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
-            print(f"OXIO Create Line Group Payload: {json.dumps(payload, indent=2)}")
-
-            response = requests.post(
-                url,
-                headers=headers,
-                json=payload,
-                timeout=30
-            )
-
-            print(f"OXIO Create Line Group Response Status: {response.status_code}")
-            print(f"OXIO Create Line Group Response Headers: {dict(response.headers)}")
-
-            # Get response text first
-            response_text = response.text
-            print(f"Raw response body: {response_text}")
-
-            # Check if response is JSON
-            content_type = response.headers.get('content-type', '').lower()
-
-            if 'application/json' in content_type:
-                try:
-                    response_data = response.json() if response.content else {}
-                    print(f"OXIO Create Line Group Response Body (parsed): {json.dumps(response_data, indent=2)}")
-                except json.JSONDecodeError as json_err:
-                    print(f"Failed to parse JSON response: {str(json_err)}")
-                    response_data = {
-                        'error': 'Invalid JSON response',
-                        'json_error': str(json_err),
-                        'raw_response': response_text[:1000]
-                    }
-            else:
-                print(f"Non-JSON response received (Content-Type: {content_type})")
-                response_data = {
-                    'error': 'Non-JSON response',
-                    'content_type': content_type,
-                    'raw_response': response_text[:1000]
-                }
-
-            if response.status_code >= 200 and response.status_code < 300:
-                # Get group ID from response - check nested group object first
-                group_id = None
-                if 'group' in response_data and 'groupId' in response_data['group']:
-                    group_id = response_data['group']['groupId']
-                else:
-                    # Fallback to other possible field names
-                    group_id = response_data.get('groupId') or response_data.get('id') or response_data.get('group_id')
-
-                return {
-                    'success': True,
-                    'status_code': response.status_code,
-                    'data': response_data,
-                    'message': 'OXIO Line Group created successfully',
-                    'group_id': group_id,
                     'request_payload': payload,
                     'firebase_uid': firebase_uid
                 }

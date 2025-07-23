@@ -33,8 +33,6 @@ window.handleLogout = handleLogout;
 
 // Global variables
 let currentUser = null;
-let authInitialized = false;
-let purchaseCooldown = false;
 
 // Initialize user data
 function initializeUser() {
@@ -74,17 +72,6 @@ function toggleMenu(element) {
             dropdown.classList.add('visible');
             dropdown.style.display = 'block';
         }
-    }
-}
-
-// Alternative menu toggle for event delegation
-function handleMenuToggle(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    const menuIcon = event.currentTarget.closest('.menu-icon');
-    if (menuIcon) {
-        toggleMenu(menuIcon);
     }
 }
 
@@ -132,34 +119,24 @@ function toggleTheme(isDarkMode) {
 }
 
 // Global dashboard functions for offer cards and user data
-function showConfirmationDrawer(productId, dataAmount, priceAmount) {
-    console.log('Showing confirmation drawer for:', productId, dataAmount, priceAmount);
+function showConfirmationDrawer(dataAmount, price, productId) {
+    console.log('Showing confirmation drawer for:', productId, dataAmount, price);
+    var drawer = document.getElementById('confirmationDrawer');
+    if (drawer) {
+        var dataAmountElement = document.getElementById('confirmDataAmount');
+        var priceElement = document.getElementById('confirmPrice');
 
-    // Check if cooldown is active
-    if (purchaseCooldown) {
-        console.log('Purchase cooldown active, cannot show confirmation drawer');
-        return;
+        if (dataAmountElement) {
+            dataAmountElement.textContent = dataAmount + 'GB';
+        }
+        if (priceElement) {
+            priceElement.textContent = '$' + price;
+        }
+
+        drawer.classList.add('show');
+        drawer.style.display = 'block';
+        drawer.dataset.productId = productId;
     }
-
-    const drawer = document.getElementById('confirmationDrawer');
-    const productName = document.getElementById('confirmProductName');
-    const productData = document.getElementById('confirmProductData');
-    const productPrice = document.getElementById('confirmProductPrice');
-    const confirmBtn = document.getElementById('confirmPurchaseBtn');
-
-    // Set product details
-    productName.textContent = productId.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-    productData.textContent = `${dataAmount}GB`;
-    productPrice.textContent = `$${priceAmount}`;
-
-    // Set up confirmation button
-    confirmBtn.onclick = () => {
-        confirmPurchase(productId, dataAmount, priceAmount);
-        hideConfirmationDrawer();
-    };
-
-    // Show drawer
-    drawer.classList.add('show');
 }
 
 function hideConfirmationDrawer() {
@@ -170,35 +147,34 @@ function hideConfirmationDrawer() {
     }
 }
 
-function confirmPurchase(productId, dataAmount, priceAmount) {
-    console.log('Confirming purchase for:', productId);
+function confirmPurchase() {
+    var drawer = document.getElementById('confirmationDrawer');
+    if (drawer && drawer.dataset.productId) {
+        var productId = drawer.dataset.productId;
+        console.log('Confirming purchase for:', productId);
 
-    // Check cooldown to prevent rapid multiple purchases
-    if (purchaseCooldown) {
-        console.log('Purchase cooldown active, ignoring request');
-        return;
-    }
+        // Get Firebase UID from multiple possible sources
+        var firebaseUid = null;
+        
+        // First try to get current user data
+        var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        if (currentUserData && currentUserData.uid) {
+            firebaseUid = currentUserData.uid;
+            console.log('Using Firebase UID from currentUser:', firebaseUid);
+        } else {
+            // Fallback to other localStorage keys
+            firebaseUid = localStorage.getItem('firebaseUid') || 
+                         localStorage.getItem('userId') || null;
+            console.log('Using Firebase UID from fallback:', firebaseUid);
+        }
 
-    // Activate cooldown for 10 seconds
-    purchaseCooldown = true;
-    setTimeout(() => {
-        purchaseCooldown = false;
-        console.log('Purchase cooldown lifted');
-    }, 10000);
+        if (!firebaseUid) {
+            alert('Please log in to make a purchase.');
+            return;
+        }
 
-    console.log('Purchase cooldown activated for 10 seconds');
-
-    // Get Firebase UID
-    let firebaseUid = null;
-    if (currentUser && currentUser.uid) {
-        firebaseUid = currentUser.uid;
-        console.log('Using Firebase UID from currentUser:', firebaseUid);
-    } else {
-        console.log('No current user available, proceeding without Firebase UID');
-    }
-
-    // Record the purchase
-    fetch('/api/record-global-purchase', {
+        // Make API call to record purchase
+        fetch('/api/record-global-purchase', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -223,6 +199,7 @@ function confirmPurchase(productId, dataAmount, priceAmount) {
             console.error('Error recording purchase:', error);
             alert('Error processing purchase. Please try again.');
         });
+    }
 }
 
 function sendComingSoonNotification() {
@@ -290,27 +267,13 @@ function startAgentCountdown() {
                 minutes--;
                 seconds = 59;
             } else {
-                // When countdown reaches 0:00, reset to 8:10 and continue
-                minutes = 8;
-                seconds = 10;
-            }
-
-            // Check if we've reached 4:10 - if so, add 5 minutes
-            if (minutes === 4 && seconds === 10) {
-                minutes = 8;
-                seconds = 10;
+                clearInterval(agentCountdownInterval);
+                countdownElement.textContent = 'Agent available now!';
+                return;
             }
 
             var timeStr = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
             countdownElement.textContent = timeStr;
-
-            // Change color to yellow if timer is above 5:00
-            var totalSeconds = minutes * 60 + seconds;
-            if (totalSeconds > 300) { // 5 minutes = 300 seconds
-                countdownElement.style.color = '#ffd700'; // Yellow
-            } else {
-                countdownElement.style.color = '#28a745'; // Green (original color)
-            }
         }, 1000);
     }
 }
@@ -1961,7 +1924,7 @@ function initializeUsageChart(chartContainer) {
         }]
     };
 
-    const chartOptions are {
+    const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -2070,26 +2033,11 @@ function initializeCarousel() {
     // Check if offers section exists, if not wait a bit
     const offersSection = document.querySelector('.offers-section');
     if (!offersSection) {
-        console.log('Offers section not found, creating it...');
-        // Create the offers section if it doesn't exist
-        const container = document.querySelector('.container');
-        const membershipBanner = document.getElementById('membershipBanner');
-        
-        if (container) {
-            const newOffersSection = document.createElement('div');
-            newOffersSection.className = 'offers-section';
-            
-            if (membershipBanner && membershipBanner.nextSibling) {
-                container.insertBefore(newOffersSection, membershipBanner.nextSibling);
-            } else {
-                const dotContainer = document.querySelector('.dot-container');
-                if (dotContainer && dotContainer.nextSibling) {
-                    container.insertBefore(newOffersSection, dotContainer.nextSibling);
-                } else {
-                    container.appendChild(newOffersSection);
-                }
-            }
-        }
+        console.log('Offers section not found, waiting...');
+        setTimeout(() => {
+            initializeCarousel();
+        }, 500);
+        return;
     }
 
     // Wait for subscription status to be loaded
@@ -2112,7 +2060,7 @@ let cardContainer = null;
 function populateOfferCards() {
     const offersSection = document.querySelector('.offers-section');
     if (!offersSection) {
-        console.log('Offers section not found during populate');
+        console.log('Offers section not found');
         return;
     }
 
@@ -2860,9 +2808,6 @@ function showHelpModal() {
     // Append the modal to the body
     document.body.appendChild(modalOverlay);
 
-    // Start the countdown immediately
-    startAgentCountdown();
-
     // Add event listener for the order callback button (event delegation)
     modalOverlay.addEventListener('click', function(e) {
         if (e.target.id === 'orderCallbackBtn') {
@@ -2973,9 +2918,3 @@ function updateBetaStatus(status, message) {
             break;
     }
 }
-
-// Check session storage for recent purchase (10 second cooldown)
-    const lastPurchaseKey = `lastPurchase_${productId}`;
-    const lastPurchaseTime = sessionStorage.getItem(lastPurchaseKey);
-    const now = Date.now();
-    const cooldownPeriod = 10000; // 10 seconds
