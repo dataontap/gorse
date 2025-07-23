@@ -74,7 +74,7 @@ class OXIOService:
                                 WHERE oxio_response::text LIKE %s
                                 ORDER BY created_at DESC
                             """, (f'%"endUserId":"{oxio_user_id}"%',))
-                            
+
                             existing_db_activations = cur.fetchall()
                             if existing_db_activations:
                                 print(f"DATABASE BLOCK: Found {len(existing_db_activations)} existing database activation(s) for OXIO user {oxio_user_id}")
@@ -103,17 +103,17 @@ class OXIOService:
                 if existing_lines.get('success') and existing_lines.get('data', {}).get('lines'):
                     lines = existing_lines['data']['lines']
                     print(f"Found {len(lines)} existing lines for user {oxio_user_id}")
-                    
+
                     # STRICT DUPLICATE PREVENTION: Block ANY line creation if user has ANY existing lines
                     if lines and len(lines) > 0:
                         print(f"API BLOCK: User {oxio_user_id} already has {len(lines)} existing line(s). Blocking any new line creation.")
-                        
+
                         # Log all existing lines for debugging
                         for i, line in enumerate(lines):
                             line_status = line.get('status') or line.get('lineStatus', 'UNKNOWN')
                             line_id = line.get('lineId', 'unknown')
                             print(f"  Existing Line {i+1}: {line_id} (Status: {line_status})")
-                        
+
                         return {
                             'success': False,
                             'error': 'User already has existing lines',

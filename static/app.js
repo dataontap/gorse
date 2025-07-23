@@ -1950,7 +1950,7 @@ function initializeUsageChart(chartContainer) {
         }]
     };
 
-    const chartOptions = {
+    const chartOptions are {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -2947,3 +2947,9 @@ function updateBetaStatus(status, message) {
             break;
     }
 }
+
+// Check session storage for recent purchase (10 second cooldown)
+    const lastPurchaseKey = `lastPurchase_${productId}`;
+    const lastPurchaseTime = sessionStorage.getItem(lastPurchaseKey);
+    const now = Date.now();
+    const cooldownPeriod = 10000; // 10 seconds
