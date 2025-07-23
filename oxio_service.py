@@ -57,20 +57,29 @@ class OXIOService:
                 elif oxio_user_id_or_payload.get('endUserId'):
                     oxio_user_id = oxio_user_id_or_payload['endUserId']
 
-            # Check for existing lines if we have a user ID
+            # Check for existing lines if we have a user ID (with retry for race conditions)
             if oxio_user_id:
                 print(f"Checking for existing lines for user: {oxio_user_id}")
-                existing_lines = self.get_user_lines(oxio_user_id)
-                if existing_lines.get('success') and existing_lines.get('data', {}).get('lines'):
-                    lines = existing_lines['data']['lines']
-                    if lines and len(lines) > 0:
-                        print(f"User already has {len(lines)} existing line(s). Skipping activation.")
-                        return {
-                            'success': False,
-                            'error': 'User already has active lines',
-                            'message': f'User {oxio_user_id} already has {len(lines)} line(s). Cannot create duplicate.',
-                            'existing_lines': lines
-                        }
+                
+                # Check twice with a small delay to handle race conditions
+                for attempt in range(2):
+                    existing_lines = self.get_user_lines(oxio_user_id)
+                    if existing_lines.get('success') and existing_lines.get('data', {}).get('lines'):
+                        lines = existing_lines['data']['lines']
+                        if lines and len(lines) > 0:
+                            print(f"User already has {len(lines)} existing line(s) on attempt {attempt + 1}. Skipping activation.")
+                            return {
+                                'success': False,
+                                'error': 'User already has active lines',
+                                'message': f'User {oxio_user_id} already has {len(lines)} line(s). Cannot create duplicate.',
+                                'existing_lines': lines,
+                                'check_attempt': attempt + 1
+                            }
+                    
+                    # Small delay between checks to handle concurrent requests
+                    if attempt == 0:
+                        import time
+                        time.sleep(0.5)
             url = f"{self.base_url}/v3/lines/line"
             headers = self.get_headers()
 
