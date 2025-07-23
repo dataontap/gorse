@@ -807,7 +807,7 @@ class OXIOService:
 
             # Log response for debugging
             response_text = response.text[:500]
-            print(f`Response preview: {response_text}...")
+            print(f"Response preview: {response_text}...")
 
             if response.status_code == 200:
                 try:
