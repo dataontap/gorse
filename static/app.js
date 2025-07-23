@@ -256,22 +256,11 @@ var callbackCountdownInterval;
 
 function startAgentCountdown() {
     var countdownElement = document.querySelector('.countdown-timer');
-    if (!countdownElement) {
-        console.log('Countdown element not found, retrying...');
-        setTimeout(startAgentCountdown, 200);
-        return;
-    }
-    
-    console.log('Starting countdown timer');
-    var minutes = 4;
-    var seconds = 20;
+    if (countdownElement) {
+        var minutes = 4;
+        var seconds = 20;
 
-    // Clear any existing interval
-    if (agentCountdownInterval) {
-        clearInterval(agentCountdownInterval);
-    }
-
-    agentCountdownInterval = setInterval(function() {
+        agentCountdownInterval = setInterval(function() {
             if (seconds > 0) {
                 seconds--;
             } else if (minutes > 0) {
@@ -2833,10 +2822,8 @@ function showHelpModal() {
     // Append the modal to the body
     document.body.appendChild(modalOverlay);
 
-    // Start the countdown immediately after a brief delay to ensure DOM is ready
-    setTimeout(() => {
-        startAgentCountdown();
-    }, 100);
+    // Start the countdown immediately
+    startAgentCountdown();
 
     // Add event listener for the order callback button (event delegation)
     modalOverlay.addEventListener('click', function(e) {
