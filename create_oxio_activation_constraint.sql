@@ -1,25 +1,37 @@
 
--- First, let's clean up any duplicate OXIO activations (keep the most recent one)
-DELETE FROM oxio_activations 
-WHERE id IN (
-    SELECT id FROM (
-        SELECT id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) as rn
-        FROM oxio_activations
-    ) t WHERE rn > 1
+
+-- First, ensure the oxio_activations table exists with correct structure
+CREATE TABLE IF NOT EXISTS oxio_activations (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    firebase_uid VARCHAR(128),
+    purchase_id INTEGER,
+    product_id VARCHAR(100),
+    iccid VARCHAR(50),
+    line_id VARCHAR(100),
+    phone_number VARCHAR(20),
+    activation_status VARCHAR(50),
+    oxio_response TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Also clean up duplicates by firebase_uid
+-- Clean up any duplicate OXIO activations (keep the most recent one)
 DELETE FROM oxio_activations 
-WHERE id IN (
-    SELECT id FROM (
-        SELECT id, ROW_NUMBER() OVER (PARTITION BY firebase_uid ORDER BY created_at DESC) as rn
-        FROM oxio_activations
-        WHERE firebase_uid IS NOT NULL
-    ) t WHERE rn > 1
+WHERE ctid NOT IN (
+    SELECT MIN(ctid) FROM oxio_activations 
+    GROUP BY user_id, firebase_uid
+);
+
+-- Clean up duplicate purchases within the last 10 seconds (using fixed interval)
+DELETE FROM purchases 
+WHERE ctid NOT IN (
+    SELECT MIN(ctid) FROM purchases 
+    GROUP BY UserID, StripeProductID, DATE_TRUNC('second', DateCreated)
+    HAVING MIN(DateCreated) > CURRENT_TIMESTAMP - INTERVAL '10 seconds'
 );
 
 -- Add unique constraint to prevent multiple activations per user
--- Check if constraint exists first, then add if it doesn't
 DO $$ 
 BEGIN
     -- Add unique constraint for user_id if it doesn't exist
@@ -40,19 +52,6 @@ BEGIN
         ADD CONSTRAINT unique_firebase_oxio_activation UNIQUE (firebase_uid);
     END IF;
 END $$;
-
--- Clean up duplicate purchases within the last 10 seconds (using fixed interval instead of NOW())
-DELETE FROM purchases 
-WHERE id IN (
-    SELECT id FROM (
-        SELECT id, ROW_NUMBER() OVER (
-            PARTITION BY UserID, StripeProductID, (DateCreated::date) 
-            ORDER BY DateCreated DESC
-        ) as rn
-        FROM purchases
-        WHERE DateCreated > CURRENT_TIMESTAMP - INTERVAL '10 seconds'
-    ) t WHERE rn > 1
-);
 
 -- Create indexes for better performance if they don't exist
 DO $$ 
@@ -85,3 +84,4 @@ BEGIN
         CREATE INDEX idx_purchases_created_at ON purchases(DateCreated);
     END IF;
 END $$;
+
