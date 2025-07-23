@@ -267,13 +267,27 @@ function startAgentCountdown() {
                 minutes--;
                 seconds = 59;
             } else {
-                clearInterval(agentCountdownInterval);
-                countdownElement.textContent = 'Agent available now!';
-                return;
+                // When countdown reaches 0:00, reset to 8:10 and continue
+                minutes = 8;
+                seconds = 10;
+            }
+
+            // Check if we've reached 4:10 - if so, add 5 minutes
+            if (minutes === 4 && seconds === 10) {
+                minutes = 8;
+                seconds = 10;
             }
 
             var timeStr = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
             countdownElement.textContent = timeStr;
+
+            // Change color to yellow if timer is above 5:00
+            var totalSeconds = minutes * 60 + seconds;
+            if (totalSeconds > 300) { // 5 minutes = 300 seconds
+                countdownElement.style.color = '#ffd700'; // Yellow
+            } else {
+                countdownElement.style.color = '#28a745'; // Green (original color)
+            }
         }, 1000);
     }
 }
@@ -2807,6 +2821,9 @@ function showHelpModal() {
 
     // Append the modal to the body
     document.body.appendChild(modalOverlay);
+
+    // Start the countdown immediately
+    startAgentCountdown();
 
     // Add event listener for the order callback button (event delegation)
     modalOverlay.addEventListener('click', function(e) {
