@@ -65,13 +65,19 @@ function toggleMenu(element) {
     const dropdown = element.querySelector('.menu-dropdown');
     if (dropdown) {
         // Handle both class-based and display-based toggles
-        if (dropdown.classList.contains('visible') || dropdown.style.display === 'block') {
+        const isVisible = dropdown.classList.contains('visible') || dropdown.style.display === 'block';
+        
+        if (isVisible) {
             dropdown.classList.remove('visible');
             dropdown.style.display = 'none';
         } else {
             dropdown.classList.add('visible');
             dropdown.style.display = 'block';
         }
+        
+        console.log('Menu toggled, now visible:', !isVisible);
+    } else {
+        console.error('Menu dropdown not found');
     }
 }
 
