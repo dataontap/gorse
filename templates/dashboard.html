@@ -341,7 +341,7 @@
         </div>
         <!-- Offers Section -->
         <div class="offers-section">
-            <!-- Card stack will be populated here by JavaScript -->
+            <!-- Offer cards will be dynamically populated here -->
         </div>
 
         <div id="confirmationDrawer" class="confirmation-drawer">
@@ -863,6 +863,34 @@
                 return;
             }
 
+             // Initialize components when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeFirebase();
+            loadUserData();
+            initializeDashboard();
+            initializeDataComponents();
+            initializeCarousel();
+            console.log('Dashboard initialized');
+        });
+
+        // Add event listener for resend eSIM button
+        document.addEventListener('DOMContentLoaded', function() {
+            const resendBtn = document.getElementById('resendEsimBtn');
+            if (resendBtn) {
+                resendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    resendEsimEmail();
+                });
+            }
+        });
+
+        function resendEsimEmail() {
+            const firebaseUid = localStorage.getItem('userId');
+            if (!firebaseUid) {
+                alert('User not authenticated');
+                return;
+            }
+
             // Disable button and show loading
             const resendBtn = document.getElementById('resendEsimBtn');
             const originalText = resendBtn.textContent;
@@ -895,6 +923,71 @@
                 resendBtn.textContent = originalText;
                 resendBtn.style.pointerEvents = 'auto';
             });
+        }
+
+        function populateOfferCards() {
+            const offersSection = document.querySelector('.offers-section');
+            if (!offersSection) return;
+
+            // Clear existing cards
+            offersSection.innerHTML = '';
+
+            // Example offers - these would ideally come from an API
+            const offers = [
+                {
+                    title: 'Global Data Package',
+                    description: 'Get 10GB of global data for just $10',
+                    buttonText: 'Buy Now',
+                    link: '#',
+                    isSubscription: false,
+                    eligible: true
+                },
+                {
+                    title: 'Premium Membership',
+                    description: 'Unlock all features with our premium plan',
+                    buttonText: 'Subscribe',
+                    link: '#',
+                    isSubscription: true,
+                    eligible: true
+                },
+                {
+                    title: 'Dot Africa Data',
+                    description: 'Get 5GB of data for use in Africa',
+                    buttonText: 'Buy Now',
+                    link: '#',
+                    isSubscription: false,
+                    eligible: true
+                }
+            ];
+
+            const offersGrid = document.createElement('div');
+            offersGrid.className = 'offers-grid';
+            offersSection.appendChild(offersGrid);
+
+            offers.forEach(offer => {
+                if (userSubscription && offer.isSubscription && userSubscription.status === 'active') {
+                    // Skip subscription offers if user is already subscribed
+                    return;
+                }
+
+                if (offer.eligible) {
+                    const offerCard = document.createElement('div');
+                    offerCard.className = 'offer-card';
+
+                    offerCard.innerHTML = `
+                        <h3>${offer.title}</h3>
+                        <p>${offer.description}</p>
+                        <a href="${offer.link}" class="btn">${offer.buttonText}</a>
+                    `;
+
+                    offersGrid.appendChild(offerCard);
+                }
+            });
+
+            // If no eligible offers, display a message
+            if (offersGrid.children.length === 0) {
+                offersSection.innerHTML = '<p>No offers available at this time.</p>';
+            }
         }
     </script>
 </body>
