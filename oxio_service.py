@@ -63,14 +63,16 @@ class OXIOService:
                 existing_lines = self.get_user_lines(oxio_user_id)
                 if existing_lines.get('success') and existing_lines.get('data', {}).get('lines'):
                     lines = existing_lines['data']['lines']
-                    if lines and len(lines) > 0:
-                        print(f"User already has {len(lines)} existing line(s). Skipping activation.")
-                        return {
-                            'success': False,
-                            'error': 'User already has active lines',
-                            'message': f'User {oxio_user_id} already has {len(lines)} line(s). Cannot create duplicate.',
-                            'existing_lines': lines
-                        }
+                    # Check for lines with status ACTIVE, ACTIVATED, or PENDING
+                    for line in lines:
+                        if line.get('lineStatus') in ['ACTIVE', 'ACTIVATED', 'PENDING']:
+                            print(f"User already has an active, activated, or pending line. Skipping activation.")
+                            return {
+                                'success': False,
+                                'error': 'User already has active, activated, or pending lines',
+                                'message': f'User {oxio_user_id} already has an active, activated, or pending line. Cannot create duplicate.',
+                                'existing_lines': lines
+                            }
             url = f"{self.base_url}/v3/lines/line"
             headers = self.get_headers()
 
@@ -91,19 +93,19 @@ class OXIOService:
                     "countryCode": "US",
                     "sim": { "simType": "EMBEDDED" },  # No ICCID included
                     "endUserId": oxio_user_id,
-                    "activateOnAttach": false
+                    "activateOnAttach": False
                 }
             elif isinstance(oxio_user_id_or_payload, dict):
                 # Complex case: full payload provided (legacy support)
                 payload = oxio_user_id_or_payload
-                
+
                 # CRITICAL FIX: If endUserId is provided in the endUser object, 
                 # remove email and other user details to avoid "user already exists" error
                 if payload.get('endUser', {}).get('endUserId'):
                     oxio_user_id = payload['endUser']['endUserId']
                     print(f"OXIO user ID found in complex payload: {oxio_user_id}")
                     print("Removing email and user details since endUserId is provided")
-                    
+
                     # Create clean payload with only endUserId - no email, ICCID, or area code
                     clean_payload = {
                         "lineType": payload.get("lineType", "LINE_TYPE_MOBILITY"),
@@ -111,12 +113,12 @@ class OXIOService:
                         "sim": {"simType": "EMBEDDED"},  # Remove ICCID, keep only simType
                         "endUserId": oxio_user_id  # Use endUserId directly, not in endUser object
                     }
-                    
+
                     # Add optional fields if they exist (but exclude phoneNumberRequirements)
                     clean_payload["activateOnAttach"] = False
-                    
+
                     print(f"Excluded ICCID and preferredAreaCode from payload")
-                        
+
                     payload = clean_payload
                     print(f"Using cleaned payload with only endUserId: {payload}")
                 else:
@@ -306,7 +308,7 @@ class OXIOService:
             if response.status_code >= 200 and response.status_code < 300:
                 # Get OXIO user ID from response - try different possible field names
                 oxio_user_id = response_data.get('endUserId') or response_data.get('id') or response_data.get('userId')
-                
+
                 return {
                     'success': True,
                     'status_code': response.status_code,
@@ -433,7 +435,7 @@ class OXIOService:
                 else:
                     # Fallback to other possible field names
                     group_id = response_data.get('groupId') or response_data.get('id') or response_data.get('group_id')
-                
+
                 return {
                     'success': True,
                     'status_code': response.status_code,
@@ -805,7 +807,7 @@ class OXIOService:
 
             # Log response for debugging
             response_text = response.text[:500]
-            print(f"Response preview: {response_text}...")
+            print(f`Response preview: {response_text}...")
 
             if response.status_code == 200:
                 try:
