@@ -2111,7 +2111,8 @@ body.light-mode {
     flex-direction: column;
     align-items: flex-start;
     margin-bottom: 15px;
-<replit_final_file>
+}
+
 .timestamp {
     font-size: 12px;
     color: #666;
@@ -3324,8 +3325,6 @@ input:checked + .toggle-slider:before {
     border-color: #666;
     color: white;
 }
-
-
 
 /* Responsive design for agent drawer */
 @media (max-width: 768px) {
