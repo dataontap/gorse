@@ -4380,6 +4380,54 @@ def update_personal_message():
         print(f"Error updating personal message: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# MCP Server Routes for Service Catalog and Pricing
+@app.route('/mcp')
+def mcp_server():
+    """MCP server endpoint for service catalog and pricing"""
+    try:
+        from mcp_server import mcp_server as mcp_handler
+        return mcp_handler()
+    except ImportError:
+        # Fallback if mcp_server.py is not available
+        return jsonify({
+            "error": "MCP server not available",
+            "message": "Service catalog endpoint is currently unavailable"
+        }), 503
+
+@app.route('/mcp/api')
+def mcp_api():
+    """JSON API endpoint for programmatic access to service catalog"""
+    try:
+        from mcp_server import mcp_api as mcp_api_handler
+        return mcp_api_handler()
+    except ImportError:
+        return jsonify({
+            "error": "MCP API not available",
+            "services": {
+                "basic_membership": {"price_usd": 24.00, "type": "annual"},
+                "full_membership": {"price_usd": 66.00, "type": "annual"},
+                "global_data_10gb": {"price_usd": 10.00, "type": "one_time"}
+            }
+        })
+
+@app.route('/mcp/service/<service_id>')
+def mcp_service_detail(service_id):
+    """Get details for a specific service"""
+    try:
+        from mcp_server import mcp_service_detail as mcp_detail_handler
+        return mcp_detail_handler(service_id)
+    except ImportError:
+        return jsonify({"error": "Service detail endpoint not available"}), 503
+
+@app.route('/mcp/calculate')
+def mcp_pricing_calculator():
+    """Calculate pricing based on selected services"""
+    try:
+        from mcp_server import mcp_pricing_calculator as mcp_calc_handler
+        return mcp_calc_handler()
+    except ImportError:
+        return jsonify({"error": "Pricing calculator not available"}), 503
+
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
     print("\n=== Registered Flask Routes ===")
