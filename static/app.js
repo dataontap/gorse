@@ -155,7 +155,7 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
-        
+
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
@@ -1002,7 +1002,8 @@ function createUserCard(invite) {
     const userCard = document.createElement('div');
     userCard.className = 'dashboard-content user-card accepted-user';
     userCard.setAttribute('data-data-percentage', dataPercentage);
-    userCard.setAttribute('data-time-percentage', timePercentage);
+    ```text
+userCard.setAttribute('data-time-percentage', timePercentage);
     userCard.setAttribute('data-dollar-amount', dollarAmount);
     userCard.setAttribute('data-score', scoreNumber);
 
@@ -1965,7 +1966,8 @@ async function loadDOTMBalance() {
     try {
         // Check if MetaMask is available and connected
         if (typeof window.ethereum !== 'undefined') {
-            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            const accounts```text
+ = await window.ethereum.request({ method: 'eth_accounts' });
             if (accounts.length > 0) {
                 const address = accounts[0];
 
@@ -2918,3 +2920,60 @@ function updateBetaStatus(status, message) {
             break;
     }
 }
+
+// Update connection indicators based on service status
+function updateConnectionIndicators() {
+    // Update Bitchat indicator based on actual connection status
+    const bitchatStatusDot = document.getElementById('bitchat-status-dot');
+    const bitchatConnectionCount = document.getElementById('bitchat-connection-count');
+
+    if (bitchatStatusDot && bitchatConnectionCount) {
+        // Check if user is on bitchat page and get actual peer count
+        if (window.location.pathname === '/bitchat') {
+            // Try to get peer count from bitchat if available
+            const peersCount = document.querySelector('.peers-count');
+            if (peersCount) {
+                const count = parseInt(peersCount.textContent) || 0;
+                bitchatConnectionCount.textContent = count;
+                bitchatStatusDot.className = count > 0 ? 'status-dot online' : 'status-dot offline';
+            }
+        } else {
+            // Default status when not on bitchat page
+            bitchatConnectionCount.textContent = '0';
+            bitchatStatusDot.className = 'status-dot offline';
+        }
+    }
+
+    // Simulate dynamic updates for other services
+    updateNetworkIndicators();
+}
+
+function updateNetworkIndicators() {
+    // Simulate network status updates
+    const indicators = document.querySelectorAll('.connection-indicator');
+    indicators.forEach((indicator, index) => {
+        if (indicator.parentElement.href && !indicator.parentElement.href.includes('bitchat')) {
+            const statusDot = indicator.querySelector('.status-dot');
+            const count = indicator.querySelector('.connection-count');
+
+            // Simulate some variance in connection counts
+            if (Math.random() > 0.7) {
+                const currentCount = parseInt(count.textContent) || 0;
+                const change = Math.random() > 0.5 ? 1 : -1;
+                const newCount = Math.max(0, currentCount + change);
+                count.textContent = newCount;
+                statusDot.className = newCount > 0 ? 'status-dot online' : 'status-dot offline';
+            }
+        }
+    });
+}
+
+// Update indicators periodically
+setInterval(updateConnectionIndicators, 5000);
+
+// Initialize the app when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('App.js loaded successfully');
+    initializeApp();
+    updateConnectionIndicators();
+});
