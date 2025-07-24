@@ -212,12 +212,15 @@ class BitchatClient {
         switch (status) {
             case 'online':
                 statusText.textContent = 'Bluetooth Connected';
+                localStorage.setItem('bitchatConnectionStatus', 'online');
                 break;
             case 'connecting':
                 statusText.textContent = 'Connecting...';
+                localStorage.setItem('bitchatConnectionStatus', 'offline');
                 break;
             default:
                 statusText.textContent = 'Bluetooth Disconnected';
+                localStorage.setItem('bitchatConnectionStatus', 'offline');
         }
     }
 
