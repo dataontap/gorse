@@ -232,34 +232,6 @@
         .offer-card .btn:hover {
             background-color: #0056b3;
         }
-
-        /* Styles for connection indicators */
-        .connection-indicator {
-            display: inline-flex;
-            align-items: center;
-            margin-left: 5px;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 3px;
-            background-color: #ccc; /* Default gray */
-        }
-
-        .status-dot.online {
-            background-color: green;
-        }
-
-        .status-dot.offline {
-            background-color: red;
-        }
-
-        .connection-count {
-            font-size: 0.8em;
-            color: #888;
-        }
     </style>
 </head>
 <body class="landing-page">
@@ -847,48 +819,5 @@
             });
         }
     </script>
-    <aside class="sidebar">
-            <div class="sidebar-content">
-                <ul class="nav-links">
-                    <li><a href="/dashboard" class="nav-link" data-translate="dashboard">
-                        <i class="fas fa-chart-pie"></i> Data
-                        <span class="connection-indicator">
-                            <span class="status-dot online"></span>
-                            <span class="connection-count">3</span>
-                        </span>
-                    </a></li>
-                    <li><a href="/network" class="nav-link" data-translate="network">
-                        <i class="fas fa-network-wired"></i> Network
-                        <span class="connection-indicator">
-                            <span class="status-dot online"></span>
-                            <span class="connection-count">2</span>
-                        </span>
-                    </a></li>
-                    <li><a href="/marketplace" class="nav-link" data-translate="marketplace">
-                        <i class="fas fa-store"></i> Marketplace
-                        <span class="connection-indicator">
-                            <span class="status-dot offline"></span>
-                            <span class="connection-count">0</span>
-                        </span>
-                    </a></li>
-                    <li><a href="/notifications" class="nav-link" data-translate="notifications">
-                        <i class="fas fa-bell"></i> Notifications
-                        <span class="connection-indicator">
-                            <span class="status-dot online"></span>
-                            <span class="connection-count">1</span>
-                        </span>
-                    </a></li>
-                    <li><a href="/bitchat" class="nav-link" data-translate="bitchat">
-                        <i class="fas fa-comments"></i> Bitchat
-                        <span class="connection-indicator">
-                            <span class="status-dot" id="bitchat-status-dot"></span>
-                            <span class="connection-count" id="bitchat-connection-count">0</span>
-                        </span>
-                    </a></li>
-                </ul>
-            </div>
-        </aside>
-
-        <main class="main-content">
-            <div class="content">
-                <div class="main-area">
+</body>
+</html>

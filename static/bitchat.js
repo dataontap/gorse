@@ -274,15 +274,6 @@ class BitchatClient {
     updateMeshStatus() {
         const peersCount = document.querySelector('.peers-count');
         peersCount.textContent = this.peers.size;
-        
-        // Update sidebar indicator if available
-        const bitchatStatusDot = document.getElementById('bitchat-status-dot');
-        const bitchatConnectionCount = document.getElementById('bitchat-connection-count');
-        
-        if (bitchatStatusDot && bitchatConnectionCount) {
-            bitchatConnectionCount.textContent = this.peers.size;
-            bitchatStatusDot.className = this.peers.size > 0 ? 'status-dot online' : 'status-dot offline';
-        }
     }
 
     sendMessage() {
