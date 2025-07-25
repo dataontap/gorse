@@ -15,7 +15,7 @@ from datetime import datetime
 # Service catalog with detailed pricing and options
 SERVICES_CATALOG = {
     "esim_services": {
-        "title": "eSIM Services",
+        "title": "Connectivity Services",
         "description": "Global eSIM connectivity and activation services",
         "services": [
             {
@@ -55,17 +55,27 @@ SERVICES_CATALOG = {
             {
                 "id": "basic_membership",
                 "name": "Basic Membership",
-                "description": "Global data access, 2FA & Satellite eTXT",
+                "description": "GLOBAL DATA ACCESS + 2FA SMS",
                 "type": "annual_subscription",
-                "price_usd": 24.00,
+                "price_cad": 24.0,
                 "billing_cycle": "yearly",
                 "features": [
-                    "5GB monthly data allowance",
                     "Global data access",
-                    "2FA support",
-                    "Satellite eTXT",
-                    "OXIO line activation included",
-                    "Priority support"
+                    "$1 per GB of data bonus - limited availability",
+                    "2FA support via incoming SMS only",
+                    "eSIM line activation included",
+                    "Unlimited Hotspot",
+                    "Infinite data share with any member",
+                    "Curated marketplace",
+                    "Network quality and outage detection",
+                    "Connectivity and device insights",
+                    "Device insurance and protection",
+                    "Device auctions",
+                    "Other retail services",
+                    "Priority QCI-8 and 5G+ access where available",
+                    "Premium live person callback support",
+                    "1.33 DOTM for $10 purchase",
+                    "All prices are in CAD"
                 ],
                 "availability": "Available"
             },
@@ -74,16 +84,12 @@ SERVICES_CATALOG = {
                 "name": "Full Membership",
                 "description": "Unlimited Talk + Text, Global Wi-Fi Calling & Satellite eTXT",
                 "type": "annual_subscription",
-                "price_usd": 66.00,
-                "billing_cycle": "yearly",
+                "price_usd": 66.0,
+                "billing_cycle": "yearly (365.25 days)",
                 "features": [
-                    "50GB monthly data allowance",
-                    "Unlimited talk and text",
-                    "Global Wi-Fi calling",
-                    "Satellite eTXT",
-                    "OXIO line activation included",
-                    "Premium support",
-                    "Advanced network features"
+                    "Unlimited talk and text in North America - Canada, US, Mexico",
+                    "Wi-Fi Calling access globally",
+                    "Satellite D2C (Available in 2026)"
                 ],
                 "availability": "Available"
             },
