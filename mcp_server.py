@@ -10,7 +10,7 @@ from flask import Flask, jsonify, render_template_string
 import os
 from datetime import datetime
 
-app = Flask(__name__)
+# Remove Flask app instance - routes will be handled by main.py
 
 # Service catalog with detailed pricing and options
 SERVICES_CATALOG = {
@@ -381,7 +381,6 @@ def calculate_total_costs():
     
     return costs
 
-@app.route('/mcp')
 def mcp_server():
     """Main MCP server endpoint"""
     costs = calculate_total_costs()
@@ -699,7 +698,6 @@ def mcp_server():
         total_categories=total_categories
     )
 
-@app.route('/mcp/api')
 def mcp_api():
     """JSON API endpoint for programmatic access"""
     return jsonify({
@@ -715,7 +713,6 @@ def mcp_api():
         }
     })
 
-@app.route('/mcp/service/<service_id>')
 def mcp_service_detail(service_id):
     """Get details for a specific service"""
     for category in SERVICES_CATALOG.values():
@@ -729,7 +726,6 @@ def mcp_service_detail(service_id):
     
     return jsonify({"error": "Service not found"}), 404
 
-@app.route('/mcp/calculate')
 def mcp_pricing_calculator():
     """Calculate pricing based on selected services"""
     from flask import request
@@ -770,6 +766,4 @@ def mcp_pricing_calculator():
         "timestamp": datetime.now().isoformat()
     })
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+# Functions are now imported and used by main.py

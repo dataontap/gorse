@@ -4380,15 +4380,26 @@ def update_personal_message():
         print(f"Error updating personal message: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# Import MCP server functions at the top level
+try:
+    from mcp_server import SERVICES_CATALOG, calculate_total_costs
+    MCP_AVAILABLE = True
+except ImportError:
+    MCP_AVAILABLE = False
+    SERVICES_CATALOG = {}
+
 # MCP Server Routes for Service Catalog and Pricing
 @app.route('/mcp')
 def mcp_server():
     """MCP server endpoint for service catalog and pricing"""
-    try:
-        from mcp_server import mcp_server as mcp_handler
-        return mcp_handler()
-    except ImportError:
-        # Fallback if mcp_server.py is not available
+    if MCP_AVAILABLE:
+        # Import the function here to avoid circular imports
+        from mcp_server import app as mcp_app
+        # Get the mcp_server route handler from the mcp_server module
+        with mcp_app.app_context():
+            from mcp_server import mcp_server as mcp_handler
+            return mcp_handler()
+    else:
         return jsonify({
             "error": "MCP server not available",
             "message": "Service catalog endpoint is currently unavailable"
@@ -4397,13 +4408,24 @@ def mcp_server():
 @app.route('/mcp/api')
 def mcp_api():
     """JSON API endpoint for programmatic access to service catalog"""
-    try:
-        from mcp_server import mcp_api as mcp_api_handler
-        return mcp_api_handler()
-    except ImportError:
+    if MCP_AVAILABLE:
+        costs = calculate_total_costs()
+        return jsonify({
+            "platform": "DOTM",
+            "version": "1.0",
+            "timestamp": datetime.now().isoformat(),
+            "services": SERVICES_CATALOG,
+            "cost_summary": costs,
+            "endpoints": {
+                "service_details": "/mcp/service/{service_id}",
+                "pricing_calculator": "/mcp/calculate",
+                "full_catalog": "/mcp"
+            }
+        })
+    else:
         return jsonify({
             "error": "MCP API not available",
-            "services": {
+            "fallback_services": {
                 "basic_membership": {"price_usd": 24.00, "type": "annual"},
                 "full_membership": {"price_usd": 66.00, "type": "annual"},
                 "global_data_10gb": {"price_usd": 10.00, "type": "one_time"}
@@ -4413,19 +4435,63 @@ def mcp_api():
 @app.route('/mcp/service/<service_id>')
 def mcp_service_detail(service_id):
     """Get details for a specific service"""
-    try:
-        from mcp_server import mcp_service_detail as mcp_detail_handler
-        return mcp_detail_handler(service_id)
-    except ImportError:
+    if MCP_AVAILABLE:
+        # Search for the service in the catalog
+        for category in SERVICES_CATALOG.values():
+            for service in category["services"]:
+                if service["id"] == service_id:
+                    return jsonify({
+                        "service": service,
+                        "category": category["title"],
+                        "timestamp": datetime.now().isoformat()
+                    })
+        
+        return jsonify({"error": "Service not found"}), 404
+    else:
         return jsonify({"error": "Service detail endpoint not available"}), 503
 
 @app.route('/mcp/calculate')
 def mcp_pricing_calculator():
     """Calculate pricing based on selected services"""
-    try:
-        from mcp_server import mcp_pricing_calculator as mcp_calc_handler
-        return mcp_calc_handler()
-    except ImportError:
+    if MCP_AVAILABLE:
+        from flask import request
+        
+        selected_services = request.args.getlist('services')
+        if not selected_services:
+            return jsonify({
+                "error": "No services specified",
+                "usage": "Add ?services=service_id1,service_id2 to calculate pricing"
+            })
+        
+        total_cost = 0
+        monthly_cost = 0
+        yearly_cost = 0
+        selected_details = []
+        
+        for category in SERVICES_CATALOG.values():
+            for service in category["services"]:
+                if service["id"] in selected_services:
+                    selected_details.append(service)
+                    
+                    if service["type"] in ["one_time_purchase", "one_time_reward"]:
+                        total_cost += service["price_usd"]
+                    elif service["type"] == "monthly_subscription" or service.get("billing_cycle") == "monthly":
+                        monthly_cost += service["price_usd"]
+                    elif service["type"] == "annual_subscription" or service.get("billing_cycle") == "yearly":
+                        yearly_cost += service["price_usd"]
+                        monthly_cost += service["price_usd"] / 12
+        
+        return jsonify({
+            "selected_services": selected_details,
+            "pricing": {
+                "one_time_total": total_cost,
+                "monthly_recurring": monthly_cost,
+                "yearly_recurring": yearly_cost,
+                "first_year_total": total_cost + yearly_cost + (monthly_cost * 12)
+            },
+            "timestamp": datetime.now().isoformat()
+        })
+    else:
         return jsonify({"error": "Pricing calculator not available"}), 503
 
 if __name__ == '__main__':
