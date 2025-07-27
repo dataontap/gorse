@@ -151,10 +151,16 @@
 
                             <div class="mb-3">
                                 <label for="imei" class="form-label">IMEI Number (optional)</label>
-                                <input type="text" class="form-control" id="imei" placeholder="You can add this later in your profile">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="imei" placeholder="Enter IMEI to check compatibility">
+                                    <button type="button" class="btn btn-outline-secondary" id="checkCompatibilityBtn" onclick="checkIMEICompatibility()">
+                                        Check Compatibility
+                                    </button>
+                                </div>
                                 <small class="form-text text-muted">
                                     Find your IMEI: Dial <span class="dialer-pill" onclick="openDialer('*#06#')">*#06#</span> on your phone and press call. Works on iPhone and Android.
                                 </small>
+                                <div id="compatibilityResult" style="display: none; margin-top: 10px;"></div>
                             </div>
 
                             <div class="d-grid d-flex justify-content-center">
@@ -171,7 +177,52 @@
         </div>
     </div>
 
+    <!-- IMEI Compatibility Check Modal -->
+    <div id="compatibilityModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8);">
+        <div class="modal-content" style="background: rgba(40, 40, 40, 0.98); margin: 5% auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; border: 1px solid rgba(255, 255, 255, 0.2);">
+            <div class="modal-header" style="text-align: center; margin-bottom: 25px;">
+                <h3 style="color: #ffffff; margin: 0;">📱 Device Compatibility Check</h3>
+            </div>
+            <div class="modal-body">
+                <div id="compatibilityLoading" style="text-align: center; display: none;">
+                    <div style="color: #74c0fc; font-size: 18px; margin: 20px 0;">
+                        🔍 Checking your device compatibility...
+                    </div>
+                    <div style="color: #cccccc; font-size: 14px;">
+                        This may take up to 15 seconds
+                    </div>
+                </div>
+                <div id="compatibilityResults" style="display: none;">
+                    <div id="deviceInfo" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                        <h4 style="color: #74c0fc; margin-bottom: 15px;">Device Information</h4>
+                        <div id="deviceDetails"></div>
+                    </div>
+                    <div id="networkCapabilities" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                        <h4 style="color: #74c0fc; margin-bottom: 15px;">Network Capabilities</h4>
+                        <div id="capabilityDetails"></div>
+                    </div>
+                    <div id="compatibilityRecommendation" style="text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    </div>
+                </div>
+                <div id="compatibilityError" style="display: none; text-align: center; color: #ff6b6b; padding: 20px;">
+                    <h4>⚠️ Compatibility Check Failed</h4>
+                    <p>Unable to verify device compatibility. You can still proceed with signup.</p>
+                </div>
+            </div>
+            <div class="modal-footer" style="text-align: center; margin-top: 25px;">
+                <button id="proceedToSignup" class="btn btn-primary" style="margin-right: 10px; padding: 12px 24px;" onclick="closeCompatibilityModal(true)">
+                    Continue with Signup
+                </button>
+                <button class="btn btn-secondary" style="padding: 12px 24px;" onclick="closeCompatibilityModal(false)">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let imeiCheckResult = null;
+
         document.addEventListener('DOMContentLoaded', function() {
             // Check if we should start in login mode
             const urlParams = new URLSearchParams(window.location.search);
@@ -199,6 +250,12 @@
                 // Prevent double submission
                 if (isSubmitting) {
                     console.log('Form submission already in progress...');
+                    return;
+                }
+
+                // Check IMEI compatibility before submitting the form
+                if (imeiInput.value.trim() !== '' && imeiCheckResult !== true) {
+                    alert('Please check IMEI compatibility before signing up.');
                     return;
                 }
 
@@ -395,6 +452,110 @@
                     alert('Please dial this code: ' + code + '\n\n1. Open your Phone app\n2. Type: ' + code + '\n3. Press call to view your IMEI number');
                 }
                 document.body.removeChild(textArea);
+            }
+        }
+
+        // Function to check IMEI compatibility
+        async function checkIMEICompatibility() {
+            const imei = document.getElementById('imei').value.trim();
+            const compatibilityModal = document.getElementById('compatibilityModal');
+            const compatibilityLoading = document.getElementById('compatibilityLoading');
+            const compatibilityResults = document.getElementById('compatibilityResults');
+            const compatibilityError = document.getElementById('compatibilityError');
+            const deviceDetails = document.getElementById('deviceDetails');
+            const capabilityDetails = document.getElementById('capabilityDetails');
+            const compatibilityRecommendation = document.getElementById('compatibilityRecommendation');
+
+            // Reset previous state
+            compatibilityError.style.display = 'none';
+            compatibilityResults.style.display = 'none';
+            deviceDetails.innerHTML = '';
+            capabilityDetails.innerHTML = '';
+            compatibilityRecommendation.innerHTML = '';
+
+            if (!imei) {
+                alert('Please enter your IMEI number.');
+                return;
+            }
+
+            // Show loading state
+            compatibilityModal.style.display = 'block';
+            compatibilityLoading.style.display = 'block';
+
+            try {
+                // Replace with your actual API endpoint and API key
+                const apiKey = 'your-api-key-123'; // Replace with your actual API key
+                const apiUrl = 'https://will-my-phone-work.replit.app/api/v1/check';
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        imei: imei,
+                        location: 'San Francisco, CA', // Or get from user
+                        network: 'OXIO' // Or get from user
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Display results
+                    compatibilityLoading.style.display = 'none';
+                    compatibilityResults.style.display = 'block';
+
+                    const device = data.device;
+                    const capabilities = data.capabilities;
+
+                    deviceDetails.innerHTML = `
+                        <p><strong>Make:</strong> ${device.make}</p>
+                        <p><strong>Model:</strong> ${device.model}</p>
+                        <p><strong>Year:</strong> ${device.year}</p>
+                        <p><strong>IMEI:</strong> ${device.imei}</p>
+                    `;
+
+                    capabilityDetails.innerHTML = `
+                        <p><strong>4G:</strong> ${capabilities.fourG ? 'Supported' : 'Not Supported'}</p>
+                        <p><strong>5G:</strong> ${capabilities.fiveG ? 'Supported' : 'Not Supported'}</p>
+                        <p><strong>VoLTE:</strong> ${capabilities.volte ? 'Supported' : 'Not Supported'}</p>
+                        <p><strong>Wi-Fi Calling:</strong> ${capabilities.wifiCalling}</p>
+                    `;
+
+                    let recommendationMessage = '';
+                    if (capabilities.fourG && capabilities.volte) {
+                        recommendationMessage = '<span style="color: #28a745;">✅ Your device is fully compatible with the OXIO network!</span>';
+                        imeiCheckResult = true; // Set global variable to allow signup
+                    } else {
+                        recommendationMessage = '<span style="color: #ffc107;">⚠️ Your device may have limited compatibility. Please check the details above.</span>';
+                        imeiCheckResult = false; // Prevent signup
+                    }
+                    compatibilityRecommendation.innerHTML = recommendationMessage;
+
+                } else {
+                    // Show error message
+                    compatibilityLoading.style.display = 'none';
+                    compatibilityError.style.display = 'block';
+                    imeiCheckResult = null; // Reset flag
+                }
+
+            } catch (error) {
+                console.error('Error checking IMEI compatibility:', error);
+                compatibilityLoading.style.display = 'none';
+                compatibilityError.style.display = 'block';
+                imeiCheckResult = null; // Reset flag
+            }
+        }
+
+        // Function to close the compatibility modal
+        function closeCompatibilityModal(proceed) {
+            document.getElementById('compatibilityModal').style.display = 'none';
+
+            if (proceed === false) {
+                document.getElementById('imei').value = '';
+                imeiCheckResult = null;
             }
         }
     </script>

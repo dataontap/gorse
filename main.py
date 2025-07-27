@@ -545,6 +545,110 @@ def update_user_imei():
         print(f"Error updating IMEI: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/imei-compatibility', methods=['POST'])
+def check_imei_compatibility():
+    """Check IMEI compatibility using external service"""
+    try:
+        data = request.get_json()
+        if not data or not data.get('imei'):
+            return jsonify({'error': 'IMEI is required'}), 400
+
+        imei = data.get('imei')
+        location = data.get('location', 'Global')
+        network = data.get('network', 'OXIO')
+        
+        # Get API key from environment
+        api_key = os.environ.get('IMEI_COMPATIBILITY_KEY', 'demo-key-123')
+        
+        # Call external IMEI compatibility service
+        import requests
+        
+        compatibility_response = requests.post(
+            'https://will-my-phone-work.replit.app/api/v1/check',
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {api_key}'
+            },
+            json={
+                'imei': imei,
+                'location': location,
+                'network': network
+            },
+            timeout=30
+        )
+        
+        if compatibility_response.status_code == 200:
+            result = compatibility_response.json()
+            
+            # Log the compatibility check
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Create compatibility_checks table if it doesn't exist
+                        cur.execute("""
+                            CREATE TABLE IF NOT EXISTS compatibility_checks (
+                                id SERIAL PRIMARY KEY,
+                                imei VARCHAR(50) NOT NULL,
+                                device_make VARCHAR(100),
+                                device_model VARCHAR(100),
+                                device_year INTEGER,
+                                four_g_support BOOLEAN,
+                                five_g_support BOOLEAN,
+                                volte_support BOOLEAN,
+                                wifi_calling_support VARCHAR(20),
+                                is_compatible BOOLEAN,
+                                search_id INTEGER,
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                            )
+                        """)
+                        
+                        # Insert compatibility check record
+                        device = result.get('device', {})
+                        capabilities = result.get('capabilities', {})
+                        is_compatible = capabilities.get('fourG', False) or capabilities.get('fiveG', False)
+                        
+                        cur.execute("""
+                            INSERT INTO compatibility_checks 
+                            (imei, device_make, device_model, device_year, four_g_support, 
+                             five_g_support, volte_support, wifi_calling_support, is_compatible, search_id)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """, (
+                            imei,
+                            device.get('make'),
+                            device.get('model'),
+                            device.get('year'),
+                            capabilities.get('fourG', False),
+                            capabilities.get('fiveG', False),
+                            capabilities.get('volte', False),
+                            capabilities.get('wifiCalling', 'unknown'),
+                            is_compatible,
+                            result.get('searchId')
+                        ))
+                        
+                        conn.commit()
+            
+            return jsonify(result)
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Compatibility service unavailable',
+                'message': 'Unable to check device compatibility at this time'
+            }), 503
+            
+    except requests.exceptions.Timeout:
+        return jsonify({
+            'success': False,
+            'error': 'Service timeout',
+            'message': 'Compatibility check timed out. Please try again.'
+        }), 504
+    except Exception as e:
+        print(f"Error checking IMEI compatibility: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error',
+            'message': 'Unable to process compatibility check'
+        }), 500
+
 @app.route('/api/auth/current-user', methods=['GET'])
 def get_current_user():
     """Get current user data from database using Firebase UID"""
