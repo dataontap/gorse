@@ -253,10 +253,12 @@
                     return;
                 }
 
-                // Check IMEI compatibility before submitting the form
-                if (imeiInput.value.trim() !== '' && imeiCheckResult !== true) {
-                    alert('Please check IMEI compatibility before signing up.');
-                    return;
+                // Check IMEI compatibility before submitting the form (optional)
+                if (imeiInput.value.trim() !== '' && imeiCheckResult === false) {
+                    const proceed = confirm('Device compatibility check showed potential issues. Do you want to proceed with signup anyway?');
+                    if (!proceed) {
+                        return;
+                    }
                 }
 
                 const submitButton = document.querySelector('button[type="submit"]');
@@ -483,20 +485,16 @@
             compatibilityLoading.style.display = 'block';
 
             try {
-                // Replace with your actual API endpoint and API key
-                const apiKey = 'your-api-key-123'; // Replace with your actual API key
-                const apiUrl = 'https://will-my-phone-work.replit.app/api/v1/check';
-
-                const response = await fetch(apiUrl, {
+                // Use our own API endpoint that handles the external service call
+                const response = await fetch('/api/imei-compatibility', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         imei: imei,
-                        location: 'San Francisco, CA', // Or get from user
-                        network: 'OXIO' // Or get from user
+                        location: 'Global',
+                        network: 'OXIO'
                     })
                 });
 
@@ -507,30 +505,30 @@
                     compatibilityLoading.style.display = 'none';
                     compatibilityResults.style.display = 'block';
 
-                    const device = data.device;
-                    const capabilities = data.capabilities;
+                    const device = data.device || {};
+                    const capabilities = data.capabilities || {};
 
                     deviceDetails.innerHTML = `
-                        <p><strong>Make:</strong> ${device.make}</p>
-                        <p><strong>Model:</strong> ${device.model}</p>
-                        <p><strong>Year:</strong> ${device.year}</p>
-                        <p><strong>IMEI:</strong> ${device.imei}</p>
+                        <p><strong>Make:</strong> ${device.make || 'Unknown'}</p>
+                        <p><strong>Model:</strong> ${device.model || 'Unknown'}</p>
+                        <p><strong>Year:</strong> ${device.year || 'Unknown'}</p>
+                        <p><strong>IMEI:</strong> ${device.imei || imei}</p>
                     `;
 
                     capabilityDetails.innerHTML = `
-                        <p><strong>4G:</strong> ${capabilities.fourG ? 'Supported' : 'Not Supported'}</p>
-                        <p><strong>5G:</strong> ${capabilities.fiveG ? 'Supported' : 'Not Supported'}</p>
-                        <p><strong>VoLTE:</strong> ${capabilities.volte ? 'Supported' : 'Not Supported'}</p>
-                        <p><strong>Wi-Fi Calling:</strong> ${capabilities.wifiCalling}</p>
+                        <p><strong>4G:</strong> ${capabilities.fourG ? '✅ Supported' : '❌ Not Supported'}</p>
+                        <p><strong>5G:</strong> ${capabilities.fiveG ? '✅ Supported' : '❌ Not Supported'}</p>
+                        <p><strong>VoLTE:</strong> ${capabilities.volte ? '✅ Supported' : '❌ Not Supported'}</p>
+                        <p><strong>Wi-Fi Calling:</strong> ${capabilities.wifiCalling || 'Unknown'}</p>
                     `;
 
                     let recommendationMessage = '';
-                    if (capabilities.fourG && capabilities.volte) {
-                        recommendationMessage = '<span style="color: #28a745;">✅ Your device is fully compatible with the OXIO network!</span>';
+                    if (capabilities.fourG || capabilities.fiveG) {
+                        recommendationMessage = '<span style="color: #28a745;">✅ Your device is compatible with the OXIO network!</span>';
                         imeiCheckResult = true; // Set global variable to allow signup
                     } else {
-                        recommendationMessage = '<span style="color: #ffc107;">⚠️ Your device may have limited compatibility. Please check the details above.</span>';
-                        imeiCheckResult = false; // Prevent signup
+                        recommendationMessage = '<span style="color: #ffc107;">⚠️ Your device may have limited compatibility. Contact support for assistance.</span>';
+                        imeiCheckResult = false; // Allow signup but with warning
                     }
                     compatibilityRecommendation.innerHTML = recommendationMessage;
 
@@ -538,14 +536,24 @@
                     // Show error message
                     compatibilityLoading.style.display = 'none';
                     compatibilityError.style.display = 'block';
-                    imeiCheckResult = null; // Reset flag
+                    compatibilityError.innerHTML = `
+                        <h4>⚠️ Compatibility Check Failed</h4>
+                        <p>${data.message || 'Unable to verify device compatibility at this time.'}</p>
+                        <p>You can still proceed with signup and we'll verify compatibility later.</p>
+                    `;
+                    imeiCheckResult = null; // Allow signup anyway
                 }
 
             } catch (error) {
                 console.error('Error checking IMEI compatibility:', error);
                 compatibilityLoading.style.display = 'none';
                 compatibilityError.style.display = 'block';
-                imeiCheckResult = null; // Reset flag
+                compatibilityError.innerHTML = `
+                    <h4>⚠️ Service Temporarily Unavailable</h4>
+                    <p>The compatibility check service is currently unavailable. Please try again later.</p>
+                    <p>You can still proceed with signup and we'll verify compatibility during activation.</p>
+                `;
+                imeiCheckResult = null; // Allow signup anyway
             }
         }
 
