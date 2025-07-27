@@ -326,8 +326,30 @@
             </div>
         </div>
 
-        <!-- Membership Banner - positioned right after the bubble -->
-        <div class="subscription-status" id="membershipBanner">
+        <!-- Bitchat Status Card - positioned right after the bubble -->
+        <div class="bitchat-status-card" id="bitchatStatusCard">
+            <div class="bitchat-info">
+                <div class="bitchat-title">
+                    <i class="fas fa-comments"></i>
+                    Bitchat Network
+                </div>
+                <div class="bitchat-status">
+                    <span class="connection-status" id="connectionStatus">
+                        <i class="fas fa-circle status-indicator" id="statusIndicator"></i>
+                        <span id="connectionText">Connecting...</span>
+                    </span>
+                    <div class="nearby-users" id="nearbyUsers">
+                        <span id="userCount">0</span> people nearby
+                    </div>
+                </div>
+            </div>
+            <button class="close-banner" onclick="dismissBitchatCard()" aria-label="Close bitchat card">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Membership Banner (hidden by default, shown when subscription exists) -->
+        <div class="subscription-status" id="membershipBanner" style="display: none;">
             <div class="subscription-info">
                 <div class="subscription-type">Basic Membership</div>
                 <div class="subscription-validity">Valid for 27029 more days</div>
@@ -338,7 +360,9 @@
         </div>
         <!-- Offers Section -->
         <div class="offers-section">
-            <!-- Card stack will be populated here by JavaScript -->
+            <div class="offers-stack-container" id="offersStackContainer">
+                <!-- Card stack will be populated here by JavaScript -->
+            </div>
         </div>
 
         <div id="confirmationDrawer" class="confirmation-drawer">
@@ -646,7 +670,9 @@
 
         function updateMembershipBanner(subscriptionData) {
             var membershipBanner = document.getElementById('membershipBanner');
-            if (!membershipBanner) return;
+            var bitchatCard = document.getElementById('bitchatStatusCard');
+            
+            if (!membershipBanner || !bitchatCard) return;
 
             if (subscriptionData.status === 'active') {
                 var subscriptionType = subscriptionData.subscription_type || 'basic_membership';
@@ -668,9 +694,52 @@
                     `;
                 }
 
+                // Show membership banner and hide Bitchat card
                 membershipBanner.style.display = 'flex';
+                bitchatCard.style.display = 'none';
             } else {
+                // Hide membership banner and show Bitchat card
                 membershipBanner.style.display = 'none';
+                bitchatCard.style.display = 'flex';
+                initializeBitchatStatus();
+            }
+        }
+
+        function initializeBitchatStatus() {
+            var statusIndicator = document.getElementById('statusIndicator');
+            var connectionText = document.getElementById('connectionText');
+            var userCount = document.getElementById('userCount');
+
+            // Simulate connection status
+            setTimeout(function() {
+                var isConnected = Math.random() > 0.3; // 70% chance of being connected
+                var nearbyCount = isConnected ? Math.floor(Math.random() * 15) + 1 : 0;
+
+                if (isConnected) {
+                    statusIndicator.classList.add('connected');
+                    statusIndicator.classList.remove('disconnected');
+                    connectionText.textContent = 'Connected';
+                } else {
+                    statusIndicator.classList.add('disconnected');
+                    statusIndicator.classList.remove('connected');
+                    connectionText.textContent = 'Disconnected';
+                }
+
+                userCount.textContent = nearbyCount;
+            }, 1500);
+        }
+
+        function dismissBitchatCard() {
+            var card = document.getElementById('bitchatStatusCard');
+            if (card) {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(-20px)';
+                setTimeout(function() {
+                    card.style.display = 'none';
+                }, 300);
+
+                // Save dismissed state to localStorage
+                localStorage.setItem('bitchatCardDismissed', 'true');
             }
         }
 
@@ -742,11 +811,20 @@
 
         // Check if banner was previously dismissed
         function checkBannerDismissedState() {
-            var dismissed = localStorage.getItem('membershipBannerDismissed');
-            if (dismissed === 'true') {
+            var membershipDismissed = localStorage.getItem('membershipBannerDismissed');
+            var bitchatDismissed = localStorage.getItem('bitchatCardDismissed');
+            
+            if (membershipDismissed === 'true') {
                 var banner = document.getElementById('membershipBanner');
                 if (banner) {
                     banner.style.display = 'none';
+                }
+            }
+            
+            if (bitchatDismissed === 'true') {
+                var bitchatCard = document.getElementById('bitchatStatusCard');
+                if (bitchatCard) {
+                    bitchatCard.style.display = 'none';
                 }
             }
         }

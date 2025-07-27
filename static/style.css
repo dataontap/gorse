@@ -477,7 +477,69 @@ body.light-mode {
     background: #e9ecef;
 }
 
-/* Styles for membership banner */
+/* Styles for Bitchat status card */
+        .bitchat-status-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 60px 0 20px 0;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            transition: all 0.3s ease;
+            opacity: 0.8;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .bitchat-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .bitchat-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bitchat-status {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .status-indicator {
+            font-size: 0.8em;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            color: #28a745;
+        }
+
+        .status-indicator.disconnected {
+            color: #dc3545;
+        }
+
+        .nearby-users {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Styles for membership banner */
         .subscription-status {
             background: rgba(255, 255, 255, 0.1); /* Add transparency */
             border-radius: 12px;
