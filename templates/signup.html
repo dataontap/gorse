@@ -212,6 +212,7 @@
                                 <button type="button" class="btn btn-outline-primary compatibility-check-btn" id="checkCompatibilityBtn" onclick="checkIMEICompatibility()" disabled>
                                     Check Services Availability
                                 </button>
+                                <br>
                                 <small class="form-text text-muted">
                                     Find your IMEI: Dial <span class="dialer-pill" onclick="openDialer('*#06#')">*#06#</span> on your phone and press call. Works on iPhone and Android.
                                 </small>
@@ -283,10 +284,10 @@
             const value = input.value.trim();
             const checkBtn = document.getElementById('checkCompatibilityBtn');
             const signupBtn = document.getElementById('signupButton');
-            
+
             // Reset signup button styling
             signupBtn.className = 'btn btn-primary btn-lg';
-            
+
             if (value.length === 15) {
                 // IMEI is complete, enable check button and highlight input
                 input.classList.add('imei-input-ready');
@@ -299,7 +300,7 @@
                 checkBtn.disabled = true;
                 checkBtn.classList.remove('ready');
                 checkBtn.textContent = 'Check Services Availability';
-                
+
                 // Clear previous compatibility result
                 const resultDiv = document.getElementById('compatibilityResult');
                 if (resultDiv) {
@@ -312,7 +313,7 @@
         // Update signup button based on compatibility
         function updateSignupButtonState(isCompatible) {
             const signupBtn = document.getElementById('signupButton');
-            
+
             if (isCompatible === true) {
                 signupBtn.className = 'btn btn-primary btn-lg compatible';
                 signupBtn.textContent = 'Sign Up - Device Compatible ✓';
