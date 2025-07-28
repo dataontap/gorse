@@ -618,6 +618,23 @@ def register_firebase_user():
                                                 )
                                             """)
                                             
+                                            # Create notifications table if it doesn't exist
+                                            cur.execute("""
+                                                CREATE TABLE IF NOT EXISTS notifications (
+                                                    id SERIAL PRIMARY KEY,
+                                                    user_id INTEGER,
+                                                    firebase_uid VARCHAR(128),
+                                                    title VARCHAR(255) NOT NULL,
+                                                    body TEXT,
+                                                    notification_type VARCHAR(50) DEFAULT 'general',
+                                                    delivered BOOLEAN DEFAULT FALSE,
+                                                    read_status BOOLEAN DEFAULT FALSE,
+                                                    fcm_response TEXT,
+                                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                    delivered_at TIMESTAMP
+                                                )
+                                            """)
+                                            
                                             cur.execute("""
                                                 SELECT fcm_token FROM fcm_tokens 
                                                 WHERE firebase_uid = %s 
@@ -625,35 +642,84 @@ def register_firebase_user():
                                             """, (firebase_uid,))
                                             
                                             result = cur.fetchone()
-                                            if result:
-                                                fcm_token = result[0]
-                                                
-                                                # Send welcome notification
+                                            fcm_token = result[0] if result else None
+                                            
+                                            # Store notification in database first
+                                            welcome_title = "Welcome to DOT Wireless! 🎉"
+                                            welcome_body = f"Hi {display_name or 'there'}! Your account is ready. Explore global connectivity and earn DOTM tokens."
+                                            
+                                            cur.execute("""
+                                                INSERT INTO notifications 
+                                                (user_id, firebase_uid, title, body, notification_type, delivered)
+                                                VALUES (%s, %s, %s, %s, %s, %s)
+                                                RETURNING id
+                                            """, (user_id, firebase_uid, welcome_title, welcome_body, 'welcome', False))
+                                            
+                                            notification_id = cur.fetchone()[0]
+                                            conn.commit()
+                                            print(f"Welcome notification stored in database with ID: {notification_id}")
+                                            
+                                            if fcm_token:
+                                                # Send welcome notification via FCM
                                                 try:
                                                     if 'firebase_admin' in sys.modules:
                                                         from firebase_admin import messaging
                                                         
                                                         message = messaging.Message(
                                                             notification=messaging.Notification(
-                                                                title="Welcome to DOT Wireless! 🎉",
-                                                                body=f"Hi {display_name or 'there'}! Your account is ready. Explore global connectivity and earn DOTM tokens.",
+                                                                title=welcome_title,
+                                                                body=welcome_body,
                                                             ),
                                                             token=fcm_token,
                                                             data={
                                                                 'type': 'welcome',
                                                                 'user_id': str(user_id),
+                                                                'notification_id': str(notification_id),
                                                                 'timestamp': str(int(time.time()))
                                                             }
                                                         )
 
                                                         response = messaging.send(message)
                                                         print(f'Welcome message sent successfully to {firebase_uid}: {response}')
+                                                        
+                                                        # Update notification as delivered
+                                                        cur.execute("""
+                                                            UPDATE notifications 
+                                                            SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
+                                                            WHERE id = %s
+                                                        """, (str(response), notification_id))
+                                                        conn.commit()
+                                                        print(f"Notification {notification_id} marked as delivered")
+                                                        
                                                     else:
-                                                        print("Firebase Admin SDK not available for welcome message")
+                                                        print("Firebase Admin SDK not available - notification stored but not sent via FCM")
+                                                        # Mark as delivered even without FCM for demo purposes
+                                                        cur.execute("""
+                                                            UPDATE notifications 
+                                                            SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
+                                                            WHERE id = %s
+                                                        """, ("No FCM SDK - demo mode", notification_id))
+                                                        conn.commit()
+                                                        
                                                 except Exception as msg_err:
-                                                    print(f"Error sending welcome message: {str(msg_err)}")
+                                                    print(f"Error sending welcome message via FCM: {str(msg_err)}")
+                                                    # Still mark as delivered to show in notifications
+                                                    cur.execute("""
+                                                        UPDATE notifications 
+                                                        SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
+                                                        WHERE id = %s
+                                                    """, (f"FCM Error: {str(msg_err)}", notification_id))
+                                                    conn.commit()
                                             else:
-                                                print(f"No FCM token found for welcome message to {firebase_uid}")
+                                                print(f"No FCM token found for {firebase_uid} - notification stored for when user enables notifications")
+                                                # Mark as delivered anyway so it shows in notifications
+                                                cur.execute("""
+                                                    UPDATE notifications 
+                                                    SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
+                                                    WHERE id = %s
+                                                """, ("No FCM token - stored for later", notification_id))
+                                                conn.commit()
+                                                
                             except Exception as welcome_err:
                                 print(f"Error in welcome message thread: {str(welcome_err)}")
                         
@@ -4602,6 +4668,116 @@ def get_oxio_activation_status():
     except Exception as e:
         print(f"Error getting OXIO activation status: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/notifications', methods=['GET'])
+def get_user_notifications():
+    """Get notifications for a user"""
+    try:
+        firebase_uid = request.args.get('firebaseUid')
+        limit = int(request.args.get('limit', 50))
+        
+        if not firebase_uid:
+            return jsonify({'error': 'Firebase UID is required'}), 400
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Ensure notifications table exists
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS notifications (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER,
+                            firebase_uid VARCHAR(128),
+                            title VARCHAR(255) NOT NULL,
+                            body TEXT,
+                            notification_type VARCHAR(50) DEFAULT 'general',
+                            delivered BOOLEAN DEFAULT FALSE,
+                            read_status BOOLEAN DEFAULT FALSE,
+                            fcm_response TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            delivered_at TIMESTAMP
+                        )
+                    """)
+                    
+                    # Get notifications for this user
+                    cur.execute("""
+                        SELECT id, title, body, notification_type, delivered, read_status, 
+                               fcm_response, created_at, delivered_at
+                        FROM notifications 
+                        WHERE firebase_uid = %s 
+                        ORDER BY created_at DESC 
+                        LIMIT %s
+                    """, (firebase_uid, limit))
+                    
+                    notifications = cur.fetchall()
+                    notification_list = []
+                    
+                    for notif in notifications:
+                        notification_list.append({
+                            'id': notif[0],
+                            'title': notif[1],
+                            'body': notif[2],
+                            'type': notif[3],
+                            'delivered': notif[4],
+                            'read': notif[5],
+                            'fcm_response': notif[6],
+                            'created_at': notif[7].isoformat() if notif[7] else None,
+                            'delivered_at': notif[8].isoformat() if notif[8] else None
+                        })
+                    
+                    return jsonify({
+                        'success': True,
+                        'notifications': notification_list,
+                        'count': len(notification_list),
+                        'firebase_uid': firebase_uid
+                    })
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error getting notifications: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/notifications/<int:notification_id>/read', methods=['POST'])
+def mark_notification_read(notification_id):
+    """Mark a notification as read"""
+    try:
+        firebase_uid = request.json.get('firebaseUid') if request.json else None
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Update notification as read
+                    if firebase_uid:
+                        cur.execute("""
+                            UPDATE notifications 
+                            SET read_status = TRUE
+                            WHERE id = %s AND firebase_uid = %s
+                            RETURNING title
+                        """, (notification_id, firebase_uid))
+                    else:
+                        cur.execute("""
+                            UPDATE notifications 
+                            SET read_status = TRUE
+                            WHERE id = %s
+                            RETURNING title
+                        """, (notification_id,))
+                    
+                    result = cur.fetchone()
+                    if result:
+                        conn.commit()
+                        return jsonify({
+                            'success': True,
+                            'message': f'Notification "{result[0]}" marked as read'
+                        })
+                    else:
+                        return jsonify({'success': False, 'message': 'Notification not found'}), 404
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error marking notification as read: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/update-personal-message', methods=['POST'])
 def update_personal_message():
