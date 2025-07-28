@@ -66,6 +66,63 @@
             color: #ffffff !important;
         }
 
+        /* IMEI compatibility check styling */
+        .compatibility-check-btn {
+            width: 100%;
+            margin-top: 8px;
+            border-radius: 6px;
+            padding: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .compatibility-check-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .compatibility-check-btn.ready {
+            background-color: rgba(0, 102, 255, 0.1);
+            border-color: #0066ff;
+            color: #0066ff;
+        }
+
+        .compatibility-check-btn.ready:hover {
+            background-color: rgba(0, 102, 255, 0.2);
+        }
+
+        .imei-input-ready {
+            border-color: #0066ff !important;
+            box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2) !important;
+        }
+
+        #signupButton.compatible {
+            background-color: #28a745 !important;
+            border-color: #28a745 !important;
+        }
+
+        #signupButton.not-compatible {
+            background-color: #ffc107 !important;
+            border-color: #ffc107 !important;
+            color: #000 !important;
+        }
+
+        .dark-mode .compatibility-check-btn {
+            background-color: rgba(60, 60, 60, 0.9) !important;
+            border-color: #555 !important;
+            color: #66a3ff !important;
+        }
+
+        .dark-mode .compatibility-check-btn.ready {
+            background-color: rgba(102, 163, 255, 0.1) !important;
+            border-color: #66a3ff !important;
+            color: #66a3ff !important;
+        }
+
+        .dark-mode .compatibility-check-btn.ready:hover {
+            background-color: rgba(102, 163, 255, 0.2) !important;
+        }
+
         /* Auto-detect dark mode */
         @media (prefers-color-scheme: dark) {
             .landing-page .card {
@@ -151,12 +208,10 @@
 
                             <div class="mb-3">
                                 <label for="imei" class="form-label">IMEI Number (optional)</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="imei" placeholder="Enter IMEI to check compatibility">
-                                    <button type="button" class="btn btn-outline-secondary" id="checkCompatibilityBtn" onclick="checkIMEICompatibility()">
-                                        Check Compatibility
-                                    </button>
-                                </div>
+                                <input type="text" class="form-control" id="imei" placeholder="Enter IMEI to check compatibility" maxlength="15" oninput="handleIMEIInput(this)">
+                                <button type="button" class="btn btn-outline-primary compatibility-check-btn" id="checkCompatibilityBtn" onclick="checkIMEICompatibility()" disabled>
+                                    Check Services Availability
+                                </button>
                                 <small class="form-text text-muted">
                                     Find your IMEI: Dial <span class="dialer-pill" onclick="openDialer('*#06#')">*#06#</span> on your phone and press call. Works on iPhone and Android.
                                 </small>
@@ -164,7 +219,7 @@
                             </div>
 
                             <div class="d-grid d-flex justify-content-center">
-                                <button type="submit" class="btn btn-primary btn-lg">Sign Up</button>
+                                <button type="submit" class="btn btn-primary btn-lg" id="signupButton">Sign Up</button>
                             </div>
                         </form>
 
@@ -222,6 +277,53 @@
 
     <script>
         let imeiCheckResult = null;
+
+        // Handle IMEI input changes
+        function handleIMEIInput(input) {
+            const value = input.value.trim();
+            const checkBtn = document.getElementById('checkCompatibilityBtn');
+            const signupBtn = document.getElementById('signupButton');
+            
+            // Reset signup button styling
+            signupBtn.className = 'btn btn-primary btn-lg';
+            
+            if (value.length === 15) {
+                // IMEI is complete, enable check button and highlight input
+                input.classList.add('imei-input-ready');
+                checkBtn.disabled = false;
+                checkBtn.classList.add('ready');
+                checkBtn.textContent = 'Check Services Availability';
+            } else {
+                // IMEI incomplete, disable check button and remove highlights
+                input.classList.remove('imei-input-ready');
+                checkBtn.disabled = true;
+                checkBtn.classList.remove('ready');
+                checkBtn.textContent = 'Check Services Availability';
+                
+                // Clear previous compatibility result
+                const resultDiv = document.getElementById('compatibilityResult');
+                if (resultDiv) {
+                    resultDiv.style.display = 'none';
+                }
+                imeiCheckResult = null;
+            }
+        }
+
+        // Update signup button based on compatibility
+        function updateSignupButtonState(isCompatible) {
+            const signupBtn = document.getElementById('signupButton');
+            
+            if (isCompatible === true) {
+                signupBtn.className = 'btn btn-primary btn-lg compatible';
+                signupBtn.textContent = 'Sign Up - Device Compatible ✓';
+            } else if (isCompatible === false) {
+                signupBtn.className = 'btn btn-primary btn-lg not-compatible';
+                signupBtn.textContent = 'Sign Up - Limited Compatibility ⚠';
+            } else {
+                signupBtn.className = 'btn btn-primary btn-lg';
+                signupBtn.textContent = 'Sign Up';
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             // Check if we should start in login mode
@@ -526,9 +628,11 @@
                     if (capabilities.fourG || capabilities.fiveG) {
                         recommendationMessage = '<span style="color: #28a745;">✅ Your device is compatible with the OXIO network!</span>';
                         imeiCheckResult = true; // Set global variable to allow signup
+                        updateSignupButtonState(true);
                     } else {
                         recommendationMessage = '<span style="color: #ffc107;">⚠️ Your device may have limited compatibility. Contact support for assistance.</span>';
                         imeiCheckResult = false; // Allow signup but with warning
+                        updateSignupButtonState(false);
                     }
                     compatibilityRecommendation.innerHTML = recommendationMessage;
 
@@ -542,6 +646,7 @@
                         <p>You can still proceed with signup and we'll verify compatibility later.</p>
                     `;
                     imeiCheckResult = null; // Allow signup anyway
+                    updateSignupButtonState(null);
                 }
 
             } catch (error) {
@@ -554,6 +659,7 @@
                     <p>You can still proceed with signup and we'll verify compatibility during activation.</p>
                 `;
                 imeiCheckResult = null; // Allow signup anyway
+                updateSignupButtonState(null);
             }
         }
 
@@ -564,6 +670,13 @@
             if (proceed === false) {
                 document.getElementById('imei').value = '';
                 imeiCheckResult = null;
+                updateSignupButtonState(null);
+                // Reset IMEI input styling
+                const imeiInput = document.getElementById('imei');
+                const checkBtn = document.getElementById('checkCompatibilityBtn');
+                imeiInput.classList.remove('imei-input-ready');
+                checkBtn.disabled = true;
+                checkBtn.classList.remove('ready');
             }
         }
     </script>
