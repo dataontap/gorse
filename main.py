@@ -2,6 +2,7 @@ from flask import Flask, request, send_from_directory, render_template, redirect
 from flask_restx import Api, Resource, fields
 from flask_socketio import SocketIO, emit
 import os
+import sys
 from typing import Optional
 import psycopg2
 from psycopg2.pool import SimpleConnectionPool
@@ -593,6 +594,61 @@ def register_firebase_user():
                                 print(f"Failed to award new member token: {result}")
                         except Exception as token_err:
                             print(f"Error awarding new member token: {str(token_err)}")
+
+                        # Schedule welcome message 10 seconds after user creation
+                        import threading
+                        def send_welcome_message():
+                            import time
+                            time.sleep(10)  # Wait 10 seconds
+                            try:
+                                # Get user's FCM token
+                                with get_db_connection() as conn:
+                                    if conn:
+                                        with conn.cursor() as cur:
+                                            cur.execute("""
+                                                SELECT fcm_token FROM fcm_tokens 
+                                                WHERE firebase_uid = %s 
+                                                ORDER BY updated_at DESC LIMIT 1
+                                            """, (firebase_uid,))
+                                            
+                                            result = cur.fetchone()
+                                            if result:
+                                                fcm_token = result[0]
+                                                
+                                                # Send welcome notification
+                                                try:
+                                                    if 'firebase_admin' in sys.modules:
+                                                        from firebase_admin import messaging
+                                                        
+                                                        message = messaging.Message(
+                                                            notification=messaging.Notification(
+                                                                title="Welcome to DOT Wireless! 🎉",
+                                                                body=f"Hi {display_name or 'there'}! Your account is ready. Explore global connectivity and earn DOTM tokens.",
+                                                            ),
+                                                            token=fcm_token,
+                                                            data={
+                                                                'type': 'welcome',
+                                                                'user_id': str(user_id),
+                                                                'timestamp': str(int(time.time()))
+                                                            }
+                                                        )
+
+                                                        response = messaging.send(message)
+                                                        print(f'Welcome message sent successfully to {firebase_uid}: {response}')
+                                                    else:
+                                                        print("Firebase Admin SDK not available for welcome message")
+                                                except Exception as msg_err:
+                                                    print(f"Error sending welcome message: {str(msg_err)}")
+                                            else:
+                                                print(f"No FCM token found for welcome message to {firebase_uid}")
+                            except Exception as welcome_err:
+                                print(f"Error in welcome message thread: {str(welcome_err)}")
+                        
+                        # Start welcome message thread
+                        welcome_thread = threading.Thread(target=send_welcome_message)
+                        welcome_thread.daemon = True
+                        welcome_thread.start()
+                        print(f"Welcome message scheduled for {firebase_uid} in 10 seconds")
 
                         # Create Stripe customer for new user
                         stripe_customer_id = None
