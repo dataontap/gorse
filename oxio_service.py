@@ -212,7 +212,118 @@ class OXIOService:
                 'request_payload': payload
             }
 
-    def create_oxio_user(self, first_name=None, last_name=None, email=None, firebase_uid=None) -> Dict[str, Any]:
+    def create_oxio_group(self, group_name, description=None) -> Dict[str, Any]:
+        """
+        Create an OXIO group for organizing users
+
+        Args:
+            group_name: Name of the group
+            description: Optional description of the group
+
+        Returns:
+            API response as dictionary
+        """
+        try:
+            url = f"{self.base_url}/v2/groups"
+            headers = self.get_headers()
+
+            payload = {
+                "name": group_name,
+                "description": description or f"Group for {group_name}"
+            }
+
+            print(f"OXIO Create Group Request URL: {url}")
+            print(f"OXIO Create Group Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
+            print(f"OXIO Create Group Payload: {json.dumps(payload, indent=2)}")
+
+            response = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=30
+            )
+
+            print(f"OXIO Create Group Response Status: {response.status_code}")
+            print(f"OXIO Create Group Response Headers: {dict(response.headers)}")
+
+            # Get response text first
+            response_text = response.text
+            print(f"Raw response body: {response_text}")
+
+            # Check if response is JSON
+            content_type = response.headers.get('content-type', '').lower()
+
+            if 'application/json' in content_type:
+                try:
+                    response_data = response.json() if response.content else {}
+                    print(f"OXIO Create Group Response Body (parsed): {json.dumps(response_data, indent=2)}")
+                except json.JSONDecodeError as json_err:
+                    print(f"Failed to parse JSON response: {str(json_err)}")
+                    response_data = {
+                        'error': 'Invalid JSON response',
+                        'json_error': str(json_err),
+                        'raw_response': response_text[:1000]
+                    }
+            else:
+                print(f"Non-JSON response received (Content-Type: {content_type})")
+                response_data = {
+                    'error': 'Non-JSON response',
+                    'content_type': content_type,
+                    'raw_response': response_text[:1000]
+                }
+
+            if response.status_code >= 200 and response.status_code < 300:
+                # Get OXIO group ID from response
+                oxio_group_id = response_data.get('groupId') or response_data.get('id') or response_data.get('group_id')
+                
+                return {
+                    'success': True,
+                    'status_code': response.status_code,
+                    'data': response_data,
+                    'message': 'OXIO group created successfully',
+                    'oxio_group_id': oxio_group_id,
+                    'request_payload': payload
+                }
+            else:
+                return {
+                    'success': False,
+                    'status_code': response.status_code,
+                    'data': response_data,
+                    'error': f'OXIO API error: {response.status_code}',
+                    'message': response_data.get('message', f'HTTP {response.status_code} error'),
+                    'request_payload': payload
+                }
+
+        except requests.exceptions.Timeout:
+            return {
+                'success': False,
+                'error': 'Request timeout',
+                'message': 'OXIO API request timed out after 30 seconds',
+                'request_payload': payload
+            }
+        except requests.exceptions.ConnectionError as conn_err:
+            return {
+                'success': False,
+                'error': 'Connection error',
+                'message': f'Could not connect to OXIO API: {str(conn_err)}',
+                'request_payload': payload
+            }
+        except requests.exceptions.RequestException as req_err:
+            return {
+                'success': False,
+                'error': 'Request error',
+                'message': f'Request failed: {str(req_err)}',
+                'request_payload': payload
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': 'Unexpected error',
+                'message': f'Unexpected error: {str(e)}',
+                'request_payload': payload
+            }
+
+    def create_oxio_user(self, first_name=None, last_name=None, email=None, firebase_uid=None, oxio_group_id=None) -> Dict[str, Any]:
         """
         Create a new OXIO end user
 
@@ -238,6 +349,10 @@ class OXIOService:
             # Add email if provided
             if email:
                 payload["email"] = email
+                
+            # Add group ID if provided
+            if oxio_group_id:
+                payload["groupId"] = oxio_group_id
 
             print(f"OXIO Create User Request URL: {url}")
             print(f"OXIO Create User Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")

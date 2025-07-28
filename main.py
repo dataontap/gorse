@@ -285,6 +285,72 @@ def register_fcm_token():
                         
                         conn.commit()
                         print(f"Stored FCM token for {firebase_uid} on {platform}")
+                        
+                        # Check for pending notifications that haven't been delivered
+                        cur.execute("""
+                            SELECT id, title, body, notification_type, created_at
+                            FROM notifications 
+                            WHERE firebase_uid = %s AND delivered = FALSE 
+                            ORDER BY created_at ASC
+                        """, (firebase_uid,))
+                        
+                        pending_notifications = cur.fetchall()
+                        
+                        if pending_notifications:
+                            print(f"Found {len(pending_notifications)} pending notifications for {firebase_uid}")
+                            
+                            # Send each pending notification
+                            for notification in pending_notifications:
+                                notification_id, title, body, notif_type, created_at = notification
+                                
+                                try:
+                                    if 'firebase_admin' in sys.modules:
+                                        from firebase_admin import messaging
+                                        
+                                        message = messaging.Message(
+                                            notification=messaging.Notification(
+                                                title=title,
+                                                body=body,
+                                            ),
+                                            token=token,
+                                            data={
+                                                'type': notif_type,
+                                                'notification_id': str(notification_id),
+                                                'timestamp': str(int(time.time()))
+                                            }
+                                        )
+
+                                        response = messaging.send(message)
+                                        print(f'Pending notification {notification_id} sent successfully: {response}')
+                                        
+                                        # Update notification as delivered
+                                        cur.execute("""
+                                            UPDATE notifications 
+                                            SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
+                                            WHERE id = %s
+                                        """, (str(response), notification_id))
+                                        
+                                    else:
+                                        print("Firebase Admin SDK not available - marking notification as delivered for demo")
+                                        # Mark as delivered even without FCM for demo purposes
+                                        cur.execute("""
+                                            UPDATE notifications 
+                                            SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
+                                            WHERE id = %s
+                                        """, ("No FCM SDK - demo mode", notification_id))
+                                        
+                                except Exception as msg_err:
+                                    print(f"Error sending pending notification {notification_id}: {str(msg_err)}")
+                                    # Still mark as delivered to avoid repeated attempts
+                                    cur.execute("""
+                                        UPDATE notifications 
+                                        SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
+                                        WHERE id = %s
+                                    """, (f"FCM Error: {str(msg_err)}", notification_id))
+                            
+                            conn.commit()
+                            print(f"Processed {len(pending_notifications)} pending notifications")
+                        
         except Exception as e:
             print(f"Error storing FCM token: {str(e)}")
 
@@ -490,6 +556,19 @@ def register_firebase_user():
                             cur.execute("ALTER TABLE users ADD COLUMN oxio_user_id VARCHAR(100)")
                             conn.commit()
                             print("OXIO user ID column added successfully")
+                            
+                        # Check if oxio_group_id column exists and add it if missing
+                        cur.execute("""
+                            SELECT column_name FROM information_schema.columns 
+                            WHERE table_name = 'users' AND column_name = 'oxio_group_id'
+                        """)
+                        oxio_group_column_exists = cur.fetchone()
+
+                        if not oxio_group_column_exists:
+                            print("Adding oxio_group_id column to users table...")
+                            cur.execute("ALTER TABLE users ADD COLUMN oxio_group_id VARCHAR(100)")
+                            conn.commit()
+                            print("OXIO group ID column added successfully")
 
                         # Ensure eth_address column exists separately
                         cur.execute("""
@@ -550,20 +629,37 @@ def register_firebase_user():
                         web3 = Web3()
                         test_account = web3.eth.account.create()
 
-                        # Create OXIO user first
+                        # Create OXIO group and user
                         oxio_user_id = None
+                        oxio_group_id = None
                         try:
-                            print(f"Creating OXIO user for Firebase UID: {firebase_uid}")
+                            print(f"Creating OXIO group and user for Firebase UID: {firebase_uid}")
+                            
+                            # Create OXIO group first
+                            group_name = f"DOT_User_{firebase_uid[:8]}"
+                            group_result = oxio_service.create_oxio_group(
+                                group_name=group_name,
+                                description=f"Group for DOT user {display_name or 'Anonymous'}"
+                            )
+                            
+                            if group_result.get('success'):
+                                oxio_group_id = group_result.get('oxio_group_id')
+                                print(f"Successfully created OXIO group: {oxio_group_id}")
+                            else:
+                                print(f"Failed to create OXIO group: {group_result.get('message', 'Unknown error')}")
+                            
                             # Parse display_name to get first and last name
                             name_parts = (display_name or "Anonymous Anonymous").split(' ', 1)
                             first_name = name_parts[0] if name_parts else "Anonymous"
                             last_name = name_parts[1] if len(name_parts) > 1 else "Anonymous"
                             
+                            # Create OXIO user with group ID
                             oxio_result = oxio_service.create_oxio_user(
                                 first_name=first_name,
                                 last_name=last_name,
                                 email=email,
-                                firebase_uid=firebase_uid
+                                firebase_uid=firebase_uid,
+                                oxio_group_id=oxio_group_id
                             )
                             
                             if oxio_result.get('success'):
@@ -572,14 +668,14 @@ def register_firebase_user():
                             else:
                                 print(f"Failed to create OXIO user: {oxio_result.get('message', 'Unknown error')}")
                         except Exception as oxio_err:
-                            print(f"Error creating OXIO user: {str(oxio_err)}")
+                            print(f"Error creating OXIO group/user: {str(oxio_err)}")
 
                         cur.execute(
                             """INSERT INTO users 
-                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id) 
-                            VALUES (%s, %s, %s, %s, %s, %s) 
+                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id, oxio_group_id) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s) 
                             RETURNING id""",
-                            (email, firebase_uid, display_name, photo_url, test_account.address, oxio_user_id)
+                            (email, firebase_uid, display_name, photo_url, test_account.address, oxio_user_id, oxio_group_id)
                         )
                         user_id = cur.fetchone()[0]
                         conn.commit()
