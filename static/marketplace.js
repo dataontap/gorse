@@ -58,6 +58,14 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeAuctionCountdown();
     initializeCartPreview();
     initializeBackToTop();
+    
+    // Initialize offers cards
+    setTimeout(() => {
+        populateOfferCards();
+        setTimeout(() => {
+            initializeCardStack();
+        }, 200);
+    }, 100);
 });
 
 function initializeMarketplace() {
@@ -597,3 +605,261 @@ document.addEventListener('click', function(e) {
         popup.style.display = 'none';
     }
 });
+
+// Offer cards functionality
+let currentCardIndex = 2;
+let cardStack = [];
+let currentSubscriptionStatus = null;
+
+function populateOfferCards() {
+    const offersSection = document.querySelector('.offers-section');
+    if (!offersSection) {
+        console.log('Offers section not found');
+        return;
+    }
+
+    // Get dismissed offers from localStorage
+    const dismissedOffers = JSON.parse(localStorage.getItem('dismissedOffers') || '[]');
+
+    // Define all possible offers
+    const allOffers = [
+        {
+            id: 'global_data',
+            title: 'Truly Global Data',
+            description: ['10000MB no expiry data for $10', 'Priority fast 5G+ when available', 'Share infinitely with any member', 'Works on most of planet Earth +10km above it'],
+            price: '$10',
+            buttonText: 'Buy',
+            buttonClass: 'btn-primary',
+            action: "showConfirmationDrawer(10, 10, 'global_data_10gb')",
+            alwaysShow: true
+        },
+        {
+            id: 'basic_membership',
+            title: 'Become a Member',
+            description: [
+                'Access available connectivity services globally',
+                'Priority (QCI 8) fast 5G+ in most (100+) places',
+                'Link multi-accounts with one payment method',
+                'Yearly, leave anytime, refundable unused data'
+            ],
+            price: '$24/year',
+            buttonText: 'Subscribe',
+            buttonClass: 'btn-primary',
+            action: "showConfirmationDrawer(10, 24, 'basic_membership')",
+            showCondition: shouldShowBasicMembership
+        },
+        {
+            id: 'full_membership',
+            title: 'Unlimited Talk + Text',
+            description: ['North America Talk + Text (SMS + RCS, no MMS)', 'Global access to Calling + Texting through Wi-Fi', 'Select brand new or Port your own CAN number', 'Yearly service (use as is or with the mobile data)'],
+            price: '$66/year',
+            buttonText: 'Coming Soon',
+            buttonClass: 'btn-secondary',
+            action: "alert('Coming soon!')",
+            disabled: true,
+            alwaysShow: true
+        }
+    ];
+
+    // Filter offers based on conditions and dismissal status
+    const availableOffers = allOffers.filter(offer => {
+        // Check if offer is dismissed
+        if (dismissedOffers.includes(offer.id)) return false;
+
+        if (offer.alwaysShow) return true;
+        if (offer.showCondition) return offer.showCondition();
+        return true;
+    });
+
+    console.log('Available offers:', availableOffers.length);
+
+    // Handle case when all offers are dismissed
+    if (availableOffers.length === 0) {
+        offersSection.innerHTML = `
+            <div class="no-offers-message" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.7);">
+                <p>All offers have been dismissed.</p>
+                <button onclick="clearDismissedOffers()" style="background: rgba(255, 255, 255, 0.2); border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">
+                    Show All Offers Again
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    // Set the initial card index to the last card
+    currentCardIndex = availableOffers.length - 1;
+
+    // Create card stack container with proper styling
+    offersSection.innerHTML = `
+        <div class="offers-stack-container" id="cardStackContainer" style="position: relative; height: 450px; width: 100%; max-width: 400px; margin: 0 auto;">
+            <!-- Cards will be inserted here -->
+        </div>
+        <div class="card-indicators" id="cardIndicators">
+            <!-- Indicators will be inserted here -->
+        </div>
+    `;
+
+    const stackContainer = document.getElementById('cardStackContainer');
+    const indicatorsContainer = document.getElementById('cardIndicators');
+
+    if (!stackContainer || !indicatorsContainer) {
+        console.error('Stack container or indicators container not found');
+        return;
+    }
+
+    // Create cards and indicators
+    availableOffers.forEach((offer, index) => {
+        // Create card
+        const offerCard = document.createElement('div');
+        offerCard.className = 'offer-card';
+        offerCard.dataset.index = index;
+
+        const descriptions = offer.description.map(desc => `<p>${desc}</p>`).join('');
+        const buttonDisabled = offer.disabled ? ' disabled' : '';
+
+        offerCard.innerHTML = `
+            <h3>${offer.title}</h3>
+            <div class="offer-description">
+                ${descriptions}
+            </div>
+            <div class="price">${offer.price}</div>
+            <div style="display: flex; align-items: center; gap: 15px; margin-top: auto; justify-content: space-between; width: 100%;">
+                <button class="dismiss-card-btn" onclick="dismissOfferCard('${offer.id}')" title="Dismiss this offer">
+                    <i class="fas fa-times"></i><br>
+                </button>
+                <button class="offer-button ${offer.buttonClass}"${buttonDisabled} onclick="${offer.action}">
+                    ${offer.buttonText}
+                </button>
+            </div>
+        `;
+
+        stackContainer.appendChild(offerCard);
+
+        // Create indicator
+        const indicator = document.createElement('div');
+        indicator.className = 'indicator-dot';
+        indicator.dataset.index = index;
+        indicator.addEventListener('click', () => goToCard(index));
+        indicatorsContainer.appendChild(indicator);
+    });
+
+    cardStack = Array.from(stackContainer.querySelectorAll('.offer-card'));
+    console.log('Created card stack with', cardStack.length, 'cards');
+    updateCardPositions();
+}
+
+function shouldShowBasicMembership() {
+    if (!currentSubscriptionStatus) return true;
+
+    // Don't show if user has active basic membership with more than 7 days remaining
+    if (currentSubscriptionStatus.status === 'active' && 
+        currentSubscriptionStatus.subscription_type === 'basic_membership') {
+
+        const endDate = new Date(currentSubscriptionStatus.end_date);
+        const now = new Date();
+        const daysRemaining = (endDate - now) / (1000 * 60 * 60 * 24);
+
+        if (daysRemaining > 7) {
+            console.log(`Basic membership has ${Math.round(daysRemaining)} days remaining - hiding basic membership offer`);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function initializeCardStack() {
+    if (!cardStack || cardStack.length === 0) {
+        console.log('No cards to initialize');
+        return;
+    }
+
+    updateCardPositions();
+    updateIndicators();
+}
+
+function updateCardPositions() {
+    if (!cardStack || cardStack.length === 0) return;
+
+    cardStack.forEach((card, index) => {
+        const offset = index - currentCardIndex;
+        const isActive = index === currentCardIndex;
+        
+        if (isActive) {
+            card.style.transform = 'translateX(0) scale(1)';
+            card.style.opacity = '1';
+            card.style.zIndex = '10';
+        } else if (offset > 0) {
+            card.style.transform = `translateX(${offset * 20}px) scale(${1 - offset * 0.05})`;
+            card.style.opacity = `${1 - offset * 0.3}`;
+            card.style.zIndex = `${10 - offset}`;
+        } else {
+            card.style.transform = `translateX(${offset * 20}px) scale(${1 + offset * 0.05})`;
+            card.style.opacity = `${1 + offset * 0.3}`;
+            card.style.zIndex = `${10 + offset}`;
+        }
+        
+        card.style.transition = 'all 0.3s ease';
+        card.style.position = 'absolute';
+        card.style.top = '0';
+        card.style.left = '0';
+        card.style.width = '100%';
+        card.style.height = '100%';
+    });
+}
+
+function updateIndicators() {
+    const indicators = document.querySelectorAll('.indicator-dot');
+    indicators.forEach((indicator, index) => {
+        indicator.classList.toggle('active', index === currentCardIndex);
+    });
+}
+
+function goToCard(index) {
+    currentCardIndex = index;
+    updateCardPositions();
+    updateIndicators();
+}
+
+function dismissOfferCard(offerId) {
+    // Add to dismissed offers
+    const dismissedOffers = JSON.parse(localStorage.getItem('dismissedOffers') || '[]');
+    if (!dismissedOffers.includes(offerId)) {
+        dismissedOffers.push(offerId);
+        localStorage.setItem('dismissedOffers', JSON.stringify(dismissedOffers));
+    }
+
+    // Animate current card out
+    const currentCard = cardStack[currentCardIndex];
+    const direction = Math.random() > 0.5 ? 1 : -1;
+
+    currentCard.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+    currentCard.style.transform = `translateX(${direction * 100}%) rotate(${direction * -10}deg) scale(0.8)`;
+    currentCard.style.opacity = '0';
+
+    // After animation, repopulate the cards
+    setTimeout(() => {
+        populateOfferCards();
+        setTimeout(() => {
+            initializeCardStack();
+        }, 100);
+    }, 300);
+}
+
+function clearDismissedOffers() {
+    localStorage.removeItem('dismissedOffers');
+    populateOfferCards();
+    setTimeout(() => {
+        initializeCardStack();
+    }, 100);
+}
+
+// Placeholder function for confirmation drawer
+function showConfirmationDrawer(amount, price, productType) {
+    alert(`Purchase: ${amount}GB for $${price} (${productType})`);
+}
+
+// Make functions globally available
+window.dismissOfferCard = dismissOfferCard;
+window.clearDismissedOffers = clearDismissedOffers;
+window.showConfirmationDrawer = showConfirmationDrawer;

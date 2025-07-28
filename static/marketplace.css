@@ -934,6 +934,188 @@ body.dark-mode .quantity-btn {
     box-shadow: 0 6px 20px rgba(70, 130, 255, 0.4);
 }
 
+/* Offer Cards Styles */
+.offers-section {
+    margin: 30px 0;
+}
+
+.offers-stack-container {
+    position: relative;
+    height: 450px;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    perspective: 1000px;
+}
+
+.offer-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 450px;
+    padding: 25px 30px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    text-align: left;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+    word-wrap: break-word;
+    transition: all 0.3s ease;
+}
+
+.offer-card h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 15px 0;
+    color: #FFF371;
+    text-align: center;
+    line-height: 1.2;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.offer-description {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+}
+
+.offer-description p {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin: 0 0 10px 0;
+    color: #ffffff;
+    text-align: left;
+    font-weight: 400;
+    opacity: 0.9;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.offer-card .price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 15px 0;
+    color: #FFF371;
+    text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    flex-shrink: 0;
+}
+
+.offer-button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1em;
+    font-weight: bold;
+    min-height: 44px;
+    width: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.offer-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.offer-button:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.dismiss-card-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.dismiss-card-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.card-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.indicator-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.indicator-dot.active {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.no-offers-message {
+    text-align: center;
+    padding: 40px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Dark mode styles for offer cards */
+.dark-mode .offer-card {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+}
+
+.dark-mode .offer-card h3 {
+    color: #FFF371 !important;
+}
+
+.dark-mode .offer-card p {
+    color: #ffffff !important;
+}
+
+.dark-mode .dismiss-card-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
 /* Responsive Styles */
 @media (max-width: 768px) {
     .device-details {
