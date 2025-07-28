@@ -1441,17 +1441,19 @@ def get_user_data_balance():
                         print(f"Debug: SQL result = {result}")
                         
                         # Safely extract values with proper validation and handle None results
-                        if result and result[0] is not None:
+                        if result and len(result) >= 3:
                             global_data_cents = int(result[0]) if result[0] is not None else 0
                             total_data_cents = int(result[1]) if result[1] is not None else 0
                             total_purchases = int(result[2]) if result[2] is not None else 0
                         else:
-                            print(f"No purchases found or invalid SQL result: {result}")
+                            print(f"Invalid SQL result structure: {result}")
                             global_data_cents = 0
                             total_data_cents = 0
                             total_purchases = 0
                     except Exception as sql_err:
                         print(f"SQL query error: {sql_err}")
+                        import traceback
+                        traceback.print_exc()
                         # Set safe defaults when query fails
                         global_data_cents = 0
                         total_data_cents = 0
