@@ -605,6 +605,19 @@ def register_firebase_user():
                                 with get_db_connection() as conn:
                                     if conn:
                                         with conn.cursor() as cur:
+                                            # Create FCM tokens table if it doesn't exist
+                                            cur.execute("""
+                                                CREATE TABLE IF NOT EXISTS fcm_tokens (
+                                                    id SERIAL PRIMARY KEY,
+                                                    firebase_uid VARCHAR(128) NOT NULL,
+                                                    fcm_token TEXT NOT NULL,
+                                                    platform VARCHAR(20) DEFAULT 'web',
+                                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                    UNIQUE(firebase_uid, platform)
+                                                )
+                                            """)
+                                            
                                             cur.execute("""
                                                 SELECT fcm_token FROM fcm_tokens 
                                                 WHERE firebase_uid = %s 
