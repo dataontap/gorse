@@ -247,14 +247,46 @@ ns = api.namespace('imei', description='IMEI operations')
 def register_fcm_token():
     data = request.json
     token = data.get('token')
+    firebase_uid = data.get('firebaseUid')
     user_agent = request.headers.get('User-Agent', '')
     platform = 'web' if 'Mozilla' in user_agent else 'android'
 
-    # In production, you'd want to store this token in your database
-    # associated with the user's account
     print(f"Registered FCM token for {platform}: {token}")
 
-    # For demonstration purposes
+    # Store token in database if Firebase UID provided
+    if firebase_uid and token:
+        try:
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Create FCM tokens table if it doesn't exist
+                        cur.execute("""
+                            CREATE TABLE IF NOT EXISTS fcm_tokens (
+                                id SERIAL PRIMARY KEY,
+                                firebase_uid VARCHAR(128) NOT NULL,
+                                fcm_token TEXT NOT NULL,
+                                platform VARCHAR(20) DEFAULT 'web',
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                UNIQUE(firebase_uid, platform)
+                            )
+                        """)
+                        
+                        # Insert or update FCM token
+                        cur.execute("""
+                            INSERT INTO fcm_tokens (firebase_uid, fcm_token, platform, updated_at)
+                            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                            ON CONFLICT (firebase_uid, platform) 
+                            DO UPDATE SET 
+                                fcm_token = EXCLUDED.fcm_token,
+                                updated_at = CURRENT_TIMESTAMP
+                        """, (firebase_uid, token, platform))
+                        
+                        conn.commit()
+                        print(f"Stored FCM token for {firebase_uid} on {platform}")
+        except Exception as e:
+            print(f"Error storing FCM token: {str(e)}")
+
     return jsonify({"status": "success", "platform": platform})
 
 # Send notifications to both web and app users
@@ -266,49 +298,136 @@ def send_notification():
     title = request.json.get('title', 'Notification')
     body = request.json.get('body', 'You have a new notification')
     target = request.json.get('target', 'all')  # 'all', 'web', 'app'
+    firebase_uid = request.json.get('firebaseUid')
 
     try:
-        # In a real implementation, you would fetch tokens from your database
-        # For demonstration, we're showing the structure
+        # Get user's FCM token if Firebase UID provided
+        fcm_token = None
+        if firebase_uid:
+            try:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            # Check if fcm_tokens table exists, create if not
+                            cur.execute("""
+                                CREATE TABLE IF NOT EXISTS fcm_tokens (
+                                    id SERIAL PRIMARY KEY,
+                                    firebase_uid VARCHAR(128) NOT NULL,
+                                    fcm_token TEXT NOT NULL,
+                                    platform VARCHAR(20) DEFAULT 'web',
+                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                    UNIQUE(firebase_uid, platform)
+                                )
+                            """)
+                            
+                            # Get user's FCM token
+                            cur.execute("""
+                                SELECT fcm_token FROM fcm_tokens 
+                                WHERE firebase_uid = %s AND platform = 'web'
+                                ORDER BY updated_at DESC LIMIT 1
+                            """, (firebase_uid,))
+                            
+                            result = cur.fetchone()
+                            if result:
+                                fcm_token = result[0]
+            except Exception as token_err:
+                print(f"Error getting FCM token: {str(token_err)}")
 
         # Example of sending to specific platforms
         if target == 'all' or target == 'app':
             # Send to Android app users
-            send_to_android(title, body)
+            send_to_android(title, body, fcm_token)
 
         if target == 'all' or target == 'web':
             # Send to Web users
-            send_to_web(title, body)
+            send_to_web(title, body, fcm_token)
 
         return jsonify({"status": "success", "message": f"Notification sent to {target}"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-def send_to_android(title, body):
-    # Normally, you would use the Firebase Admin SDK here
+def send_to_android(title, body, fcm_token=None):
+    # Send to Android app users using Firebase Admin SDK
     print(f"Sending to Android: {title} - {body}")
+    
+    if fcm_token:
+        try:
+            # Use Firebase Admin SDK if available
+            if 'firebase_admin' in sys.modules:
+                from firebase_admin import messaging
+                
+                message = messaging.Message(
+                    notification=messaging.Notification(
+                        title=title,
+                        body=body,
+                    ),
+                    token=fcm_token,
+                    android=messaging.AndroidConfig(
+                        priority='high',
+                        notification=messaging.AndroidNotification(
+                            icon='ic_notification',
+                            color='#00ffff'
+                        )
+                    )
+                )
 
-    # Example with Firebase Admin SDK (commented out)
-    """
-    from firebase_admin import messaging
+                response = messaging.send(message)
+                print('Successfully sent Android message:', response)
+                return response
+        except Exception as e:
+            print(f"Error sending Android notification: {str(e)}")
+    
+    return None
 
-    message = messaging.Message(
-        notification=messaging.Notification(
-            title=title,
-            body=body,
-        ),
-        token='device_token_here',  # or topic='topic_name'
-    )
-
-    response = messaging.send(message)
-    print('Successfully sent message:', response)
-    """
-
-def send_to_web(title, body):
-    # Normally, you would use the Firebase Admin SDK here
+def send_to_web(title, body, fcm_token=None):
+    # Send to Web users using Firebase Admin SDK with web push credentials
     print(f"Sending to Web: {title} - {body}")
+    
+    if fcm_token:
+        try:
+            # Use Firebase Admin SDK if available
+            if 'firebase_admin' in sys.modules:
+                from firebase_admin import messaging
+                
+                # Get web messaging credentials from environment
+                web_private_key = os.environ.get('WEB_MESSAGING_PRIVATE_KEY')
+                web_authorization = os.environ.get('WEB_MESSAGING_AUTHORIZATION')
+                
+                # Configure web push options
+                web_push_config = None
+                if web_private_key and web_authorization:
+                    web_push_config = messaging.WebpushConfig(
+                        headers={
+                            'Authorization': web_authorization,
+                            'Private-Key': web_private_key
+                        },
+                        notification=messaging.WebpushNotification(
+                            title=title,
+                            body=body,
+                            icon='/static/tropical-border.png',
+                            badge='/static/tropical-border.png',
+                            tag='dotm-notification',
+                            requireInteraction=False
+                        )
+                    )
 
-    # Similar implementation as send_to_android, targeting web tokens
+                message = messaging.Message(
+                    notification=messaging.Notification(
+                        title=title,
+                        body=body,
+                    ),
+                    token=fcm_token,
+                    webpush=web_push_config
+                )
+
+                response = messaging.send(message)
+                print('Successfully sent web message:', response)
+                return response
+        except Exception as e:
+            print(f"Error sending web notification: {str(e)}")
+    
+    return None
 
 delivery_ns = api.namespace('delivery', description='eSIM delivery operations')
 customer_ns = api.namespace('customer', description='Customer operations')

@@ -770,6 +770,33 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   }
 
+  // Send token to your server
+  function sendTokenToServer(token) {
+    // Get current user's Firebase UID if available
+    let firebaseUid = null;
+    if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+      firebaseUid = firebase.auth().currentUser.uid;
+    }
+
+    fetch('/api/register-fcm-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        token: token,
+        firebaseUid: firebaseUid
+      }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Token registered with server:', data);
+    })
+    .catch((error) => {
+      console.error('Error registering token:', error);
+    });
+  }
+
   // Make functions globally available
   window.signInWithGoogle = function() {
     console.log("signInWithGoogle called");
