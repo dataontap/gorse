@@ -209,9 +209,11 @@
                             <div class="mb-3">
                                 <label for="imei" class="form-label">IMEI Number (optional)</label>
                                 <input type="text" class="form-control" id="imei" placeholder="Enter IMEI to check compatibility" maxlength="15" oninput="handleIMEIInput(this)">
-                                <button type="button" class="btn btn-outline-primary compatibility-check-btn" id="checkCompatibilityBtn" onclick="checkIMEICompatibility()" disabled>
-                                    Check Services Availability
-                                </button>
+                                <div style="text-align: center;">
+                                    <button type="button" class="btn btn-outline-primary compatibility-check-btn" id="checkCompatibilityBtn" onclick="checkIMEICompatibility()" disabled>
+                                        Check Services Availability
+                                    </button>
+                                </div>
                                 <br>
                                 <small class="form-text text-muted">
                                     Find your IMEI: Dial <span class="dialer-pill" onclick="openDialer('*#06#')">*#06#</span> on your phone and press call. Works on iPhone and Android.
