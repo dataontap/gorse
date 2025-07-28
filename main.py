@@ -131,6 +131,62 @@ try:
                         conn.commit()
                         print("Status column added successfully")
 
+                # Check if fcm_tokens table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'fcm_tokens')")
+                fcm_tokens_exists = cur.fetchone()[0]
+
+                if not fcm_tokens_exists:
+                    print("Creating fcm_tokens table...")
+                    create_fcm_tokens_sql = """
+                        CREATE TABLE fcm_tokens (
+                            id SERIAL PRIMARY KEY,
+                            firebase_uid VARCHAR(128) NOT NULL,
+                            fcm_token TEXT NOT NULL,
+                            platform VARCHAR(20) DEFAULT 'web',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            UNIQUE(firebase_uid, platform)
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_fcm_tokens_firebase_uid ON fcm_tokens(firebase_uid);
+                        CREATE INDEX IF NOT EXISTS idx_fcm_tokens_platform ON fcm_tokens(platform);
+                    """
+                    cur.execute(create_fcm_tokens_sql)
+                    conn.commit()
+                    print("fcm_tokens table created successfully")
+                else:
+                    print("fcm_tokens table already exists")
+
+                # Check if notifications table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'notifications')")
+                notifications_exists = cur.fetchone()[0]
+
+                if not notifications_exists:
+                    print("Creating notifications table...")
+                    create_notifications_sql = """
+                        CREATE TABLE notifications (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER,
+                            firebase_uid VARCHAR(128),
+                            title VARCHAR(255) NOT NULL,
+                            body TEXT,
+                            notification_type VARCHAR(50) DEFAULT 'general',
+                            delivered BOOLEAN DEFAULT FALSE,
+                            read_status BOOLEAN DEFAULT FALSE,
+                            fcm_response TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            delivered_at TIMESTAMP,
+                            FOREIGN KEY (user_id) REFERENCES users(id)
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_notifications_firebase_uid ON notifications(firebase_uid);
+                        CREATE INDEX IF NOT EXISTS idx_notifications_delivered ON notifications(delivered);
+                        CREATE INDEX IF NOT EXISTS idx_notifications_read_status ON notifications(read_status);
+                    """
+                    cur.execute(create_notifications_sql)
+                    conn.commit()
+                    print("notifications table created successfully")
+                else:
+                    print("notifications table already exists")
+
                 conn.commit()
         else:
             print("No database connection available for table creation")
@@ -260,20 +316,7 @@ def register_fcm_token():
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
-                        # Create FCM tokens table if it doesn't exist
-                        cur.execute("""
-                            CREATE TABLE IF NOT EXISTS fcm_tokens (
-                                id SERIAL PRIMARY KEY,
-                                firebase_uid VARCHAR(128) NOT NULL,
-                                fcm_token TEXT NOT NULL,
-                                platform VARCHAR(20) DEFAULT 'web',
-                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                UNIQUE(firebase_uid, platform)
-                            )
-                        """)
-                        
-                        # Insert or update FCM token
+                        # Insert or update FCM token (table should already exist from startup)
                         cur.execute("""
                             INSERT INTO fcm_tokens (firebase_uid, fcm_token, platform, updated_at)
                             VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
@@ -695,42 +738,12 @@ def register_firebase_user():
                         import threading
                         def send_welcome_message():
                             import time
-                            time.sleep(10)  # Wait 10 seconds
+                            time.sleep(3)  # Wait 3 seconds for FCM token registration
                             try:
                                 # Get user's FCM token
                                 with get_db_connection() as conn:
                                     if conn:
                                         with conn.cursor() as cur:
-                                            # Create FCM tokens table if it doesn't exist
-                                            cur.execute("""
-                                                CREATE TABLE IF NOT EXISTS fcm_tokens (
-                                                    id SERIAL PRIMARY KEY,
-                                                    firebase_uid VARCHAR(128) NOT NULL,
-                                                    fcm_token TEXT NOT NULL,
-                                                    platform VARCHAR(20) DEFAULT 'web',
-                                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                    UNIQUE(firebase_uid, platform)
-                                                )
-                                            """)
-                                            
-                                            # Create notifications table if it doesn't exist
-                                            cur.execute("""
-                                                CREATE TABLE IF NOT EXISTS notifications (
-                                                    id SERIAL PRIMARY KEY,
-                                                    user_id INTEGER,
-                                                    firebase_uid VARCHAR(128),
-                                                    title VARCHAR(255) NOT NULL,
-                                                    body TEXT,
-                                                    notification_type VARCHAR(50) DEFAULT 'general',
-                                                    delivered BOOLEAN DEFAULT FALSE,
-                                                    read_status BOOLEAN DEFAULT FALSE,
-                                                    fcm_response TEXT,
-                                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                    delivered_at TIMESTAMP
-                                                )
-                                            """)
-                                            
                                             cur.execute("""
                                                 SELECT fcm_token FROM fcm_tokens 
                                                 WHERE firebase_uid = %s 
@@ -749,7 +762,7 @@ def register_firebase_user():
                                                 (user_id, firebase_uid, title, body, notification_type, delivered)
                                                 VALUES (%s, %s, %s, %s, %s, %s)
                                                 RETURNING id
-                                            """, (user_id, firebase_uid, welcome_title, welcome_body, 'welcome', False))
+                                            """, (user_id, firebase_uid, welcome_title, welcome_body, 'welcome', True))
                                             
                                             notification_id = cur.fetchone()[0]
                                             conn.commit()
@@ -778,42 +791,39 @@ def register_firebase_user():
                                                         response = messaging.send(message)
                                                         print(f'Welcome message sent successfully to {firebase_uid}: {response}')
                                                         
-                                                        # Update notification as delivered
+                                                        # Update notification with FCM response
                                                         cur.execute("""
                                                             UPDATE notifications 
-                                                            SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
+                                                            SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                             WHERE id = %s
                                                         """, (str(response), notification_id))
                                                         conn.commit()
-                                                        print(f"Notification {notification_id} marked as delivered")
+                                                        print(f"Notification {notification_id} marked as delivered via FCM")
                                                         
                                                     else:
-                                                        print("Firebase Admin SDK not available - notification stored but not sent via FCM")
-                                                        # Mark as delivered even without FCM for demo purposes
+                                                        print("Firebase Admin SDK not available - notification stored in database")
                                                         cur.execute("""
                                                             UPDATE notifications 
-                                                            SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
+                                                            SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                             WHERE id = %s
                                                         """, ("No FCM SDK - demo mode", notification_id))
                                                         conn.commit()
                                                         
                                                 except Exception as msg_err:
                                                     print(f"Error sending welcome message via FCM: {str(msg_err)}")
-                                                    # Still mark as delivered to show in notifications
                                                     cur.execute("""
                                                         UPDATE notifications 
-                                                        SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
+                                                        SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                         WHERE id = %s
                                                     """, (f"FCM Error: {str(msg_err)}", notification_id))
                                                     conn.commit()
                                             else:
-                                                print(f"No FCM token found for {firebase_uid} - notification stored for when user enables notifications")
-                                                # Mark as delivered anyway so it shows in notifications
+                                                print(f"No FCM token found for {firebase_uid} - notification stored for later")
                                                 cur.execute("""
                                                     UPDATE notifications 
-                                                    SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
+                                                    SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                     WHERE id = %s
-                                                """, ("No FCM token - stored for later", notification_id))
+                                                """, ("No FCM token available", notification_id))
                                                 conn.commit()
                                                 
                             except Exception as welcome_err:
@@ -823,7 +833,7 @@ def register_firebase_user():
                         welcome_thread = threading.Thread(target=send_welcome_message)
                         welcome_thread.daemon = True
                         welcome_thread.start()
-                        print(f"Welcome message scheduled for {firebase_uid} in 10 seconds")
+                        print(f"Welcome message scheduled for {firebase_uid} in 3 seconds")
 
                         # Create Stripe customer for new user
                         stripe_customer_id = None
@@ -4778,23 +4788,6 @@ def get_user_notifications():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Ensure notifications table exists
-                    cur.execute("""
-                        CREATE TABLE IF NOT EXISTS notifications (
-                            id SERIAL PRIMARY KEY,
-                            user_id INTEGER,
-                            firebase_uid VARCHAR(128),
-                            title VARCHAR(255) NOT NULL,
-                            body TEXT,
-                            notification_type VARCHAR(50) DEFAULT 'general',
-                            delivered BOOLEAN DEFAULT FALSE,
-                            read_status BOOLEAN DEFAULT FALSE,
-                            fcm_response TEXT,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            delivered_at TIMESTAMP
-                        )
-                    """)
-                    
                     # Get notifications for this user
                     cur.execute("""
                         SELECT id, title, body, notification_type, delivered, read_status, 
