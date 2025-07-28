@@ -398,12 +398,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (userInfo) {
             userInfo.innerHTML = `
                 <div class="demo-mode-active" style="text-align: center; padding: 20px;">
-                    <h2 style="color: #74c0fc; margin-bottom: 15px;">🎮 Demo Mode Active</h2>
+                    <h2 style="color: #74c0fc; margin-bottom: 15px;">🎮 You are in Demo Mode</h2>
                     <div style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                        <p style="color: #cccccc; margin: 5px 0;"><strong>Name:</strong> Demo User</p>
-                        <p style="color: #cccccc; margin: 5px 0;"><strong>Email:</strong> demo@example.com</p>
-                        <p style="color: #cccccc; margin: 5px 0;"><strong>Data Balance:</strong> 5.5 GB</p>
-                        <p style="color: #cccccc; margin: 5px 0;"><strong>Status:</strong> Demo Member</p>
+                        <p style="color: #cccccc; margin: 5px 0;">This is demo release without actual connectivity and 0 actual $ being charged. Request BETA access eSIM, pay $1 through Stripe and try service globally.</p>
                     </div>
                     <button onclick="disableDemoMode()" style="background: rgba(255, 193, 7, 0.2); border: 1px solid #ffc107; color: #ffc107; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
                         Exit Demo Mode
@@ -740,12 +737,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (userInfo) {
         userInfo.innerHTML = `
           <div class="demo-mode-active" style="text-align: center; padding: 20px;">
-            <h2 style="color: #74c0fc; margin-bottom: 15px;">🎮 Demo Mode Active</h2>
+            <h2 style="color: #74c0fc; margin-bottom: 15px;">🎮 You are in Demo Mode</h2>
             <div style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-              <p style="color: #cccccc; margin: 5px 0;"><strong>Name:</strong> Demo User</p>
-              <p style="color: #cccccc; margin: 5px 0;"><strong>Email:</strong> demo@example.com</p>
-              <p style="color: #cccccc; margin: 5px 0;"><strong>Data Balance:</strong> 5.5 GB</p>
-              <p style="color: #cccccc; margin: 5px 0;"><strong>Status:</strong> Demo Member</p>
+              <p style="color: #cccccc; margin: 5px 0;">This is demo release without actual connectivity and 0 actual $ being charged. Request BETA access eSIM, pay $1 through Stripe and try service globally.</p>
             </div>
             <button onclick="disableDemoMode()" style="background: rgba(255, 193, 7, 0.2); border: 1px solid #ffc107; color: #ffc107; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
               Exit Demo Mode
