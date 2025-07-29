@@ -229,7 +229,8 @@ class OXIOService:
 
             payload = {
                 "name": group_name,
-                "description": description or f"Group for {group_name}"
+                "description": description or f"Group for {group_name}",
+                "groupType": "CUSTOM"
             }
 
             print(f"OXIO Create Group Request URL: {url}")
