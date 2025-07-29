@@ -1725,7 +1725,7 @@ def get_user_by_firebase_uid(firebase_uid):
                 with conn.cursor() as cur:
                     cur.execute(
                         """SELECT id, email, firebase_uid, stripe_customer_id, display_name, 
-                                  photo_url, imei, oxio_user_id, eth_address 
+                                  photo_url, imei, oxio_user_id, eth_address, oxio_group_id 
                         FROM users WHERE firebase_uid = %s""",
                         (firebase_uid,)
                     )
@@ -3284,11 +3284,17 @@ def get_oxio_user_data():
         oxio_user_id = user_data[7] if len(user_data) > 7 else None
         eth_address = user_data[8] if len(user_data) > 8 else None
 
+        # Extract additional fields from user_data tuple including oxio_group_id
+        oxio_group_id = None
+        if len(user_data) > 9:  # Check if oxio_group_id column exists (index 9)
+            oxio_group_id = user_data[9]
+
         # Get OXIO data from database and API
         oxio_data = {
             'user_id': user_id,
             'email': user_email,
             'oxio_user_id': oxio_user_id,  # OXIO user ID from oxio_user_id column
+            'oxio_group_id': oxio_group_id,  # OXIO group ID from oxio_group_id column
             'metamask_address': eth_address,  # MetaMask address from eth_address column
             'phone_number': None,
             'line_id': None,
