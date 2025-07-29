@@ -276,8 +276,14 @@ class OXIOService:
                 }
 
             if response.status_code >= 200 and response.status_code < 300:
-                # Get OXIO group ID from response
-                oxio_group_id = response_data.get('groupId') or response_data.get('id') or response_data.get('group_id')
+                # Get OXIO group ID from response - check nested structure first
+                oxio_group_id = None
+                if 'group' in response_data and isinstance(response_data['group'], dict):
+                    oxio_group_id = response_data['group'].get('groupId')
+                
+                # Fallback to top-level fields if not found in nested structure
+                if not oxio_group_id:
+                    oxio_group_id = response_data.get('groupId') or response_data.get('id') or response_data.get('group_id')
                 
                 return {
                     'success': True,
