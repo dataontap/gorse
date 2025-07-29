@@ -453,6 +453,130 @@ class OXIOService:
                 'firebase_uid': firebase_uid
             }
 
+    def find_user_by_email(self, email: str) -> Dict[str, Any]:
+        """
+        Find an existing OXIO user by email address
+
+        Args:
+            email: Email address to search for
+
+        Returns:
+            API response as dictionary with user details if found
+        """
+        try:
+            # Use the end-users endpoint with email filter
+            url = f"{self.base_url}/v2/end-users"
+            headers = self.get_headers()
+            
+            # Add email as query parameter
+            params = {'email': email}
+
+            print(f"OXIO Find User by Email URL: {url}")
+            print(f"OXIO Find User Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
+            print(f"OXIO Find User Params: {params}")
+
+            response = requests.get(
+                url,
+                headers=headers,
+                params=params,
+                timeout=30
+            )
+
+            print(f"OXIO Find User Response Status: {response.status_code}")
+            print(f"OXIO Find User Response Headers: {dict(response.headers)}")
+
+            # Get response text first
+            response_text = response.text
+            print(f"Raw response body: {response_text}")
+
+            # Check if response is JSON
+            content_type = response.headers.get('content-type', '').lower()
+
+            if 'application/json' in content_type:
+                try:
+                    response_data = response.json() if response.content else {}
+                    print(f"OXIO Find User Response Body (parsed): {json.dumps(response_data, indent=2)}")
+                except json.JSONDecodeError as json_err:
+                    print(f"Failed to parse JSON response: {str(json_err)}")
+                    response_data = {
+                        'error': 'Invalid JSON response',
+                        'json_error': str(json_err),
+                        'raw_response': response_text[:1000]
+                    }
+            else:
+                print(f"Non-JSON response received (Content-Type: {content_type})")
+                response_data = {
+                    'error': 'Non-JSON response',
+                    'content_type': content_type,
+                    'raw_response': response_text[:1000]
+                }
+
+            if response.status_code >= 200 and response.status_code < 300:
+                # Look for user in response data
+                users = response_data.get('endUsers', []) or response_data.get('users', [])
+                
+                if users and len(users) > 0:
+                    # Find user with matching email
+                    for user in users:
+                        if user.get('email', '').lower() == email.lower():
+                            oxio_user_id = user.get('endUserId') or user.get('id') or user.get('userId')
+                            return {
+                                'success': True,
+                                'status_code': response.status_code,
+                                'data': response_data,
+                                'message': 'OXIO user found by email',
+                                'oxio_user_id': oxio_user_id,
+                                'user_data': user,
+                                'email': email
+                            }
+                
+                # No matching user found
+                return {
+                    'success': False,
+                    'status_code': response.status_code,
+                    'data': response_data,
+                    'message': 'No OXIO user found with this email',
+                    'email': email
+                }
+            else:
+                return {
+                    'success': False,
+                    'status_code': response.status_code,
+                    'data': response_data,
+                    'error': f'OXIO API error: {response.status_code}',
+                    'message': response_data.get('message', f'HTTP {response.status_code} error'),
+                    'email': email
+                }
+
+        except requests.exceptions.Timeout:
+            return {
+                'success': False,
+                'error': 'Request timeout',
+                'message': 'OXIO API request timed out after 30 seconds',
+                'email': email
+            }
+        except requests.exceptions.ConnectionError as conn_err:
+            return {
+                'success': False,
+                'error': 'Connection error',
+                'message': f'Could not connect to OXIO API: {str(conn_err)}',
+                'email': email
+            }
+        except requests.exceptions.RequestException as req_err:
+            return {
+                'success': False,
+                'error': 'Request error',
+                'message': f'Request failed: {str(req_err)}',
+                'email': email
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': 'Unexpected error',
+                'message': f'Unexpected error: {str(e)}',
+                'email': email
+            }
+
     def get_user_lines(self, oxio_user_id: str) -> Dict[str, Any]:
         """
         Get existing lines for an OXIO user

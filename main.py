@@ -709,7 +709,20 @@ def register_firebase_user():
                                 oxio_user_id = oxio_result.get('oxio_user_id')
                                 print(f"Successfully created OXIO user: {oxio_user_id}")
                             else:
-                                print(f"Failed to create OXIO user: {oxio_result.get('message', 'Unknown error')}")
+                                # Check if user already exists (error code 6805)
+                                if (oxio_result.get('status_code') == 400 and 
+                                    oxio_result.get('data', {}).get('code') == 6805):
+                                    print(f"OXIO user already exists for {email}, attempting to find existing user ID")
+                                    
+                                    # Try to find existing OXIO user by email
+                                    existing_user_result = oxio_service.find_user_by_email(email)
+                                    if existing_user_result.get('success'):
+                                        oxio_user_id = existing_user_result.get('oxio_user_id')
+                                        print(f"Found existing OXIO user ID: {oxio_user_id}")
+                                    else:
+                                        print(f"Could not find existing OXIO user, will proceed without OXIO user ID")
+                                else:
+                                    print(f"Failed to create OXIO user: {oxio_result.get('message', 'Unknown error')}")
                         except Exception as oxio_err:
                             print(f"Error creating OXIO group/user: {str(oxio_err)}")
 
@@ -4633,6 +4646,81 @@ def about():
 def message_admin():
     return render_template('message_admin.html')
 
+@app.route('/api/fix-user-oxio-data', methods=['POST'])
+def fix_user_oxio_data():
+    """Fix missing OXIO data for existing users"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid')
+        email = data.get('email')
+
+        if not firebase_uid and not email:
+            return jsonify({'success': False, 'message': 'Firebase UID or email is required'}), 400
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get user details
+                    if firebase_uid:
+                        cur.execute("""
+                            SELECT id, email, display_name, oxio_user_id, oxio_group_id
+                            FROM users 
+                            WHERE firebase_uid = %s
+                        """, (firebase_uid,))
+                    else:
+                        cur.execute("""
+                            SELECT id, email, display_name, oxio_user_id, oxio_group_id
+                            FROM users 
+                            WHERE email = %s
+                        """, (email,))
+                    
+                    user_result = cur.fetchone()
+
+                    if not user_result:
+                        return jsonify({'success': False, 'message': 'User not found'}), 404
+
+                    user_id, user_email, display_name, existing_oxio_user_id, existing_oxio_group_id = user_result
+
+                    # Try to find existing OXIO user by email
+                    print(f"Attempting to find existing OXIO user for email: {user_email}")
+                    existing_user_result = oxio_service.find_user_by_email(user_email)
+                    
+                    if existing_user_result.get('success'):
+                        oxio_user_id = existing_user_result.get('oxio_user_id')
+                        print(f"Found existing OXIO user ID: {oxio_user_id}")
+                        
+                        # Update user with found OXIO user ID
+                        cur.execute(
+                            "UPDATE users SET oxio_user_id = %s WHERE id = %s",
+                            (oxio_user_id, user_id)
+                        )
+                        conn.commit()
+                        
+                        return jsonify({
+                            'success': True,
+                            'message': 'Successfully linked existing OXIO user',
+                            'user_id': user_id,
+                            'email': user_email,
+                            'oxio_user_id': oxio_user_id,
+                            'firebase_uid': firebase_uid,
+                            'oxio_response': existing_user_result
+                        })
+                    else:
+                        return jsonify({
+                            'success': False,
+                            'message': f'Could not find existing OXIO user: {existing_user_result.get("message", "Unknown error")}',
+                            'user_id': user_id,
+                            'email': user_email,
+                            'firebase_uid': firebase_uid,
+                            'oxio_response': existing_user_result
+                        }), 404
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error in fix user OXIO data endpoint: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/create-oxio-user', methods=['POST'])
 def create_oxio_user_endpoint():
     """Create an OXIO user for an existing Firebase user"""
@@ -4698,11 +4786,42 @@ def create_oxio_user_endpoint():
                                 'oxio_response': oxio_result
                             })
                         else:
-                            return jsonify({
-                                'success': False,
-                                'message': f'Failed to create OXIO user: {oxio_result.get("message", "Unknown error")}',
-                                'oxio_response': oxio_result
-                            }), 500
+                            # Check if user already exists (error code 6805)
+                            if (oxio_result.get('status_code') == 400 and 
+                                oxio_result.get('data', {}).get('code') == 6805):
+                                print(f"OXIO user already exists for {email}, attempting to find existing user ID")
+                                
+                                # Try to find existing OXIO user by email
+                                existing_user_result = oxio_service.find_user_by_email(email)
+                                if existing_user_result.get('success'):
+                                    oxio_user_id = existing_user_result.get('oxio_user_id')
+                                    print(f"Found existing OXIO user ID: {oxio_user_id}")
+                                    
+                                    # Update user with found OXIO user ID
+                                    cur.execute(
+                                        "UPDATE users SET oxio_user_id = %s WHERE id = %s",
+                                        (oxio_user_id, user_id)
+                                    )
+                                    conn.commit()
+                                    
+                                    return jsonify({
+                                        'success': True,
+                                        'message': 'Found and linked existing OXIO user',
+                                        'oxio_user_id': oxio_user_id,
+                                        'oxio_response': existing_user_result
+                                    })
+                                else:
+                                    return jsonify({
+                                        'success': False,
+                                        'message': f'OXIO user exists but could not be found: {existing_user_result.get("message", "Unknown error")}',
+                                        'oxio_response': existing_user_result
+                                    }), 500
+                            else:
+                                return jsonify({
+                                    'success': False,
+                                    'message': f'Failed to create OXIO user: {oxio_result.get("message", "Unknown error")}',
+                                    'oxio_response': oxio_result
+                                }), 500
                     except Exception as oxio_err:
                         return jsonify({
                             'success': False,
