@@ -3901,6 +3901,60 @@ def token_price_pings():
             'message': str(e)
         }), 500
 
+@app.route('/api/oxio-pings', methods=['GET'])
+def oxio_api_pings():
+    """Endpoint to view OXIO API ping history"""
+    pings = []
+    try:
+        # Ensure table exists
+        create_token_pings_table()
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get OXIO API pings specifically
+                    cur.execute("""
+                        SELECT id, token_price, request_time_ms, response_time_ms, 
+                               roundtrip_ms, ping_destination, source, additional_data, created_at 
+                        FROM token_price_pings 
+                        WHERE source = 'oxio_api'
+                        ORDER BY created_at DESC 
+                        LIMIT 50
+                    """)
+                    rows = cur.fetchall()
+
+                    for row in rows:
+                        try:
+                            additional_data = json.loads(row[7]) if row[7] else {}
+                        except:
+                            additional_data = {}
+                            
+                        pings.append({
+                            'id': row[0],
+                            'request_time_ms': row[2],
+                            'response_time_ms': row[3],
+                            'roundtrip_ms': row[4],
+                            'ping_destination': row[5],
+                            'source': row[6],
+                            'endpoint_name': additional_data.get('endpoint_name'),
+                            'status_code': additional_data.get('status_code'),
+                            'service': additional_data.get('service'),
+                            'additional_data': additional_data,
+                            'created_at': row[8].isoformat() if row[8] else None
+                        })
+
+        return jsonify({
+            'status': 'success',
+            'oxio_pings': pings,
+            'total_pings': len(pings)
+        })
+    except Exception as e:
+        print(f"Error in oxio-pings endpoint: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 @app.route('/api/debug/recent-purchases', methods=['GET'])
 def debug_recent_purchases():
     """Debug endpoint to check recent purchases"""

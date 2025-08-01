@@ -3,6 +3,8 @@ import requests
 import json
 from typing import Dict, Any, Optional
 import time
+import socket
+from datetime import datetime
 
 class OXIOService:
     def __init__(self):
@@ -35,6 +37,47 @@ class OXIOService:
             'Authorization': f'Basic {encoded_credentials}',
             'User-Agent': 'DOTM-Platform/1.0'
         }
+
+    def record_api_ping(self, endpoint_name: str, request_time_ms: int, response_time_ms: int, 
+                       status_code: int, destination_url: str, additional_data: Dict = None):
+        """Record OXIO API response time in the pings database"""
+        try:
+            # Import here to avoid circular imports
+            from main import get_db_connection
+            
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Use a fixed price for OXIO API pings (not applicable but required by table)
+                        api_response_indicator = 1.0  # Use 1.0 to indicate successful API response
+                        
+                        roundtrip_ms = request_time_ms + response_time_ms
+                        
+                        # Create additional data with OXIO-specific information
+                        ping_data = {
+                            'endpoint_name': endpoint_name,
+                            'status_code': status_code,
+                            'timestamp': datetime.now().isoformat(),
+                            'service': 'oxio_api',
+                            'hostname': socket.gethostname(),
+                            'user_id': 1  # Default user for system pings
+                        }
+                        
+                        if additional_data:
+                            ping_data.update(additional_data)
+                        
+                        cur.execute(
+                            """INSERT INTO token_price_pings 
+                               (token_price, request_time_ms, response_time_ms, roundtrip_ms, 
+                                ping_destination, source, additional_data)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                            (api_response_indicator, request_time_ms, response_time_ms, roundtrip_ms, 
+                             destination_url, 'oxio_api', json.dumps(ping_data))
+                        )
+                        conn.commit()
+                        print(f"Recorded OXIO API ping: {endpoint_name} (Request: {request_time_ms}ms, Response: {response_time_ms}ms, Status: {status_code})")
+        except Exception as e:
+            print(f"Error recording OXIO API ping: {str(e)}")
 
     def activate_line(self, oxio_user_id_or_payload) -> Dict[str, Any]:
         """
@@ -239,12 +282,20 @@ class OXIOService:
             print(f"OXIO Create Group Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
             print(f"OXIO Create Group Payload: {json.dumps(payload, indent=2)}")
 
+            # Track timing
+            start_time = time.time() * 1000  # Convert to milliseconds
+            
             response = requests.post(
                 url,
                 headers=headers,
                 json=payload,
                 timeout=30
             )
+            
+            end_time = time.time() * 1000
+            total_time_ms = int(end_time - start_time)
+            request_time_ms = int(total_time_ms * 0.3)  # Estimate request preparation time
+            response_time_ms = int(total_time_ms * 0.7)  # Estimate response processing time
 
             print(f"OXIO Create Group Response Status: {response.status_code}")
             print(f"OXIO Create Group Response Headers: {dict(response.headers)}")
@@ -285,22 +336,52 @@ class OXIOService:
                 if not oxio_group_id:
                     oxio_group_id = response_data.get('groupId') or response_data.get('id') or response_data.get('group_id')
                 
+                # Record successful API ping
+                self.record_api_ping(
+                    endpoint_name='create_group',
+                    request_time_ms=request_time_ms,
+                    response_time_ms=response_time_ms,
+                    status_code=response.status_code,
+                    destination_url=url,
+                    additional_data={
+                        'group_name': group_name,
+                        'oxio_group_id': oxio_group_id,
+                        'group_status': response_data.get('group', {}).get('status') if isinstance(response_data.get('group'), dict) else None
+                    }
+                )
+                
                 return {
                     'success': True,
                     'status_code': response.status_code,
                     'data': response_data,
                     'message': 'OXIO group created successfully',
                     'oxio_group_id': oxio_group_id,
-                    'request_payload': payload
+                    'request_payload': payload,
+                    'response_time_ms': total_time_ms
                 }
             else:
+                # Record failed API ping
+                self.record_api_ping(
+                    endpoint_name='create_group',
+                    request_time_ms=request_time_ms,
+                    response_time_ms=response_time_ms,
+                    status_code=response.status_code,
+                    destination_url=url,
+                    additional_data={
+                        'group_name': group_name,
+                        'error': f'HTTP {response.status_code}',
+                        'error_message': response_data.get('message', 'Unknown error')
+                    }
+                )
+                
                 return {
                     'success': False,
                     'status_code': response.status_code,
                     'data': response_data,
                     'error': f'OXIO API error: {response.status_code}',
                     'message': response_data.get('message', f'HTTP {response.status_code} error'),
-                    'request_payload': payload
+                    'request_payload': payload,
+                    'response_time_ms': total_time_ms
                 }
 
         except requests.exceptions.Timeout:
