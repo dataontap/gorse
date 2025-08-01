@@ -3890,6 +3890,64 @@ input:checked + .toggle-slider:before {
     color: #999;
 }
 
+/* Datashare specific styles */
+.datashare-user {
+    border-left: 4px solid var(--primary-color);
+}
+
+.group-info {
+    margin: 10px 0;
+    padding: 10px;
+    background: rgba(0, 102, 255, 0.1);
+    border-radius: 8px;
+}
+
+.group-name {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+
+.user-status {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.invitation-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.invitation-group {
+    font-size: 14px;
+    color: var(--primary-color);
+    font-weight: 500;
+    margin-bottom: 3px;
+}
+
+.invitation-message {
+    font-style: italic;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.demo-badge {
+    background: #ff9800;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 40px;
+}
+
 /* Help desk styles */
 .help-section {
     position: fixed;

@@ -155,7 +155,7 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
-        
+
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
@@ -415,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle send invitation button
         if (e.target.id === 'sendInvitationBtn') {
             e.preventDefault();
-            sendInvitation();
+            sendDatashareInvitation();
             return;
         }
 
@@ -590,57 +590,104 @@ function hideAddUserPopup() {
 }
 
 function showInviteForm() {
-    const container = document.getElementById('inviteFormContainer');
-    if (!container) return;
+    const popup = document.getElementById('addUserPopup');
+    const content = popup.querySelector('.popup-content');
 
-    container.innerHTML = `
+    content.innerHTML = `
+        <div class="popup-header">
+            <h3>Invite to Datashare Group</h3>
+            <button class="popup-close">×</button>
+        </div>
         <div class="invite-form">
-            <h4>Send Invitation</h4>
+            <h4>Send Datashare Invitation</h4>
+            <div class="form-group">
+                <label for="groupName">Group Name</label>
+                <input type="text" id="groupName" placeholder="My Datashare Group" value="My Datashare Group" required>
+            </div>
             <div class="form-group">
                 <label for="inviteEmail">Email Address</label>
                 <input type="email" id="inviteEmail" placeholder="Enter email address" required>
             </div>
             <div class="form-group">
+                <label for="inviteName">Name (Optional)</label>
+                <input type="text" id="inviteName" placeholder="Enter their name">
+            </div>
+            <div class="form-group">
                 <label for="inviteMessage">Personal Message (Optional)</label>
-                <textarea id="inviteMessage" placeholder="Add a personal message..." rows="3"></textarea>
+                <textarea id="inviteMessage" placeholder="Join my datashare group to save on connectivity costs together!" rows="3"></textarea>
             </div>
             <div class="form-actions">
-                <button class="btn-secondary" id="cancelInviteBtn">Cancel</button>
-                <button class="btn-primary" id="sendInvitationBtn">Send Invitation</button>
+                <button type="button" id="cancelInviteBtn" class="btn-secondary">Cancel</button>
+                <button type="button" id="sendInvitationBtn" class="btn-primary">Send Invitation</button>
             </div>
         </div>
     `;
 
-    // Add event listeners for form buttons
-    document.getElementById('cancelInviteBtn').addEventListener('click', hideAddUserPopup);
-    document.getElementById('sendInvitationBtn').addEventListener('click', sendInvitation);
+    popup.style.display = 'flex';
 }
 
-function sendInvitation() {
-    const email = document.getElementById('inviteEmail')?.value;
-    const message = document.getElementById('inviteMessage')?.value || '';
+function createDemoUser() {
+    const timestamp = Date.now();
+    const demoEmail = `demo${timestamp}@datashare.example.com`;
+    const firebaseUid = localStorage.getItem('userId');
+    const groupName = `Demo Datashare Group ${timestamp % 1000}`;
+
+    fetch('/api/send-datashare-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: demoEmail,
+            name: `Demo User ${timestamp % 1000}`,
+            groupName: groupName,
+            message: 'Demo datashare user created automatically',
+            firebaseUid: firebaseUid,
+            isDemoUser: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Demo datashare user created successfully!\nEmail: ${data.invited_email}\nGroup: ${data.group_name}`);
+            hideAddUserPopup();
+            loadDatashareInvites(); // Refresh the invites list
+        } else {
+            alert('Error creating demo user: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error creating demo user:', error);
+        alert('Error creating demo user. Please try again.');
+    });
+}
+
+function sendDatashareInvitation() {
+    const email = document.getElementById('inviteEmail').value;
+    const name = document.getElementById('inviteName').value;
+    const groupName = document.getElementById('groupName').value || 'My Datashare Group';
+    const message = document.getElementById('inviteMessage').value;
+    const firebaseUid = localStorage.getItem('userId');
 
     if (!email) {
         alert('Please enter an email address');
         return;
     }
 
-    const firebaseUid = localStorage.getItem('userId');
-
-    // Disable button during processing
-    const sendBtn = document.getElementById('sendInvitationBtn');
-    if (sendBtn) {
-        sendBtn.disabled = true;
-        sendBtn.textContent = 'Sending...';
+    if (!firebaseUid) {
+        alert('Please log in first');
+        return;
     }
 
-    fetch('/api/send-invitation', {
+    fetch('/api/send-datashare-invitation', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
             email: email,
+            name: name || 'Friend',
+            groupName: groupName,
             message: message,
             firebaseUid: firebaseUid,
             isDemoUser: false
@@ -649,11 +696,9 @@ function sendInvitation() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Invitation sent successfully!');
+            alert(`Datashare invitation sent successfully!\nInvited: ${data.invited_email}\nGroup: ${data.group_name}`);
             hideAddUserPopup();
-            if (typeof loadInvitesList === 'function') {
-                loadInvitesList(); // Refresh the invites list
-            }
+            loadDatashareInvites(); // Refresh the invites list
         } else {
             alert('Error sending invitation: ' + (data.message || 'Unknown error'));
         }
@@ -661,47 +706,175 @@ function sendInvitation() {
     .catch(error => {
         console.error('Error sending invitation:', error);
         alert('Error sending invitation. Please try again.');
-    })
-    .finally(() => {
-        if (sendBtn) {
-            sendBtn.disabled = false;
-            sendBtn.textContent = 'Send Invitation';
-        }
     });
 }
 
-function createDemoUser() {
-    const timestamp = Date.now();
-    const demoEmail = `demo${timestamp}@example.com`;
+function loadDatashareInvites() {
+    const firebaseUid = localStorage.getItem('userId');
+    if (!firebaseUid) return;
+
+    fetch(`/api/datashare-invitations?firebaseUid=${firebaseUid}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayDatashareInvites(data.invitations);
+            } else {
+                console.error('Error loading datashare invites:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading datashare invites:', error);
+        });
+}
+
+function displayDatashareInvites(invites) {
+    const invitationsSection = document.getElementById('recentInvitationsSection');
+    const invitationsList = document.getElementById('invitationsList');
+    const acceptedUsersContainer = document.getElementById('acceptedUsersContainer');
+
+    if (!invitationsList) return;
+
+    // Clear existing content
+    invitationsList.innerHTML = '';
+    if (acceptedUsersContainer) {
+        acceptedUsersContainer.innerHTML = '';
+    }
+
+    if (!invites || invites.length === 0) {
+        invitationsList.innerHTML = '<p class="no-invites">No datashare invitations sent yet</p>';
+        if (invitationsSection) {
+            invitationsSection.style.display = 'none';
+        }
+        return;
+    }
+
+    // Show the invitations section
+    if (invitationsSection) {
+        invitationsSection.style.display = 'block';
+    }
+
+    // Separate accepted and pending invitations
+    const acceptedInvites = invites.filter(invite => invite.invitation_status === 'invite_accepted');
+    const pendingInvites = invites.filter(invite => invite.invitation_status !== 'invite_accepted');
+
+    // Display accepted invitations as user cards
+    if (acceptedInvites.length > 0 && acceptedUsersContainer) {
+        acceptedInvites.forEach(invite => {
+            const userCard = createDatashareUserCard(invite);
+            acceptedUsersContainer.appendChild(userCard);
+        });
+    }
+
+    // Display pending invitations
+    if (pendingInvites.length > 0) {
+        pendingInvites.forEach(invite => {
+            const inviteItem = createDatashareInviteItem(invite);
+            invitationsList.appendChild(inviteItem);
+        });
+    }
+}
+
+function createDatashareUserCard(invite) {
+    const userCard = document.createElement('div');
+    userCard.className = 'user-card datashare-user';
+    userCard.setAttribute('data-invite-id', invite.id);
+
+    const truncatedEmail = invite.invited_email.length > 30 ? 
+        invite.invited_email.substring(0, 27) + '...' : invite.invited_email;
+
+    userCard.innerHTML = `
+        <div class="user-info-header">
+            <div class="user-name">${invite.invited_name || 'Datashare User'}</div>
+            <div class="header-icons">
+                <div class="edit-icon" onclick="editDatashareUser(this)" title="Edit datashare user">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="remove-icon" onclick="removeDatashareUser(this)" title="Remove from datashare">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+        </div>
+        <div class="email-container">
+            <div class="user-email">${truncatedEmail}</div>
+            <div class="timestamp">Member since ${formatDate(invite.accepted_at || invite.created_at)}</div>
+        </div>
+        <div class="group-info">
+            <div class="group-name">Group: ${invite.group_name}</div>
+            <div class="user-status">Status: Active Member</div>
+        </div>
+        <div class="usage-info">
+            <div class="usage-amount">Shared Data: 0 GB</div>
+            <div class="usage-bar">
+                <div class="usage-fill" style="width: 0%"></div>
+            </div>
+        </div>
+        <div class="user-actions">
+            <button class="action-btn pause-btn" onclick="pauseDatashareUser(this)">
+                <i class="fas fa-pause"></i> Pause
+            </button>
+            <button class="action-btn settings-btn" onclick="openDatashareSettings(this)">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </div>
+    `;
+
+    return userCard;
+}
+
+function createDatashareInviteItem(invite) {
+    const inviteItem = document.createElement('div');
+    inviteItem.className = 'invitation-item datashare-invite';
+    inviteItem.setAttribute('data-invite-id', invite.id);
+
+    const statusClass = `status-${invite.invitation_status.replace('_', '-')}`;
+    const canCancel = invite.invitation_status === 'invite_sent';
+
+    inviteItem.innerHTML = `
+        <div class="invitation-info">
+            <div class="invitation-email">${invite.invited_email}</div>
+            <div class="invitation-name">${invite.invited_name || 'Unknown'}</div>
+            <div class="invitation-group">Group: ${invite.group_name}</div>
+            <div class="invitation-date">${formatDate(invite.created_at)}</div>
+            ${invite.personal_message ? `<div class="invitation-message">"${invite.personal_message}"</div>` : ''}
+        </div>
+        <div class="invitation-status ${statusClass}">${formatStatus(invite.invitation_status)}</div>
+        ${canCancel ? `<button class="cancel-invite-btn" onclick="cancelDatashareInvitation(${invite.id})" title="Cancel invitation">
+            <i class="fas fa-times"></i>
+        </button>` : ''}
+        ${invite.is_demo_user ? '<div class="demo-badge">DEMO</div>' : ''}
+    `;
+
+    return inviteItem;
+}
+
+function cancelDatashareInvitation(invitationId) {
     const firebaseUid = localStorage.getItem('userId');
 
-    fetch('/api/send-invitation', {
+    if (!confirm('Are you sure you want to cancel this datashare invitation?')) {
+        return;
+    }
+
+    fetch(`/api/cancel-datashare-invitation/${invitationId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            email: demoEmail,
-            message: 'Demo user created automatically',
-            firebaseUid: firebaseUid,
-            isDemoUser: true
+            firebaseUid: firebaseUid
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Demo user created successfully!');
-            hideAddUserPopup();
-            if (typeof loadInvitesList === 'function') {
-                loadInvitesList(); // Refresh the invites list
-            }
+            alert('Invitation cancelled successfully');
+            loadDatashareInvites(); // Refresh the list
         } else {
-            alert('Error creating demo user: ' + (data.message || 'Unknown error'));
+            alert('Error cancelling invitation: ' + (data.message || 'Unknown error'));
         }
     })
     .catch(error => {
-        console.error('Error creating demo user:', error);
-        alert('Error creating demo user. Please try again.');
+        console.error('Error cancelling invitation:', error);
+        alert('Error cancelling invitation. Please try again.');
     });
 }
 
@@ -792,6 +965,7 @@ function toggleSortControls() {
     if (userCards.length >= 2) {
         if (sortContainer) {
             sortContainer.style.display = 'flex';
+```text
         }
     } else {
         if (sortContainer) {
@@ -1155,7 +1329,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle send invitation button
         if (e.target.id === 'sendInvitationBtn') {
             e.preventDefault();
-            sendInvitation();
+            sendDatashareInvitation();
             return;
         }
 
@@ -1335,14 +1509,22 @@ function showInviteForm() {
 
     container.innerHTML = `
         <div class="invite-form">
-            <h4>Send Invitation</h4>
+            <h4>Send Datashare Invitation</h4>
+            <div class="form-group">
+                <label for="groupName">Group Name</label>
+                <input type="text" id="groupName" placeholder="My Datashare Group" value="My Datashare Group" required>
+            </div>
             <div class="form-group">
                 <label for="inviteEmail">Email Address</label>
                 <input type="email" id="inviteEmail" placeholder="Enter email address" required>
             </div>
             <div class="form-group">
+                <label for="inviteName">Name (Optional)</label>
+                <input type="text" id="inviteName" placeholder="Enter their name">
+            </div>
+            <div class="form-group">
                 <label for="inviteMessage">Personal Message (Optional)</label>
-                <textarea id="inviteMessage" placeholder="Add a personal message..." rows="3"></textarea>
+                <textarea id="inviteMessage" placeholder="Join my datashare group to save on connectivity costs together!" rows="3"></textarea>
             </div>
             <div class="form-actions">
                 <button class="btn-secondary" id="cancelInviteBtn">Cancel</button>
@@ -1353,11 +1535,49 @@ function showInviteForm() {
 
     // Add event listeners for form buttons
     document.getElementById('cancelInviteBtn').addEventListener('click', hideAddUserPopup);
-    document.getElementById('sendInvitationBtn').addEventListener('click', sendInvitation);
+    document.getElementById('sendInvitationBtn').addEventListener('click', sendDatashareInvitation);
 }
 
-function sendInvitation() {
+function createDemoUser() {
+    const timestamp = Date.now();
+    const demoEmail = `demo${timestamp}@datashare.example.com`;
+    const firebaseUid = localStorage.getItem('userId');
+    const groupName = `Demo Datashare Group ${timestamp % 1000}`;
+
+    fetch('/api/send-datashare-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: demoEmail,
+            name: `Demo User ${timestamp % 1000}`,
+            groupName: groupName,
+            message: 'Demo datashare user created automatically',
+            firebaseUid: firebaseUid,
+            isDemoUser: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Demo datashare user created successfully!\nEmail: ${data.invited_email}\nGroup: ${data.group_name}`);
+            hideAddUserPopup();
+            loadDatashareInvites(); // Refresh the invites list
+        } else {
+            alert('Error creating demo user: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error creating demo user:', error);
+        alert('Error creating demo user. Please try again.');
+    });
+}
+
+function sendDatashareInvitation() {
     const email = document.getElementById('inviteEmail')?.value;
+    const name = document.getElementById('inviteName')?.value;
+    const groupName = document.getElementById('groupName')?.value || 'My Datashare Group';
     const message = document.getElementById('inviteMessage')?.value || '';
 
     if (!email) {
@@ -1374,13 +1594,15 @@ function sendInvitation() {
         sendBtn.textContent = 'Sending...';
     }
 
-    fetch('/api/send-invitation', {
+    fetch('/api/send-datashare-invitation', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
             email: email,
+            name: name,
+            groupName: groupName,
             message: message,
             firebaseUid: firebaseUid,
             isDemoUser: false
@@ -1389,10 +1611,10 @@ function sendInvitation() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Invitation sent successfully!');
+            alert(`Datashare invitation sent successfully!\nInvited: ${data.invited_email}\nGroup: ${data.group_name}`);
             hideAddUserPopup();
-            if (typeof loadInvitesList === 'function') {
-                loadInvitesList(); // Refresh the invites list
+            if (typeof loadDatashareInvites === 'function') {
+                loadDatashareInvites(); // Refresh the invites list
             }
         } else {
             alert('Error sending invitation: ' + (data.message || 'Unknown error'));
@@ -1407,41 +1629,6 @@ function sendInvitation() {
             sendBtn.disabled = false;
             sendBtn.textContent = 'Send Invitation';
         }
-    });
-}
-
-function createDemoUser() {
-    const timestamp = Date.now();
-    const demoEmail = `demo${timestamp}@example.com`;
-    const firebaseUid = localStorage.getItem('userId');
-
-    fetch('/api/send-invitation', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email: demoEmail,
-            message: 'Demo user created automatically',
-            firebaseUid: firebaseUid,
-            isDemoUser: true
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Demo user created successfully!');
-            hideAddUserPopup();
-            if (typeof loadInvitesList === 'function') {
-                loadInvitesList(); // Refresh the invites list
-            }
-        } else {
-            alert('Error creating demo user: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error creating demo user:', error);
-        alert('Error creating demo user. Please try again.');
     });
 }
 
@@ -1732,6 +1919,7 @@ function createUserCard(invite) {
     // Generate random data for demo users
     const isDemo = invite.email.includes('example.com');
     const dataPercentage = Math.floor(Math.random() * 100) + 1;
+```text
     const timePercentage = Math.floor(Math.random() * 100) + 1;
     const dollarAmount = Math.floor(Math.random() * 25) + 1;
     const scoreNumber = Math.floor(Math.random() * 10) + 1;
@@ -1802,11 +1990,577 @@ function initializePauseDurationUpdates() {
 
 // Call this when the page loads to handle any existing paused users
 document.addEventListener('DOMContentLoaded', function() {
-    // Existing DOMContentLoaded code...
+    console.log('App.js loaded successfully');
 
-    // Initialize pause duration updates after a short delay to ensure cards are loaded
-    setTimeout(initializePauseDurationUpdates, 1500);
+    // Initialize theme based on localStorage or default to dark
+    const savedTheme = localStorage.getItem('darkMode');
+    const isDarkMode = savedTheme === null ? true : savedTheme === 'true';
+    toggleTheme(isDarkMode);
+
+    // Load DOTM balance if wallet is connected
+    loadDOTMBalance();
+
+    // Add event listeners for theme toggles
+    const darkToggle = document.getElementById('darkModeToggle');
+    const lightToggle = document.getElementById('lightModeToggle');
+
+    if (darkToggle) {
+        darkToggle.addEventListener('click', function() {
+            toggleTheme(true);
+        });
+    }
+
+    if (lightToggle) {
+        lightToggle.addEventListener('click', function() {
+            toggleTheme(false);
+        });
+    }
+
+    // Initialize add user functionality with popup
+    const addUserBtn = document.getElementById('addUserBtn');
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            showAddUserPopup();
+        });
+    }
+
+    // Initialize chart toggle functionality
+    document.querySelectorAll('.insight-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleChart(this);
+        });
+    });
+
+    // Use event delegation for all interactive elements
+    document.addEventListener('click', function(e) {
+        // Handle logout functionality
+        if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
+            e.preventDefault();
+            console.log('Logout button clicked');
+
+            // Try multiple logout methods
+            if (window.firebaseAuth && window.firebaseAuth.signOut) {
+                window.firebaseAuth.signOut();
+            } else if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().signOut().then(() => {
+                    localStorage.clear();
+                    window.location.href = '/';
+                }).catch((error) => {
+                    console.error('Logout error:', error);
+                    localStorage.clear();
+                    window.location.href = '/';
+                });
+            } else {
+                // Fallback: clear storage and redirect
+                localStorage.clear();
+                window.location.href = '/';
+            }
+            return;
+        }
+
+        // Close popup
+        if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
+            hideAddUserPopup();
+            return;
+        }
+
+        // Handle invite anyone button
+        if (e.target.id === 'inviteAnyoneBtn') {
+            e.preventDefault();
+            showInviteForm();
+            return;
+        }
+
+        // Handle demo user button
+        if (e.target.id === 'demoUserBtn') {
+            e.preventDefault();
+            createDemoUser();
+            return;
+        }
+
+        // Handle send invitation button
+        if (e.target.id === 'sendInvitationBtn') {
+            e.preventDefault();
+            sendDatashareInvitation();
+            return;
+        }
+
+        // Handle cancel invitation button
+        if (e.target.id === 'cancelInviteBtn') {
+            e.preventDefault();
+            hideAddUserPopup();
+            return;
+        }
+    });
+
+    // Add event delegation for confirmation drawer buttons
+    document.addEventListener('click', function(e) {
+        // Handle buy buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 10, 'global_data_10gb');
+        }
+
+        // Handle subscribe buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 24, 'basic_membership');
+        }
+
+        // Handle drawer cancel/confirm buttons
+        if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            hideConfirmationDrawer();
+        }
+
+        if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            confirmPurchase();
+        }
+    });
+
+    // Initialize beta enrollment functionality
+    const betaEnrollBtn = document.getElementById('betaEnrollBtn');
+    if (betaEnrollBtn) {
+        betaEnrollBtn.addEventListener('click', handleBetaEnrollment);
+        checkBetaStatus(); // Check current status on page load
+    }
+
+    // Handle help toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+            showHelpModal();
+        }
+    });
+
+    // Initialize settings toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'settingsToggle' || e.target.closest('#settingsToggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu) {
+                // Toggle settings submenu visibility
+                if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
+                    settingsSubmenu.style.display = 'block';
+                } else {
+                    settingsSubmenu.style.display = 'none';
+                }
+            }
+        }
+
+        // Handle language selector changes
+        if (e.target.id === 'languageSelect') {
+            const selectedLanguage = e.target.value;
+            if (typeof setLanguage === 'function') {
+                setLanguage(selectedLanguage);
+            }
+        }
+
+        // Close settings submenu when clicking outside
+        if (!e.target.closest('#settingsToggle') && !e.target.closest('.settings-submenu')) {
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu && settingsSubmenu.style.display === 'block') {
+                settingsSubmenu.style.display = 'none';
+            }
+        }
+    });
+
+    // Load invites if on dashboard page
+    if (window.location.pathname === '/dashboard') {
+        setTimeout(() => {
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList();
+            }
+        }, 1000);
+    }
+
+		// Load datashare invites if on dashboard page
+		if (window.location.pathname === '/dashboard') {
+			setTimeout(() => {
+					loadDatashareInvites();
+			}, 1000);
+		}
+
+    // Initialize carousel functionality
+    initializeCarousel();
 });
+
+// Add User Popup Functions
+function showAddUserPopup() {
+    console.log('showAddUserPopup called');
+
+    // Remove existing popup if any
+    hideAddUserPopup();
+
+    const popup = document.createElement('div');
+    popup.id = 'addUserPopup';
+    popup.className = 'popup-overlay';
+    popup.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: rgba(0, 0, 0, 0.7) !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        z-index: 999999 !important;
+        opacity: 1 !important;
+    `;
+
+    popup.innerHTML = `
+        <div class="popup-content" style="z-index: 999999; position: relative;">
+            <div class="popup-header">
+                <h3>Add New Datashare User</h3>
+                <button class="popup-close" onclick="hideAddUserPopup()">&times;</button>
+            </div>
+            <div class="popup-body">
+                <div class="invitation-options">
+                    <button class="invite-option-btn" id="inviteAnyoneBtn">
+                        <i class="fas fa-envelope"></i>
+                        <span>Invite Anyone</span>
+                        <small>Send invitation via email for a start</small>
+                    </button>
+                    <button class="invite-option-btn" id="demoUserBtn">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Demo User</span>
+                        <small>Create sample user instantly</small>
+                    </button>
+                </div>
+                <div id="inviteFormContainer"></div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+    console.log('Popup added to body:', popup);
+
+    // Force show with timeout
+    setTimeout(() => {
+        popup.classList.add('show');
+        popup.style.opacity = '1';
+    }, 10);
+
+    // Add event listeners
+    document.getElementById('inviteAnyoneBtn').addEventListener('click', showInviteForm);
+    document.getElementById('demoUserBtn').addEventListener('click', createDemoUser);
+}
+
+function hideAddUserPopup() {
+    console.log('hideAddUserPopup called');
+    const popup = document.getElementById('addUserPopup');
+    if (popup) {
+        popup.style.opacity = '0';
+        setTimeout(() => {
+            popup.remove();
+        }, 300);
+    }
+}
+
+function showInviteForm() {
+    const container = document.getElementById('inviteFormContainer');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="invite-form">
+            <h4>Send Datashare Invitation</h4>
+            <div class="form-group">
+                <label for="groupName">Group Name</label>
+                <input type="text" id="groupName" placeholder="My Datashare Group" value="My Datashare Group" required>
+            </div>
+            <div class="form-group">
+                <label for="inviteEmail">Email Address</label>
+                <input type="email" id="inviteEmail" placeholder="Enter email address" required>
+            </div>
+            <div class="form-group">
+                <label for="inviteName">Name (Optional)</label>
+                <input type="text" id="inviteName" placeholder="Enter their name">
+            </div>
+            <div class="form-group">
+                <label for="inviteMessage">Personal Message (Optional)</label>
+                <textarea id="inviteMessage" placeholder="Join my datashare group to save on connectivity costs together!" rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" id="cancelInviteBtn">Cancel</button>
+                <button class="btn-primary" id="sendInvitationBtn">Send Invitation</button>
+            </div>
+        </div>
+    `;
+
+    // Add event listeners for form buttons
+    document.getElementById('cancelInviteBtn').addEventListener('click', hideAddUserPopup);
+    document.getElementById('sendInvitationBtn').addEventListener('click', sendDatashareInvitation);
+}
+
+function createDemoUser() {
+    const timestamp = Date.now();
+    const demoEmail = `demo${timestamp}@datashare.example.com`;
+    const firebaseUid = localStorage.getItem('userId');
+    const groupName = `Demo Datashare Group ${timestamp % 1000}`;
+
+    fetch('/api/send-datashare-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: demoEmail,
+            name: `Demo User ${timestamp % 1000}`,
+            groupName: groupName,
+            message: 'Demo datashare user created automatically',
+            firebaseUid: firebaseUid,
+            isDemoUser: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Demo datashare user created successfully!\nEmail: ${data.invited_email}\nGroup: ${data.group_name}`);
+            hideAddUserPopup();
+            loadDatashareInvites(); // Refresh the invites list
+        } else {
+            alert('Error creating demo user: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error creating demo user:', error);
+        alert('Error creating demo user. Please try again.');
+    });
+}
+
+function sendDatashareInvitation() {
+    const email = document.getElementById('inviteEmail')?.value;
+    const name = document.getElementById('inviteName')?.value;
+    const groupName = document.getElementById('groupName')?.value || 'My Datashare Group';
+    const message = document.getElementById('inviteMessage')?.value || '';
+
+    if (!email) {
+        alert('Please enter an email address');
+        return;
+    }
+
+    const firebaseUid = localStorage.getItem('userId');
+
+    // Disable button during processing
+    const sendBtn = document.getElementById('sendInvitationBtn');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending...';
+    }
+
+    fetch('/api/send-datashare-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: email,
+            name: name,
+            groupName: groupName,
+            message: message,
+            firebaseUid: firebaseUid,
+            isDemoUser: false
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Datashare invitation sent successfully!\nInvited: ${data.invited_email}\nGroup: ${data.group_name}`);
+            hideAddUserPopup();
+            if (typeof loadDatashareInvites === 'function') {
+                loadDatashareInvites(); // Refresh the invites list
+            }
+        } else {
+            alert('Error sending invitation: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error sending invitation:', error);
+        alert('Error sending invitation. Please try again.');
+    })
+    .finally(() => {
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send Invitation';
+        }
+    });
+}
+
+function loadDatashareInvites() {
+    const firebaseUid = localStorage.getItem('userId');
+    if (!firebaseUid) return;
+
+    fetch(`/api/datashare-invitations?firebaseUid=${firebaseUid}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayDatashareInvites(data.invitations);
+            } else {
+                console.error('Error loading datashare invites:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading datashare invites:', error);
+        });
+}
+
+function displayDatashareInvites(invites) {
+    const invitationsSection = document.getElementById('recentInvitationsSection');
+    const invitationsList = document.getElementById('invitationsList');
+    const acceptedUsersContainer = document.getElementById('acceptedUsersContainer');
+
+    if (!invitationsList) return;
+
+    // Clear existing content
+    invitationsList.innerHTML = '';
+    if (acceptedUsersContainer) {
+        acceptedUsersContainer.innerHTML = '';
+    }
+
+    if (!invites || invites.length === 0) {
+        invitationsList.innerHTML = '<p class="no-invites">No datashare invitations sent yet</p>';
+        if (invitationsSection) {
+            invitationsSection.style.display = 'none';
+        }
+        return;
+    }
+
+    // Show the invitations section
+    if (invitationsSection) {
+        invitationsSection.style.display = 'block';
+    }
+
+    // Separate accepted and pending invitations
+    const acceptedInvites = invites.filter(invite => invite.invitation_status === 'invite_accepted');
+    const pendingInvites = invites.filter(invite => invite.invitation_status !== 'invite_accepted');
+
+    // Display accepted invitations as user cards
+    if (acceptedInvites.length > 0 && acceptedUsersContainer) {
+        acceptedInvites.forEach(invite => {
+            const userCard = createDatashareUserCard(invite);
+            acceptedUsersContainer.appendChild(userCard);
+        });
+    }
+
+    // Display pending invitations
+    if (pendingInvites.length > 0) {
+        pendingInvites.forEach(invite => {
+            const inviteItem = createDatashareInviteItem(invite);
+            invitationsList.appendChild(inviteItem);
+        });
+    }
+}
+
+function createDatashareUserCard(invite) {
+    const userCard = document.createElement('div');
+    userCard.className = 'user-card datashare-user';
+    userCard.setAttribute('data-invite-id', invite.id);
+
+    const truncatedEmail = invite.invited_email.length > 30 ? 
+        invite.invited_email.substring(0, 27) + '...' : invite.invited_email;
+
+    userCard.innerHTML = `
+        <div class="user-info-header">
+            <div class="user-name">${invite.invited_name || 'Datashare User'}</div>
+            <div class="header-icons">
+                <div class="edit-icon" onclick="editDatashareUser(this)" title="Edit datashare user">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="remove-icon" onclick="removeDatashareUser(this)" title="Remove from datashare">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+        </div>
+        <div class="email-container">
+            <div class="user-email">${truncatedEmail}</div>
+            <div class="timestamp">Member since ${formatDate(invite.accepted_at || invite.created_at)}</div>
+        </div>
+        <div class="group-info">
+            <div class="group-name">Group: ${invite.group_name}</div>
+            <div class="user-status">Status: Active Member</div>
+        </div>
+        <div class="usage-info">
+            <div class="usage-amount">Shared Data: 0 GB</div>
+            <div class="usage-bar">
+                <div class="usage-fill" style="width: 0%"></div>
+            </div>
+        </div>
+        <div class="user-actions">
+            <button class="action-btn pause-btn" onclick="pauseDatashareUser(this)">
+                <i class="fas fa-pause"></i> Pause
+            </button>
+            <button class="action-btn settings-btn" onclick="openDatashareSettings(this)">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </div>
+    `;
+
+    return userCard;
+}
+
+function createDatashareInviteItem(invite) {
+    const inviteItem = document.createElement('div');
+    inviteItem.className = 'invitation-item datashare-invite';
+    inviteItem.setAttribute('data-invite-id', invite.id);
+
+    const statusClass = `status-${invite.invitation_status.replace('_', '-')}`;
+    const canCancel = invite.invitation_status === 'invite_sent';
+
+    inviteItem.innerHTML = `
+        <div class="invitation-info">
+            <div class="invitation-email">${invite.invited_email}</div>
+            <div class="invitation-name">${invite.invited_name || 'Unknown'}</div>
+            <div class="invitation-group">Group: ${invite.group_name}</div>
+            <div class="invitation-date">${formatDate(invite.created_at)}</div>
+            ${invite.personal_message ? `<div class="invitation-message">"${invite.personal_message}"</div>` : ''}
+        </div>
+        <div class="invitation-status ${statusClass}">${formatStatus(invite.invitation_status)}</div>
+        ${canCancel ? `<button class="cancel-invite-btn" onclick="cancelDatashareInvitation(${invite.id})" title="Cancel invitation">
+            <i class="fas fa-times"></i>
+        </button>` : ''}
+        ${invite.is_demo_user ? '<div class="demo-badge">DEMO</div>' : ''}
+    `;
+
+    return inviteItem;
+}
+
+function cancelDatashareInvitation(invitationId) {
+    const firebaseUid = localStorage.getItem('userId');
+
+    if (!confirm('Are you sure you want to cancel this datashare invitation?')) {
+        return;
+    }
+
+    fetch(`/api/cancel-datashare-invitation/${invitationId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            firebaseUid: firebaseUid
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Invitation cancelled successfully');
+            loadDatashareInvites(); // Refresh the list
+        } else {
+            alert('Error cancelling invitation: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error cancelling invitation:', error);
+        alert('Error cancelling invitation. Please try again.');
+    });
+}
 
 function createInviteItem(invite) {
     const inviteItem = document.createElement('div');
@@ -2003,6 +2757,7 @@ window.toggleUserPause = toggleUserPause;
 window.performSort = performSort;
 window.toggleChart = toggleChart;
 window.loadDOTMBalance = loadDOTMBalance;
+window.loadDatashareInvites = loadDatashareInvites;
 
 // Global help functions for compatibility
 function startHelpSession() {
