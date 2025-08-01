@@ -31,7 +31,24 @@ document.addEventListener('DOMContentLoaded', async function() {
       const { getMessaging, getToken, onMessage } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js');
 
       // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
+      console.log('Firebase auth script loading...');
+
+      let app;
+      try {
+          // Check if Firebase app already exists
+          try {
+              app = firebase.app(); // Try to get existing app first
+              console.log('Using existing Firebase app');
+          } catch (e) {
+              // App doesn't exist, create new one
+              app = firebase.initializeApp(firebaseConfig);
+              console.log('Firebase App initialized successfully');
+          }
+      } catch (error) {
+          console.error('Firebase initialization error:', error);
+          throw error;
+      }
+
       const messaging = getMessaging(app);
 
       // Register service worker and wait for it to be ready
@@ -127,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       showNotificationStatus('Error setting up notifications: ' + err.message);
     }
   }
-   
+
 });
 
 // Send token to your server

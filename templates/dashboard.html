@@ -838,6 +838,62 @@
                 tokenBalancePill.textContent = '100.33 DOTM'; // Hardcoded DOTM balance as requested
             }
         }
+
+        // Add missing chart toggle function
+        function toggleChart(linkElement) {
+            const chartContainer = linkElement.closest('.insights-card').querySelector('.usage-chart');
+            if (chartContainer) {
+                if (chartContainer.style.display === 'none' || chartContainer.style.display === '') {
+                    chartContainer.style.display = 'block';
+                    linkElement.textContent = 'Hide details';
+                    
+                    // Initialize chart if not already done
+                    const canvas = chartContainer.querySelector('canvas');
+                    if (canvas && !canvas.chart) {
+                        initializeUsageChart(canvas);
+                    }
+                } else {
+                    chartContainer.style.display = 'none';
+                    linkElement.textContent = 'See details';
+                }
+            }
+        }
+
+        // Initialize usage chart
+        function initializeUsageChart(canvas) {
+            const ctx = canvas.getContext('2d');
+            canvas.chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Data Usage (GB)',
+                        data: [2.1, 1.8, 2.5, 3.2, 2.8, 1.9, 2.3],
+                        borderColor: '#FFF371',
+                        backgroundColor: 'rgba(255, 243, 113, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#fff' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#fff' }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#fff' } }
+                    }
+                }
+            });
+        }
     </script>
     <script>
                     // Refresh invites list function
