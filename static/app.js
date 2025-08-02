@@ -955,6 +955,7 @@ function createInviteItem(invite) {
             <div class="invitation-email">${invite.email}</div>
             <div class="invitation-date">${formatDate(invite.created_at)}</div>
         </div>
+        <```text
         <div class="invitation-status ${statusClass}">${formatStatus(invite.invitation_status)}</div>
         ${canCancel ? `<button class="cancel-invite-btn" onclick="cancelInvitation(${invite.id})" title="Cancel invitation">
             <i class="fas fa-times"></i>
@@ -1194,14 +1195,35 @@ let currentX = 0;
 let cardContainer = null;
 
 function populateOfferCards() {
-    const offersSection = document.querySelector('.offers-section');
+    // Try multiple selectors for the offers section
+    let offersSection = document.querySelector('.offers-section') || 
+                       document.getElementById('offersStackContainer') || 
+                       document.querySelector('[class*="offers"]') ||
+                       document.querySelector('.dashboard-content');
+
     if (!offersSection) {
-        console.log('Offers section not found');
+        console.log('Offers section not found, waiting...');
+        setTimeout(() => {
+            initializeCarousel();
+        }, 500);
         return;
     }
 
     // Define all possible offers
     const allOffers = [
+        {
+            id: 'demo_mode',
+            title: '📱 Demo Mode',
+            description: [
+                'This is wireless service provider demo. Request BETA access, and try the connectivity service anywhere on planet Earth and up to 15km+ above (soon). Requires membership.',
+                'This is demo release without actual connectivity and 0 actual $ being charged. Request BETA access eSIM, pay $1 through Stripe and try service globally.'
+            ],
+            price: '$1 BETA',
+            buttonText: 'Request BETA eSIM',
+            buttonClass: 'btn-primary beta-esim-btn',
+            action: "requestBetaESIM()",
+            alwaysShow: true
+        },
         {
             id: 'global_data',
             title: 'Truly Global Data',
@@ -1879,6 +1901,7 @@ function showHelpModal() {
     // Create the close button
     const closeButton = document.createElement('button');
     closeButton.id = 'closeHelpModal';
+```text
     closeButton.textContent = 'Close';
     closeButton.style.cssText = `
         position: absolute;
@@ -2053,4 +2076,9 @@ function updateBetaStatus(status, message) {
             betaStatusText.textContent = message || 'Beta enrollment complete';
             break;
     }
+}
+
+// Dummy function for requestBetaESIM
+function requestBetaESIM() {
+    alert('Requesting BETA eSIM - This is a demo function.');
 }
