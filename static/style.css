@@ -1659,7 +1659,7 @@ body.light-mode {
     max-width: 600px;
     position: relative;
     backdrop-filter: blur(5px);
-    z-index: 20;
+    z-index: 5;
     transition: all 0.3s ease-out;
     max-width: 700px; /* Updated max-width */
     padding: 32px; /* Updated padding */
@@ -3860,6 +3860,8 @@ input:checked + .toggle-slider:before {
     max-width: 600px;
     margin: 20px auto;
     padding: 0 20px;
+    position: relative;
+    z-index: 10;
 }
 
 .accepted-user {
@@ -3873,6 +3875,10 @@ input:checked + .toggle-slider:before {
     padding: 20px;
     margin-top: 20px;
     transition: all 0.3s ease;
+    position: relative;
+    z-index: 10;
+    display: block;
+    visibility: visible;
 }
 
 .user-card:hover {

@@ -797,16 +797,22 @@ function displayDatashareInvites(invites) {
     const invitationsList = document.getElementById('invitationsList');
     const acceptedUsersContainer = document.getElementById('acceptedUsersContainer');
 
-    if (!invitationsList) return;
+    console.log('Displaying datashare invites:', invites);
+
+    if (!invitationsList) {
+        console.log('Invitations list element not found');
+        return;
+    }
 
     // Clear existing content
     invitationsList.innerHTML = '';
     if (acceptedUsersContainer) {
         acceptedUsersContainer.innerHTML = '';
+        acceptedUsersContainer.style.display = 'block';
     }
 
     if (!invites || invites.length === 0) {
-        invitationsList.innerHTML = '<p class="no-invites">No datashare invitations sent yet</p>';
+        invitationsList.innerHTML = '<div class="dashboard-content"><p class="no-invites">No datashare invitations sent yet</p></div>';
         if (invitationsSection) {
             invitationsSection.style.display = 'none';
         }
@@ -822,12 +828,21 @@ function displayDatashareInvites(invites) {
     const acceptedInvites = invites.filter(invite => invite.invitation_status === 'invite_accepted');
     const pendingInvites = invites.filter(invite => invite.invitation_status !== 'invite_accepted');
 
+    console.log('Accepted invites:', acceptedInvites.length);
+    console.log('Pending invites:', pendingInvites.length);
+
     // Display accepted invitations as user cards
     if (acceptedInvites.length > 0 && acceptedUsersContainer) {
-        acceptedInvites.forEach(invite => {
+        acceptedInvites.forEach((invite, index) => {
+            console.log(`Creating user card for invite ${index}:`, invite);
             const userCard = createDatashareUserCard(invite);
             acceptedUsersContainer.appendChild(userCard);
+            console.log('User card added to container');
         });
+        
+        // Force display
+        acceptedUsersContainer.style.display = 'block';
+        acceptedUsersContainer.style.visibility = 'visible';
     }
 
     // Display pending invitations
@@ -837,12 +852,22 @@ function displayDatashareInvites(invites) {
             invitationsList.appendChild(inviteItem);
         });
     }
+
+    // Update user count in the header
+    const userCountElement = document.querySelector('.user-count');
+    if (userCountElement) {
+        userCountElement.textContent = acceptedInvites.length;
+    }
 }
 
 function createDatashareUserCard(invite) {
     const userCard = document.createElement('div');
-    userCard.className = 'user-card datashare-user';
+    userCard.className = 'user-card datashare-user dashboard-content';
     userCard.setAttribute('data-invite-id', invite.id);
+    userCard.style.display = 'block';
+    userCard.style.visibility = 'visible';
+    userCard.style.position = 'relative';
+    userCard.style.zIndex = '10';
 
     const truncatedEmail = invite.invited_email.length > 30 ? 
         invite.invited_email.substring(0, 27) + '...' : invite.invited_email;
@@ -865,21 +890,22 @@ function createDatashareUserCard(invite) {
         </div>
         <div class="group-info">
             <div class="group-name">Group: ${invite.group_name}</div>
-            <div class="user-status">Status: Active Member</div>
+            <div class="user-status">Status: ${invite.is_demo_user ? 'Demo User' : 'Active Member'}</div>
         </div>
         <div class="usage-info">
             <div class="usage-amount">Shared Data: 0 GB</div>
-            <div class="usage-bar">
-                <div class="usage-fill" style="width: 0%"></div>
+            <div class="usage-bar" style="background: rgba(200,200,200,0.3); height: 4px; border-radius: 2px; margin-top: 5px;">
+                <div class="usage-fill" style="width: 0%; background: #4CAF50; height: 100%; border-radius: 2px;"></div>
             </div>
         </div>
-        <div class="user-actions">
-            <button class="action-btn pause-btn" onclick="pauseDatashareUser(this)">
+        <div class="user-actions" style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="action-btn pause-btn btn btn-sm btn-warning" onclick="pauseDatashareUser(this)">
                 <i class="fas fa-pause"></i> Pause
             </button>
-            <button class="action-btn settings-btn" onclick="openDatashareSettings(this)">
+            <button class="action-btn settings-btn btn btn-sm btn-secondary" onclick="openDatashareSettings(this)">
                 <i class="fas fa-cog"></i> Settings
             </button>
+            ${invite.is_demo_user ? '<span class="demo-badge" style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; margin-left: auto;">DEMO</span>' : ''}
         </div>
     `;
 
@@ -1125,6 +1151,15 @@ async function loadDOTMBalance() {
         console.error('Error loading DOTM balance:', error);
         tokenBalancePill.textContent = '0.00 DOTM';
     }
+}
+
+// Add missing loadInvitesList function
+function loadInvitesList() {
+    const firebaseUid = localStorage.getItem('userId');
+    if (!firebaseUid) return;
+
+    // This function can be expanded later for regular invites
+    console.log('Loading invites list for:', firebaseUid);
 }
 
 // Make functions globally available
@@ -1701,6 +1736,47 @@ function clearDismissedOffers() {
 }
 
 window.clearDismissedOffers = clearDismissedOffers;
+
+// Add missing placeholder functions for datashare user management
+function editDatashareUser(element) {
+    alert('Edit datashare user functionality coming soon!');
+}
+
+function removeDatashareUser(element) {
+    if (confirm('Are you sure you want to remove this datashare user?')) {
+        const userCard = element.closest('.user-card');
+        if (userCard) {
+            userCard.remove();
+        }
+    }
+}
+
+function pauseDatashareUser(element) {
+    const userCard = element.closest('.user-card');
+    if (userCard) {
+        userCard.classList.toggle('paused');
+        const button = element;
+        if (userCard.classList.contains('paused')) {
+            button.innerHTML = '<i class="fas fa-play"></i> Resume';
+            button.classList.remove('btn-warning');
+            button.classList.add('btn-success');
+        } else {
+            button.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            button.classList.remove('btn-success');
+            button.classList.add('btn-warning');
+        }
+    }
+}
+
+function openDatashareSettings(element) {
+    alert('Datashare settings functionality coming soon!');
+}
+
+// Make these functions globally available
+window.editDatashareUser = editDatashareUser;
+window.removeDatashareUser = removeDatashareUser;
+window.pauseDatashareUser = pauseDatashareUser;
+window.openDatashareSettings = openDatashareSettings;
 
 function shouldShowBasicMembership() {
     if (!currentSubscriptionStatus) return true;
