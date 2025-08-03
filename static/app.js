@@ -155,7 +155,7 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
-        
+
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
@@ -1002,7 +1002,8 @@ function createUserCard(invite) {
     const userCard = document.createElement('div');
     userCard.className = 'dashboard-content user-card accepted-user';
     userCard.setAttribute('data-data-percentage', dataPercentage);
-    userCard.setAttribute('data-time-percentage', timePercentage);
+    userCard.setAttribute```text
+('data-time-percentage', timePercentage);
     userCard.setAttribute('data-dollar-amount', dollarAmount);
     userCard.setAttribute('data-score', scoreNumber);
 
@@ -1056,7 +1057,8 @@ function createUserCard(invite) {
 // Initialize pause duration updates for any existing paused users on page load
 function initializePauseDurationUpdates() {
     const pausedCards = document.querySelectorAll('.user-card.paused[data-pause-time]');
-    pausedCards.forEach(card => {        updatePauseDuration(card);
+    pausedCards.forEach(card => {
+        updatePauseDuration(card);
     });
 }
 
@@ -1796,7 +1798,8 @@ function createUserCard(invite) {
 // Initialize pause duration updates for any existing paused users on page load
 function initializePauseDurationUpdates() {
     const pausedCards = document.querySelectorAll('.user-card.paused[data-pause-time]');
-    pausedCards.forEach(card => {        updatePauseDuration(card);
+    pausedCards.forEach(card => {
+        updatePauseDuration(card);
     });
 }
 
@@ -1965,7 +1968,8 @@ async function loadDOTMBalance() {
     try {
         // Check if MetaMask is available and connected
         if (typeof window.ethereum !== 'undefined') {
-            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            const accounts = await```text
+ window.ethereum.request({ method: 'eth_accounts' });
             if (accounts.length > 0) {
                 const address = accounts[0];
 
@@ -2575,28 +2579,60 @@ function updateSubscriptionStatus(subscriptionData) {
     }
 }
 
-// Global help functions for compatibility
-function startHelpSession() {
-    if (typeof helpDesk !== 'undefined') {
-        return helpDesk.startHelpSession();
+// Missing function definitions to fix reference errors
+function loadInvitesList() {
+    const firebaseUid = localStorage.getItem('userId');
+    if (!firebaseUid) return;
+
+    fetch(`/api/invites?firebaseUid=${firebaseUid}&limit=10`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayInvites(data.invites);
+        } else {
+            console.error('Error loading invites:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading invites:', error);
+    });
+}
+
+function toggleProfileDropdown() {
+    const dropdown = document.querySelector('.profile-dropdown');
+    if (dropdown) {
+        if (dropdown.classList.contains('visible') || dropdown.style.display === 'block') {
+            dropdown.classList.remove('visible');
+            dropdown.style.display = 'none';
+        } else {
+            dropdown.classList.add('visible');
+            dropdown.style.display = 'block';
+        }
     }
 }
 
-function endHelpSession() {
-    if (typeof helpDesk !== 'undefined') {
-        return helpDesk.endHelpSession();
+function getCurrentUser() {
+    const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (user) {
+        return user;
+    } else if (localStorage.getItem('demoMode') === 'true') {
+        return {
+            uid: 'demo_user',
+            email: 'demo@example.com',
+            displayName: 'Demo User',
+            userId: 1,
+            dataBalance: 5.5,
+            founderStatus: 'N'
+        };
     }
-}
-
-function trackHelpInteraction(type, data) {
-    if (typeof helpDesk !== 'undefined') {
-        return helpDesk.trackInteraction(type, data);
-    }
+    return null;
 }
 
 // Beta enrollment functions
 function handleBetaEnrollment() {
     const firebaseUid = localStorage.getItem('userId');
+    console.log('Beta enrollment initiated for Firebase UID:', firebaseUid);
+
     if (!firebaseUid) {
         alert('Please sign in to enroll in the beta program.');
         return;
@@ -2647,7 +2683,19 @@ function checkBetaStatus() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            updateBetaStatus(data.status, data.message);
+            const betaBtn = document.getElementById('betaEnrollBtn');
+            const betaStatus = document.getElementById('betaStatus');
+
+            if (betaBtn && betaStatus) {
+                if (data.status === 'enrolled') {
+                    betaBtn.style.display = 'none';
+                    betaStatus.style.display = 'block';
+                    betaStatus.innerHTML = '<span style="color: #51cf66;">✓ Beta Access Granted</span>';
+                } else {
+                    betaBtn.style.display = 'block';
+                    betaStatus.style.display = 'none';
+                }
+            }
         }
     })
     .catch(error => {
@@ -2857,7 +2905,7 @@ function send_esim_ready_email() {
             alert('Error resending eSIM Ready email: ' + (data.message || 'Unknown error'));
         }
     })
-    .catch(error => {
+    .catch(error =>{
         console.error('Error resending eSIM Ready email:', error);
         alert('Error resending eSIM Ready email. Please try again.');
     });
