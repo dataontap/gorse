@@ -1334,21 +1334,17 @@ body.light-mode {
 
 .menu-dropdown {
     position: absolute;
+    left: 0;
+    top: 60px;
+    height: calc(100vh - 60px);
     background: rgba(40, 40, 40, 0.95);
     backdrop-filter: blur(5px);
     border-radius: 8px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     display: none;
+    overflow-y: auto;
     min-width: 200px;
     z-index: 1005;
-}
-
-.menu-dropdown {
-    left: 0;
-    top: 60px;
-    height: calc(100vh - 60px);
-    display: none;
-    overflow-y: auto;
     transform: translateX(-100%);
     transition: transform 0.3s ease-out;
     opacity: 0;
@@ -1356,6 +1352,7 @@ body.light-mode {
 }
 
 .menu-dropdown.visible {
+    display: block;
     transform: translateX(0);
     opacity: 1;
     pointer-events: auto;
