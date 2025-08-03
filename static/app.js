@@ -155,7 +155,7 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
-
+        
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
@@ -1001,7 +1001,7 @@ function createUserCard(invite) {
 
     const userCard = document.createElement('div');
     userCard.className = 'dashboard-content user-card accepted-user';
-    userCard.setAttribute('data-data-percentage',` dataPercentage);
+    userCard.setAttribute('data-data-percentage', dataPercentage);
     userCard.setAttribute('data-time-percentage', timePercentage);
     userCard.setAttribute('data-dollar-amount', dollarAmount);
     userCard.setAttribute('data-score', scoreNumber);
@@ -1965,7 +1965,6 @@ async function loadDOTMBalance() {
     try {
         // Check if MetaMask is available and connected
         if (typeof window.ethereum !== 'undefined') {
-```
             const accounts = await window.ethereum.request({ method: 'eth_accounts' });
             if (accounts.length > 0) {
                 const address = accounts[0];
@@ -2597,17 +2596,7 @@ function trackHelpInteraction(type, data) {
 
 // Beta enrollment functions
 function handleBetaEnrollment() {
-    // Try multiple sources for Firebase UID
-    let firebaseUid = localStorage.getItem('userId');
-
-    // Also try getting from current user data
-    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-    if (currentUserData && currentUserData.uid) {
-        firebaseUid = currentUserData.uid;
-    }
-
-    console.log('Beta enrollment initiated for Firebase UID:', firebaseUid);
-
+    const firebaseUid = localStorage.getItem('userId');
     if (!firebaseUid) {
         alert('Please sign in to enroll in the beta program.');
         return;
@@ -2615,30 +2604,21 @@ function handleBetaEnrollment() {
 
     const betaEnrollBtn = document.getElementById('betaEnrollBtn');
     betaEnrollBtn.disabled = true;
-    betaEnrollBtn.textContent = 'Creating Stripe invoice...';
+    betaEnrollBtn.textContent = 'Processing...';
 
-    // Create Stripe invoice for $1 eSIM
     fetch('/api/beta-enrollment', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            firebaseUid: firebaseUid,
-            action: 'create_stripe_invoice',
-            amount: 100, // $1.00 in cents
-            description: 'BETA eSIM Access - $1 CAD'
+            firebaseUid: firebaseUid
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            if (data.invoice_url) {
-                // Redirect to Stripe invoice payment page
-                window.open(data.invoice_url, '_blank');
-                betaEnrollBtn.textContent = 'Check your email for payment link';
-                updateBetaStatus('payment_pending', 'Invoice sent to your email. Please complete payment to activate your eSIM.');
-            } else if (data.email_sent && data.iccid) {
+            if (data.email_sent && data.iccid) {
                 // Show success message with ICCID details
                 alert(`Beta eSIM Ready!\n\nICCID: ${data.iccid}\n\nActivation details have been sent to your email. Check your inbox for complete instructions.`);
                 updateBetaStatus(data.status, data.message);
@@ -2646,16 +2626,16 @@ function handleBetaEnrollment() {
                 updateBetaStatus(data.status, data.message);
             }
         } else {
-            alert('Error creating invoice: ' + (data.message || 'Unknown error'));
+            alert('Error enrolling in beta: ' + (data.message || 'Unknown error'));
             betaEnrollBtn.disabled = false;
-            betaEnrollBtn.textContent = 'Request $1 BETA eSIM';
+            betaEnrollBtn.textContent = 'Request BETA eSIM';
         }
     })
     .catch(error => {
-        console.error('Error creating beta invoice:', error);
-        alert('Error creating invoice. Please try again.');
+        console.error('Error enrolling in beta:', error);
+        alert('Error enrolling in beta. Please try again.');
         betaEnrollBtn.disabled = false;
-        betaEnrollBtn.textContent = 'Request $1 BETA eSIM';
+        betaEnrollBtn.textContent = 'Request BETA eSIM';
     });
 }
 
