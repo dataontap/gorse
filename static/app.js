@@ -155,7 +155,7 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
-
+        
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
@@ -415,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle send invitation button
         if (e.target.id === 'sendInvitationBtn') {
             e.preventDefault();
-            sendDatashareInvitation();
+            sendInvitation();
             return;
         }
 
@@ -512,12 +512,745 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
 
-		// Load datashare invites if on dashboard page
-		if (window.location.pathname === '/dashboard') {
-			setTimeout(() => {
-					loadDatashareInvites();
-			}, 1000);
-		}
+    // Initialize carousel functionality
+    initializeCarousel();
+});
+
+// Add User Popup Functions
+function showAddUserPopup() {
+    console.log('showAddUserPopup called');
+
+    // Remove existing popup if any
+    hideAddUserPopup();
+
+    const popup = document.createElement('div');
+    popup.id = 'addUserPopup';
+    popup.className = 'popup-overlay';
+    popup.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: rgba(0, 0, 0, 0.7) !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        z-index: 999999 !important;
+        opacity: 1 !important;
+    `;
+
+    popup.innerHTML = `
+        <div class="popup-content" style="z-index: 999999; position: relative;">
+            <div class="popup-header">
+                <h3>Add New Datashare User</h3>
+                <button class="popup-close" onclick="hideAddUserPopup()">&times;</button>
+            </div>
+            <div class="popup-body">
+                <div class="invitation-options">
+                    <button class="invite-option-btn" id="inviteAnyoneBtn">
+                        <i class="fas fa-envelope"></i>
+                        <span>Invite Anyone</span>
+                        <small>Send invitation via email for a start</small>
+                    </button>
+                    <button class="invite-option-btn" id="demoUserBtn">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Demo User</span>
+                        <small>Create sample user instantly</small>
+                    </button>
+                </div>
+                <div id="inviteFormContainer"></div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+    console.log('Popup added to body:', popup);
+
+    // Force show with timeout
+    setTimeout(() => {
+        popup.classList.add('show');
+        popup.style.opacity = '1';
+    }, 10);
+
+    // Add event listeners
+    document.getElementById('inviteAnyoneBtn').addEventListener('click', showInviteForm);
+    document.getElementById('demoUserBtn').addEventListener('click', createDemoUser);
+}
+
+function hideAddUserPopup() {
+    console.log('hideAddUserPopup called');
+    const popup = document.getElementById('addUserPopup');
+    if (popup) {
+        popup.style.opacity = '0';
+        setTimeout(() => {
+            popup.remove();
+        }, 300);
+    }
+}
+
+function showInviteForm() {
+    const container = document.getElementById('inviteFormContainer');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="invite-form">
+            <h4>Send Invitation</h4>
+            <div class="form-group">
+                <label for="inviteEmail">Email Address</label>
+                <input type="email" id="inviteEmail" placeholder="Enter email address" required>
+            </div>
+            <div class="form-group">
+                <label for="inviteMessage">Personal Message (Optional)</label>
+                <textarea id="inviteMessage" placeholder="Add a personal message..." rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" id="cancelInviteBtn">Cancel</button>
+                <button class="btn-primary" id="sendInvitationBtn">Send Invitation</button>
+            </div>
+        </div>
+    `;
+
+    // Add event listeners for form buttons
+    document.getElementById('cancelInviteBtn').addEventListener('click', hideAddUserPopup);
+    document.getElementById('sendInvitationBtn').addEventListener('click', sendInvitation);
+}
+
+function sendInvitation() {
+    const email = document.getElementById('inviteEmail')?.value;
+    const message = document.getElementById('inviteMessage')?.value || '';
+
+    if (!email) {
+        alert('Please enter an email address');
+        return;
+    }
+
+    const firebaseUid = localStorage.getItem('userId');
+
+    // Disable button during processing
+    const sendBtn = document.getElementById('sendInvitationBtn');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending...';
+    }
+
+    fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: email,
+            message: message,
+            firebaseUid: firebaseUid,
+            isDemoUser: false
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Invitation sent successfully!');
+            hideAddUserPopup();
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList(); // Refresh the invites list
+            }
+        } else {
+            alert('Error sending invitation: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error sending invitation:', error);
+        alert('Error sending invitation. Please try again.');
+    })
+    .finally(() => {
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send Invitation';
+        }
+    });
+}
+
+function createDemoUser() {
+    const timestamp = Date.now();
+    const demoEmail = `demo${timestamp}@example.com`;
+    const firebaseUid = localStorage.getItem('userId');
+
+    fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: demoEmail,
+            message: 'Demo user created automatically',
+            firebaseUid: firebaseUid,
+            isDemoUser: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Demo user created successfully!');
+            hideAddUserPopup();
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList(); // Refresh the invites list
+            }
+        } else {
+            alert('Error creating demo user: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error creating demo user:', error);
+        alert('Error creating demo user. Please try again.');
+    });
+}
+
+// Invites List Functions
+function loadInvitesList() {
+    const firebaseUid = localStorage.getItem('userId');
+    if (!firebaseUid) return;
+
+    fetch(`/api/invites?firebaseUid=${firebaseUid}&limit=10`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayInvites(data.invites);
+        } else {
+            console.error('Error loading invites:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading invites:', error);
+    });
+}
+
+function displayInvites(invites) {
+    const invitationsSection = document.getElementById('recentInvitationsSection');
+    const invitationsList = document.getElementById('invitationsList');
+    const acceptedUsersContainer = document.getElementById('acceptedUsersContainer');
+
+    if (!invitationsList) return;
+
+    // Clear existing content
+    invitationsList.innerHTML = '';
+    if (acceptedUsersContainer) {
+        acceptedUsersContainer.innerHTML = '';
+    }
+
+    if (!invites || invites.length === 0) {
+        invitationsList.innerHTML = '<p class="no-invites">No invitations sent yet</p>';
+        if (invitationsSection) {
+            invitationsSection.style.display = 'none';
+        }
+        toggleSortControls();
+        return;
+    }
+
+    // Show the invitations section
+    if (invitationsSection) {
+        invitationsSection.style.display = 'block';
+    }
+
+    // Separate accepted and pending invitations
+    const acceptedInvites = invites.filter(invite => invite.invitation_status === 'invite_accepted');
+    const pendingInvites = invites.filter(invite => invite.invitation_status !== 'invite_accepted');
+
+    // Display accepted invitations as user cards
+    if (acceptedInvites.length > 0 && acceptedUsersContainer) {
+        acceptedInvites.forEach(invite => {
+            const userCard = createUserCard(invite);
+            acceptedUsersContainer.appendChild(userCard);
+        });
+
+        // Update user count
+        const userCountElement = document.querySelector('.user-count');
+        if (userCountElement) {
+            userCountElement.textContent = acceptedInvites.length;
+        }
+
+        // Show/hide sort controls based on number of cards
+        toggleSortControls();
+        initializeSorting();
+    }
+
+    // Display pending invitations in the invitations list
+    pendingInvites.forEach(invite => {
+        const inviteItem = createInviteItem(invite);
+        invitationsList.appendChild(inviteItem);
+    });
+
+    if (pendingInvites.length === 0) {
+        invitationsList.innerHTML = '<p class="no-pending-invites">No pending invitations</p>';
+    }
+}
+
+// Toggle sort controls visibility
+function toggleSortControls() {
+    const userCards = document.querySelectorAll('.accepted-user');
+    const sortContainer = document.querySelector('.sort-container .sort-controls');
+
+    if (userCards.length >= 2) {
+        if (sortContainer) {
+            sortContainer.style.display = 'flex';
+        }
+    } else {
+        if (sortContainer) {
+            sortContainer.style.display = 'none';
+        }
+    }
+}
+
+// Initialize sorting functionality
+function initializeSorting() {
+    const sortSelect = document.querySelector('.sort-select');
+    const sortIcons = document.querySelectorAll('.sort-icon');
+
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const activeIcon = document.querySelector('.sort-icon.active');
+            if (activeIcon) {
+                performSort();
+            }
+        });
+    }
+
+    sortIcons.forEach(icon => {
+        icon.addEventListener('click', function() {
+            // Remove active class from all icons
+            sortIcons.forEach(i => i.classList.remove('active'));
+            // Add active class to clicked icon
+            this.classList.add('active');
+            performSort();
+        });
+    });
+}
+
+// Perform sorting with animation
+function performSort() {
+    const sortSelect = document.querySelector('.sort-select');
+    const activeIcon = document.querySelector('.sort-icon.active');
+    const userCards = Array.from(document.querySelectorAll('.accepted-user'));
+
+    if (!sortSelect || !activeIcon || userCards.length < 2) return;
+
+    const sortBy = sortSelect.value;
+    const sortDirection = activeIcon.dataset.sort;
+
+    // Add sorting class to cards for animation
+    userCards.forEach(card => {
+        card.classList.add('sorting');
+    });
+
+    // Sort the cards array
+    userCards.sort((a, b) => {
+        let valueA, valueB;
+
+        switch(sortBy) {
+            case 'percentage':
+                valueA = parseInt(a.getAttribute('data-data-percentage'));
+                valueB = parseInt(b.getAttribute('data-data-percentage'));
+                break;
+            case 'screentime':
+                valueA = parseInt(a.getAttribute('data-time-percentage'));
+                valueB = parseInt(b.getAttribute('data-time-percentage'));
+                break;
+            case 'dollars':
+                valueA = parseInt(a.getAttribute('data-dollar-amount'));
+                valueB = parseInt(b.getAttribute('data-dollar-amount'));
+                break;
+            default:
+                valueA = parseInt(a.getAttribute('data-score'));
+                valueB = parseInt(b.getAttribute('data-score'));
+        }
+
+        if (sortDirection === 'asc' || sortDirection === 'oldest') {
+            return valueA - valueB;
+        } else {
+            return valueB - valueA;
+        }
+    });
+
+    // Apply animation classes
+    userCards.forEach((card, index) => {
+        if (index % 2 === 0) {
+            card.classList.add('sorting-up');
+        } else {
+            card.classList.add('sorting-down');
+        }
+    });
+
+    // Re-append cards in sorted order after animation
+    setTimeout(() => {
+        const container = document.getElementById('acceptedUsersContainer');
+        userCards.forEach(card => {
+            container.appendChild(card);
+            card.classList.remove('sorting', 'sorting-up', 'sorting-down');
+        });
+    }, 600);
+}
+
+// Edit user card function (placeholder for future functionality)
+function editUserCard(element) {
+    alert('Edit user functionality coming soon!');
+}
+
+// Remove user card function
+function removeUserCard(element) {
+    const userCard = element.closest('.user-card');
+    if (userCard && confirm('Are you sure you want to remove this user?')) {
+        userCard.style.transition = 'all 0.3s ease';
+        userCard.style.transform = 'translateX(100%)';
+        userCard.style.opacity = '0';
+
+        setTimeout(() => {
+            userCard.remove();
+            toggleSortControls();
+
+            // Update user count
+            const userCards = document.querySelectorAll('.accepted-user');
+            const userCountElement = document.querySelector('.user-count');
+            if (userCountElement) {
+                userCountElement.textContent = userCards.length;
+            }
+        }, 300);
+    }
+}
+
+// Toggle user pause function
+function toggleUserPause(element) {
+    const card = element.closest('.user-card');
+    const icon = element;
+    const pauseDuration = card.querySelector('.pause-duration');
+
+    if (icon.classList.contains('fa-pause')) {
+        // Currently active, pause it
+        icon.classList.remove('fa-pause');
+        icon.classList.add('fa-play');
+        icon.title = 'Resume data sharing';
+        card.classList.add('paused');
+        pauseDuration.style.display = 'inline';
+
+        // Store the pause timestamp
+        const pauseTime = Date.now();
+        card.setAttribute('data-pause-time', pauseTime);
+        pauseDuration.textContent = 'Paused just now';
+
+        // Start updating the pause duration
+        updatePauseDuration(card);
+    } else {
+        // Currently paused, resume it
+        icon.classList.remove('fa-play');
+        icon.classList.add('fa-pause');
+        icon.title = 'Temporarily pause data share for this user';
+        card.classList.remove('paused');
+        pauseDuration.style.display = 'none';
+        card.removeAttribute('data-pause-time');
+    }
+}
+
+// Function to update pause duration display
+function updatePauseDuration(card) {
+    const pauseDuration = card.querySelector('.pause-duration');
+    const pauseTime = parseInt(card.getAttribute('data-pause-time'));
+
+    if (!pauseTime || !card.classList.contains('paused')) {
+        return; // Stop if card is no longer paused
+    }
+
+    const now = Date.now();
+    const secondsElapsed = Math.floor((now - pauseTime) / 1000);
+
+    let durationText;
+    if (secondsElapsed < 60) {
+        if (secondsElapsed < 5) {
+            durationText = 'Paused just now';
+        } else {
+            durationText = `Paused ${secondsElapsed} seconds ago`;
+        }
+    } else {
+        const minutesElapsed = Math.floor(secondsElapsed / 60);
+        const remainingSeconds = secondsElapsed % 60;
+
+        if (minutesElapsed === 1 && remainingSeconds === 0) {
+            durationText = 'Paused 1 minute ago';
+        } else if (remainingSeconds === 0) {
+            durationText = `Paused ${minutesElapsed} minutes ago`;
+        } else if (minutesElapsed === 1) {
+            durationText = `Paused 1 minute ${remainingSeconds} seconds ago`;
+        } else {
+            durationText = `Paused ${minutesElapsed} minutes ${remainingSeconds} seconds ago`;
+        }
+    }
+
+    pauseDuration.textContent = durationText;
+
+    // Schedule next update in 10 seconds
+    setTimeout(() => updatePauseDuration(card), 10000);
+}
+
+function createUserCard(invite) {
+    // Generate random data for demo users
+    const isDemo = invite.email.includes('example.com');
+    const dataPercentage = Math.floor(Math.random() * 100) + 1;
+    const timePercentage = Math.floor(Math.random() * 100) + 1;
+    const dollarAmount = Math.floor(Math.random() * 25) + 1;
+    const scoreNumber = Math.floor(Math.random() * 10) + 1;
+
+    // Truncate email after 16 characters
+    const truncatedEmail = invite.email.length > 16 ? invite.email.substring(0, 16) + '...' : invite.email;
+
+    const userCard = document.createElement('div');
+    userCard.className = 'dashboard-content user-card accepted-user';
+    userCard.setAttribute('data-data-percentage', dataPercentage);
+    userCard.setAttribute('data-time-percentage', timePercentage);
+    userCard.setAttribute('data-dollar-amount', dollarAmount);
+    userCard.setAttribute('data-score', scoreNumber);
+
+    userCard.innerHTML = `
+        <div class="user-info-header">
+            <div class="user-name">Datashare User ${invite.id}</div>
+            <div class="header-icons">
+                <div class="edit-icon" onclick="editUserCard(this)" title="Edit user">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="remove-icon" onclick="removeUserCard(this)" title="Remove user">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+        </div>
+        <div class="email-container">
+            <div class="user-email">${truncatedEmail}</div>
+            <div class="timestamp">Active Member since ${formatDate(invite.created_at)}</div>
+        </div>
+
+        <div class="data-usage">
+            <div class="usage-metrics">
+                <div class="metric" data-metric="data">
+                    <div class="usage_label"><i class="fas fa-database"></i> Data</div>
+                    <div class="usage-amount">${dataPercentage}%</div>
+                </div>
+                <div class="metric" data-metric="time">
+                    <div class="usage-label"><i class="fas fa-clock"></i> Time</div>
+                    <div class="usage-amount">${timePercentage}%</div>
+                </div>
+                <div class="metric" data-metric="cost">
+                    <div class="usage-label"><i class="fas fa-dollar-sign"></i> Cost</div>
+                    <div class="usage-amount">$${dollarAmount}</div>
+                </div>
+                <div class="metric" data-metric="score">
+                    <div class="usage-label"><i class="fas fa-star"></i> Score</div>
+                    <div class="usage-amount">${scoreNumber}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-actions">
+            <i class="fas fa-pause pause-play-icon" title="Temporarily pause data share for this user" onclick="toggleUserPause(this)"></i>
+            <span class="pause-duration" style="display: none;"></span>
+        </div>
+    `;
+
+    return userCard;
+}
+
+// Initialize pause duration updates for any existing paused users on page load
+function initializePauseDurationUpdates() {
+    const pausedCards = document.querySelectorAll('.user-card.paused[data-pause-time]');
+    pausedCards.forEach(card => {        updatePauseDuration(card);
+    });
+}
+
+// Call this when the page loads to handle any existing paused users
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('App.js loaded successfully');
+
+    // Initialize theme based on localStorage or default to dark
+    const savedTheme = localStorage.getItem('darkMode');
+    const isDarkMode = savedTheme === null ? true : savedTheme === 'true';
+    toggleTheme(isDarkMode);
+
+    // Load DOTM balance if wallet is connected
+    loadDOTMBalance();
+
+    // Add event listeners for theme toggles
+    const darkToggle = document.getElementById('darkModeToggle');
+    const lightToggle = document.getElementById('lightModeToggle');
+
+    if (darkToggle) {
+        darkToggle.addEventListener('click', function() {
+            toggleTheme(true);
+        });
+    }
+
+    if (lightToggle) {
+        lightToggle.addEventListener('click', function() {
+            toggleTheme(false);
+        });
+    }
+
+    // Initialize add user functionality with popup
+    const addUserBtn = document.getElementById('addUserBtn');
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            showAddUserPopup();
+        });
+    }
+
+    // Initialize chart toggle functionality
+    document.querySelectorAll('.insight-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleChart(this);
+        });
+    });
+
+    // Use event delegation for all interactive elements
+    document.addEventListener('click', function(e) {
+        // Handle logout functionality
+        if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
+            e.preventDefault();
+            console.log('Logout button clicked');
+
+            // Try multiple logout methods
+            if (window.firebaseAuth && window.firebaseAuth.signOut) {
+                window.firebaseAuth.signOut();
+            } else if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().signOut().then(() => {
+                    localStorage.clear();
+                    window.location.href = '/';
+                }).catch((error) => {
+                    console.error('Logout error:', error);
+                    localStorage.clear();
+                    window.location.href = '/';
+                });
+            } else {
+                // Fallback: clear storage and redirect
+                localStorage.clear();
+                window.location.href = '/';
+            }
+            return;
+        }
+
+        // Close popup
+        if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
+            hideAddUserPopup();
+            return;
+        }
+
+        // Handle invite anyone button
+        if (e.target.id === 'inviteAnyoneBtn') {
+            e.preventDefault();
+            showInviteForm();
+            return;
+        }
+
+        // Handle demo user button
+        if (e.target.id === 'demoUserBtn') {
+            e.preventDefault();
+            createDemoUser();
+            return;
+        }
+
+        // Handle send invitation button
+        if (e.target.id === 'sendInvitationBtn') {
+            e.preventDefault();
+            sendInvitation();
+            return;
+        }
+
+        // Handle cancel invitation button
+        if (e.target.id === 'cancelInviteBtn') {
+            e.preventDefault();
+            hideAddUserPopup();
+            return;
+        }
+    });
+
+    // Add event delegation for confirmation drawer buttons
+    document.addEventListener('click', function(e) {
+        // Handle buy buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 10, 'global_data_10gb');
+        }
+
+        // Handle subscribe buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 24, 'basic_membership');
+        }
+
+        // Handle drawer cancel/confirm buttons
+        if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            hideConfirmationDrawer();
+        }
+
+        if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            confirmPurchase();
+        }
+    });
+
+    // Initialize beta enrollment functionality
+    const betaEnrollBtn = document.getElementById('betaEnrollBtn');
+    if (betaEnrollBtn) {
+        betaEnrollBtn.addEventListener('click', handleBetaEnrollment);
+        checkBetaStatus(); // Check current status on page load
+    }
+
+    // Handle help toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+            showHelpModal();
+        }
+    });
+
+    // Initialize settings toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'settingsToggle' || e.target.closest('#settingsToggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu) {
+                // Toggle settings submenu visibility
+                if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
+                    settingsSubmenu.style.display = 'block';
+                } else {
+                    settingsSubmenu.style.display = 'none';
+                }
+            }
+        }
+
+        // Handle language selector changes
+        if (e.target.id === 'languageSelect') {
+            const selectedLanguage = e.target.value;
+            if (typeof setLanguage === 'function') {
+                setLanguage(selectedLanguage);
+            }
+        }
+
+        // Close settings submenu when clicking outside
+        if (!e.target.closest('#settingsToggle') && !e.target.closest('.settings-submenu')) {
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu && settingsSubmenu.style.display === 'block') {
+                settingsSubmenu.style.display = 'none';
+            }
+        }
+    });
+
+    // Load invites if on dashboard page
+    if (window.location.pathname === '/dashboard') {
+        setTimeout(() => {
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList();
+            }
+        }, 1000);
+    }
 
     // Initialize carousel functionality
     initializeCarousel();
@@ -602,22 +1335,14 @@ function showInviteForm() {
 
     container.innerHTML = `
         <div class="invite-form">
-            <h4>Send Datashare Invitation</h4>
-            <div class="form-group">
-                <label for="groupName">Group Name</label>
-                <input type="text" id="groupName" placeholder="My Datashare Group" value="My Datashare Group" required>
-            </div>
+            <h4>Send Invitation</h4>
             <div class="form-group">
                 <label for="inviteEmail">Email Address</label>
                 <input type="email" id="inviteEmail" placeholder="Enter email address" required>
             </div>
             <div class="form-group">
-                <label for="inviteName">Name (Optional)</label>
-                <input type="text" id="inviteName" placeholder="Enter their name">
-            </div>
-            <div class="form-group">
                 <label for="inviteMessage">Personal Message (Optional)</label>
-                <textarea id="inviteMessage" placeholder="Join my datashare group to save on connectivity costs together!" rows="3"></textarea>
+                <textarea id="inviteMessage" placeholder="Add a personal message..." rows="3"></textarea>
             </div>
             <div class="form-actions">
                 <button class="btn-secondary" id="cancelInviteBtn">Cancel</button>
@@ -628,75 +1353,11 @@ function showInviteForm() {
 
     // Add event listeners for form buttons
     document.getElementById('cancelInviteBtn').addEventListener('click', hideAddUserPopup);
-    document.getElementById('sendInvitationBtn').addEventListener('click', sendDatashareInvitation);
+    document.getElementById('sendInvitationBtn').addEventListener('click', sendInvitation);
 }
 
-function createDemoUser() {
-    const timestamp = Date.now();
-    const demoEmail = `demo${timestamp}@datashare.example.com`;
-
-    // Try multiple sources for Firebase UID
-    let firebaseUid = null;
-
-    // First try to get current user data
-    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-    if (currentUserData && currentUserData.uid) {
-        firebaseUid = currentUserData.uid;
-        console.log('Using Firebase UID from currentUser:', firebaseUid);
-    } else {
-        // Fallback to other localStorage keys
-        firebaseUid = localStorage.getItem('firebaseUid') || 
-                     localStorage.getItem('userId') || null;
-        console.log('Using Firebase UID from fallback:', firebaseUid);
-    }
-
-    // Try to get from Firebase auth if available
-    if (!firebaseUid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
-        firebaseUid = firebase.auth().currentUser.uid;
-        console.log('Using Firebase UID from Firebase auth:', firebaseUid);
-    }
-
-    if (!firebaseUid) {
-        alert('Please log in to create datashare users. Firebase UID is required.');
-        return;
-    }
-
-    const groupName = `Demo Datashare Group ${timestamp % 1000}`;
-
-    fetch('/api/send-datashare-invitation', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email: demoEmail,
-            name: `Demo User ${timestamp % 1000}`,
-            groupName: groupName,
-            message: 'Demo datashare user created automatically',
-            firebaseUid: firebaseUid,
-            isDemoUser: true
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Demo datashare user created successfully!\nEmail: ${data.invited_email}\nGroup: ${data.group_name}`);
-            hideAddUserPopup();
-            loadDatashareInvites(); // Refresh the invites list
-        } else {
-            alert('Error creating demo user: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error creating demo user:', error);
-        alert('Error creating demo user. Please try again.');
-    });
-}
-
-function sendDatashareInvitation() {
+function sendInvitation() {
     const email = document.getElementById('inviteEmail')?.value;
-    const name = document.getElementById('inviteName')?.value;
-    const groupName = document.getElementById('groupName')?.value || 'My Datashare Group';
     const message = document.getElementById('inviteMessage')?.value || '';
 
     if (!email) {
@@ -704,47 +1365,22 @@ function sendDatashareInvitation() {
         return;
     }
 
-    // Try multiple sources for Firebase UID
-    let firebaseUid = null;
+    const firebaseUid = localStorage.getItem('userId');
 
-    // First try to get current user data
-    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-    if (currentUserData && currentUserData.uid) {
-        firebaseUid = currentUserData.uid;
-        console.log('Using Firebase UID from currentUser:', firebaseUid);
-    } else {
-        // Fallback to other localStorage keys
-        firebaseUid = localStorage.getItem('firebaseUid') || 
-                     localStorage.getItem('userId') || null;
-        console.log('Using Firebase UID from fallback:', firebaseUid);
-    }
-
-    // Try to get from Firebase auth if available
-    if (!firebaseUid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
-        firebaseUid = firebase.auth().currentUser.uid;
-        console.log('Using Firebase UID from Firebase auth:', firebaseUid);
-    }
-
-    if (!firebaseUid) {
-        alert('Please log in to send invitations. Firebase UID is required.');
-        return;
-    }
-
+    // Disable button during processing
     const sendBtn = document.getElementById('sendInvitationBtn');
     if (sendBtn) {
         sendBtn.disabled = true;
         sendBtn.textContent = 'Sending...';
     }
 
-    fetch('/api/send-datashare-invitation', {
+    fetch('/api/send-invitation', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
             email: email,
-            name: name,
-            groupName: groupName,
             message: message,
             firebaseUid: firebaseUid,
             isDemoUser: false
@@ -753,7 +1389,7 @@ function sendDatashareInvitation() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(`Datashare invitation sent successfully!\nInvited: ${data.invited_email}\nGroup: ${data.group_name}`);
+            alert('Invitation sent successfully!');
             hideAddUserPopup();
             if (typeof loadInvitesList === 'function') {
                 loadInvitesList(); // Refresh the invites list
@@ -774,48 +1410,79 @@ function sendDatashareInvitation() {
     });
 }
 
-function loadDatashareInvites() {
+function createDemoUser() {
+    const timestamp = Date.now();
+    const demoEmail = `demo${timestamp}@example.com`;
+    const firebaseUid = localStorage.getItem('userId');
+
+    fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: demoEmail,
+            message: 'Demo user created automatically',
+            firebaseUid: firebaseUid,
+            isDemoUser: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Demo user created successfully!');
+            hideAddUserPopup();
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList(); // Refresh the invites list
+            }
+        } else {
+            alert('Error creating demo user: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error creating demo user:', error);
+        alert('Error creating demo user. Please try again.');
+    });
+}
+
+// Invites List Functions
+function loadInvitesList() {
     const firebaseUid = localStorage.getItem('userId');
     if (!firebaseUid) return;
 
-    fetch(`/api/datashare-invitations?firebaseUid=${firebaseUid}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayDatashareInvites(data.invitations);
-            } else {
-                console.error('Error loading datashare invites:', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading datashare invites:', error);
-        });
+    fetch(`/api/invites?firebaseUid=${firebaseUid}&limit=10`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayInvites(data.invites);
+        } else {
+            console.error('Error loading invites:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading invites:', error);
+    });
 }
 
-function displayDatashareInvites(invites) {
+function displayInvites(invites) {
     const invitationsSection = document.getElementById('recentInvitationsSection');
     const invitationsList = document.getElementById('invitationsList');
     const acceptedUsersContainer = document.getElementById('acceptedUsersContainer');
 
-    console.log('Displaying datashare invites:', invites);
-
-    if (!invitationsList) {
-        console.log('Invitations list element not found');
-        return;
-    }
+    if (!invitationsList) return;
 
     // Clear existing content
     invitationsList.innerHTML = '';
     if (acceptedUsersContainer) {
         acceptedUsersContainer.innerHTML = '';
-        acceptedUsersContainer.style.display = 'block';
     }
 
     if (!invites || invites.length === 0) {
-        invitationsList.innerHTML = '<div class="dashboard-content"><p class="no-invites">No datashare invitations sent yet</p></div>';
+        invitationsList.innerHTML = '<p class="no-invites">No invitations sent yet</p>';
         if (invitationsSection) {
             invitationsSection.style.display = 'none';
         }
+        toggleSortControls();
         return;
     }
 
@@ -828,146 +1495,318 @@ function displayDatashareInvites(invites) {
     const acceptedInvites = invites.filter(invite => invite.invitation_status === 'invite_accepted');
     const pendingInvites = invites.filter(invite => invite.invitation_status !== 'invite_accepted');
 
-    console.log('Accepted invites:', acceptedInvites.length);
-    console.log('Pending invites:', pendingInvites.length);
-
     // Display accepted invitations as user cards
     if (acceptedInvites.length > 0 && acceptedUsersContainer) {
-        acceptedInvites.forEach((invite, index) => {
-            console.log(`Creating user card for invite ${index}:`, invite);
-            const userCard = createDatashareUserCard(invite);
+        acceptedInvites.forEach(invite => {
+            const userCard = createUserCard(invite);
             acceptedUsersContainer.appendChild(userCard);
-            console.log('User card added to container');
         });
 
-        // Force display
-        acceptedUsersContainer.style.display = 'block';
-        acceptedUsersContainer.style.visibility = 'visible';
+        // Update user count
+        const userCountElement = document.querySelector('.user-count');
+        if (userCountElement) {
+            userCountElement.textContent = acceptedInvites.length;
+        }
+
+        // Show/hide sort controls based on number of cards
+        toggleSortControls();
+        initializeSorting();
     }
 
-    // Display pending invitations
-    if (pendingInvites.length > 0) {
-        pendingInvites.forEach(invite => {
-            const inviteItem = createDatashareInviteItem(invite);
-            invitationsList.appendChild(inviteItem);
-        });
-    }
+    // Display pending invitations in the invitations list
+    pendingInvites.forEach(invite => {
+        const inviteItem = createInviteItem(invite);
+        invitationsList.appendChild(inviteItem);
+    });
 
-    // Update user count in the header
-    const userCountElement = document.querySelector('.user-count');
-    if (userCountElement) {
-        userCountElement.textContent = acceptedInvites.length;
+    if (pendingInvites.length === 0) {
+        invitationsList.innerHTML = '<p class="no-pending-invites">No pending invitations</p>';
     }
 }
 
-function createDatashareUserCard(invite) {
-    const userCard = document.createElement('div');
-    userCard.className = 'user-card datashare-user dashboard-content';
-    userCard.setAttribute('data-invite-id', invite.id);
-    userCard.style.display = 'block';
-    userCard.style.visibility = 'visible';
-    userCard.style.position = 'relative';
-    userCard.style.zIndex = '10';
+// Toggle sort controls visibility
+function toggleSortControls() {
+    const userCards = document.querySelectorAll('.accepted-user');
+    const sortContainer = document.querySelector('.sort-container .sort-controls');
 
-    const truncatedEmail = invite.invited_email.length > 30 ? 
-        invite.invited_email.substring(0, 27) + '...' : invite.invited_email;
+    if (userCards.length >= 2) {
+        if (sortContainer) {
+            sortContainer.style.display = 'flex';
+        }
+    } else {
+        if (sortContainer) {
+            sortContainer.style.display = 'none';
+        }
+    }
+}
+
+// Initialize sorting functionality
+function initializeSorting() {
+    const sortSelect = document.querySelector('.sort-select');
+    const sortIcons = document.querySelectorAll('.sort-icon');
+
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const activeIcon = document.querySelector('.sort-icon.active');
+            if (activeIcon) {
+                performSort();
+            }
+        });
+    }
+
+    sortIcons.forEach(icon => {
+        icon.addEventListener('click', function() {
+            // Remove active class from all icons
+            sortIcons.forEach(i => i.classList.remove('active'));
+            // Add active class to clicked icon
+            this.classList.add('active');
+            performSort();
+        });
+    });
+}
+
+// Perform sorting with animation
+function performSort() {
+    const sortSelect = document.querySelector('.sort-select');
+    const activeIcon = document.querySelector('.sort-icon.active');
+    const userCards = Array.from(document.querySelectorAll('.accepted-user'));
+
+    if (!sortSelect || !activeIcon || userCards.length < 2) return;
+
+    const sortBy = sortSelect.value;
+    const sortDirection = activeIcon.dataset.sort;
+
+    // Add sorting class to cards for animation
+    userCards.forEach(card => {
+        card.classList.add('sorting');
+    });
+
+    // Sort the cards array
+    userCards.sort((a, b) => {
+        let valueA, valueB;
+
+        switch(sortBy) {
+            case 'percentage':
+                valueA = parseInt(a.getAttribute('data-data-percentage'));
+                valueB = parseInt(b.getAttribute('data-data-percentage'));
+                break;
+            case 'screentime':
+                valueA = parseInt(a.getAttribute('data-time-percentage'));
+                valueB = parseInt(b.getAttribute('data-time-percentage'));
+                break;
+            case 'dollars':
+                valueA = parseInt(a.getAttribute('data-dollar-amount'));
+                valueB = parseInt(b.getAttribute('data-dollar-amount'));
+                break;
+            default:
+                valueA = parseInt(a.getAttribute('data-score'));
+                valueB = parseInt(b.getAttribute('data-score'));
+        }
+
+        if (sortDirection === 'asc' || sortDirection === 'oldest') {
+            return valueA - valueB;
+        } else {
+            return valueB - valueA;
+        }
+    });
+
+    // Apply animation classes
+    userCards.forEach((card, index) => {
+        if (index % 2 === 0) {
+            card.classList.add('sorting-up');
+        } else {
+            card.classList.add('sorting-down');
+        }
+    });
+
+    // Re-append cards in sorted order after animation
+    setTimeout(() => {
+        const container = document.getElementById('acceptedUsersContainer');
+        userCards.forEach(card => {
+            container.appendChild(card);
+            card.classList.remove('sorting', 'sorting-up', 'sorting-down');
+        });
+    }, 600);
+}
+
+// Edit user card function (placeholder for future functionality)
+function editUserCard(element) {
+    alert('Edit user functionality coming soon!');
+}
+
+// Remove user card function
+function removeUserCard(element) {
+    const userCard = element.closest('.user-card');
+    if (userCard && confirm('Are you sure you want to remove this user?')) {
+        userCard.style.transition = 'all 0.3s ease';
+        userCard.style.transform = 'translateX(100%)';
+        userCard.style.opacity = '0';
+
+        setTimeout(() => {
+            userCard.remove();
+            toggleSortControls();
+
+            // Update user count
+            const userCards = document.querySelectorAll('.accepted-user');
+            const userCountElement = document.querySelector('.user-count');
+            if (userCountElement) {
+                userCountElement.textContent = userCards.length;
+            }
+        }, 300);
+    }
+}
+
+// Toggle user pause function
+function toggleUserPause(element) {
+    const card = element.closest('.user-card');
+    const icon = element;
+    const pauseDuration = card.querySelector('.pause-duration');
+
+    if (icon.classList.contains('fa-pause')) {
+        // Currently active, pause it
+        icon.classList.remove('fa-pause');
+        icon.classList.add('fa-play');
+        icon.title = 'Resume data sharing';
+        card.classList.add('paused');
+        pauseDuration.style.display = 'inline';
+
+        // Store the pause timestamp
+        const pauseTime = Date.now();
+        card.setAttribute('data-pause-time', pauseTime);
+        pauseDuration.textContent = 'Paused just now';
+
+        // Start updating the pause duration
+        updatePauseDuration(card);
+    } else {
+        // Currently paused, resume it
+        icon.classList.remove('fa-play');
+        icon.classList.add('fa-pause');
+        icon.title = 'Temporarily pause data share for this user';
+        card.classList.remove('paused');
+        pauseDuration.style.display = 'none';
+        card.removeAttribute('data-pause-time');
+    }
+}
+
+// Function to update pause duration display
+function updatePauseDuration(card) {
+    const pauseDuration = card.querySelector('.pause-duration');
+    const pauseTime = parseInt(card.getAttribute('data-pause-time'));
+
+    if (!pauseTime || !card.classList.contains('paused')) {
+        return; // Stop if card is no longer paused
+    }
+
+    const now = Date.now();
+    const secondsElapsed = Math.floor((now - pauseTime) / 1000);
+
+    let durationText;
+    if (secondsElapsed < 60) {
+        if (secondsElapsed < 5) {
+            durationText = 'Paused just now';
+        } else {
+            durationText = `Paused ${secondsElapsed} seconds ago`;
+        }
+    } else {
+        const minutesElapsed = Math.floor(secondsElapsed / 60);
+        const remainingSeconds = secondsElapsed % 60;
+
+        if (minutesElapsed === 1 && remainingSeconds === 0) {
+            durationText = 'Paused 1 minute ago';
+        } else if (remainingSeconds === 0) {
+            durationText = `Paused ${minutesElapsed} minutes ago`;
+        } else if (minutesElapsed === 1) {
+            durationText = `Paused 1 minute ${remainingSeconds} seconds ago`;
+        } else {
+            durationText = `Paused ${minutesElapsed} minutes ${remainingSeconds} seconds ago`;
+        }
+    }
+
+    pauseDuration.textContent = durationText;
+
+    // Schedule next update in 10 seconds
+    setTimeout(() => updatePauseDuration(card), 10000);
+}
+
+function createUserCard(invite) {
+    // Generate random data for demo users
+    const isDemo = invite.email.includes('example.com');
+    const dataPercentage = Math.floor(Math.random() * 100) + 1;
+    const timePercentage = Math.floor(Math.random() * 100) + 1;
+    const dollarAmount = Math.floor(Math.random() * 25) + 1;
+    const scoreNumber = Math.floor(Math.random() * 10) + 1;
+
+    // Truncate email after 16 characters
+    const truncatedEmail = invite.email.length > 16 ? invite.email.substring(0, 16) + '...' : invite.email;
+
+    const userCard = document.createElement('div');
+    userCard.className = 'dashboard-content user-card accepted-user';
+    userCard.setAttribute('data-data-percentage', dataPercentage);
+    userCard.setAttribute('data-time-percentage', timePercentage);
+    userCard.setAttribute('data-dollar-amount', dollarAmount);
+    userCard.setAttribute('data-score', scoreNumber);
 
     userCard.innerHTML = `
         <div class="user-info-header">
-            <div class="user-name">${invite.invited_name || 'Datashare User'}</div>
+            <div class="user-name">Datashare User ${invite.id}</div>
             <div class="header-icons">
-                <div class="edit-icon" onclick="editDatashareUser(this)" title="Edit datashare user">
+                <div class="edit-icon" onclick="editUserCard(this)" title="Edit user">
                     <i class="fas fa-edit"></i>
                 </div>
-                <div class="remove-icon" onclick="removeDatashareUser(this)" title="Remove from datashare">
+                <div class="remove-icon" onclick="removeUserCard(this)" title="Remove user">
                     <i class="fas fa-times"></i>
                 </div>
             </div>
         </div>
         <div class="email-container">
             <div class="user-email">${truncatedEmail}</div>
-            <div class="timestamp">Member since ${formatDate(invite.accepted_at || invite.created_at)}</div>
+            <div class="timestamp">Active Member since ${formatDate(invite.created_at)}</div>
         </div>
-        <div class="group-info">
-            <div class="group-name">Group: ${invite.group_name}</div>
-            <div class="user-status">Status: ${invite.is_demo_user ? 'Demo User' : 'Active Member'}</div>
-        </div>
-        <div class="usage-info">
-            <div class="usage-amount">Shared Data: 0 GB</div>
-            <div class="usage-bar" style="background: rgba(200,200,200,0.3); height: 4px; border-radius: 2px; margin-top: 5px;">
-                <div class="usage-fill" style="width: 0%; background: #4CAF50; height: 100%; border-radius: 2px;"></div>
+
+        <div class="data-usage">
+            <div class="usage-metrics">
+                <div class="metric" data-metric="data">
+                    <div class="usage_label"><i class="fas fa-database"></i> Data</div>
+                    <div class="usage-amount">${dataPercentage}%</div>
+                </div>
+                <div class="metric" data-metric="time">
+                    <div class="usage-label"><i class="fas fa-clock"></i> Time</div>
+                    <div class="usage-amount">${timePercentage}%</div>
+                </div>
+                <div class="metric" data-metric="cost">
+                    <div class="usage-label"><i class="fas fa-dollar-sign"></i> Cost</div>
+                    <div class="usage-amount">$${dollarAmount}</div>
+                </div>
+                <div class="metric" data-metric="score">
+                    <div class="usage-label"><i class="fas fa-star"></i> Score</div>
+                    <div class="usage-amount">${scoreNumber}</div>
+                </div>
             </div>
         </div>
-        <div class="user-actions" style="display: flex; gap: 10px; margin-top: 15px;">
-            <button class="action-btn pause-btn btn btn-sm btn-warning" onclick="pauseDatashareUser(this)">
-                <i class="fas fa-pause"></i> Pause
-            </button>
-            <button class="action-btn settings-btn btn btn-sm btn-secondary" onclick="openDatashareSettings(this)">
-                <i class="fas fa-cog"></i> Settings
-            </button>
-            ${invite.is_demo_user ? '<span class="demo-badge" style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; margin-left: auto;">DEMO</span>' : ''}
+
+        <div class="card-actions">
+            <i class="fas fa-pause pause-play-icon" title="Temporarily pause data share for this user" onclick="toggleUserPause(this)"></i>
+            <span class="pause-duration" style="display: none;"></span>
         </div>
     `;
 
     return userCard;
 }
 
-function createDatashareInviteItem(invite) {
-    const inviteItem = document.createElement('div');
-    inviteItem.className = 'invitation-item datashare-invite';
-    inviteItem.setAttribute('data-invite-id', invite.id);
-
-    const statusClass = `status-${invite.invitation_status.replace('_', '-')}`;
-    const canCancel = invite.invitation_status === 'invite_sent';
-
-    inviteItem.innerHTML = `
-        <div class="invitation-info">
-            <div class="invitation-email">${invite.invited_email}</div>
-            <div class="invitation-name">${invite.invited_name || 'Unknown'}</div>
-            <div class="invitation-group">Group: ${invite.group_name}</div>
-            <div class="invitation-date">${formatDate(invite.created_at)}</div>
-            ${invite.personal_message ? `<div class="invitation-message">"${invite.personal_message}"</div>` : ''}
-        </div>
-        <div class="invitation-status ${statusClass}">${formatStatus(invite.invitation_status)}</div>
-        ${canCancel ? `<button class="cancel-invite-btn" onclick="cancelDatashareInvitation(${invite.id})" title="Cancel invitation">
-            <i class="fas fa-times"></i>
-        </button>` : ''}
-        ${invite.is_demo_user ? '<div class="demo-badge">DEMO</div>' : ''}
-    `;
-
-    return inviteItem;
-}
-
-function cancelDatashareInvitation(invitationId) {
-    const firebaseUid = localStorage.getItem('userId');
-
-    if (!confirm('Are you sure you want to cancel this datashare invitation?')) {
-        return;
-    }
-
-    fetch(`/api/cancel-datashare-invitation/${invitationId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            firebaseUid: firebaseUid
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Invitation cancelled successfully');
-            loadDatashareInvites(); // Refresh the list
-        } else {
-            alert('Error cancelling invitation: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error cancelling invitation:', error);
-        alert('Error cancelling invitation. Please try again.');
+// Initialize pause duration updates for any existing paused users on page load
+function initializePauseDurationUpdates() {
+    const pausedCards = document.querySelectorAll('.user-card.paused[data-pause-time]');
+    pausedCards.forEach(card => {        updatePauseDuration(card);
     });
 }
+
+// Call this when the page loads to handle any existing paused users
+document.addEventListener('DOMContentLoaded', function() {
+    // Existing DOMContentLoaded code...
+
+    // Initialize pause duration updates after a short delay to ensure cards are loaded
+    setTimeout(initializePauseDurationUpdates, 1500);
+});
 
 function createInviteItem(invite) {
     const inviteItem = document.createElement('div');
@@ -1152,15 +1991,6 @@ async function loadDOTMBalance() {
     }
 }
 
-// Add missing loadInvitesList function
-function loadInvitesList() {
-    const firebaseUid = localStorage.getItem('userId');
-    if (!firebaseUid) return;
-
-    // This function can be expanded later for regular invites
-    console.log('Loading invites list for:', firebaseUid);
-}
-
 // Make functions globally available
 window.showAddUserPopup = showAddUserPopup;
 window.hideAddUserPopup = hideAddUserPopup;
@@ -1173,7 +2003,6 @@ window.toggleUserPause = toggleUserPause;
 window.performSort = performSort;
 window.toggleChart = toggleChart;
 window.loadDOTMBalance = loadDOTMBalance;
-window.loadDatashareInvites = loadDatashareInvites;
 
 // Global help functions for compatibility
 function startHelpSession() {
@@ -1229,61 +2058,14 @@ let currentX = 0;
 let cardContainer = null;
 
 function populateOfferCards() {
-    // Try multiple selectors for the offers section
-    let offersSection = document.getElementById('offersSection') ||
-                       document.querySelector('.offers-section') || 
-                       document.getElementById('offersStackContainer') || 
-                       document.querySelector('[class*="offers"]') ||
-                       document.querySelector('.dashboard-content');
-
-    console.log('Looking for offers section...', offersSection);
-
+    const offersSection = document.querySelector('.offers-section');
     if (!offersSection) {
-        console.log('Offers section not found, retrying...');
-        if (document.readyState === 'complete') {
-            // If DOM is loaded but still no section, force create one
-            const container = document.querySelector('.container');
-            if (container) {
-                const newOffersSection = document.createElement('div');
-                newOffersSection.className = 'offers-section';
-                newOffersSection.id = 'offersSection';
-                newOffersSection.innerHTML = '<div class="offers-stack-container" id="offersStackContainer"></div>';
-
-                // Insert after dot container
-                const dotContainer = document.querySelector('.dot-container');
-                if (dotContainer && dotContainer.nextSibling) {
-                    container.insertBefore(newOffersSection, dotContainer.nextSibling);
-                } else {
-                    container.appendChild(newOffersSection);
-                }
-                offersSection = newOffersSection;
-                console.log('Created new offers section');
-            }
-        }
-
-        if (!offersSection) {
-            setTimeout(() => {
-                populateOfferCards();
-            }, 500);
-            return;
-        }
+        console.log('Offers section not found');
+        return;
     }
 
     // Define all possible offers
     const allOffers = [
-        {
-            id: 'demo_mode',
-            title: '📱 Demo Mode',
-            description: [
-                'This is wireless service provider demo. Request BETA access, and try the connectivity service anywhere on planet Earth and up to 15km+ above (soon). Requires membership.',
-                'This is demo release without actual connectivity and 0 actual $ being charged. Request BETA access eSIM, pay $1 through Stripe and try service globally.'
-            ],
-            price: '$1 BETA',
-            buttonText: 'Request BETA eSIM',
-            buttonClass: 'btn-primary beta-esim-btn',
-            action: "requestBetaESIM()",
-            alwaysShow: true
-        },
         {
             id: 'global_data',
             title: 'Truly Global Data',
@@ -1762,47 +2544,6 @@ function clearDismissedOffers() {
 
 window.clearDismissedOffers = clearDismissedOffers;
 
-// Add missing placeholder functions for datashare user management
-function editDatashareUser(element) {
-    alert('Edit datashare user functionality coming soon!');
-}
-
-function removeDatashareUser(element) {
-    if (confirm('Are you sure you want to remove this datashare user?')) {
-        const userCard = element.closest('.user-card');
-        if (userCard) {
-            userCard.remove();
-        }
-    }
-}
-
-function pauseDatashareUser(element) {
-    const userCard = element.closest('.user-card');
-    if (userCard) {
-        userCard.classList.toggle('paused');
-        const button = element;
-        if (userCard.classList.contains('paused')) {
-            button.innerHTML = '<i class="fas fa-play"></i> Resume';
-            button.classList.remove('btn-warning');
-            button.classList.add('btn-success');
-        } else {
-            button.innerHTML = '<i class="fas fa-pause"></i> Pause';
-            button.classList.remove('btn-success');
-            button.classList.add('btn-warning');
-        }
-    }
-}
-
-function openDatashareSettings(element) {
-    alert('Datashare settings functionality coming soon!');
-}
-
-// Make these functions globally available
-window.editDatashareUser = editDatashareUser;
-window.removeDatashareUser = removeDatashareUser;
-window.pauseDatashareUser = pauseDatashareUser;
-window.openDatashareSettings = openDatashareSettings;
-
 function shouldShowBasicMembership() {
     if (!currentSubscriptionStatus) return true;
 
@@ -1880,941 +2621,7 @@ function handleBetaEnrollment() {
             if (data.email_sent && data.iccid) {
                 // Show success message with ICCID details
                 alert(`Beta eSIM Ready!\n\nICCID: ${data.iccid}\n\nActivation details have been sent to your email. Check your inbox for complete instructions.`);
-                update// Apply the changes to improve offers section detection and force population
-<replit_final_file>
-// Standalone logout function
-function handleLogout(event) {
-    if (event) {
-        event.preventDefault();
-    }
-
-    console.log('Handling logout...');
-
-    // Clear all localStorage
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('databaseUserId');
-    localStorage.clear();
-
-    // Try Firebase logout if available
-    if (typeof firebase !== 'undefined' && firebase.auth) {
-        firebase.auth().signOut().then(() => {
-            console.log('Firebase logout successful');
-            window.location.href = '/';
-        }).catch((error) => {
-            console.error('Firebase logout error:', error);
-            window.location.href = '/';
-        });
-    } else {
-        // Direct redirect if Firebase not available
-        console.log('Firebase not available, redirecting directly');
-        window.location.href = '/';
-    }
-}
-
-// Make function globally available
-window.handleLogout = handleLogout;
-
-// Global variables
-let currentUser = null;
-
-// Initialize user data
-function initializeUser() {
-    const user = getCurrentUser(); // From firebase-auth.js
-    if (user) {
-        currentUser = user;
-        console.log('App initialized with user:', currentUser);
-    } else {
-        console.log('App initialized without user (guest mode)');
-    }
-}
-
-// Call initialization when the page loads
-document.addEventListener('DOMContentLoaded', initializeUser);
-
-// Global variables
-let currentTheme = 'dark'; // Default to dark mode
-
-// Ensure functions are available immediately
-window.toggleMenu = toggleMenu;
-window.toggleProfileDropdown = toggleProfileDropdown;
-window.showConfirmationDrawer = showConfirmationDrawer;
-window.hideConfirmationDrawer = hideConfirmationDrawer;
-window.confirmPurchase = confirmPurchase;
-window.sendComingSoonNotification = sendComingSoonNotification;
-window.toggleTheme = toggleTheme;
-
-// Global menu toggle functionality
-function toggleMenu(element) {
-    const dropdown = element.querySelector('.menu-dropdown');
-    if (dropdown) {
-        // Handle both class-based and display-based toggles
-        if (dropdown.classList.contains('visible') || dropdown.style.display === 'block') {
-            dropdown.classList.remove('visible');
-            dropdown.style.display = 'none';
-        } else {
-            dropdown.classList.add('visible');
-            dropdown.style.display = 'block';
-        }
-    }
-}
-
-// Global profile dropdown functionality
-function toggleProfileDropdown() {
-    const dropdown = document.querySelector('.profile-dropdown');
-    if (dropdown) {
-        if (dropdown.classList.contains('visible') || dropdown.style.display === 'block') {
-            dropdown.classList.remove('visible');
-            dropdown.style.display = 'none';
-        } else {
-            dropdown.classList.add('visible');
-            dropdown.style.display = 'block';
-        }
-    }
-}
-
-// Theme toggle function
-function toggleTheme(isDarkMode) {
-    const body = document.body;
-    const darkToggle = document.getElementById('darkModeToggle');
-    const lightToggle = document.getElementById('lightModeToggle');
-
-    if (isDarkMode) {
-        // Switch to dark mode
-        body.classList.remove('light-mode');
-        body.classList.add('dark-mode');
-        currentTheme = 'dark';
-        localStorage.setItem('darkMode', 'true');
-
-        // Update toggle states
-        if (darkToggle) darkToggle.classList.add('active');
-        if (lightToggle) lightToggle.classList.remove('active');
-    } else {
-        // Switch to light mode
-        body.classList.remove('dark-mode');
-        body.classList.add('light-mode');
-        currentTheme = 'light';
-        localStorage.setItem('darkMode', 'false');
-
-        // Update toggle states
-        if (darkToggle) darkToggle.classList.remove('active');
-        if (lightToggle) lightToggle.classList.add('active');
-    }
-}
-
-// Global dashboard functions for offer cards and user data
-function showConfirmationDrawer(dataAmount, price, productId) {
-    console.log('Showing confirmation drawer for:', productId, dataAmount, price);
-    var drawer = document.getElementById('confirmationDrawer');
-    if (drawer) {
-        var dataAmountElement = document.getElementById('confirmDataAmount');
-        var priceElement = document.getElementById('confirmPrice');
-
-        if (dataAmountElement) {
-            dataAmountElement.textContent = dataAmount + 'GB';
-        }
-        if (priceElement) {
-            priceElement.textContent = '$' + price;
-        }
-
-        drawer.classList.add('show');
-        drawer.style.display = 'block';
-        drawer.dataset.productId = productId;
-    }
-}
-
-function hideConfirmationDrawer() {
-    var drawer = document.getElementById('confirmationDrawer');
-    if (drawer) {
-        drawer.classList.remove('show');
-        drawer.style.display = 'none';
-    }
-}
-
-function confirmPurchase() {
-    var drawer = document.getElementById('confirmationDrawer');
-    if (drawer && drawer.dataset.productId) {
-        var productId = drawer.dataset.productId;
-        console.log('Confirming purchase for:', productId);
-
-        // Get Firebase UID from multiple possible sources
-        var firebaseUid = null;
-
-        // First try to get current user data
-        var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-        if (currentUserData && currentUserData.uid) {
-            firebaseUid = currentUserData.uid;
-            console.log('Using Firebase UID from currentUser:', firebaseUid);
-        } else {
-            // Fallback to other localStorage keys
-            firebaseUid = localStorage.getItem('firebaseUid') || 
-                         localStorage.getItem('userId') || null;
-            console.log('Using Firebase UID from fallback:', firebaseUid);
-        }
-
-        if (!firebaseUid) {
-            alert('Please log in to make a purchase.');
-            return;
-        }
-
-        // Make API call to record purchase
-        fetch('/api/record-global-purchase', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                productId: productId,
-                firebaseUid: firebaseUid
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Purchase recorded:', data);
-            hideConfirmationDrawer();
-
-            // Show success message
-            alert('Purchase successful! Your data will be available shortly.');
-
-            // Refresh the page to update data balance
-            window.location.reload();
-        })
-        .catch(error => {
-            console.error('Error recording purchase:', error);
-            alert('Error processing purchase. Please try again.');
-        });
-    }
-}
-
-function sendComingSoonNotification() {
-    alert('This feature is coming soon! Thank you for your interest.');
-}
-
-// Carousel functions removed - using grid layout now
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', function(event) {
-    const menuIcon = document.querySelector('.menu-icon');
-    const profileSection = document.querySelector('.profile-section');
-    const menuDropdown = document.querySelector('.menu-dropdown');
-    const profileDropdown = document.querySelector('.profile-dropdown');
-
-    // Close menu dropdown if clicking outside
-    if (menuDropdown && menuIcon && !menuIcon.contains(event.target)) {
-        menuDropdown.classList.remove('visible');
-        menuDropdown.style.display = 'none';
-    }
-
-    // Close profile dropdown if clicking outside
-    if (profileDropdown && profileSection && !profileSection.contains(event.target)) {
-        profileDropdown.classList.remove('visible');
-        profileDropdown.style.display = 'none';
-    }
-});
-
-// Notification tester functionality
-function showNotificationTester() {
-    // Simple notification tester - you can expand this as needed
-    if (Notification.permission === 'granted') {
-        new Notification('🚀 GORSE Network Alert', {
-            body: 'Your global connectivity is active! Ready to stay connected worldwide.',
-            icon: '/static/favicon.ico'
-        });
-    } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission().then(function(permission) {
-            if (permission === 'granted') {
-                new Notification('🚀 GORSE Network Alert', {
-                    body: 'Your global connectivity is active! Ready to stay connected worldwide.',
-                    icon: '/static/favicon.ico'
-                });
-            }
-        });
-    } else {
-        alert('Notifications are blocked. Please enable them in your browser settings.');
-    }
-}
-
-// Help system countdown and callback functionality
-var agentCountdownInterval;
-var callbackCountdownInterval;
-
-function startAgentCountdown() {
-    var countdownElement = document.querySelector('.countdown-timer');
-    if (countdownElement) {
-        var minutes = 4;
-        var seconds = 20;
-
-        agentCountdownInterval = setInterval(function() {
-            if (seconds > 0) {
-                seconds--;
-            } else if (minutes > 0) {
-                minutes--;
-                seconds = 59;
-            } else {
-                clearInterval(agentCountdownInterval);
-                countdownElement.textContent = 'Agent available now!';
-                return;
-            }
-
-            var timeStr = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-            countdownElement.textContent = timeStr;
-        }, 1000);
-    }
-}
-
-function stopAllCountdowns() {
-    if (agentCountdownInterval) {
-        clearInterval(agentCountdownInterval);
-    }
-    if (callbackCountdownInterval) {
-        clearInterval(callbackCountdownInterval);
-    }
-}
-
-function orderCallback() {
-    var callbackBtn = document.getElementById('orderCallbackBtn');
-	alert('Callback ordered! We will call you back shortly.');
-    if (callbackBtn) {
-        callbackBtn.disabled = true;
-        callbackBtn.textContent = 'Callback Ordered';
-
-        // Show countdown
-        var countdownDiv = document.querySelector('.callback-countdown');
-        if (!countdownDiv) {
-            countdownDiv = document.createElement('div');
-            countdownDiv.className = 'callback-countdown';
-            callbackBtn.parentNode.appendChild(countdownDiv);
-        }
-
-        var countdownTime = 300; // 5 minutes
-        callbackCountdownInterval = setInterval(function() {
-            if (countdownTime > 0) {
-                var minutes = Math.floor(countdownTime / 60);
-                var seconds = countdownTime % 60;
-                countdownDiv.innerHTML = 'Expect callback in: ' + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-                countdownTime--;
-            } else {
-                clearInterval(callbackCountdownInterval);
-                countdownDiv.innerHTML = '<button id="answerCallBtn" class="answer-call-button">Answer Super Agent\'s Call</button>';
-            }
-        }, 1000);
-    }
-}
-
-function answerCall() {
-    alert('Connecting you with our super agent...');
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('App.js loaded successfully');
-
-    // Initialize theme based on localStorage or default to dark
-    const savedTheme = localStorage.getItem('darkMode');
-    const isDarkMode = savedTheme === null ? true : savedTheme === 'true';
-    toggleTheme(isDarkMode);
-
-    // Load DOTM balance if wallet is connected
-    loadDOTMBalance();
-
-    // Add event listeners for theme toggles
-    const darkToggle = document.getElementById('darkModeToggle');
-    const lightToggle = document.getElementById('lightModeToggle');
-
-    if (darkToggle) {
-        darkToggle.addEventListener('click', function() {
-            toggleTheme(true);
-        });
-    }
-
-    if (lightToggle) {
-        lightToggle.addEventListener('click', function() {
-            toggleTheme(false);
-        });
-    }
-
-    // Initialize add user functionality with popup
-    const addUserBtn = document.getElementById('addUserBtn');
-    if (addUserBtn) {
-        addUserBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            showAddUserPopup();
-        });
-    }
-
-    // Initialize chart toggle functionality
-    document.querySelectorAll('.insight-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            toggleChart(this);
-        });
-    });
-
-    // Use event delegation for all interactive elements
-    document.addEventListener('click', function(e) {
-        // Handle logout functionality
-        if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
-            e.preventDefault();
-            console.log('Logout button clicked');
-
-            // Try multiple logout methods
-            if (window.firebaseAuth && window.firebaseAuth.signOut) {
-                window.firebaseAuth.signOut();
-            } else if (typeof firebase !== 'undefined' && firebase.auth) {
-                firebase.auth().signOut().then(() => {
-                    localStorage.clear();
-                    window.location.href = '/';
-                }).catch((error) => {
-                    console.error('Logout error:', error);
-                    localStorage.clear();
-                    window.location.href = '/';
-                });
-            } else {
-                // Fallback: clear storage and redirect
-                localStorage.clear();
-                window.location.href = '/';
-            }
-            return;
-        }
-
-        // Close popup
-        if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
-            hideAddUserPopup();
-            return;
-        }
-
-        // Handle invite anyone button
-        if (e.target.id === 'inviteAnyoneBtn') {
-            e.preventDefault();
-            showInviteForm();
-            return;
-        }
-
-        // Handle demo user button
-        if (e.target.id === 'demoUserBtn') {
-            e.preventDefault();
-            createDemoUser();
-            return;
-        }
-
-        // Handle send invitation button
-        if (e.target.id === 'sendInvitationBtn') {
-            e.preventDefault();
-            sendDatashareInvitation();
-            return;
-        }
-
-        // Handle cancel invitation button
-        if (e.target.id === 'cancelInviteBtn') {
-            e.preventDefault();
-            hideAddUserPopup();
-            return;
-        }
-    });
-
-    // Add event delegation for confirmation drawer buttons
-    document.addEventListener('click', function(e) {
-        // Handle buy buttons
-        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
-            e.preventDefault();
-            showConfirmationDrawer(10, 10, 'global_data_10gb');
-        }
-
-        // Handle subscribe buttons
-        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
-            e.preventDefault();
-            showConfirmationDrawer(10, 24, 'basic_membership');
-        }
-
-        // Handle drawer cancel/confirm buttons
-        if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
-            e.preventDefault();
-            hideConfirmationDrawer();
-        }
-
-        if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
-            e.preventDefault();
-            confirmPurchase();
-        }
-    });
-
-    // Initialize beta enrollment functionality
-    const betaEnrollBtn = document.getElementById('betaEnrollBtn');
-    if (betaEnrollBtn) {
-        betaEnrollBtn.addEventListener('click', handleBetaEnrollment);
-        checkBetaStatus(); // Check current status on page load
-    }
-
-    // Handle help toggle functionality using event delegation
-    document.addEventListener('click', function(e) {
-        if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
-            e.preventDefault();
-            e.stopPropagation();
-            showHelpModal();
-        }
-    });
-
-    // Initialize settings toggle functionality using event delegation
-    document.addEventListener('click', function(e) {
-        if (e.target.id === 'settingsToggle' || e.target.closest('#settingsToggle')) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const settingsSubmenu = document.querySelector('.settings-submenu');
-            if (settingsSubmenu) {
-                // Toggle settings submenu visibility
-                if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
-                    settingsSubmenu.style.display = 'block';
-                } else {
-                    settingsSubmenu.style.display = 'none';
-                }
-            }
-        }
-
-        // Handle language selector changes
-        if (e.target.id === 'languageSelect') {
-            const selectedLanguage = e.target.value;
-            if (typeof setLanguage === 'function') {
-                setLanguage(selectedLanguage);
-            }
-        }
-
-        // Close settings submenu when clicking outside
-        if (!e.target.closest('#settingsToggle') && !e.target.closest('.settings-submenu')) {
-            const settingsSubmenu = document.querySelector('.settings-submenu');
-            if (settingsSubmenu && settingsSubmenu.style.display === 'block') {
-                settingsSubmenu.style.display = 'none';
-            }
-        }
-    });
-
-    // Load invites if on dashboard page
-    if (window.location.pathname === '/dashboard') {
-        setTimeout(() => {
-            if (typeof loadInvitesList === 'function') {
-                loadInvitesList();
-            }
-        }, 1000);
-    }
-
-		// Load datashare invites if on dashboard page
-		if (window.location.pathname === '/dashboard') {
-			setTimeout(() => {
-					loadDatashareInvites();
-			}, 1000);
-		}
-
-    // Initialize carousel functionality
-    initializeCarousel();
-});
-
-// Add User Popup Functions
-function showAddUserPopup() {
-    console.log('showAddUserPopup called');
-
-    // Remove existing popup if any
-    hideAddUserPopup();
-
-    const popup = document.createElement('div');
-    popup.id = 'addUserPopup';
-    popup.className = 'popup-overlay';
-    popup.style.cssText = `
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        background: rgba(0, 0, 0, 0.7) !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        z-index: 999999 !important;
-        opacity: 1 !important;
-    `;
-
-    popup.innerHTML = `
-        <div class="popup-content" style="z-index: 999999; position: relative;">
-            <div class="popup-header">
-                <h3>Add New Datashare User</h3>
-                <button class="popup-close" onclick="hideAddUserPopup()">&times;</button>
-            </div>
-            <div class="popup-body">
-                <div class="invitation-options">
-                    <button class="invite-option-btn" id="inviteAnyoneBtn">
-                        <i class="fas fa-envelope"></i>
-                        <span>Invite Anyone</span>
-                        <small>Send invitation via email for a start</small>
-                    </button>
-                    <button class="invite-option-btn" id="demoUserBtn">
-                        <i class="fas fa-user-plus"></i>
-                        <span>Demo User</span>
-                        <small>Create sample user instantly</small>
-                    </button>
-                </div>
-                <div id="inviteFormContainer"></div>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(popup);
-    console.log('Popup added to body:', popup);
-
-    // Force show with timeout
-    setTimeout(() => {
-        popup.classList.add('show');
-        popup.style.opacity = '1';
-    }, 10);
-
-    // Add event listeners
-    document.getElementById('inviteAnyoneBtn').addEventListener('click', showInviteForm);
-    document.getElementById('demoUserBtn').addEventListener('click', createDemoUser);
-}
-
-function hideAddUserPopup() {
-    console.log('hideAddUserPopup called');
-    const popup = document.getElementById('addUserPopup');
-    if (popup) {
-        popup.style.opacity = '0';
-        setTimeout(() => {
-            popup.remove();
-        }, 300);
-    }
-}
-
-function showInviteForm() {
-    const container = document.getElementById('inviteFormContainer');
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="invite-form">
-            <h4>Send Datashare Invitation</h4>
-            <div class="form-group">
-                <label for="groupName">Group Name</label>
-                <input type="text" id="groupName" placeholder="My Datashare Group" value="My Datashare Group" required>
-            </div>
-            <div class="form-group">
-                <label for="inviteEmail">Email Address</label>
-                <input type="email" id="inviteEmail" placeholder="Enter email address" required>
-            </div>
-            <div class="form-group">
-                <label for="inviteName">Name (Optional)</label>
-                <input type="text" id="inviteName" placeholder="Enter their name">
-            </div>
-            <div class="form-group">
-                <label for="inviteMessage">Personal Message (Optional)</label>
-                <textarea id="inviteMessage" placeholder="Join my datashare group to save on connectivity costs together!" rows="3"></textarea>
-            </div>
-            <div class="form-actions">
-                <button class="btn-secondary" id="cancelInviteBtn">Cancel</button>
-                <button class="btn-primary" id="sendInvitationBtn">Send Invitation</button>
-            </div>
-        </div>
-    `;
-
-    // Add event listeners for form buttons
-    document.getElementById('cancelInviteBtn').addEventListener('click', hideAddUserPopup);
-    document.getElementById('sendInvitationBtn').addEventListener('click', sendDatashareInvitation);
-}
-
-function createDemoUser() {
-    const timestamp = Date.now();
-    const demoEmail = `demo${timestamp}@datashare.example.com`;
-
-    // Try multiple sources for Firebase UID
-    let firebaseUid = null;
-
-    // First try to get current user data
-    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-    if (currentUserData && currentUserData.uid) {
-        firebaseUid = currentUserData.uid;
-        console.log('Using Firebase UID from currentUser:', firebaseUid);
-    } else {
-        // Fallback to other localStorage keys
-        firebaseUid = localStorage.getItem('firebaseUid') || 
-                     localStorage.getItem('userId') || null;
-        console.log('Using Firebase UID from fallback:', firebaseUid);
-    }
-
-    // Try to get from Firebase auth if available
-    if (!firebaseUid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
-        firebaseUid = firebase.auth().currentUser.uid;
-        console.log('Using Firebase UID from Firebase auth:', firebaseUid);
-    }
-
-    if (!firebaseUid) {
-        alert('Please log in to create datashare users. Firebase UID is required.');
-        return;
-    }
-
-    const groupName = `Demo Datashare Group ${timestamp % 1000}`;
-
-    fetch('/api/send-datashare-invitation', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email: demoEmail,
-            name: `Demo User ${timestamp % 1000}`,
-            groupName: groupName,
-            message: 'Demo datashare user created automatically',
-            firebaseUid: firebaseUid,
-            isDemoUser: true
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Demo datashare user created successfully!\nEmail: ${data.invited_email}\nGroup: ${data.group_name}`);
-            hideAddUserPopup();
-            loadDatashareInvites(); // Refresh the invites list
-        } else {
-            alert('Error creating demo user: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error creating demo user:', error);
-        alert('Error creating demo user. Please try again.');
-    });
-}
-
-function sendDatashareInvitation() {
-    const email = document.getElementById('inviteEmail')?.value;
-    const name = document.getElementById('inviteName')?.value;
-    const groupName = document.getElementById('groupName')?.value || 'My Datashare Group';
-    const message = document.getElementById('inviteMessage')?.value || '';
-
-    if (!email) {
-        alert('Please enter an email address');
-        return;
-    }
-
-    // Try multiple sources for Firebase UID
-    let firebaseUid = null;
-
-    // First try to get current user data
-    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-    if (currentUserData && currentUserData.uid) {
-        firebaseUid = currentUserData.uid;
-        console.log('Using Firebase UID from currentUser:', firebaseUid);
-    } else {
-        // Fallback to other localStorage keys
-        firebaseUid = localStorage.getItem('firebaseUid') || 
-                     localStorage.getItem('userId') || null;
-        console.log('Using Firebase UID from fallback:', firebaseUid);
-    }
-
-    // Try to get from Firebase auth if available
-    if (!firebaseUid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
-        firebaseUid = firebase.auth().currentUser.uid;
-        console.log('Using Firebase UID from Firebase auth:', firebaseUid);
-    }
-
-    if (!firebaseUid) {
-        alert('Please log in to send invitations. Firebase UID is required.');
-        return;
-    }
-
-    const sendBtn = document.getElementById('sendInvitationBtn');
-    if (sendBtn) {
-        sendBtn.disabled = true;
-        sendBtn.textContent = 'Sending...';
-    }
-
-    fetch('/api/send-datashare-invitation', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email: email,
-            name: name,
-            groupName: groupName,
-            message: message,
-            firebaseUid: firebaseUid,
-            isDemoUser: false
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Datashare invitation sent successfully!\nInvited: ${data.invited_email}\nGroup: ${data.group_name}`);
-            hideAddUserPopup();
-            if (typeof loadInvitesList === 'function') {
-                loadInvitesList(); // Refresh the invites list
-            }
-        } else {
-            alert('Error sending invitation: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error sending invitation:', error);
-        alert('Error sending invitation. Please try again.');
-    })
-    .finally(() => {
-        if (sendBtn) {
-            sendBtn.disabled = false;
-            sendBtn.textContent = 'Send Invitation';
-        }
-    });
-}
-
-function loadDatashareInvites() {
-    const firebaseUid = localStorage.getItem('userId');
-    if (!firebaseUid) return;
-
-    fetch(`/api/datashare-invitations?firebaseUid=${firebaseUid}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayDatashareInvites(data.invitations);
-            } else {
-                console.error('Error loading datashare invites:', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading datashare invites:', error);
-        });
-}
-
-function displayDatashareInvites(invites) {
-    const invitationsSection = document.getElementById('recentInvitationsSection');
-    const invitationsList = document.getElementById('invitationsList');
-    const acceptedUsersContainer = document.getElementById('acceptedUsersContainer');
-
-    console.log('Displaying datashare invites:', invites);
-
-    if (!invitationsList) {
-        console.log('Invitations list element not found');
-        return;
-    }
-
-    // Clear existing content
-    invitationsList.innerHTML = '';
-    if (acceptedUsersContainer) {
-        acceptedUsersContainer.innerHTML = '';
-        acceptedUsersContainer.style.display = 'block';
-    }
-
-    if (!invites || invites.length === 0) {
-        invitationsList.innerHTML = '<div class="dashboard-content"><p class="no-invites">No datashare invitations sent yet</p></div>';
-        if (invitationsSection) {
-            invitationsSection.style.display = 'none';
-        }
-        return;
-    }
-
-    // Show the invitations section
-    if (invitationsSection) {
-        invitationsSection.style.display = 'block';
-    }
-
-    // Separate accepted and pending invitations
-    const acceptedInvites = invites.filter(invite => invite.invitation_status === 'invite_accepted');
-    const pendingInvites = invites.filter(invite => invite.invitation_status !== 'invite_accepted');
-
-    console.log('Accepted invites:', acceptedInvites.length);
-    console.log('Pending invites:', pendingInvites.length);
-
-    // Display accepted invitations as user cards
-    if (acceptedInvites.length > 0 && acceptedUsersContainer) {
-        acceptedInvites.forEach((invite, index) => {
-            console.log(`Creating user card for invite ${index}:`, invite);
-            const userCard = createDatashareUserCard(invite);
-            acceptedUsersContainer.appendChild(userCard);
-            console.log('User card added to container');
-        });
-
-        // Force display
-        acceptedUsersContainer.style.display = 'block';
-        acceptedUsersContainer.style.visibility = 'visible';
-    }
-
-    // Display pending invitations
-    if (pendingInvites.length > 0) {
-        pendingInvites.forEach(invite => {
-            const inviteItem = createDatashareInviteItem(invite);
-            invitationsList.appendChild(inviteItem);
-        });
-    }
-
-    // Update user count in the header
-    const userCountElement = document.querySelector('.user-count');
-    if (userCountElement) {
-        userCountElement.textContent = acceptedInvites.length;
-    }
-}
-
-function createDatashareUserCard(invite) {
-    const userCard = document.createElement('div');
-    userCard.className = 'user-card datashare-user dashboard-content';
-    userCard.setAttribute('data-invite-id', invite.id);
-    userCard.style.display = 'block';
-    userCard.style.visibility = 'visible';
-    userCard.style.position = 'relative';
-    userCard.style.zIndex = '10';
-
-    const truncatedEmail = invite.invited_email.length > 30 ? 
-        invite.invited_email.substring(0, 27) + '...' : invite.invited_email;
-
-    userCard.innerHTML = `
-        <div class="user-info-header">
-            <div class="user-name">${invite.invited_name || 'Datashare User'}</div>
-            <div class="header-icons">
-                <div class="edit-icon" onclick="editDatashareUser(this)" title="Edit datashare user">
-                    <i class="fas fa-edit"></i>
-                </div>
-                <div class="remove-icon" onclick="removeDatashareUser(this)" title="Remove from datashare">
-                    <i class="fas fa-times"></i>
-                </div>
-            </div>
-        </div>
-        <div class="email-container">
-            <div class="user-email">${truncatedEmail}</div>
-            <div class="timestamp">Member since ${formatDate(invite.accepted_at || invite.created_at)}</div>
-        </div>
-        <div class="group-info">
-            <div class="group-name">Group: ${invite.group_name}</div>
-            <div class="user-status">Status: ${invite.is_demo_user ? 'Demo User' : 'Active Member'}</div>
-        </div>
-        <div class="usage-info">
-            <div class="usage-amount">Shared Data: 0 GB</div>
-            <div class="usage-bar" style="background: rgba(200,200,200,0.3); height: 4px; border-radius: 2px; margin-top: 5px;">
-                <div class="usage-fill" style="width: 0%; background: #4CAF50; height: 100%; border-radius: 2px;"></div>
-            </div>
-        </div>
-        <div class="user-actions" style="display: flex; gap: 10px; margin-top: 15px;">
-            <button class="action-btn pause-btn btn btn-sm btn-warning" onclick="pauseDatashareUser(this)">
-                <i class="fas fa-pause"></i> Pause
-            </button>
-            <button class="action-btn settings-btn btn btn-sm btn-secondary" onclick="openDatashareSettings(this)">
-                <i class="fas fa-cog"></i> Settings
-            </button>
-            ${invite.is_demo_user ? '<span class="demo-badge" style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; margin-left: auto;">DEMO</span>' : ''}
-        </div>
-    `;
-
-    return userCard;
-}
-
-function createDatashareInviteItem(invite) {
-    const inviteItem = document.createElement('div');
-    inviteItem.className = 'invitation-item datashare-invite';
-    inviteItem.setAttribute('data-invite-id', invite.id);
-
-    const statusClass = `status-${invite.invitation_status.replace('_', '-')}`;
-    const canCancel = invite.invitation_status === 'invite_sent';
-
-    inviteItem.innerHTML = `
-        <div class="invitation-info">
-            <div class="invitation-email">${invite.invited_email}</div>
-            <div class="invitation-name">${invite.invited_name || 'Unknown'}</div>
-            <div class="invitation-group">Group: ${invite.group_name}</div>
-            <div class="invitation-date">${formatDate(invite.created_at)}</div>
-            ${invite.personal_message ? `<div class="invitation-message">"${invite.personal_message}"</div>` : ''}
-        </div>
-        <div class="invitation-status ${statusClass}">${formatStatus(invite.invitation_status)}</div>
-        ${canCancel ? `<button class="cancel-invite-btn" onclick="cancelDatashareInvitation(${invite.id})" title="Cancel invitation">
-            <i class="BetaStatus(data.status, data.message);
+                updateBetaStatus(data.status, data.message);
             } else {
                 updateBetaStatus(data.status, data.message);
             }
@@ -3110,9 +2917,4 @@ function updateBetaStatus(status, message) {
             betaStatusText.textContent = message || 'Beta enrollment complete';
             break;
     }
-}
-
-// Dummy function for requestBetaESIM
-function requestBetaESIM() {
-    alert('Requesting BETA eSIM - This is a demo function.');
 }

@@ -26,40 +26,12 @@ document.addEventListener('DOMContentLoaded', async function() {
   try {
     // Initialize Firebase Cloud Messaging only if supported
     if ('serviceWorker' in navigator && 'PushManager' in window) {
-      // Wait for Firebase v8 to be available
-      let retries = 0;
-      while (typeof firebase === 'undefined' && retries < 10) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        retries++;
-      }
-      
-      if (typeof firebase === 'undefined') {
-        throw new Error('Firebase v8 not available after waiting');
-      }
-
-      // Initialize Firebase
-      console.log('Firebase messaging initialization...');
-
-      let app;
-      try {
-          // Check if Firebase app already exists
-          try {
-              app = firebase.app(); // Try to get existing app first
-              console.log('Using existing Firebase app');
-          } catch (e) {
-              // App doesn't exist, create new one
-              app = firebase.initializeApp(firebaseConfig);
-              console.log('Firebase App initialized successfully');
-          }
-      } catch (error) {
-          console.error('Firebase initialization error:', error);
-          throw error;
-      }
-      
-      // Dynamically import Firebase modules for messaging
+      // Dynamically import Firebase modules
       const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
       const { getMessaging, getToken, onMessage } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js');
 
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
 
       // Register service worker and wait for it to be ready
@@ -155,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       showNotificationStatus('Error setting up notifications: ' + err.message);
     }
   }
-
+   
 });
 
 // Send token to your server
