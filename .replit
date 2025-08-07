@@ -30,3 +30,13 @@ args = "python -c \"import socket; s = socket.socket(); s.bind(('0.0.0.0', 0)); 
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 35431
+externalPort = 3001
+exposeLocalhost = true
+
+[[ports]]
+localPort = 44983
+externalPort = 3000
+exposeLocalhost = true
