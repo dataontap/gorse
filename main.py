@@ -3542,7 +3542,7 @@ def resend_esim_email():
                 user_result = cur.fetchone()
 
                 if not user_result:
-                    return jsonify({'success': False, 'message': 'User not found'}), 400
+                    return jsonify({'success': False, 'message': 'User not found'}), 404
 
                 user_id, user_email, display_name = user_result
 
