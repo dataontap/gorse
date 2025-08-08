@@ -137,10 +137,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Global user data
     let currentUserData = null;
+    
+    // Check if user explicitly wants to be logged out
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceLogout = urlParams.get('logout') === 'true';
+    
+    if (forceLogout && firebase.auth().currentUser) {
+      console.log('Force logout requested via URL parameter');
+      firebase.auth().signOut();
+      return;
+    }
 
     // Auth state observer
     firebase.auth().onAuthStateChanged(async (user) => {
       console.log('Auth state changed:', user ? 'signed in' : 'signed out');
+      
+      // Check if this is an unwanted automatic re-authentication
+      // If user lands on login page with existing auth state, it means they want to log out
+      if (user && (window.location.pathname === '/login' || window.location.pathname === '/signup')) {
+        console.log('User found on login/signup page, signing out automatically...');
+        firebase.auth().signOut();
+        return;
+      }
 
       if (user) {
           console.log('User is signed in:', user.uid);
@@ -470,37 +488,44 @@ document.addEventListener('DOMContentLoaded', function() {
       },
 
       signOut: function() {
+        console.log('Starting Firebase sign out process...');
+        
+        // Clear all local storage first
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('databaseUserId');
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('demoMode');
+        
+        // Clear all localStorage (comprehensive cleanup)
+        localStorage.clear();
+        
         if (!firebase || !firebase.auth) {
-          console.error('Firebase auth not available');
-          // Clear localStorage and redirect anyway
-          localStorage.removeItem('userId');
-          localStorage.removeItem('userEmail');
-          localStorage.removeItem('databaseUserId');
-          localStorage.removeItem('currentUser');
+          console.error('Firebase auth not available during signout');
           window.location.href = '/';
           return Promise.resolve();
         }
 
         return firebase.auth().signOut()
           .then(() => {
-            // Clear all local storage
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userEmail');
-            localStorage.removeItem('databaseUserId');
-            localStorage.removeItem('currentUser');
-            console.log('User signed out successfully');
-
-            // Redirect to home page after logout  
-            window.location.href = '/';
+            console.log('Firebase signOut completed successfully');
+            
+            // Force clear any remaining Firebase state
+            if (firebase.auth().currentUser) {
+              console.warn('User still exists after signOut, forcing reload');
+            }
+            
+            // Small delay to ensure Firebase state is cleared
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 100);
           })
           .catch((error) => {
-            console.error('Error during sign out:', error);
-            // Clear localStorage and redirect anyway
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userEmail');
-            localStorage.removeItem('databaseUserId');
-            localStorage.removeItem('currentUser');
-            window.location.href = '/';
+            console.error('Error during Firebase sign out:', error);
+            // Force redirect even if signOut fails
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 100);
           });
       },
 

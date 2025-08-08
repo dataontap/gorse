@@ -155,7 +155,7 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
-        
+
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
@@ -163,7 +163,7 @@ function confirmPurchase() {
             console.log('Using Firebase UID from currentUser:', firebaseUid);
         } else {
             // Fallback to other localStorage keys
-            firebaseUid = localStorage.getItem('firebaseUid') || 
+            firebaseUid = localStorage.getItem('firebaseUid') ||
                          localStorage.getItem('userId') || null;
             console.log('Using Firebase UID from fallback:', firebaseUid);
         }
@@ -372,22 +372,22 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             console.log('Logout button clicked');
 
+            // Clear storage first
+            localStorage.clear();
+
             // Try multiple logout methods
             if (window.firebaseAuth && window.firebaseAuth.signOut) {
                 window.firebaseAuth.signOut();
             } else if (typeof firebase !== 'undefined' && firebase.auth) {
                 firebase.auth().signOut().then(() => {
-                    localStorage.clear();
-                    window.location.href = '/';
+                    window.location.href = '/?logout=true';
                 }).catch((error) => {
                     console.error('Logout error:', error);
-                    localStorage.clear();
-                    window.location.href = '/';
+                    window.location.href = '/?logout=true';
                 });
             } else {
-                // Fallback: clear storage and redirect
-                localStorage.clear();
-                window.location.href = '/';
+                // Fallback: redirect with logout parameter
+                window.location.href = '/?logout=true';
             }
             return;
         }
@@ -1112,22 +1112,22 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             console.log('Logout button clicked');
 
+            // Clear storage first
+            localStorage.clear();
+
             // Try multiple logout methods
             if (window.firebaseAuth && window.firebaseAuth.signOut) {
                 window.firebaseAuth.signOut();
             } else if (typeof firebase !== 'undefined' && firebase.auth) {
                 firebase.auth().signOut().then(() => {
-                    localStorage.clear();
-                    window.location.href = '/';
+                    window.location.href = '/?logout=true';
                 }).catch((error) => {
                     console.error('Logout error:', error);
-                    localStorage.clear();
-                    window.location.href = '/';
+                    window.location.href = '/?logout=true';
                 });
             } else {
-                // Fallback: clear storage and redirect
-                localStorage.clear();
-                window.location.href = '/';
+                // Fallback: redirect with logout parameter
+                window.location.href = '/?logout=true';
             }
             return;
         }
@@ -2548,7 +2548,7 @@ function shouldShowBasicMembership() {
     if (!currentSubscriptionStatus) return true;
 
     // Don't show if user has active basic membership with more than 7 days remaining
-    if (currentSubscriptionStatus.status === 'active' && 
+    if (currentSubscriptionStatus.status === 'active' &&
         currentSubscriptionStatus.subscription_type === 'basic_membership') {
 
         const endDate = new Date(currentSubscriptionStatus.end_date);

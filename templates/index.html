@@ -78,7 +78,31 @@
         </div>
     </div>
 
+    <!-- Demo Section -->
+        <div class="demo-section">
+            <h3>Try Demo Mode</h3>
+            <p>Explore the platform without signing up</p>
+            <button onclick="enableDemoMode()" class="demo-btn">
+                🎮 Try Demo Mode
+            </button>
+        </div>
 
+        <!-- Force logout if needed -->
+        <script>
+        // Check if user should be logged out when visiting home page
+        document.addEventListener('DOMContentLoaded', function() {
+            // If user is coming from a logout action, ensure they're signed out
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('logout') === 'true') {
+                if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                    console.log('Forcing logout on home page...');
+                    firebase.auth().signOut();
+                }
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
+        </script>
 </body>
 
     <!-- Bootstrap JS -->
@@ -95,10 +119,8 @@
 
 
     </script>
-</body>
-        <!-- Demo mode activation from URL -->
-        <script>
-            // Check if demo mode is requested via URL parameter
+<script>
+            // Demo mode activation from URL
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('demo') === 'true') {
                 localStorage.setItem('demoMode', 'true');
