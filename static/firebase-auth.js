@@ -798,8 +798,15 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   }
 
-  // Send token to your server
+  // Send token to your server with deduplication
   function sendTokenToServer(token) {
+    // Check if this token was already registered in this session
+    const lastRegisteredToken = sessionStorage.getItem('lastRegisteredFCMToken');
+    if (lastRegisteredToken === token) {
+      console.log('FCM token already registered in this session, skipping duplicate registration');
+      return;
+    }
+
     // Get current user's Firebase UID if available
     let firebaseUid = null;
     if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
@@ -819,6 +826,8 @@ document.addEventListener('DOMContentLoaded', function() {
     .then(response => response.json())
     .then(data => {
       console.log('Token registered with server:', data);
+      // Store the token to prevent duplicate registrations
+      sessionStorage.setItem('lastRegisteredFCMToken', token);
     })
     .catch((error) => {
       console.error('Error registering token:', error);
@@ -831,6 +840,14 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log("Firebase Messaging not available, skipping token registration.");
       return;
     }
+
+    // Check if FCM token registration is already in progress
+    if (window.fcmRegistrationInProgress) {
+      console.log('FCM token registration already in progress, skipping duplicate call');
+      return;
+    }
+    
+    window.fcmRegistrationInProgress = true;
 
     // Request permission for notifications
     firebase.messaging().requestPermission().then((permission) => {
@@ -848,6 +865,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }).catch((err) => {
       console.error('Unable to get permission to notify, or token:', err);
+    }).finally(() => {
+      // Reset the flag after completion
+      window.fcmRegistrationInProgress = false;
     });
   }
 
