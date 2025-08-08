@@ -126,7 +126,7 @@ try:
                     print("beta_testers table already exists")
                     # Check if status column exists and add it if missing
                     cur.execute("""
-                        SELECT column_name FROM information_schema.columns 
+                        SELECT column_name FROM information_schema.columns
                         WHERE table_name = 'beta_testers' AND column_name = 'status'
                     """)
                     status_column_exists = cur.fetchone()
@@ -403,11 +403,7 @@ def register_fcm_token():
 
                             return jsonify({"status": "success", "platform": platform, "pending_sent": len(pending_notifications)})
 
-        except Exception as e:
-            print(f"Error storing FCM token: {str(e)}")
-            return jsonify({"status": "error", "message": str(e)}), 500
-
-    return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
+        return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
 
 
 # Send notifications to both web and app users
@@ -2433,7 +2429,6 @@ def create_tables_route():
 
     return jsonify(results)
 
-
 @api.route('/check-memberships')
 class CheckMemberships(Resource):
     def get(self):
@@ -3720,121 +3715,6 @@ def handle_beta_esim_payment(session):
         import traceback
         traceback.print_exc()
 
-@app.route('/api/debug/fcm-notifications/<firebase_uid>', methods=['GET'])
-def debug_fcm_notifications(firebase_uid):
-    """Debug endpoint to check FCM tokens and notifications for a user"""
-    try:
-        debug_info = {
-            'firebase_uid': firebase_uid,
-            'fcm_tokens': [],
-            'notifications': [],
-            'database_status': 'unknown'
-        }
-
-        with get_db_connection() as conn:
-            if conn:
-                debug_info['database_status'] = 'connected'
-                with conn.cursor() as cur:
-                    # Check FCM tokens
-                    cur.execute("""
-                        SELECT fcm_token, platform, created_at, updated_at
-                        FROM fcm_tokens
-                        WHERE firebase_uid = %s
-                        ORDER BY updated_at DESC
-                    """, (firebase_uid,))
-
-                    fcm_tokens = cur.fetchall()
-                    for token in fcm_tokens:
-                        debug_info['fcm_tokens'].append({
-                            'token_preview': token[0][:30] + '...' if token[0] else None,
-                            'platform': token[1],
-                            'created_at': token[2].isoformat() if token[2] else None,
-                            'updated_at': token[3].isoformat() if token[3] else None
-                        })
-
-                    # Check notifications
-                    cur.execute("""
-                        SELECT id, title, body, notification_type, delivered, read_status,
-                               fcm_response, created_at, delivered_at
-                        FROM notifications
-                        WHERE firebase_uid = %s
-                        ORDER BY created_at DESC
-                        LIMIT 10
-                    """, (firebase_uid,))
-
-                    notifications = cur.fetchall()
-                    for notif in notifications:
-                        debug_info['notifications'].append({
-                            'id': notif[0],
-                            'title': notif[1],
-                            'body': notif[2][:100] + '...' if len(notif[2]) > 100 else notif[2],
-                            'type': notif[3],
-                            'delivered': notif[4],
-                            'read': notif[5],
-                            'fcm_response': notif[6][:100] + '...' if notif[6] and len(notif[6]) > 100 else notif[6],
-                            'created_at': notif[7].isoformat() if notif[7] else None,
-                            'delivered_at': notif[8].isoformat() if notif[8] else None
-                        })
-
-                    # Check user existence
-                    cur.execute("SELECT id, email, display_name FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                    user = cur.fetchone()
-                    if user:
-                        debug_info['user'] = {
-                            'id': user[0],
-                            'email': user[1],
-                            'display_name': user[2]
-                        }
-                    else:
-                        debug_info['user'] = None
-
-        return jsonify(debug_info)
-
-    except Exception as e:
-        print(f"Error in FCM debug endpoint: {str(e)}")
-        return jsonify({
-            'error': str(e),
-            'firebase_uid': firebase_uid
-        }), 500
-
-        # Create OXIO plan for 10 days
-        from oxio_service import OxioService
-        oxio = OxioService()
-
-        # Get user email for OXIO plan
-        cur.execute("SELECT email FROM users WHERE id = %s", (user_id,))
-        user_email = cur.fetchone()[0]
-
-        # Create 10-day plan with 1000MB (1024000 KB)
-        plan_result = oxio.create_custom_plan(
-            user_email=user_email,
-            plan_name="OXIO_10day_demo_plan",
-                    duration_seconds=10 * 24 * 60 * 60,  # 10 days in seconds
-                    data_limit_kb=1024000  # 1000MB in KB
-                )
-
-                if plan_result.get('success'):
-                    print(f"Created OXIO plan for user {user_id}: {plan_result}")
-
-                    # Send eSIM email
-                    from email_service import EmailService
-                    email_service = EmailService()
-
-                    email_service.send_esim_ready_email(
-                        to_email=user_email,
-                        plan_details=plan_result
-                    )
-                else:
-                    print(f"Failed to create OXIO plan: {plan_result}")
-
-                conn.commit()
-                print(f"Beta eSIM payment processed for user {user_id}")
-
-    except Exception as e:
-        print(f"Error handling beta eSIM payment: {str(e)}")
-        import traceback
-        traceback.print_exc()
-
 @app.route('/webhook', methods=['GET', 'POST'])
 def stripe_webhook():
     if request.method == 'GET':
@@ -3995,8 +3875,6 @@ def stripe_webhook():
                             print(f"Failed to activate OXIO line via Stripe: {oxio_result.get('message', 'Unknown error')}")
                     else:
                         print(f"User not found for Firebase UID: {firebase_uid}")
-                else:
-                    print(f"Missing customer_id or firebase_uid in session metadata")
 
             except Exception as stripe_oxio_err:
                 print(f"Error during Stripe OXIO line activation: {str(stripe_oxio_err)}")
