@@ -3715,8 +3715,10 @@ def handle_beta_esim_payment(session):
                 # Add 1000MB of data to user's balance (use empty string for stripeid to avoid NOT NULL constraint)
                 cur.execute("""
                     INSERT INTO purchases (stripeid, stripeproductid, priceid, totalamount, userid, datecreated, firebaseuid)
-                    VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s)
-                """, ('', 'beta_esim_data', 'price_beta_data', 100, user_id, session['payment_intent'], firebase_uid))
+                    VALUES ('', 'beta_esim_data', 'price_beta_data', 100, %s, CURRENT_TIMESTAMP, %s)
+                """, (user_id, firebase_uid))
+
+                conn.commit()
 
     except Exception as e:
         print(f"Error handling beta eSIM payment: {str(e)}")
