@@ -132,125 +132,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function setupAuthStateListener() {
-    // Configure Google auth provider
-    const googleProvider = new firebase.auth.GoogleAuthProvider();
-
-    // Global user data
-    let currentUserData = null;
-    
-    // Check if user explicitly wants to be logged out
-    const urlParams = new URLSearchParams(window.location.search);
-    const forceLogout = urlParams.get('logout') === 'true';
-    
-    if (forceLogout && firebase.auth().currentUser) {
-      console.log('Force logout requested via URL parameter');
-      firebase.auth().signOut();
-      return;
-    }
-
-    // Auth state observer
-    firebase.auth().onAuthStateChanged(async (user) => {
-      console.log('Auth state changed:', user ? 'signed in' : 'signed out');
-      
-      // Check if this is an unwanted automatic re-authentication
-      // If user lands on login page with existing auth state, it means they want to log out
-      if (user && (window.location.pathname === '/login' || window.location.pathname === '/signup')) {
-        console.log('User found on login/signup page, signing out automatically...');
-        firebase.auth().signOut();
-        return;
-      }
-
-      if (user) {
-          console.log('User is signed in:', user.uid);
-
-          // Register user in backend and get full user data
-          try {
-              const response = await fetch('/api/auth/register', {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                      firebaseUid: user.uid,
-                      email: user.email,
-                      displayName: user.displayName,
-                      photoURL: user.photoURL
-                  })
-              });
-
-              const result = await response.json();
-              console.log('User registration result:', result);
-
-              // Get full user data including balance
-              const userDataResponse = await fetch(`/api/auth/current-user?firebaseUid=${user.uid}`);
-              const userData = await userDataResponse.json();
-
-              if (userData.status === 'success') {
-                  currentUserData = {
-                      uid: user.uid,
-                      email: userData.email,
-                      displayName: userData.displayName,
-                      photoURL: userData.photoURL,
-                      userId: userData.userId,
-                      stripeCustomerId: userData.stripeCustomerId,
-                      imei: userData.imei,
-                      founderStatus: userData.founderStatus
-                  };
-
-                  // Set initial balance and load it asynchronously
-                  currentUserData.dataBalance = 0;
-
-                  // Load balance asynchronously with delay to ensure user is fully registered
-                  setTimeout(async () => {
-                      try {
-                          console.log('Loading user balance after authentication delay...');
-                          const balanceResponse = await fetch(`/api/user/data-balance?firebaseUid=${user.uid}`);
-                          const balanceData = await balanceResponse.json();
-
-                          if (balanceData.status === 'success') {
-                              currentUserData.dataBalance = balanceData.dataBalance || 0;
-                              console.log('Balance loaded successfully:', currentUserData.dataBalance);
-
-                              // Update UI with new balance
-                              updateBalanceDisplays(currentUserData.dataBalance);
-
-                              // Update localStorage with new balance
-                              localStorage.setItem('currentUser', JSON.stringify(currentUserData));
-                          } else {
-                              console.error('Balance API error:', balanceData);
-                              currentUserData.dataBalance = 0;
-                          }
-                      } catch (balanceError) {
-                          console.error('Error fetching balance after delay:', balanceError);
-                          currentUserData.dataBalance = 0;
-                      }
-                  }, 2000); // Wait 2 seconds after authentication before loading balance
-
-                  console.log('Complete user data loaded:', currentUserData);
-
-                  // Store in localStorage
-                  localStorage.setItem('currentUser', JSON.stringify(currentUserData));
-
-                  // Update UI with real user data
-                  updateAuthUI(user, currentUserData);
-              } else {
-                  console.error('Failed to get user data:', userData);
-                  // Fallback to basic Firebase data
-                  updateAuthUI(user, null);
-              }
-
-          } catch (error) {
-              console.error('Error getting user data:', error);
-              // Fallback to basic Firebase data
-              updateAuthUI(user, null);
-          }
-
-      } else {
-          console.log('User is signed out');
-          currentUserData = null;
-          localStorage.removeItem('currentUser');
-          updateAuthUI(null, null);
-      }
+    // Check authentication state on page load
+    firebase.auth().onAuthStateChanged(async function(user) {
+        if (user) {
+            console.log('Firebase user detected:', user.email);
+            // Only update UI with basic Firebase data, don't make API calls automatically
+            updateAuthUI(user, null);
+        } else {
+            console.log('No authenticated user');
+            // Clear stored user data
+            localStorage.removeItem('currentUser');
+            updateAuthUI(null, null);
+        }
     });
 
     function updateAuthUI(user, userData) {
@@ -448,6 +341,97 @@ document.addEventListener('DOMContentLoaded', function() {
         return null;
     }
 
+    // Function to load user data and balance
+    async function loadUserData(user) {
+        try {
+            console.log('Loading user data for:', user.uid);
+
+            // Register user in our database
+            const registrationResponse = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    firebaseUid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL
+                })
+            });
+
+            const registrationData = await registrationResponse.json();
+            console.log('Registration response:', registrationData);
+
+            // Get additional user data from our API
+            const userResponse = await fetch(`/api/auth/current-user?firebaseUid=${user.uid}`);
+            const userData = await userResponse.json();
+
+            if (userData.status === 'success') {
+                console.log('Got user data:', userData);
+
+                // Create comprehensive user data object
+                const currentUserData = {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    userId: userData.userId,
+                    stripeCustomerId: userData.stripeCustomerId,
+                    founderStatus: userData.founderStatus,
+                    oxioUserId: userData.oxioUserId,
+                    metamaskAddress: userData.metamaskAddress,
+                    oxioGroupId: userData.oxioGroupId,
+                    dataBalance: 0 // Will be loaded separately
+                };
+
+                // Load data balance after a short delay to ensure user registration is complete
+                setTimeout(async () => {
+                    try {
+                        const balanceResponse = await fetch(`/api/user/data-balance?firebaseUid=${user.uid}`);
+                        const balanceData = await balanceResponse.json();
+
+                        if (balanceData.status === 'success') {
+                            currentUserData.dataBalance = balanceData.dataBalance;
+                            console.log('Data balance loaded:', balanceData.dataBalance, 'GB');
+
+                            // Update localStorage with new balance
+                            localStorage.setItem('currentUser', JSON.stringify(currentUserData));
+                            updateAuthUI(user, currentUserData); // Update UI with balance
+                        } else {
+                            console.error('Balance API error:', balanceData);
+                            currentUserData.dataBalance = 0;
+                            updateAuthUI(user, currentUserData); // Update UI with 0 balance
+                        }
+                    } catch (balanceError) {
+                        console.error('Error fetching balance after delay:', balanceError);
+                        currentUserData.dataBalance = 0;
+                        updateAuthUI(user, currentUserData); // Update UI with 0 balance
+                    }
+                }, 2000); // Wait 2 seconds after authentication before loading balance
+
+                console.log('Complete user data loaded:', currentUserData);
+
+                // Store in localStorage
+                localStorage.setItem('currentUser', JSON.stringify(currentUserData));
+
+                // Update UI with real user data (without balance initially)
+                updateAuthUI(user, currentUserData);
+
+            } else {
+                console.error('Failed to get user data:', userData);
+                // Fallback to basic Firebase data
+                updateAuthUI(user, null);
+            }
+
+        } catch (error) {
+            console.error('Error loading user data:', error);
+            // Fallback to basic Firebase data
+            updateAuthUI(user, null);
+        }
+    }
+
+
     // Expose auth functions to global scope
     window.firebaseAuth = {
       signInWithEmailPassword: function(email, password) {
@@ -456,10 +440,22 @@ document.addEventListener('DOMContentLoaded', function() {
           return Promise.reject(new Error('Authentication service not available'));
         }
         return firebase.auth().signInWithEmailAndPassword(email, password)
-          .catch(error => {
-            console.error("Auth error:", error);
-            throw error;
-          });
+            .then(async (userCredential) => {
+                const user = userCredential.user;
+                console.log('Email/password sign-in successful:', user.email);
+
+                // Load user data after successful login
+                await loadUserData(user);
+
+                // FCM token will be handled after user data is loaded
+                registerFCMToken();
+
+                return userCredential;
+            })
+            .catch((error) => {
+                console.error("Auth error:", error);
+                throw error;
+            });
       },
 
       signInWithGoogle: function() {
@@ -469,10 +465,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const googleProvider = new firebase.auth.GoogleAuthProvider();
         return firebase.auth().signInWithPopup(googleProvider)
-          .catch(error => {
-            console.error("Google sign-in error:", error);
-            throw error;
-          });
+            .then(async (result) => {
+                const user = result.user;
+                console.log('Google sign-in successful:', user.email);
+
+                // Load user data after successful login
+                await loadUserData(user);
+
+                // FCM token will be handled after user data is loaded
+                registerFCMToken();
+
+                return result;
+            })
+            .catch((error) => {
+                console.error("Google sign-in error:", error);
+                throw error;
+            });
       },
 
       createUserWithEmailPassword: function(email, password) {
@@ -489,17 +497,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
       signOut: function() {
         console.log('Starting Firebase sign out process...');
-        
+
         // Clear all local storage first
         localStorage.removeItem('userId');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('databaseUserId');
         localStorage.removeItem('currentUser');
         localStorage.removeItem('demoMode');
-        
+
         // Clear all localStorage (comprehensive cleanup)
         localStorage.clear();
-        
+
         if (!firebase || !firebase.auth) {
           console.error('Firebase auth not available during signout');
           window.location.href = '/';
@@ -509,12 +517,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return firebase.auth().signOut()
           .then(() => {
             console.log('Firebase signOut completed successfully');
-            
+
             // Force clear any remaining Firebase state
             if (firebase.auth().currentUser) {
               console.warn('User still exists after signOut, forcing reload');
             }
-            
+
             // Small delay to ensure Firebase state is cleared
             setTimeout(() => {
               window.location.href = '/';
@@ -715,6 +723,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.isDemoMode = isDemoMode;
     window.showDemoData = showDemoData;
     window.getCurrentUser = getCurrentUser;
+    window.loadUserData = loadUserData; // Expose loadUserData
   }
 
   function setupFallbackAuthFunctions() {
@@ -802,7 +811,7 @@ document.addEventListener('DOMContentLoaded', function() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         token: token,
         firebaseUid: firebaseUid
       }),
@@ -813,6 +822,32 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch((error) => {
       console.error('Error registering token:', error);
+    });
+  }
+
+  // Function to register FCM token, called after user is loaded
+  function registerFCMToken() {
+    if (typeof firebase === 'undefined' || !firebase.messaging) {
+      console.log("Firebase Messaging not available, skipping token registration.");
+      return;
+    }
+
+    // Request permission for notifications
+    firebase.messaging().requestPermission().then((permission) => {
+      console.log('Notification permission granted:', permission);
+
+      // Get the FCM token
+      return firebase.messaging().getToken();
+    }).then((currentToken) => {
+      if (currentToken) {
+        console.log('FCM Token:', currentToken);
+        // Send the token to the server
+        sendTokenToServer(currentToken);
+      } else {
+        console.log('No FCM token found. Request permission to receive notifications.');
+      }
+    }).catch((err) => {
+      console.error('Unable to get permission to notify, or token:', err);
     });
   }
 
