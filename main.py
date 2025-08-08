@@ -3803,9 +3803,9 @@ def debug_fcm_notifications(firebase_uid):
 
         # Get user email for OXIO plan
         cur.execute("SELECT email FROM users WHERE id = %s", (user_id,))
-                user_email = cur.fetchone()[0]
+        user_email = cur.fetchone()[0]
 
-                # Create 10-day plan with 1000MB (1024000 KB)
+        # Create 10-day plan with 1000MB (1024000 KB)
                 plan_result = oxio.create_custom_plan(
                     user_email=user_email,
                     plan_name="OXIO_10day_demo_plan",
