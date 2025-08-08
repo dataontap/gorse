@@ -2314,10 +2314,10 @@ def record_global_purchase():
                     except Exception as db_err:
                         print(f"Error storing OXIO activation record: {str(db_err)}")
                 else:
-                    print(f"Failed to activate OXIO line: {oxio_result.get('message', 'Unknown error')}")
+                    print(f"Failed to activate OXIO line for Basic Membership purchase: {oxio_result.get('message', 'Unknown error')}")
 
             except Exception as oxio_err:
-                print(f"Error during OXIO line activation: {str(oxio_err)}")
+                print(f"Error during OXIO line activation for Basic Membership: {str(oxio_err)}")
 
     if purchase_id:
         print(f"Successfully recorded purchase: {purchase_id} for product: {product_id} with Firebase UID: {firebase_uid}")
