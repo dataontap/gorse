@@ -315,6 +315,30 @@
         async function loadNotifications() {
             try {
                 const firebaseUid = localStorage.getItem('userId');
+                if (!firebaseUid) {
+                    console.error('No Firebase UID found');
+                    return;
+                }
+
+                // Load database notifications first
+                const notificationsResponse = await fetch(`/api/notifications?firebaseUid=${firebaseUid}&limit=50`);
+                const notificationsData = await notificationsResponse.json();
+
+                if (notificationsData.success && notificationsData.notifications) {
+                    // Convert database notifications
+                    const dbNotifications = notificationsData.notifications.map(notification => ({
+                        id: `db_${notification.id}`,
+                        type: notification.type || 'system',
+                        title: notification.title,
+                        message: notification.body,
+                        time: new Date(notification.created_at),
+                        read: notification.read,
+                        data: notification,
+                        isWelcome: notification.type === 'welcome'
+                    }));
+
+                    notifications = [...dbNotifications];
+                }
 
                 // Load invitations
                 const invitesResponse = await fetch(`/api/invites?firebaseUid=${firebaseUid}`);
@@ -332,7 +356,7 @@
                         data: invite
                     }));
 
-                    notifications = [...inviteNotifications];
+                    notifications = [...notifications, ...inviteNotifications];
                 }
 
                 // Load other notification types (system notifications, etc.)
@@ -432,12 +456,28 @@
             emptyState.style.display = 'none';
 
             const notificationsHtml = filteredNotifications.map(notification => `
-                <div class="notification-item ${notification.read ? 'read' : 'unread'}" data-id="${notification.id}">
+                <div class="notification-item ${notification.read ? 'read' : 'unread'} ${notification.isWelcome ? 'welcome-message-notification' : ''}" data-id="${notification.id}">
                     <div class="notification-indicator ${notification.read ? 'read' : ''}"></div>
                     <div class="notification-content">
                         <div class="notification-title">${notification.title}</div>
                         <div class="notification-message">${notification.message}</div>
                         <div class="notification-time">${formatTime(notification.time)}</div>
+                        ${notification.isWelcome ? `
+                            <div class="welcome-message-controls">
+                                <button class="play-welcome-btn" onclick="playNotificationWelcomeMessage()">
+                                    <i class="fas fa-play"></i> Play Message
+                                </button>
+                                <select id="notificationLanguage" onchange="updateNotificationWelcomeMessage()">
+                                    <option value="en">English</option>
+                                    <option value="es">Español</option>
+                                    <option value="fr">Français</option>
+                                </select>
+                                <select id="notificationVoice" onchange="updateNotificationWelcomeMessage()">
+                                    <option value="">Loading voices...</option>
+                                </select>
+                                <audio id="notificationWelcomeAudio" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="notification-actions">
                         ${!notification.read ? `

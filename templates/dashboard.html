@@ -943,14 +943,33 @@
                 })
                 .catch(error => console.error('Error loading voices:', error));
 
-            // Show welcome message card for new users
-            const welcomeCardDismissed = localStorage.getItem('welcomeMessageDismissed');
-            if (welcomeCardDismissed !== 'true') {
-                const welcomeCard = document.getElementById('welcomeMessageCard');
-                if (welcomeCard) {
-                    welcomeCard.style.display = 'flex';
-                }
-            }
+            // Check if user has notifications (welcome message)
+            fetch(`/api/notifications?firebaseUid=${firebaseUid}&limit=10`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.notifications) {
+                        const hasWelcomeNotification = data.notifications.some(n => n.type === 'welcome');
+                        const welcomeCardDismissed = localStorage.getItem('welcomeMessageDismissed');
+                        
+                        if (hasWelcomeNotification && welcomeCardDismissed !== 'true') {
+                            const welcomeCard = document.getElementById('welcomeMessageCard');
+                            if (welcomeCard) {
+                                welcomeCard.style.display = 'flex';
+                                // Add link to notifications
+                                const welcomeDescription = welcomeCard.querySelector('.welcome-message-description');
+                                if (welcomeDescription) {
+                                    welcomeDescription.innerHTML = `
+                                        Listen to your custom welcome message with today's date and personalized greeting.
+                                        <br><a href="/notifications" style="color: rgba(255,255,255,0.9); text-decoration: underline;">
+                                            View in Notifications →
+                                        </a>
+                                    `;
+                                }
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.error('Error checking for welcome notifications:', error));
         }
 
         function populateVoiceSelect() {
