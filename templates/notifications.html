@@ -157,6 +157,57 @@
             margin-bottom: 16px;
             opacity: 0.5;
         }
+
+        .notification-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+            transition: background-color 0.3s ease;
+        }
+
+        .welcome-message-notification {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+            border: 2px solid rgba(102, 126, 234, 0.5);
+        }
+
+        .welcome-message-controls {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .play-welcome-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .play-welcome-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .play-welcome-btn:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        .welcome-message-controls select {
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
     </style>
 </head>
 <body class="landing-page">
@@ -538,6 +589,85 @@
             });
         }
     </script>
+    <script>
+        // Welcome message functionality for notifications page
+        function playNotificationWelcomeMessage() {
+            const firebaseUid = localStorage.getItem('userId');
+            const language = document.getElementById('notificationLanguage').value;
+            const voiceId = document.getElementById('notificationVoice').value;
+
+            if (!firebaseUid) {
+                alert('Please log in to play welcome message');
+                return;
+            }
+
+            const playBtn = document.querySelector('.play-welcome-btn');
+            const audio = document.getElementById('notificationWelcomeAudio');
+
+            playBtn.disabled = true;
+            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+            fetch('/api/welcome-message/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    firebaseUid: firebaseUid,
+                    language: language,
+                    voiceId: voiceId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.audio_url) {
+                    audio.src = data.audio_url;
+                    audio.style.display = 'block';
+                    audio.play();
+                } else {
+                    alert('Error generating welcome message: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error playing welcome message:', error);
+                alert('Error playing welcome message. Please try again.');
+            })
+            .finally(() => {
+                playBtn.disabled = false;
+                playBtn.innerHTML = '<i class="fas fa-play"></i> Play Message';
+            });
+        }
+
+        function updateNotificationWelcomeMessage() {
+            const audio = document.getElementById('notificationWelcomeAudio');
+            audio.style.display = 'none';
+            audio.src = '';
+        }
+
+        function loadNotificationVoices() {
+            fetch('/api/welcome-message/voices')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.voices) {
+                        const voiceSelect = document.getElementById('notificationVoice');
+                        voiceSelect.innerHTML = '';
+                        data.voices.forEach(voice => {
+                            const option = document.createElement('option');
+                            option.value = voice.voice_id;
+                            option.textContent = `${voice.name} (${voice.labels?.gender || 'Unknown'})`;
+                            voiceSelect.appendChild(option);
+                        });
+                        voiceSelect.value = '21m00Tcm4TlvDq8ikWAM'; // Default voice
+                    }
+                })
+                .catch(error => console.error('Error loading voices:', error));
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadNotifications();
+            loadNotificationVoices();
+        });
+    </script>
 <div class="container">
             <h2>Notifications</h2>
             <div class="notifications-container" id="notifications-container">
@@ -624,97 +754,5 @@
             setInterval(loadNotifications, 30000);
         });
     </script>
-
-    <style>
-        .notification-item {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            background: white;
-            transition: all 0.3s ease;
-        }
-
-        .notification-item.unread {
-            border-left: 4px solid #007bff;
-            background: #f8f9fa;
-        }
-
-        .notification-item.read {
-            opacity: 0.8;
-        }
-
-        .notification-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 10px;
-        }
-
-        .notification-meta {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .notification-type {
-            background: #6c757d;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            text-transform: capitalize;
-        }
-
-        .delivered-badge {
-            background: #28a745;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-        }
-
-        .pending-badge {
-            background: #ffc107;
-            color: black;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-        }
-
-        .mark-read-btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            cursor: pointer;
-        }
-
-        .mark-read-btn:hover {
-            background: #0056b3;
-        }
-
-        .notification-footer {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
-        }
-
-        .notification-footer small {
-            color: #6c757d;
-        }
-
-        .loading-message, .error-message, .no-notifications {
-            text-align: center;
-            padding: 40px;
-            color: #6c757d;
-        }
-
-        .error-message {
-            color: #dc3545;
-        }
-    </style>
 </body>
 </html>

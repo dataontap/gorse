@@ -41,6 +41,7 @@ from oxio_service import oxio_service
 from stripe_products import create_stripe_products
 import ethereum_helper
 import product_rules_helper
+from elevenlabs_service import elevenlabs_service
 
 # Create products in Stripe if they don't exist
 if stripe.api_key:
@@ -747,12 +748,37 @@ def register_firebase_user():
                         except Exception as token_err:
                             print(f"Error awarding new member token: {str(token_err)}")
 
-                        # Schedule welcome message 10 seconds after user creation
+                        # Schedule welcome message and audio generation
                         import threading
                         def send_welcome_message():
                             import time
                             time.sleep(3)  # Wait 3 seconds for FCM token registration
                             try:
+                                # Generate welcome audio message
+                                try:
+                                    audio_result = elevenlabs_service.generate_welcome_message(
+                                        user_name=display_name,
+                                        language='en'
+                                    )
+                                    
+                                    if audio_result['success']:
+                                        # Store the audio message
+                                        with get_db_connection() as conn:
+                                            if conn:
+                                                with conn.cursor() as cur:
+                                                    cur.execute("""
+                                                        INSERT INTO welcome_messages 
+                                                        (user_id, firebase_uid, language, voice_id, audio_data, created_at)
+                                                        VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                                                        RETURNING id
+                                                    """, (user_id, firebase_uid, 'en', '21m00Tcm4TlvDq8ikWAM', audio_result['audio_data']))
+                                                    
+                                                    audio_message_id = cur.fetchone()[0]
+                                                    conn.commit()
+                                                    print(f"Welcome audio message created with ID: {audio_message_id}")
+                                except Exception as audio_err:
+                                    print(f"Error generating welcome audio: {str(audio_err)}")
+                                    audio_message_id = None
                                 # Get user's FCM token
                                 with get_db_connection() as conn:
                                     if conn:
@@ -768,7 +794,7 @@ def register_firebase_user():
                                             
                                             # Store notification in database first
                                             welcome_title = "Welcome to DOT Wireless! 🎉"
-                                            welcome_body = f"Hi {display_name or 'there'}! Your account is ready. Explore global connectivity and earn DOTM tokens."
+                                            welcome_body = f"Hi {display_name or 'there'}! Your account is ready. Your personalized welcome message is waiting for you!"
                                             
                                             cur.execute("""
                                                 INSERT INTO notifications 
@@ -4056,6 +4082,124 @@ def debug_purchases_structure():
     except Exception as e:
         print(f"Error in debug purchases structure: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/welcome-message/generate', methods=['POST'])
+def generate_welcome_message():
+    """Generate personalized welcome message using ElevenLabs"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid')
+        language = data.get('language', 'en')
+        voice_id = data.get('voiceId')
+        
+        if not firebase_uid:
+            return jsonify({'error': 'Firebase UID required'}), 400
+        
+        # Get user data
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            return jsonify({'error': 'User not found'}), 404
+        
+        user_name = user_data[2] if len(user_data) > 2 else None  # display_name
+        
+        # Generate welcome message
+        result = elevenlabs_service.generate_welcome_message(
+            user_name=user_name,
+            language=language,
+            voice_id=voice_id
+        )
+        
+        if result['success']:
+            # Store the message in database
+            try:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            # Create welcome_messages table if it doesn't exist
+                            cur.execute("""
+                                CREATE TABLE IF NOT EXISTS welcome_messages (
+                                    id SERIAL PRIMARY KEY,
+                                    user_id INTEGER NOT NULL,
+                                    firebase_uid VARCHAR(128),
+                                    language VARCHAR(10),
+                                    voice_id VARCHAR(100),
+                                    audio_data BYTEA,
+                                    message_text TEXT,
+                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                )
+                            """)
+                            
+                            # Store the audio data and message
+                            cur.execute("""
+                                INSERT INTO welcome_messages 
+                                (user_id, firebase_uid, language, voice_id, audio_data, created_at)
+                                VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                                RETURNING id
+                            """, (user_data[0], firebase_uid, language, voice_id, result['audio_data']))
+                            
+                            message_id = cur.fetchone()[0]
+                            conn.commit()
+            except Exception as db_err:
+                print(f"Error storing welcome message: {str(db_err)}")
+                message_id = None
+            
+            return jsonify({
+                'success': True,
+                'message_id': message_id,
+                'audio_url': f'/api/welcome-message/audio/{message_id}' if message_id else None
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            }), 500
+            
+    except Exception as e:
+        print(f"Error generating welcome message: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/welcome-message/audio/<int:message_id>', methods=['GET'])
+def get_welcome_message_audio(message_id):
+    """Serve welcome message audio"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT audio_data FROM welcome_messages 
+                        WHERE id = %s
+                    """, (message_id,))
+                    
+                    result = cur.fetchone()
+                    if result and result[0]:
+                        from flask import Response
+                        return Response(
+                            result[0],
+                            mimetype='audio/mpeg',
+                            headers={'Content-Disposition': f'attachment; filename=welcome_message_{message_id}.mp3'}
+                        )
+        
+        return jsonify({'error': 'Audio not found'}), 404
+        
+    except Exception as e:
+        print(f"Error serving welcome message audio: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/welcome-message/voices', methods=['GET'])
+def get_available_voices():
+    """Get available ElevenLabs voices"""
+    try:
+        voices = elevenlabs_service.get_voices()
+        return jsonify({
+            'success': True,
+            'voices': voices
+        })
+    except Exception as e:
+        print(f"Error getting voices: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/debug/user-creation-status/<firebase_uid>', methods=['GET'])
 def debug_user_creation_status(firebase_uid):

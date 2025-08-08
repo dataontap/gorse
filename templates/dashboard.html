@@ -189,6 +189,59 @@
             background-color: transparent; /* Transparent background */
         }
 
+        /* Welcome message card styling */
+        .welcome-message-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .welcome-message-info {
+            flex-grow: 1;
+        }
+
+        .welcome-message-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .welcome-message-description {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .play-welcome-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .play-welcome-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .voice-controls select {
+            margin-right: 10px;
+            padding: 5px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255,255,255,0.9);
+        }
+
         /* Styles for offers section */
         .offers-section {
             margin-top: 20px;
@@ -347,6 +400,38 @@
                 </div>
             </div>
             <button class="close-banner" onclick="dismissBitchatCard()" aria-label="Close bitchat card">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Welcome Message Player -->
+        <div class="welcome-message-card" id="welcomeMessageCard" style="display: none;">
+            <div class="welcome-message-info">
+                <div class="welcome-message-title">
+                    <i class="fas fa-volume-up"></i>
+                    Your Personalized Welcome Message
+                </div>
+                <div class="welcome-message-description">
+                    Listen to your custom welcome message with today's date and personalized greeting.
+                </div>
+                <div class="welcome-message-controls">
+                    <button class="play-welcome-btn" id="playWelcomeBtn" onclick="playWelcomeMessage()">
+                        <i class="fas fa-play"></i> Play Welcome Message
+                    </button>
+                    <div class="voice-controls" style="margin-top: 10px;">
+                        <select id="welcomeLanguage" onchange="updateWelcomeMessage()">
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                        </select>
+                        <select id="welcomeVoice" onchange="updateWelcomeMessage()">
+                            <option value="">Loading voices...</option>
+                        </select>
+                    </div>
+                    <audio id="welcomeAudio" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
+                </div>
+            </div>
+            <button class="close-banner" onclick="dismissWelcomeMessage()" aria-label="Close welcome message">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -838,6 +923,125 @@
                 tokenBalancePill.textContent = '100.33 DOTM'; // Hardcoded DOTM balance as requested
             }
         }
+
+        // Welcome message functionality
+        let currentWelcomeMessageId = null;
+        let availableVoices = [];
+
+        function loadWelcomeMessage() {
+            const firebaseUid = localStorage.getItem('userId');
+            if (!firebaseUid) return;
+
+            // Load available voices
+            fetch('/api/welcome-message/voices')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.voices) {
+                        availableVoices = data.voices;
+                        populateVoiceSelect();
+                    }
+                })
+                .catch(error => console.error('Error loading voices:', error));
+
+            // Show welcome message card for new users
+            const welcomeCardDismissed = localStorage.getItem('welcomeMessageDismissed');
+            if (welcomeCardDismissed !== 'true') {
+                const welcomeCard = document.getElementById('welcomeMessageCard');
+                if (welcomeCard) {
+                    welcomeCard.style.display = 'flex';
+                }
+            }
+        }
+
+        function populateVoiceSelect() {
+            const voiceSelect = document.getElementById('welcomeVoice');
+            if (!voiceSelect || !availableVoices.length) return;
+
+            voiceSelect.innerHTML = '';
+            availableVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.voice_id;
+                option.textContent = `${voice.name} (${voice.labels?.gender || 'Unknown'})`;
+                voiceSelect.appendChild(option);
+            });
+
+            // Select default voice (Rachel)
+            voiceSelect.value = '21m00Tcm4TlvDq8ikWAM';
+        }
+
+        function playWelcomeMessage() {
+            const firebaseUid = localStorage.getItem('userId');
+            const language = document.getElementById('welcomeLanguage').value;
+            const voiceId = document.getElementById('welcomeVoice').value;
+            const playBtn = document.getElementById('playWelcomeBtn');
+            const audio = document.getElementById('welcomeAudio');
+
+            if (!firebaseUid) {
+                alert('Please log in to play welcome message');
+                return;
+            }
+
+            // Update button state
+            playBtn.disabled = true;
+            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+            // Generate new welcome message
+            fetch('/api/welcome-message/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    firebaseUid: firebaseUid,
+                    language: language,
+                    voiceId: voiceId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.audio_url) {
+                    currentWelcomeMessageId = data.message_id;
+                    audio.src = data.audio_url;
+                    audio.style.display = 'block';
+                    audio.play();
+                } else {
+                    alert('Error generating welcome message: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error playing welcome message:', error);
+                alert('Error playing welcome message. Please try again.');
+            })
+            .finally(() => {
+                playBtn.disabled = false;
+                playBtn.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
+            });
+        }
+
+        function updateWelcomeMessage() {
+            // Reset audio when settings change
+            const audio = document.getElementById('welcomeAudio');
+            audio.style.display = 'none';
+            audio.src = '';
+        }
+
+        function dismissWelcomeMessage() {
+            const welcomeCard = document.getElementById('welcomeMessageCard');
+            if (welcomeCard) {
+                welcomeCard.style.opacity = '0';
+                welcomeCard.style.transform = 'translateY(-20px)';
+                setTimeout(() => {
+                    welcomeCard.style.display = 'none';
+                }, 300);
+
+                localStorage.setItem('welcomeMessageDismissed', 'true');
+            }
+        }
+
+        // Load welcome message on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadWelcomeMessage();
+        });
     </script>
     <script>
                     // Refresh invites list function
