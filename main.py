@@ -314,7 +314,7 @@ def register_fcm_token():
     user_agent = request.headers.get('User-Agent', '')
     platform = 'web' if 'Mozilla' in user_agent else 'android'
 
-    print(f"Registered FCM token for {platform}: {token}")
+    print(f"Registered FCM token for {platform}: {token} (Firebase UID: {firebase_uid})")
 
     # Store token in database if Firebase UID provided
     if firebase_uid and token:
@@ -401,7 +401,7 @@ def register_fcm_token():
                             conn.commit()
                             print(f"Processed {len(pending_notifications)} pending notifications")
 
-                            return jsonify({"status": "success", "platform": platform})
+                            return jsonify({"status": "success", "platform": platform, "pending_sent": len(pending_notifications)})
 
         except Exception as e:
             print(f"Error storing FCM token: {str(e)}")
@@ -3717,6 +3717,85 @@ def handle_beta_esim_payment(session):
                     VALUES (%s, %s, 100, 1000, 'beta_esim_data', 'completed')
                 """, (user_id, session['payment_intent']))
 
+
+
+@app.route('/api/debug/fcm-notifications/<firebase_uid>', methods=['GET'])
+def debug_fcm_notifications(firebase_uid):
+    """Debug endpoint to check FCM tokens and notifications for a user"""
+    try:
+        debug_info = {
+            'firebase_uid': firebase_uid,
+            'fcm_tokens': [],
+            'notifications': [],
+            'database_status': 'unknown'
+        }
+
+        with get_db_connection() as conn:
+            if conn:
+                debug_info['database_status'] = 'connected'
+                with conn.cursor() as cur:
+                    # Check FCM tokens
+                    cur.execute("""
+                        SELECT fcm_token, platform, created_at, updated_at 
+                        FROM fcm_tokens 
+                        WHERE firebase_uid = %s
+                        ORDER BY updated_at DESC
+                    """, (firebase_uid,))
+                    
+                    fcm_tokens = cur.fetchall()
+                    for token in fcm_tokens:
+                        debug_info['fcm_tokens'].append({
+                            'token_preview': token[0][:30] + '...' if token[0] else None,
+                            'platform': token[1],
+                            'created_at': token[2].isoformat() if token[2] else None,
+                            'updated_at': token[3].isoformat() if token[3] else None
+                        })
+
+                    # Check notifications
+                    cur.execute("""
+                        SELECT id, title, body, notification_type, delivered, read_status, 
+                               fcm_response, created_at, delivered_at
+                        FROM notifications 
+                        WHERE firebase_uid = %s 
+                        ORDER BY created_at DESC 
+                        LIMIT 10
+                    """, (firebase_uid,))
+
+                    notifications = cur.fetchall()
+                    for notif in notifications:
+                        debug_info['notifications'].append({
+                            'id': notif[0],
+                            'title': notif[1],
+                            'body': notif[2][:100] + '...' if len(notif[2]) > 100 else notif[2],
+                            'type': notif[3],
+                            'delivered': notif[4],
+                            'read': notif[5],
+                            'fcm_response': notif[6][:100] + '...' if notif[6] and len(notif[6]) > 100 else notif[6],
+                            'created_at': notif[7].isoformat() if notif[7] else None,
+                            'delivered_at': notif[8].isoformat() if notif[8] else None
+                        })
+
+                    # Check user existence
+                    cur.execute("SELECT id, email, display_name FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    user = cur.fetchone()
+                    if user:
+                        debug_info['user'] = {
+                            'id': user[0],
+                            'email': user[1],
+                            'display_name': user[2]
+                        }
+                    else:
+                        debug_info['user'] = None
+
+        return jsonify(debug_info)
+
+    except Exception as e:
+        print(f"Error in FCM debug endpoint: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'firebase_uid': firebase_uid
+        }), 500
+
                 # Create OXIO plan for 10 days
                 from oxio_service import OxioService
                 oxio = OxioService()
@@ -5110,6 +5189,8 @@ def get_user_notifications():
         if not firebase_uid:
             return jsonify({'error': 'Firebase UID is required'}), 400
 
+        print(f"Getting notifications for Firebase UID: {firebase_uid}")
+
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
@@ -5139,11 +5220,31 @@ def get_user_notifications():
                             'delivered_at': notif[8].isoformat() if notif[8] else None
                         })
 
+                    print(f"Found {len(notification_list)} notifications for {firebase_uid}")
+
+                    # Also check if there's an FCM token registered for this user
+                    cur.execute("""
+                        SELECT fcm_token, platform, updated_at 
+                        FROM fcm_tokens 
+                        WHERE firebase_uid = %s
+                        ORDER BY updated_at DESC
+                    """, (firebase_uid,))
+                    
+                    fcm_tokens = cur.fetchall()
+                    fcm_info = []
+                    for token in fcm_tokens:
+                        fcm_info.append({
+                            'token_preview': token[0][:20] + '...' if token[0] else None,
+                            'platform': token[1],
+                            'updated_at': token[2].isoformat() if token[2] else None
+                        })
+
                     return jsonify({
                         'success': True,
                         'notifications': notification_list,
                         'count': len(notification_list),
-                        'firebase_uid': firebase_uid
+                        'firebase_uid': firebase_uid,
+                        'fcm_tokens': fcm_info
                     })
 
         return jsonify({'success': False, 'message': 'Database connection error'}), 500
