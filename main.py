@@ -3797,11 +3797,11 @@ def debug_fcm_notifications(firebase_uid):
             'firebase_uid': firebase_uid
         }), 500
 
-                # Create OXIO plan for 10 days
-                from oxio_service import OxioService
-                oxio = OxioService()
+            # Create OXIO plan for 10 days
+            from oxio_service import OxioService
+            oxio = OxioService()
 
-                # Get user email for OXIO plan
+            # Get user email for OXIO plan
                 cur.execute("SELECT email FROM users WHERE id = %s", (user_id,))
                 user_email = cur.fetchone()[0]
 
