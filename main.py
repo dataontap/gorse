@@ -404,9 +404,6 @@ def register_fcm_token():
                             return jsonify({"status": "success", "platform": platform, "pending_sent": len(pending_notifications)})
 
                         return jsonify({"status": "success", "platform": platform})
-                    except Exception as pref_err:
-                        print(f"Error processing pending notifications: {str(pref_err)}")
-                        return jsonify({"status": "success", "platform": platform})
 
                 return jsonify({"status": "success", "platform": platform})
 
