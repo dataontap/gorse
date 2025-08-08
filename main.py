@@ -406,8 +406,6 @@ def register_fcm_token():
                         return jsonify({"status": "success", "platform": platform})
 
                 return jsonify({"status": "success", "platform": platform})
-        else:
-            return jsonify({"status": "success", "platform": platform})
 
         return jsonify({"status": "success", "platform": platform})
 
@@ -3531,56 +3529,54 @@ def resend_esim_email():
             return jsonify({'success': False, 'message': 'Firebase UID required'}), 400
 
         with get_db_connection() as conn:
-            if not conn:
-                return jsonify({'success': False, 'message': 'Database connection error'}), 500
+            if conn:
+                with conn.cursor() as cur:
+                    # Get user details
+                    cur.execute("SELECT id, email, display_name FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    user_result = cur.fetchone()
 
-            with conn.cursor() as cur:
-                # Get user details
-                cur.execute("SELECT id, email, display_name FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                user_result = cur.fetchone()
+                    if not user_result:
+                        return jsonify({'success': False, 'message': 'User not found'}), 400
 
-                if not user_result:
-                    return jsonify({'success': False, 'message': 'User not found'}), 404
+                    user_id, user_email, display_name = user_result
 
-                user_id, user_email, display_name = user_result
+                    # Check if user has eSIM ready status
+                    cur.execute("""
+                        SELECT status FROM beta_testers
+                        WHERE user_id = %s AND status = 'esim_ready'
+                        ORDER BY timestamp DESC LIMIT 1
+                    """, (user_id,))
 
-                # Check if user has eSIM ready status
-                cur.execute("""
-                    SELECT status FROM beta_testers
-                    WHERE user_id = %s AND status = 'esim_ready'
-                    ORDER BY timestamp DESC LIMIT 1
-                """, (user_id,))
+                    status_result = cur.fetchone()
 
-                status_result = cur.fetchone()
+                    if not status_result:
+                        return jsonify({
+                            'success': False,
+                            'message': 'eSIM not ready or user not enrolled in beta'
+                        }), 400
 
-                if not status_result:
-                    return jsonify({
-                        'success': False,
-                        'message': 'eSIM not ready or user not enrolled in beta'
-                    }), 400
+                    # Generate demo ICCID details for resending
+                    import random
+                    demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
+                    activation_code = f"AC{random.randint(100000, 999999)}"
+                    qr_code_data = f"LPA:1$api-staging.brandvno.com${activation_code}$"
 
-                # Generate demo ICCID details for resending
-                import random
-                demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
-                activation_code = f"AC{random.randint(100000, 999999)}"
-                qr_code_data = f"LPA:1$api-staging.brandvno.com${activation_code}$"
+                    # Create mock OXIO SIM details
+                    oxio_sim_details = {
+                        'iccid': demo_iccid,
+                        'activation_code': activation_code,
+                        'qr_code': qr_code_data,
+                        'plan_name': 'OXIO_10day_demo_plan',
+                        'data_allowance': '1000MB',
+                        'validity_days': 10,
+                        'regions': ['Global'],
+                        'status': 'ready_for_activation',
+                        'note': 'Resent eSIM details - demo data'
+                    }
 
-                # Create mock OXIO SIM details
-                oxio_sim_details = {
-                    'iccid': demo_iccid,
-                    'activation_code': activation_code,
-                    'qr_code': qr_code_data,
-                    'plan_name': 'OXIO_10day_demo_plan',
-                    'data_allowance': '1000MB',
-                    'validity_days': 10,
-                    'regions': ['Global'],
-                    'status': 'ready_for_activation',
-                    'note': 'Resent eSIM details - demo data'
-                }
-
-                # Create email content
-                email_subject = f"[RESENT] Beta eSIM Details - ICCID: {oxio_sim_details['iccid']}"
-                email_content = f"""
+                    # Create email content
+                    email_subject = f"[RESENT] Beta eSIM Details - ICCID: {oxio_sim_details['iccid']}"
+                    email_content = f"""
 Hello {display_name or 'Beta Tester'},
 
 Here are your eSIM activation details (resent):
@@ -3612,29 +3608,29 @@ Thank you for participating in our beta program!
 
 Best regards,
 DOTM Team
-                """
+                    """
 
-                # Log the resend email (simulate for now)
-                print(f"=== RESENT BETA eSIM EMAIL ===")
-                print(f"To: {user_email}")
-                print(f"Subject: {email_subject}")
-                print(f"Content:\n{email_content}")
-                print("===============================")
+                    # Log the resend email (simulate for now)
+                    print(f"=== RESENT BETA eSIM EMAIL ===")
+                    print(f"To: {user_email}")
+                    print(f"Subject: {email_subject}")
+                    print(f"Content:\n{email_content}")
+                    print("===============================")
 
-                # Record the resend action
-                cur.execute("""
-                    INSERT INTO beta_testers (user_id, firebase_uid, action, status, timestamp)
-                    VALUES (%s, %s, 'RESEND_EMAIL', 'esim_ready', CURRENT_TIMESTAMP)
-                """, (user_id, firebase_uid))
+                    # Record the resend action
+                    cur.execute("""
+                        INSERT INTO beta_testers (user_id, firebase_uid, action, status, timestamp)
+                        VALUES (%s, %s, 'RESEND_EMAIL', 'esim_ready', CURRENT_TIMESTAMP)
+                    """, (user_id, firebase_uid))
 
-                conn.commit()
+                    conn.commit()
 
-                return jsonify({
-                    'success': True,
-                    'message': f'eSIM details resent to {user_email}',
-                    'email_sent': True,
-                    'resent_at': datetime.now().isoformat()
-                })
+                    return jsonify({
+                        'success': True,
+                        'message': f'eSIM details resent to {user_email}',
+                        'email_sent': True,
+                        'resent_at': datetime.now().isoformat()
+                    })
 
     except Exception as e:
         print(f"Error resending eSIM email: {str(e)}")
@@ -4019,7 +4015,6 @@ def debug_purchases_structure():
                             ORDER BY DateCreated DESC
                             LIMIT 5
                         """, (firebase_uid,))
-                        recent_purchases = cur.fetchall()
                     else:
                         cur.execute("""
                             SELECT * FROM purchases
