@@ -403,6 +403,7 @@ def register_fcm_token():
 
     except Exception as e:
         print(f"Error storing FCM token: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # Send notifications to both web and app users
 @app.route('/api/send-notification', methods=['POST'])
