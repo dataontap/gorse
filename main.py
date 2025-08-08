@@ -3275,6 +3275,7 @@ DOTM Team
         traceback.print_exc()
         return jsonify({'success': False, 'message': f'Internal server error: {str(e)}'}), 500
 
+
 @app.route('/api/beta-status')
 def get_beta_status():
     firebase_uid = request.args.get('firebaseUid')
@@ -3690,12 +3691,6 @@ DOTM Team
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'message': f'Internal server error: {str(e)}'}), 500
-
-def get_db_connection():
-    database_url = os.environ.get('DATABASE_URL')
-    if not database_url:
-        raise Exception("DATABASE_URL environment variable not set")
-    return psycopg2.connect(database_url)
 
 def handle_beta_esim_payment(session):
     """Handle successful beta eSIM payment"""
