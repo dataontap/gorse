@@ -1,0 +1,25 @@
+Existing Firebase user found: 31684 with Stripe customer: cus_SnHc4tAdwNOkiT
+Existing Firebase user found: 31684 with Stripe customer: cus_SnHc4tAdwNOkiT
+172.31.114.226 - - [08/Aug/2025 14:23:54] "POST /api/auth/register HTTP/1.1" 200 -
+172.31.114.226 - - [08/Aug/2025 14:23:54] "POST /api/auth/register HTTP/1.1" 200 -
+172.31.114.226 - - [08/Aug/2025 14:23:54] "GET /api/auth/current-user?firebaseUid=5FQiYc7dTNcZuOTADFzN1oAryXV2 HTTP/1.1" 200 -
+172.31.114.226 - - [08/Aug/2025 14:23:54] "GET /api/auth/current-user?firebaseUid=5FQiYc7dTNcZuOTADFzN1oAryXV2 HTTP/1.1" 200 -
+172.31.114.226 - - [08/Aug/2025 14:23:55] "GET /firebase-messaging-sw.js HTTP/1.1" 304 -
+get_user_by_firebase_uid debug: Found user 31684 with oxio_user_id: de3cb557-3a55-4161-866d-fbcd747aa473, eth_address: 0x96a6Bc2d3575391d06Ec58bB2b5ae23dE8d70aDf
+Found user 31684 for Firebase UID 5FQiYc7dTNcZuOTADFzN1oAryXV2 with Stripe customer cus_SnHc4tAdwNOkiT
+SQL query error: tuple index out of range
+Traceback (most recent call last):
+  File "/home/runner/workspace/main.py", line 1864, in get_user_data_balance
+    cur.execute("""
+IndexError: tuple index out of range
+Data balance calculation: user_id=31684, purchases=0, global_data=0.0GB, other_data=0.0GB, subscription=0GB, total=0.0GB
+172.31.114.226 - - [08/Aug/2025 14:23:57] "GET /api/user/data-balance?firebaseUid=5FQiYc7dTNcZuOTADFzN1oAryXV2 HTTP/1.1" 200 -
+get_user_by_firebase_uid debug: Found user 31684 with oxio_user_id: de3cb557-3a55-4161-866d-fbcd747aa473, eth_address: 0x96a6Bc2d3575391d06Ec58bB2b5ae23dE8d70aDf
+Found user 31684 for Firebase UID 5FQiYc7dTNcZuOTADFzN1oAryXV2 with Stripe customer cus_SnHc4tAdwNOkiT
+SQL query error: tuple index out of range
+Traceback (most recent call last):
+  File "/home/runner/workspace/main.py", line 1864, in get_user_data_balance
+    cur.execute("""
+IndexError: tuple index out of range
+Data balance calculation: user_id=31684, purchases=0, global_data=0.0GB, other_data=0.0GB, subscription=0GB, total=0.0GB
+172.31.114.226 - - [08/Aug/2025 14:23:59] "GET /api/user/data-balance?firebaseUid=5FQiYc7dTNcZuOTADFzN1oAryXV2 HTTP/1.1" 200 -
