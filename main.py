@@ -3128,7 +3128,7 @@ def beta_enrollment():
                 activation_code = f"AC{random.randint(100000, 999999)}"
                 qr_code_data = f"LPA:1$api-staging.brandvno.com${activation_code}$"
 
-                # Try to get OXIO SIM details (fallback to demo if service unavailable)
+                # Try to get SIM details (fallback to demo if service unavailable)
                 oxio_sim_details = {
                     'iccid': demo_iccid,
                     'activation_code': activation_code,
