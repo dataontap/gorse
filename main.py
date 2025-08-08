@@ -2715,7 +2715,7 @@ def get_user_network_features(firebase_uid):
             'user_id': user_id,
             'email': user_email,
             'oxio_user_id': user_data[6] if len(user_data) > 6 else None,  # OXIO user ID from user_data tuple
-            'metamask_address': user_data[7] if len(user_data) > 7 else None,  # ETH address from user_data tuple
+            'metamask_address': user_data[7] if len(user_data) > 7 else None,  # MetaMask address from user_data tuple
             'phone_number': None,
             'line_id': None,
             'iccid': None,
