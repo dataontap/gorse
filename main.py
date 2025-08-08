@@ -412,6 +412,8 @@ def register_fcm_token():
         else:
             return jsonify({"status": "success", "platform": platform})
 
+        return jsonify({"status": "success", "platform": platform})
+
 
 # Send notifications to both web and app users
 @app.route('/api/send-notification', methods=['POST'])
