@@ -3719,9 +3719,6 @@ def handle_beta_esim_payment(session):
                 """, (user_id, firebase_uid))
 
                 conn.commit()
-
-    except Exception as e:
-        print(f"Error handling beta eSIM payment: {str(e)}")
         import traceback
         traceback.print_exc()
 
