@@ -2550,54 +2550,6 @@ class CreateTestWallet(Resource):
             web3 = Web3()
             account = web3.eth.account.create()
 
-            # Get user details for tracking
-            user_id = 1  # For demo purposes
-            data = request.get_json() or {}
-            email = data.get('email', 'test@example.com')
-
-            # Store wallet in database
-            with get_db_connection() as conn:
-                if conn:
-                    with conn.cursor() as cur:
-                        # Check if users table exists
-                        cur.execute(
-                            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')"
-                        )
-                        table_exists = cur.fetchone()[0]
-
-                        if not table_exists:
-                            # Create users table
-                            cur.execute("""
-                                CREATE TABLE users (
-                                    UserID SERIAL PRIMARY KEY,
-                                    email VARCHAR(255),
-                                    stripe_customer_id VARCHAR(100),
-                                    eth_address VARCHAR(42),
-                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                )
-                            """)
-
-                        # Check if user exists
-                        cur.execute("SELECT UserID FROM users WHERE email = %s", (email,))
-                        user = cur.fetchone()
-
-                        if user:
-                            # Update existing user
-                            cur.execute(
-                                "UPDATE users SET eth_address = %s WHERE UserID = %s",
-                                (account.address, user[0])
-                            )
-                            user_id = user[0]
-                        else:
-                            # Create new user
-                            cur.execute(
-                                "INSERT INTO users (email, eth_address) VALUES (%s, %s) RETURNING UserID",
-                                (email, account.address)
-                            )
-                            user_id = cur.fetchone()[0]
-
-                        conn.commit()
-
             # Assign tokens to the new wallet
             success, result = ethereum_helper.assign_founding_token(account.address)
             if not success:
