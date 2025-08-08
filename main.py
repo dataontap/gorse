@@ -36,6 +36,7 @@ except Exception as e:
         yield None
 
 # Initialize Stripe
+import stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
 # Import OXIO service
@@ -352,6 +353,7 @@ def register_fcm_token():
                                 notification_id, title, body, notif_type, created_at = notification
 
                                 try:
+                                    # Use Firebase Admin SDK if available
                                     if 'firebase_admin' in sys.modules:
                                         from firebase_admin import messaging
 
@@ -399,11 +401,14 @@ def register_fcm_token():
                             conn.commit()
                             print(f"Processed {len(pending_notifications)} pending notifications")
 
-        return jsonify({"status": "success", "platform": platform})
+                            return jsonify({"status": "success", "platform": platform})
 
-    except Exception as e:
-        print(f"Error storing FCM token: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        except Exception as e:
+            print(f"Error storing FCM token: {str(e)}")
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+    return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
+
 
 # Send notifications to both web and app users
 @app.route('/api/send-notification', methods=['POST'])
@@ -1743,7 +1748,7 @@ def create_checkout_session():
             cancel_url=cancel_url,
             metadata={
                 'product_id': product_id,
-                'firebase_uid': firebase_uid if firebase_uid else '',
+                'firebase_uid': firebase_uid,
                 'subscription_type': 'yearly' if is_subscription else 'one_time'
             },
             **customer_params  # Add customer ID if available
@@ -2193,8 +2198,6 @@ def record_global_purchase():
             if user_data:
                 user_id = user_data[0]
                 print(f"Found user_id {user_id} for Firebase UID {firebase_uid}")
-            else:
-                print(f"No user found for Firebase UID {firebase_uid}")
         except Exception as lookup_err:
             print(f"Error looking up user by Firebase UID: {str(lookup_err)}")
 
@@ -3189,7 +3192,7 @@ def beta_enrollment():
                     from oxio_service import oxio_service
                     test_result = oxio_service.test_connection()
                     if test_result.get('success'):
-                        print("OXIO service available - using real SIM details")
+                        print("OXIO service available - using demo data with a note")
                         # In a real implementation, you would call OXIO to get actual SIM details
                         # For now, we'll use the demo data with a note that OXIO is available
                         oxio_sim_details['note'] = 'OXIO service connected - using demo data for beta'
@@ -4473,7 +4476,6 @@ class UpdateEthAddress(Resource):
             print(f"Error updating Ethereum address: {str(e)}")
             return {'error': str(e)}, 500
 
-
 @app.route('/api/user/stripe-id/<int:user_id>', methods=['GET'])
 def get_user_stripe_id(user_id):
     """Get Stripe customer ID for a specific user"""
@@ -5038,7 +5040,7 @@ def create_oxio_user_endpoint():
         print(f"Error in create OXIO user endpoint: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
-@app.route('/api/oxio-activation-status', methods=['GET'])
+@app.route('/api/oxio-activation-status')
 def get_oxio_activation_status():
     """Get OXIO activation status for a user"""
     firebase_uid = request.args.get('firebaseUid')
