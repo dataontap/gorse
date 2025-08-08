@@ -126,13 +126,13 @@ try:
                     print("beta_testers table already exists")
                     # Check if status column exists and add it if missing
                     cur.execute("""
-                        SELECT column_name FROM information_schema.columns
+                        SELECT column_name FROM information_schema.columns 
                         WHERE table_name = 'beta_testers' AND column_name = 'status'
                     """)
                     status_column_exists = cur.fetchone()
 
                     if not status_column_exists:
-                        print("Adding status column to beta_testers table...")
+                        print("Adding missing status column to beta_testers table...")
                         cur.execute("ALTER TABLE beta_testers ADD COLUMN status VARCHAR(50) DEFAULT 'not_enrolled'")
                         conn.commit()
                         print("Status column added successfully")
@@ -300,7 +300,7 @@ def oxio_test_sample_activation():
 # Now initialize Flask-RESTX AFTER the OXIO routes are defined
 api = Api(app, version='1.0', title='IMEI API',
     description='Get android phone IMEI API with telephony permissions for eSIM activation',
-    doc='/api',
+    doc='/api', 
     prefix='/api')  # Move all API endpoints under /api path
 
 ns = api.namespace('imei', description='IMEI operations')
@@ -314,7 +314,7 @@ def register_fcm_token():
     user_agent = request.headers.get('User-Agent', '')
     platform = 'web' if 'Mozilla' in user_agent else 'android'
 
-    print(f"Registered FCM token for {platform}: {token} (Firebase UID: {firebase_uid})")
+    print(f"Registered FCM token for {platform}: {token}")
 
     # Store token in database if Firebase UID provided
     if firebase_uid and token:
@@ -326,8 +326,8 @@ def register_fcm_token():
                         cur.execute("""
                             INSERT INTO fcm_tokens (firebase_uid, fcm_token, platform, updated_at)
                             VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
-                            ON CONFLICT (firebase_uid, platform)
-                            DO UPDATE SET
+                            ON CONFLICT (firebase_uid, platform) 
+                            DO UPDATE SET 
                                 fcm_token = EXCLUDED.fcm_token,
                                 updated_at = CURRENT_TIMESTAMP
                         """, (firebase_uid, token, platform))
@@ -338,8 +338,8 @@ def register_fcm_token():
                         # Check for pending notifications that haven't been delivered
                         cur.execute("""
                             SELECT id, title, body, notification_type, created_at
-                            FROM notifications
-                            WHERE firebase_uid = %s AND delivered = FALSE
+                            FROM notifications 
+                            WHERE firebase_uid = %s AND delivered = FALSE 
                             ORDER BY created_at ASC
                         """, (firebase_uid,))
 
@@ -375,7 +375,7 @@ def register_fcm_token():
 
                                         # Update notification as delivered
                                         cur.execute("""
-                                            UPDATE notifications
+                                            UPDATE notifications 
                                             SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                             WHERE id = %s
                                         """, (str(response), notification_id))
@@ -384,7 +384,7 @@ def register_fcm_token():
                                         print("Firebase Admin SDK not available - marking notification as delivered for demo")
                                         # Mark as delivered even without FCM for demo purposes
                                         cur.execute("""
-                                            UPDATE notifications
+                                            UPDATE notifications 
                                             SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                             WHERE id = %s
                                         """, ("No FCM SDK - demo mode", notification_id))
@@ -393,7 +393,7 @@ def register_fcm_token():
                                     print(f"Error sending pending notification {notification_id}: {str(msg_err)}")
                                     # Still mark as delivered to avoid repeated attempts
                                     cur.execute("""
-                                        UPDATE notifications
+                                        UPDATE notifications 
                                         SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                         WHERE id = %s
                                     """, (f"FCM Error: {str(msg_err)}", notification_id))
@@ -401,13 +401,13 @@ def register_fcm_token():
                             conn.commit()
                             print(f"Processed {len(pending_notifications)} pending notifications")
 
-                            return jsonify({"status": "success", "platform": platform, "pending_sent": len(pending_notifications)})
+                            return jsonify({"status": "success", "platform": platform})
 
-                        return jsonify({"status": "success", "platform": platform})
+        except Exception as e:
+            print(f"Error storing FCM token: {str(e)}")
+            return jsonify({"status": "error", "message": str(e)}), 500
 
-                return jsonify({"status": "success", "platform": platform})
-
-        return jsonify({"status": "success", "platform": platform})
+    return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
 
 
 # Send notifications to both web and app users
@@ -444,7 +444,7 @@ def send_notification():
 
                             # Get user's FCM token
                             cur.execute("""
-                                SELECT fcm_token FROM fcm_tokens
+                                SELECT fcm_token FROM fcm_tokens 
                                 WHERE firebase_uid = %s AND platform = 'web'
                                 ORDER BY updated_at DESC LIMIT 1
                             """, (firebase_uid,))
@@ -601,7 +601,7 @@ def register_firebase_user():
                     else:
                         # Check if oxio_user_id column exists and add it if missing
                         cur.execute("""
-                            SELECT column_name FROM information_schema.columns
+                            SELECT column_name FROM information_schema.columns 
                             WHERE table_name = 'users' AND column_name = 'oxio_user_id'
                         """)
                         oxio_column_exists = cur.fetchone()
@@ -614,7 +614,7 @@ def register_firebase_user():
 
                         # Check if oxio_group_id column exists and add it if missing
                         cur.execute("""
-                            SELECT column_name FROM information_schema.columns
+                            SELECT column_name FROM information_schema.columns 
                             WHERE table_name = 'users' AND column_name = 'oxio_group_id'
                         """)
                         oxio_group_column_exists = cur.fetchone()
@@ -627,7 +627,7 @@ def register_firebase_user():
 
                         # Ensure eth_address column exists separately
                         cur.execute("""
-                            SELECT column_name FROM information_schema.columns
+                            SELECT column_name FROM information_schema.columns 
                             WHERE table_name = 'users' AND column_name = 'eth_address'
                         """)
                         eth_column_exists = cur.fetchone()
@@ -650,10 +650,10 @@ def register_firebase_user():
 
                         # Update user information if needed
                         cur.execute(
-                            """UPDATE users SET
-                                email = %s,
-                                display_name = %s,
-                                photo_url = %s
+                            """UPDATE users SET 
+                                email = %s, 
+                                display_name = %s, 
+                                photo_url = %s 
                             WHERE id = %s""",
                             (email, display_name, photo_url, user_id)
                         )
@@ -722,7 +722,7 @@ def register_firebase_user():
                                 print(f"Successfully created OXIO user: {oxio_user_id}")
                             else:
                                 # Check if user already exists (error code 6805)
-                                if (oxio_result.get('status_code') == 400 and
+                                if (oxio_result.get('status_code') == 400 and 
                                     oxio_result.get('data', {}).get('code') == 6805):
                                     print(f"OXIO user already exists for {email}, attempting to find existing user ID")
 
@@ -739,9 +739,9 @@ def register_firebase_user():
                             print(f"Error creating OXIO group/user: {str(oxio_err)}")
 
                         cur.execute(
-                            """INSERT INTO users
-                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id, oxio_group_id)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            """INSERT INTO users 
+                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id, oxio_group_id) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s) 
                             RETURNING id""",
                             (email, firebase_uid, display_name, photo_url, test_account.address, oxio_user_id, oxio_group_id)
                         )
@@ -800,7 +800,7 @@ def register_firebase_user():
                                             if conn:
                                                 with conn.cursor() as cur:
                                                     cur.execute("""
-                                                        INSERT INTO welcome_messages
+                                                        INSERT INTO welcome_messages 
                                                         (user_id, firebase_uid, language, voice_id, audio_data, audio_url, created_at)
                                                         VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                                                         RETURNING id
@@ -817,8 +817,8 @@ def register_firebase_user():
                                     if conn:
                                         with conn.cursor() as cur:
                                             cur.execute("""
-                                                SELECT fcm_token FROM fcm_tokens
-                                                WHERE firebase_uid = %s
+                                                SELECT fcm_token FROM fcm_tokens 
+                                                WHERE firebase_uid = %s 
                                                 ORDER BY updated_at DESC LIMIT 1
                                             """, (firebase_uid,))
 
@@ -830,7 +830,7 @@ def register_firebase_user():
                                             welcome_body = f"Hi {display_name or 'there'}! Your account is ready. Your personalized welcome message is waiting for you!"
 
                                             cur.execute("""
-                                                INSERT INTO notifications
+                                                INSERT INTO notifications 
                                                 (user_id, firebase_uid, title, body, notification_type, delivered)
                                                 VALUES (%s, %s, %s, %s, %s, %s)
                                                 RETURNING id
@@ -865,7 +865,7 @@ def register_firebase_user():
 
                                                         # Update notification with FCM response
                                                         cur.execute("""
-                                                            UPDATE notifications
+                                                            UPDATE notifications 
                                                             SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                             WHERE id = %s
                                                         """, (str(response), notification_id))
@@ -875,7 +875,7 @@ def register_firebase_user():
                                                     else:
                                                         print("Firebase Admin SDK not available - notification stored in database")
                                                         cur.execute("""
-                                                            UPDATE notifications
+                                                            UPDATE notifications 
                                                             SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                             WHERE id = %s
                                                         """, ("No FCM SDK - demo mode", notification_id))
@@ -884,7 +884,7 @@ def register_firebase_user():
                                                 except Exception as msg_err:
                                                     print(f"Error sending welcome message via FCM: {str(msg_err)}")
                                                     cur.execute("""
-                                                        UPDATE notifications
+                                                        UPDATE notifications 
                                                         SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                         WHERE id = %s
                                                     """, (f"FCM Error: {str(msg_err)}", notification_id))
@@ -892,7 +892,7 @@ def register_firebase_user():
                                             else:
                                                 print(f"No FCM token found for {firebase_uid} - notification stored for later")
                                                 cur.execute("""
-                                                    UPDATE notifications
+                                                    UPDATE notifications 
                                                     SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                     WHERE id = %s
                                                 """, ("No FCM token available", notification_id))
@@ -1040,8 +1040,8 @@ def check_imei_compatibility():
                         is_compatible = capabilities.get('fourG', False) or capabilities.get('fiveG', False)
 
                         cur.execute("""
-                            INSERT INTO compatibility_checks
-                            (imei, device_make, device_model, device_year, four_g_support,
+                            INSERT INTO compatibility_checks 
+                            (imei, device_make, device_model, device_year, four_g_support, 
                              five_g_support, volte_support, wifi_calling_support, is_compatible, search_id)
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """, (
@@ -1173,7 +1173,7 @@ def get_member_count():
                     # Check if users table exists
                     cur.execute("""
                         SELECT EXISTS (
-                            SELECT FROM information_schema.tables
+                            SELECT FROM information_schema.tables 
                             WHERE table_name = 'users'
                         )
                     """)
@@ -1261,7 +1261,7 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                             else:
                                 # Check if new columns exist and add them if needed
                                 cur.execute("""
-                                    SELECT column_name FROM information_schema.columns
+                                    SELECT column_name FROM information_schema.columns 
                                     WHERE table_name = 'purchases'
                                 """)
                                 columns = [row[0] for row in cur.fetchall()]
@@ -1303,9 +1303,9 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
 
                             # Now insert the purchase record with all tracking information
                             cur.execute(
-                                """INSERT INTO purchases
-                                   (StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated, StripeTransactionID, FirebaseUID)
-                                   VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s, %s)
+                                """INSERT INTO purchases 
+                                   (StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated, StripeTransactionID, FirebaseUID) 
+                                   VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s, %s) 
                                    RETURNING PurchaseID""",
                                 (stripe_id, product_id, price_id, amount, user_id, stripe_transaction_id, firebase_uid)
                             )
@@ -1370,7 +1370,7 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
 
                     # First, deactivate any existing active subscriptions for this user
                     cur.execute("""
-                        UPDATE subscriptions
+                        UPDATE subscriptions 
                         SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
                         WHERE user_id = %s AND status = 'active'
                     """, (user_id,))
@@ -1413,9 +1413,9 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
 
                     # Calculate validity end date (1 year = 365.25 days exactly for leap years)
                     cur.execute("""
-                        INSERT INTO subscriptions
-                        (user_id, subscription_type, stripe_subscription_id, start_date, end_date, status, created_at, updated_at)
-                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        INSERT INTO subscriptions 
+                        (user_id, subscription_type, stripe_subscription_id, start_date, end_date, status, created_at, updated_at) 
+                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
                         RETURNING end_date, subscription_id
                     """, (user_id, subscription_type, actual_stripe_subscription_id))
 
@@ -1435,6 +1435,7 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
 
 @delivery_ns.route('')
 class DeliveryResource(Resource):
+    @delivery_ns.response(400, 'Bad Request')
     def post(self):
         """Submit eSIM delivery preferences"""
         try:
@@ -1783,14 +1784,14 @@ def get_user_by_firebase_uid(firebase_uid):
             if conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        """SELECT id, email, display_name, stripe_customer_id, photo_url, imei,
-                                  oxio_user_id, eth_address, oxio_group_id
+                        """SELECT id, email, firebase_uid, stripe_customer_id, display_name, 
+                                  photo_url, imei, oxio_user_id, eth_address, oxio_group_id
                         FROM users WHERE firebase_uid = %s""",
                         (firebase_uid,)
                     )
                     user_data = cur.fetchone()
                     if user_data:
-                        print(f"get_user_by_firebase_uid debug: Found user {user_data[0]} with oxio_user_id: {user_data[6]}, eth_address: {user_data[7]}")
+                        print(f"get_user_by_firebase_uid debug: Found user {user_data[0]} with oxio_user_id: {user_data[7]}, eth_address: {user_data[8]}")
                     return user_data
         return None
     except Exception as e:
@@ -1805,10 +1806,10 @@ def get_user_stripe_purchases(stripe_customer_id):
                 with conn.cursor() as cur:
                     # Get purchases linked to Stripe customer
                     cur.execute("""
-                        SELECT SUM(TotalAmount)
-                        FROM purchases
+                        SELECT SUM(TotalAmount) 
+                        FROM purchases 
                         WHERE StripeID IN (
-                            SELECT id FROM stripe_sessions_or_invoices
+                            SELECT id FROM stripe_sessions_or_invoices 
                             WHERE customer_id = %s
                         ) OR UserID = (
                             SELECT id FROM users WHERE stripe_customer_id = %s
@@ -1834,7 +1835,8 @@ def get_user_data_balance():
             user_data = get_user_by_firebase_uid(firebase_uid)
             if user_data:
                 user_id = user_data[0]  # Get the actual internal user ID (integer)
-                print(f"Found user {user_id} for Firebase UID {firebase_uid}")
+                stripe_customer_id = user_data[3]  # Get Stripe customer ID
+                print(f"Found user {user_id} for Firebase UID {firebase_uid} with Stripe customer {stripe_customer_id}")
             else:
                 return jsonify({
                     'error': 'User not found for Firebase UID',
@@ -1860,11 +1862,11 @@ def get_user_data_balance():
                     # Get all data-related purchases for this user - using correct column names
                     try:
                         cur.execute("""
-                            SELECT
+                            SELECT 
                                 COALESCE(SUM(CASE WHEN StripeProductID = 'global_data_10gb' THEN TotalAmount ELSE 0 END), 0) as global_data_cents,
                                 COALESCE(SUM(CASE WHEN StripeProductID LIKE '%data%' OR StripeProductID = 'beta_esim_data' THEN TotalAmount ELSE 0 END), 0) as total_data_cents,
                                 COUNT(*) as total_purchases
-                            FROM purchases
+                            FROM purchases 
                             WHERE UserID = %s OR FirebaseUID = %s
                         """, (user_id, firebase_uid))
 
@@ -1902,8 +1904,8 @@ def get_user_data_balance():
 
                     # Get subscription status for additional data allowances
                     cur.execute("""
-                        SELECT subscription_type, end_date
-                        FROM subscriptions
+                        SELECT subscription_type, end_date 
+                        FROM subscriptions 
                         WHERE user_id = %s AND status = 'active' AND end_date > CURRENT_TIMESTAMP
                         ORDER BY end_date DESC LIMIT 1
                     """, (user_id,))
@@ -1985,7 +1987,7 @@ def report_data_usage():
                 if conn:
                     with conn.cursor() as cur:
                         cur.execute("""
-                            INSERT INTO data_usage_log
+                            INSERT INTO data_usage_log 
                             (user_id, stripe_customer_id, megabytes_used, stripe_event_id, created_at)
                             VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
                         """, (user_data[0], stripe_customer_id, megabytes_used, result.get('event_id')))
@@ -2070,9 +2072,9 @@ def get_subscription_status():
                     # Get the most recent active subscription
                     cur.execute("""
                         SELECT subscription_type, start_date, end_date, status, stripe_subscription_id
-                        FROM subscriptions
+                        FROM subscriptions 
                         WHERE user_id = %s AND status = 'active' AND end_date > CURRENT_TIMESTAMP
-                        ORDER BY end_date DESC
+                        ORDER BY end_date DESC 
                         LIMIT 1
                     """, (user_id,))
 
@@ -2090,9 +2092,9 @@ def get_subscription_status():
                         # Check if user has any expired subscriptions
                         cur.execute("""
                             SELECT subscription_type, end_date
-                            FROM subscriptions
+                            FROM subscriptions 
                             WHERE user_id = %s
-                            ORDER BY end_date DESC
+                            ORDER BY end_date DESC 
                             LIMIT 1
                         """, (user_id,))
 
@@ -2229,8 +2231,8 @@ def record_global_purchase():
                 # Get user details for OXIO activation
                 user_email = user_data[1] if len(user_data) > 1 else "unknown@example.com"
                 # Make sure we get the OXIO user ID (column 7) not the ETH address (column 8)
-                oxio_user_id = user_data[6] if len(user_data) > 6 else None # Corrected index for oxio_user_id
-                eth_address = user_data[7] if len(user_data) > 7 else None # Corrected index for eth_address
+                oxio_user_id = user_data[7] if len(user_data) > 7 else None
+                eth_address = user_data[8] if len(user_data) > 8 else None
                 print(f"Debug: Retrieved user data - email: {user_email}, oxio_user_id: {oxio_user_id}, eth_address: {eth_address}")
 
                 # Use environment variable for ICCID or generate a demo one
@@ -2298,11 +2300,11 @@ def record_global_purchase():
 
                                     # Insert activation record
                                     cur.execute("""
-                                        INSERT INTO oxio_activations
-                                        (user_id, firebase_uid, purchase_id, product_id, iccid,
+                                        INSERT INTO oxio_activations 
+                                        (user_id, firebase_uid, purchase_id, product_id, iccid, 
                                          line_id, phone_number, activation_status, oxio_response)
                                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                                    """, (user_id, firebase_uid, purchase_id, product_id, iccid,
+                                    """, (user_id, firebase_uid, purchase_id, product_id, iccid, 
                                           line_id, phone_number, 'activated', json.dumps(oxio_result)))
 
                                     conn.commit()
@@ -2310,10 +2312,10 @@ def record_global_purchase():
                     except Exception as db_err:
                         print(f"Error storing OXIO activation record: {str(db_err)}")
                 else:
-                    print(f"Failed to activate OXIO line for Basic Membership purchase: {oxio_result.get('message', 'Unknown error')}")
+                    print(f"Failed to activate OXIO line: {oxio_result.get('message', 'Unknown error')}")
 
             except Exception as oxio_err:
-                print(f"Error during OXIO line activation for Basic Membership: {str(oxio_err)}")
+                print(f"Error during OXIO line activation: {str(oxio_err)}")
 
     if purchase_id:
         print(f"Successfully recorded purchase: {purchase_id} for product: {product_id} with Firebase UID: {firebase_uid}")
@@ -2433,20 +2435,21 @@ def create_tables_route():
 
     return jsonify(results)
 
+
 @api.route('/check-memberships')
 class CheckMemberships(Resource):
     def get(self):
         try:
             # Try to get user ID from session (in a real app)
-            user_id = 1  # Default for demo
+            user_id = 1  # Default for demo 
 
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
-                        # Check if user has purchased any membership products
+                        # Check if user haspurchased any membership products
                         cur.execute("""
-                            SELECT StripeProductID
-                            FROM purchases
+                            SELECT StripeProductID 
+                            FROM purchases 
                             WHERE UserID = %s AND StripeProductID IN ('basic_membership', 'full_membership')
                             LIMIT 1
                         """, (user_id,))
@@ -2545,6 +2548,54 @@ class CreateTestWallet(Resource):
             from web3 import Web3
             web3 = Web3()
             account = web3.eth.account.create()
+
+            # Get user details for tracking
+            user_id = 1  # For demo purposes
+            data = request.get_json() or {}
+            email = data.get('email', 'test@example.com')
+
+            # Store wallet in database
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Check if users table exists
+                        cur.execute(
+                            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')"
+                        )
+                        table_exists = cur.fetchone()[0]
+
+                        if not table_exists:
+                            # Create users table
+                            cur.execute("""
+                                CREATE TABLE users (
+                                    UserID SERIAL PRIMARY KEY,
+                                    email VARCHAR(255),
+                                    stripe_customer_id VARCHAR(100),
+                                    eth_address VARCHAR(42),
+                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                )
+                            """)
+
+                        # Check if user exists
+                        cur.execute("SELECT UserID FROM users WHERE email = %s", (email,))
+                        user = cur.fetchone()
+
+                        if user:
+                            # Update existing user
+                            cur.execute(
+                                "UPDATE users SET eth_address = %s WHERE UserID = %s",
+                                (account.address, user[0])
+                            )
+                            user_id = user[0]
+                        else:
+                            # Create new user
+                            cur.execute(
+                                "INSERT INTO users (email, eth_address) VALUES (%s, %s) RETURNING UserID",
+                                (email, account.address)
+                            )
+                            user_id = cur.fetchone()[0]
+
+                        conn.commit()
 
             # Assign tokens to the new wallet
             success, result = ethereum_helper.assign_founding_token(account.address)
@@ -2710,8 +2761,8 @@ def get_user_network_features(firebase_uid):
         oxio_data = {
             'user_id': user_id,
             'email': user_email,
-            'oxio_user_id': user_data[6] if len(user_data) > 6 else None,  # OXIO user ID from user_data tuple
-            'metamask_address': user_data[7] if len(user_data) > 7 else None,  # MetaMask address from user_data tuple
+            'oxio_user_id': user_data[7] if len(user_data) > 7 else None,  # OXIO user ID from user_data tuple
+            'metamask_address': user_data[8] if len(user_data) > 8 else None,  # ETH address from user_data tuple
             'phone_number': None,
             'line_id': None,
             'iccid': None,
@@ -2747,8 +2798,8 @@ def get_user_network_features(firebase_uid):
                         """)
 
                         cur.execute("""
-                            SELECT stripe_product_id, enabled
-                            FROM user_network_preferences
+                            SELECT stripe_product_id, enabled 
+                            FROM user_network_preferences 
                             WHERE user_id = %s
                         """, (user_id,))
 
@@ -2809,7 +2860,7 @@ def toggle_network_feature(firebase_uid, product_id):
                     INSERT INTO user_network_preferences (user_id, stripe_product_id, enabled)
                     VALUES (%s, %s, %s)
                     ON CONFLICT (user_id, stripe_product_id)
-                    DO UPDATE SET
+                    DO UPDATE SET 
                         enabled = EXCLUDED.enabled,
                         updated_at = CURRENT_TIMESTAMP
                 """, (user_id, product_id, enabled))
@@ -2844,8 +2895,8 @@ def test_ping_creation():
                     roundtrip = 150
 
                     cur.execute(
-                        """INSERT INTO token_price_pings
-                          (token_price, request_time_ms, response_time_ms, roundtrip_ms,
+                        """INSERT INTO token_price_pings 
+                          (token_price, request_time_ms, response_time_ms, roundtrip_ms, 
                            ping_destination, source, additional_data)
                           VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id""",
                         (
@@ -2946,11 +2997,11 @@ def populate_token_pings():
 
                         # Insert the record
                         cur.execute(
-                            """INSERT INTO token_price_pings
-                              (token_price, request_time_ms, response_time_ms, roundtrip_ms,
+                            """INSERT INTO token_price_pings 
+                              (token_price, request_time_ms, response_time_ms, roundtrip_ms, 
                                ping_destination, source, additional_data, created_at)
                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
-                            (token_price, request_time, response_time, roundtrip,
+                            (token_price, request_time, response_time, roundtrip, 
                              destination, source, additional_data, timestamp)
                         )
 
@@ -3018,7 +3069,7 @@ def create_token_pings_table():
                     else:
                         # Check if all required columns exist
                         cur.execute("""
-                            SELECT column_name FROM information_schema.columns
+                            SELECT column_name FROM information_schema.columns 
                             WHERE table_name = 'token_price_pings'
                         """)
                         columns = [row[0] for row in cur.fetchall()]
@@ -3102,15 +3153,15 @@ def beta_enrollment():
 
                 # Check if already enrolled in beta
                 cur.execute("""
-                    SELECT status FROM beta_testers
-                    WHERE user_id = %s
+                    SELECT status FROM beta_testers 
+                    WHERE user_id = %s 
                     ORDER BY timestamp DESC LIMIT 1
                 """, (user_id,))
 
                 existing_status = cur.fetchone()
                 if existing_status and existing_status[0] in ['esim_ready', 'enrolled']:
                     return jsonify({
-                        'success': True,
+                        'success': True, 
                         'status': existing_status[0],
                         'message': 'Already enrolled in beta program'
                     })
@@ -3124,7 +3175,7 @@ def beta_enrollment():
                 activation_code = f"AC{random.randint(100000, 999999)}"
                 qr_code_data = f"LPA:1$api-staging.brandvno.com${activation_code}$"
 
-                # Try to get SIM details (fallback to demo if service unavailable)
+                # Try to get OXIO SIM details (fallback to demo if service unavailable)
                 oxio_sim_details = {
                     'iccid': demo_iccid,
                     'activation_code': activation_code,
@@ -3223,7 +3274,6 @@ DOTM Team
         traceback.print_exc()
         return jsonify({'success': False, 'message': f'Internal server error: {str(e)}'}), 500
 
-
 @app.route('/api/beta-status')
 def get_beta_status():
     firebase_uid = request.args.get('firebaseUid')
@@ -3245,8 +3295,8 @@ def get_beta_status():
 
                 # Get latest beta status
                 cur.execute("""
-                    SELECT status, timestamp FROM beta_testers
-                    WHERE user_id = %s
+                    SELECT status, timestamp FROM beta_testers 
+                    WHERE user_id = %s 
                     ORDER BY timestamp DESC LIMIT 1
                 """, (user_id,))
 
@@ -3288,13 +3338,13 @@ def get_oxio_user_data():
         user_email = user_data[1]
 
         # Extract additional fields from user_data tuple
-        oxio_user_id = user_data[6] if len(user_data) > 6 else None  # OXIO user ID from user_data tuple
-        eth_address = user_data[7] if len(user_data) > 7 else None  # ETH address from user_data tuple
+        oxio_user_id = user_data[7] if len(user_data) > 7 else None
+        eth_address = user_data[8] if len(user_data) > 8 else None
 
         # Extract additional fields from user_data tuple including oxio_group_id
         oxio_group_id = None
-        if len(user_data) > 8:  # Check if oxio_group_id column exists (index 8)
-            oxio_group_id = user_data[8]
+        if len(user_data) > 9:  # Check if oxio_group_id column exists (index 9)
+            oxio_group_id = user_data[9]
 
         # Get OXIO data from database and API
         oxio_data = {
@@ -3323,7 +3373,7 @@ def get_oxio_user_data():
                 with conn.cursor() as cur:
                     # Ensure beta_testers table has all required columns
                     cur.execute("""
-                        SELECT column_name FROM information_schema.columns
+                        SELECT column_name FROM information_schema.columns 
                         WHERE table_name = 'beta_testers'
                     """)
                     columns = [row[0] for row in cur.fetchall()]
@@ -3344,9 +3394,9 @@ def get_oxio_user_data():
 
                     # Check for beta tester data (contains some OXIO info)
                     cur.execute("""
-                        SELECT status, timestamp, stripe_payment_intent_id
-                        FROM beta_testers
-                        WHERE user_id = %s
+                        SELECT status, timestamp, stripe_payment_intent_id 
+                        FROM beta_testers 
+                        WHERE user_id = %s 
                         ORDER BY timestamp DESC LIMIT 1
                     """, (user_id,))
 
@@ -3363,7 +3413,7 @@ def get_oxio_user_data():
                         # First check for existing activation records in database
                         cur.execute("""
                             SELECT line_id, phone_number, iccid, activation_status, oxio_response, created_at
-                            FROM oxio_activations
+                            FROM oxio_activations 
                             WHERE user_id = %s AND activation_status = 'activated'
                             ORDER BY created_at DESC LIMIT 1
                         """, (user_id,))
@@ -3529,54 +3579,56 @@ def resend_esim_email():
             return jsonify({'success': False, 'message': 'Firebase UID required'}), 400
 
         with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Get user details
-                    cur.execute("SELECT id, email, display_name FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                    user_result = cur.fetchone()
+            if not conn:
+                return jsonify({'success': False, 'message': 'Database connection error'}), 500
 
-                    if not user_result:
-                        return jsonify({'success': False, 'message': 'User not found'}), 400
+            with conn.cursor() as cur:
+                # Get user details
+                cur.execute("SELECT id, email, display_name FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                user_result = cur.fetchone()
 
-                    user_id, user_email, display_name = user_result
+                if not user_result:
+                    return jsonify({'success': False, 'message': 'User not found'}), 404
 
-                    # Check if user has eSIM ready status
-                    cur.execute("""
-                        SELECT status FROM beta_testers
-                        WHERE user_id = %s AND status = 'esim_ready'
-                        ORDER BY timestamp DESC LIMIT 1
-                    """, (user_id,))
+                user_id, user_email, display_name = user_result
 
-                    status_result = cur.fetchone()
+                # Check if user has eSIM ready status
+                cur.execute("""
+                    SELECT status FROM beta_testers 
+                    WHERE user_id = %s AND status = 'esim_ready'
+                    ORDER BY timestamp DESC LIMIT 1
+                """, (user_id,))
 
-                    if not status_result:
-                        return jsonify({
-                            'success': False,
-                            'message': 'eSIM not ready or user not enrolled in beta'
-                        }), 400
+                status_result = cur.fetchone()
 
-                    # Generate demo ICCID details for resending
-                    import random
-                    demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
-                    activation_code = f"AC{random.randint(100000, 999999)}"
-                    qr_code_data = f"LPA:1$api-staging.brandvno.com${activation_code}$"
+                if not status_result:
+                    return jsonify({
+                        'success': False, 
+                        'message': 'eSIM not ready or user not enrolled in beta'
+                    }), 400
 
-                    # Create mock OXIO SIM details
-                    oxio_sim_details = {
-                        'iccid': demo_iccid,
-                        'activation_code': activation_code,
-                        'qr_code': qr_code_data,
-                        'plan_name': 'OXIO_10day_demo_plan',
-                        'data_allowance': '1000MB',
-                        'validity_days': 10,
-                        'regions': ['Global'],
-                        'status': 'ready_for_activation',
-                        'note': 'Resent eSIM details - demo data'
-                    }
+                # Generate demo ICCID details for resending
+                import random
+                demo_iccid = f"8910650420001{random.randint(100000, 999999)}F"
+                activation_code = f"AC{random.randint(100000, 999999)}"
+                qr_code_data = f"LPA:1$api-staging.brandvno.com${activation_code}$"
 
-                    # Create email content
-                    email_subject = f"[RESENT] Beta eSIM Details - ICCID: {oxio_sim_details['iccid']}"
-                    email_content = f"""
+                # Create mock OXIO SIM details
+                oxio_sim_details = {
+                    'iccid': demo_iccid,
+                    'activation_code': activation_code,
+                    'qr_code': qr_code_data,
+                    'plan_name': 'OXIO_10day_demo_plan',
+                    'data_allowance': '1000MB',
+                    'validity_days': 10,
+                    'regions': ['Global'],
+                    'status': 'ready_for_activation',
+                    'note': 'Resent eSIM details - demo data'
+                }
+
+                # Create email content
+                email_subject = f"[RESENT] Beta eSIM Details - ICCID: {oxio_sim_details['iccid']}"
+                email_content = f"""
 Hello {display_name or 'Beta Tester'},
 
 Here are your eSIM activation details (resent):
@@ -3608,35 +3660,41 @@ Thank you for participating in our beta program!
 
 Best regards,
 DOTM Team
-                    """
+                """
 
-                    # Log the resend email (simulate for now)
-                    print(f"=== RESENT BETA eSIM EMAIL ===")
-                    print(f"To: {user_email}")
-                    print(f"Subject: {email_subject}")
-                    print(f"Content:\n{email_content}")
-                    print("===============================")
+                # Log the resend email (simulate for now)
+                print(f"=== RESENT BETA eSIM EMAIL ===")
+                print(f"To: {user_email}")
+                print(f"Subject: {email_subject}")
+                print(f"Content:\n{email_content}")
+                print("===============================")
 
-                    # Record the resend action
-                    cur.execute("""
-                        INSERT INTO beta_testers (user_id, firebase_uid, action, status, timestamp)
-                        VALUES (%s, %s, 'RESEND_EMAIL', 'esim_ready', CURRENT_TIMESTAMP)
-                    """, (user_id, firebase_uid))
+                # Record the resend action
+                cur.execute("""
+                    INSERT INTO beta_testers (user_id, firebase_uid, action, status, timestamp)
+                    VALUES (%s, %s, 'RESEND_EMAIL', 'esim_ready', CURRENT_TIMESTAMP)
+                """, (user_id, firebase_uid))
 
-                    conn.commit()
+                conn.commit()
 
-                    return jsonify({
-                        'success': True,
-                        'message': f'eSIM details resent to {user_email}',
-                        'email_sent': True,
-                        'resent_at': datetime.now().isoformat()
-                    })
+                return jsonify({
+                    'success': True,
+                    'message': f'eSIM details resent to {user_email}',
+                    'email_sent': True,
+                    'resent_at': datetime.now().isoformat()
+                })
 
     except Exception as e:
         print(f"Error resending eSIM email: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'message': f'Internal server error: {str(e)}'}), 500
+
+def get_db_connection():
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        raise Exception("DATABASE_URL environment variable not set")
+    return psycopg2.connect(database_url)
 
 def handle_beta_esim_payment(session):
     """Handle successful beta eSIM payment"""
@@ -3648,18 +3706,52 @@ def handle_beta_esim_payment(session):
             with conn.cursor() as cur:
                 # Update beta tester status
                 cur.execute("""
-                    UPDATE beta_testers
+                    UPDATE beta_testers 
                     SET status = 'esim_ready', stripe_payment_intent_id = %s
                     WHERE user_id = %s AND status = 'payment_pending'
                 """, (session['payment_intent'], user_id))
 
-                # Add 1000MB of data to user's balance (use empty string for stripeid to avoid NOT NULL constraint)
+                # Add 1000MB of data to user's balance
                 cur.execute("""
-                    INSERT INTO purchases (stripeid, stripeproductid, priceid, totalamount, userid, datecreated, firebaseuid)
-                    VALUES ('', 'beta_esim_data', 'price_beta_data', 100, %s, CURRENT_TIMESTAMP, %s)
-                """, (user_id, firebase_uid))
+                    INSERT INTO purchases (user_id, stripe_payment_intent_id, amount_cents, data_amount_mb, product_id, status)
+                    VALUES (%s, %s, 100, 1000, 'beta_esim_data', 'completed')
+                """, (user_id, session['payment_intent']))
+
+                # Create OXIO plan for 10 days
+                from oxio_service import OxioService
+                oxio = OxioService()
+
+                # Get user email for OXIO plan
+                cur.execute("SELECT email FROM users WHERE id = %s", (user_id,))
+                user_email = cur.fetchone()[0]
+
+                # Create 10-day plan with 1000MB (1024000 KB)
+                plan_result = oxio.create_custom_plan(
+                    user_email=user_email,
+                    plan_name="OXIO_10day_demo_plan",
+                    duration_seconds=10 * 24 * 60 * 60,  # 10 days in seconds
+                    data_limit_kb=1024000  # 1000MB in KB
+                )
+
+                if plan_result.get('success'):
+                    print(f"Created OXIO plan for user {user_id}: {plan_result}")
+
+                    # Send eSIM email
+                    from email_service import EmailService
+                    email_service = EmailService()
+
+                    email_service.send_esim_ready_email(
+                        to_email=user_email,
+                        plan_details=plan_result
+                    )
+                else:
+                    print(f"Failed to create OXIO plan: {plan_result}")
 
                 conn.commit()
+                print(f"Beta eSIM payment processed for user {user_id}")
+
+    except Exception as e:
+        print(f"Error handling beta eSIM payment: {str(e)}")
         import traceback
         traceback.print_exc()
 
@@ -3737,8 +3829,8 @@ def stripe_webhook():
                         user_id = user_data[0]
                         user_email = user_data[1]
                         # Make sure we get the OXIO user ID (column 7) not the ETH address (column 8)
-                        oxio_user_id = user_data[6] if len(user_data) > 6 else None # Corrected index for oxio_user_id
-                        eth_address = user_data[7] if len(user_data) > 7 else None # Corrected index for eth_address
+                        oxio_user_id = user_data[7] if len(user_data) > 7 else None
+                        eth_address = user_data[8] if len(user_data) > 8 else None
                         print(f"Stripe webhook debug: Retrieved user data - email: {user_email}, oxio_user_id: {oxio_user_id}, eth_address: {eth_address}")
 
                         print(f"Activating OXIO line for Stripe Basic Membership purchase by user {user_id}")
@@ -3808,11 +3900,11 @@ def stripe_webhook():
 
                                             # Insert activation record
                                             cur.execute("""
-                                                INSERT INTO oxio_activations
-                                                (user_id, firebase_uid, purchase_id, product_id, iccid,
+                                                INSERT INTO oxio_activations 
+                                                (user_id, firebase_uid, purchase_id, product_id, iccid, 
                                                  line_id, phone_number, activation_status, oxio_response)
                                                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                                            """, (user_id, firebase_uid, None, 'basic_membership', iccid,
+                                            """, (user_id, firebase_uid, None, 'basic_membership', iccid, 
                                                   line_id, phone_number, 'activated', json.dumps(oxio_result)))
 
                                             conn.commit()
@@ -3823,6 +3915,8 @@ def stripe_webhook():
                             print(f"Failed to activate OXIO line via Stripe: {oxio_result.get('message', 'Unknown error')}")
                     else:
                         print(f"User not found for Firebase UID: {firebase_uid}")
+                else:
+                    print(f"Missing customer_id or firebase_uid in session metadata")
 
             except Exception as stripe_oxio_err:
                 print(f"Error during Stripe OXIO line activation: {str(stripe_oxio_err)}")
@@ -3849,10 +3943,10 @@ def token_price_pings():
 
                     # Get recent pings with all fields
                     cur.execute("""
-                        SELECT id, token_price, request_time_ms, response_time_ms,
-                               roundtrip_ms, ping_destination, source, additional_data, created_at
-                        FROM token_price_pings
-                        ORDER BY created_at DESC
+                        SELECT id, token_price, request_time_ms, response_time_ms, 
+                               roundtrip_ms, ping_destination, source, additional_data, created_at 
+                        FROM token_price_pings 
+                        ORDER BY created_at DESC 
                         LIMIT 50
                     """)
                     rows = cur.fetchall()
@@ -3894,11 +3988,11 @@ def oxio_api_pings():
                 with conn.cursor() as cur:
                     # Get OXIO API pings specifically
                     cur.execute("""
-                        SELECT id, token_price, request_time_ms, response_time_ms,
-                               roundtrip_ms, ping_destination, source, additional_data, created_at
-                        FROM token_price_pings
+                        SELECT id, token_price, request_time_ms, response_time_ms, 
+                               roundtrip_ms, ping_destination, source, additional_data, created_at 
+                        FROM token_price_pings 
                         WHERE source = 'oxio_api'
-                        ORDER BY created_at DESC
+                        ORDER BY created_at DESC 
                         LIMIT 50
                     """)
                     rows = cur.fetchall()
@@ -3949,18 +4043,18 @@ def debug_recent_purchases():
                     if firebase_uid:
                         cur.execute("""
                             SELECT PurchaseID, StripeProductID, TotalAmount, DateCreated, UserID, FirebaseUID
-                            FROM purchases
+                            FROM purchases 
                             WHERE FirebaseUID = %s OR UserID = (
                                 SELECT id FROM users WHERE firebase_uid = %s
                             )
-                            ORDER BY DateCreated DESC
+                            ORDER BY DateCreated DESC 
                             LIMIT 10
                         """, (firebase_uid, firebase_uid))
                     else:
                         cur.execute("""
                             SELECT PurchaseID, StripeProductID, TotalAmount, DateCreated, UserID, FirebaseUID
-                            FROM purchases
-                            ORDER BY DateCreated DESC
+                            FROM purchases 
+                            ORDER BY DateCreated DESC 
                             LIMIT 10
                         """)
 
@@ -4000,9 +4094,9 @@ def debug_purchases_structure():
                 with conn.cursor() as cur:
                     # Check table structure
                     cur.execute("""
-                        SELECT column_name, data_type
-                        FROM information_schema.columns
-                        WHERE table_name = 'purchases'
+                        SELECT column_name, data_type 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'purchases' 
                         ORDER BY ordinal_position
                     """)
                     columns = cur.fetchall()
@@ -4010,15 +4104,16 @@ def debug_purchases_structure():
                     # Check actual data for this user
                     if firebase_uid:
                         cur.execute("""
-                            SELECT * FROM purchases
-                            WHERE FirebaseUID = %s
-                            ORDER BY DateCreated DESC
+                            SELECT * FROM purchases 
+                            WHERE FirebaseUID = %s 
+                            ORDER BY DateCreated DESC 
                             LIMIT 5
                         """, (firebase_uid,))
+                        recent_purchases = cur.fetchall()
                     else:
                         cur.execute("""
-                            SELECT * FROM purchases
-                            ORDER BY DateCreated DESC
+                            SELECT * FROM purchases 
+                            ORDER BY DateCreated DESC 
                             LIMIT 5
                         """)
                         recent_purchases = cur.fetchall()
@@ -4084,7 +4179,7 @@ def generate_welcome_message():
 
                             # Store the audio data and message
                             cur.execute("""
-                                INSERT INTO welcome_messages
+                                INSERT INTO welcome_messages 
                                 (user_id, firebase_uid, language, voice_id, audio_data, audio_url, created_at)
                                 VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                                 RETURNING id
@@ -4119,7 +4214,7 @@ def get_welcome_message_audio(message_id):
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                        SELECT audio_data FROM welcome_messages
+                        SELECT audio_data FROM welcome_messages 
                         WHERE id = %s
                     """, (message_id,))
 
@@ -4172,7 +4267,7 @@ def debug_user_creation_status(firebase_uid):
                     # Check user in database
                     cur.execute("""
                         SELECT id, email, display_name, stripe_customer_id, oxio_user_id, created_at
-                        FROM users
+                        FROM users 
                         WHERE firebase_uid = %s
                     """, (firebase_uid,))
                     user_data = cur.fetchone()
@@ -4283,8 +4378,8 @@ def db_test():
 
                     # Get list of tables
                     cur.execute("""
-                        SELECT table_name
-                        FROM information_schema.tables
+                        SELECT table_name 
+                        FROM information_schema.tables 
                         WHERE table_schema = 'public'
                     """)
                     tables = cur.fetchall()
@@ -4293,8 +4388,8 @@ def db_test():
                     # Check purchases table structure
                     if 'purchases' in results['tables']:
                         cur.execute("""
-                            SELECT column_name, data_type
-                            FROM information_schema.columns
+                            SELECT column_name, data_type 
+                            FROM information_schema.columns 
                             WHERE table_name = 'purchases'
                         """)
                         columns = cur.fetchall()
@@ -4351,16 +4446,16 @@ class UpdateEthAddress(Resource):
                         if firebase_uid:
                             # Update by Firebase UID
                             cur.execute("""
-                                UPDATE users
-                                SET eth_address = %s
+                                UPDATE users 
+                                SET eth_address = %s 
                                 WHERE firebase_uid = %s
                                 RETURNING id
                             """, (eth_address, firebase_uid))
                         else:
                             # Fallback to user ID 1 for demo
                             cur.execute("""
-                                UPDATE users
-                                SET eth_address = %s
+                                UPDATE users 
+                                SET eth_address = %s 
                                 WHERE id = %s
                                 RETURNING id
                             """, (eth_address, 1))
@@ -4390,7 +4485,7 @@ def get_user_stripe_id(user_id):
                 with conn.cursor() as cur:
                     cur.execute("""
                         SELECT id, email, firebase_uid, stripe_customer_id, display_name
-                        FROM users
+                        FROM users 
                         WHERE id = %s
                     """, (user_id,))
 
@@ -4479,7 +4574,7 @@ def send_invitation():
 
                     # Check if there's already a pending invitation for this email
                     cur.execute("""
-                        SELECT id, invitation_status FROM invites
+                        SELECT id, invitation_status FROM invites 
                         WHERE email = %s AND invitation_status IN ('invite_sent', 're_invited')
                         ORDER BY created_at DESC LIMIT 1
                     """, (email,))
@@ -4489,8 +4584,8 @@ def send_invitation():
                     if existing_invite:
                         # Update existing invitation as re-invited
                         cur.execute("""
-                            UPDATE invites
-                            SET invitation_status = 're_invited',
+                            UPDATE invites 
+                            SET invitation_status = 're_invited', 
                                 updated_at = CURRENT_TIMESTAMP,
                                 expires_at = CURRENT_TIMESTAMP + INTERVAL '7 days',
                                 invitation_token = %s,
@@ -4503,8 +4598,8 @@ def send_invitation():
                     else:
                         # Create new invitation
                         cur.execute("""
-                            INSERT INTO invites
-                            (user_id, email, invitation_token, invited_by_user_id, invited_by_firebase_uid,
+                            INSERT INTO invites 
+                            (user_id, email, invitation_token, invited_by_user_id, invited_by_firebase_uid, 
                              personal_message, is_demo_user, invitation_status)
                             VALUES (%s, %s, %s, %s, %s, %s, %s, 'invite_sent')
                             RETURNING id
@@ -4527,9 +4622,9 @@ def send_invitation():
                             demo_account = web3.eth.account.create()
 
                             cur.execute("""
-                                INSERT INTO users
-                                (email, display_name, eth_address, firebase_uid)
-                                VALUES (%s, %s, %s, %s)
+                                INSERT INTO users 
+                                (email, display_name, eth_address, firebase_uid) 
+                                VALUES (%s, %s, %s, %s) 
                                 RETURNING id
                             """, (email, display_name, demo_account.address, f"demo_{invite_id}_{secrets.token_hex(8)}"))
 
@@ -4537,8 +4632,8 @@ def send_invitation():
 
                             # Update invitation with user ID and mark as accepted
                             cur.execute("""
-                                UPDATE invites
-                                SET user_id = %s,
+                                UPDATE invites 
+                                SET user_id = %s, 
                                     invitation_status = 'invite_accepted',
                                     accepted_at = CURRENT_TIMESTAMP,
                                     updated_at = CURRENT_TIMESTAMP
@@ -4587,10 +4682,10 @@ def get_invites():
                             SELECT id, email, invitation_status, personal_message, is_demo_user,
                                    created_at, updated_at, expires_at, accepted_at, rejected_at,
                                    invited_by_firebase_uid
-                            FROM invites
-                            WHERE invited_by_firebase_uid = %s
+                            FROM invites 
+                            WHERE invited_by_firebase_uid = %s 
                             AND invitation_status != 'invite_cancelled'
-                            ORDER BY created_at DESC
+                            ORDER BY created_at DESC 
                             LIMIT %s
                         """, (firebase_uid, limit))
                     else:
@@ -4599,9 +4694,9 @@ def get_invites():
                             SELECT id, email, invitation_status, personal_message, is_demo_user,
                                    created_at, updated_at, expires_at, accepted_at, rejected_at,
                                    invited_by_firebase_uid
-                            FROM invites
+                            FROM invites 
                             WHERE invitation_status != 'invite_cancelled'
-                            ORDER BY created_at DESC
+                            ORDER BY created_at DESC 
                             LIMIT %s
                         """, (limit,))
 
@@ -4647,13 +4742,13 @@ def cancel_invitation(invite_id):
                     # Check if the user has permission to cancel this invitation
                     if firebase_uid:
                         cur.execute("""
-                            SELECT id FROM invites
+                            SELECT id FROM invites 
                             WHERE id = %s AND invited_by_firebase_uid = %s
                             AND invitation_status IN ('invite_sent', 're_invited')
                         """, (invite_id, firebase_uid))
                     else:
                         cur.execute("""
-                            SELECT id FROM invites
+                            SELECT id FROM invites 
                             WHERE id = %s AND invitation_status IN ('invite_sent', 're_invited')
                         """, (invite_id,))
 
@@ -4662,7 +4757,7 @@ def cancel_invitation(invite_id):
 
                     # Cancel the invitation
                     cur.execute("""
-                        UPDATE invites
+                        UPDATE invites 
                         SET invitation_status = 'invite_cancelled',
                             cancelled_at = CURRENT_TIMESTAMP,
                             updated_at = CURRENT_TIMESTAMP
@@ -4708,9 +4803,9 @@ def create_subscription_record():
 
                     # Create subscription record
                     cur.execute("""
-                        INSERT INTO subscriptions
-                        (user_id, subscription_type, stripe_subscription_id, start_date, end_date, status, created_at, updated_at)
-                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        INSERT INTO subscriptions 
+                        (user_id, subscription_type, stripe_subscription_id, start_date, end_date, status, created_at, updated_at) 
+                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
                         RETURNING subscription_id, end_date
                     """, (user_id, subscription_type, stripe_subscription_id))
 
@@ -4775,13 +4870,13 @@ def fix_user_oxio_data():
                     if firebase_uid:
                         cur.execute("""
                             SELECT id, email, display_name, oxio_user_id, oxio_group_id
-                            FROM users
+                            FROM users 
                             WHERE firebase_uid = %s
                         """, (firebase_uid,))
                     else:
                         cur.execute("""
                             SELECT id, email, display_name, oxio_user_id, oxio_group_id
-                            FROM users
+                            FROM users 
                             WHERE email = %s
                         """, (email,))
 
@@ -4847,8 +4942,8 @@ def create_oxio_user_endpoint():
                 with conn.cursor() as cur:
                     # Get user details
                     cur.execute("""
-                        SELECT id, email, display_name, oxio_user_id
-                        FROM users
+                        SELECT id, email, display_name, oxio_user_id 
+                        FROM users 
                         WHERE firebase_uid = %s
                     """, (firebase_uid,))
                     user_result = cur.fetchone()
@@ -4898,7 +4993,7 @@ def create_oxio_user_endpoint():
                             })
                         else:
                             # Check if user already exists (error code 6805)
-                            if (oxio_result.get('status_code') == 400 and
+                            if (oxio_result.get('status_code') == 400 and 
                                 oxio_result.get('data', {}).get('code') == 6805):
                                 print(f"OXIO user already exists for {email}, attempting to find existing user ID")
 
@@ -4964,10 +5059,10 @@ def get_oxio_activation_status():
                 with conn.cursor() as cur:
                     # Get OXIO activation records for this user
                     cur.execute("""
-                        SELECT id, product_id, iccid, line_id, phone_number,
+                        SELECT id, product_id, iccid, line_id, phone_number, 
                                activation_status, oxio_response, created_at
-                        FROM oxio_activations
-                        WHERE user_id = %s
+                        FROM oxio_activations 
+                        WHERE user_id = %s 
                         ORDER BY created_at DESC
                     """, (user_id,))
 
@@ -5015,18 +5110,16 @@ def get_user_notifications():
         if not firebase_uid:
             return jsonify({'error': 'Firebase UID is required'}), 400
 
-        print(f"Getting notifications for Firebase UID: {firebase_uid}")
-
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     # Get notifications for this user
                     cur.execute("""
-                        SELECT id, title, body, notification_type, delivered, read_status,
+                        SELECT id, title, body, notification_type, delivered, read_status, 
                                fcm_response, created_at, delivered_at
-                        FROM notifications
-                        WHERE firebase_uid = %s
-                        ORDER BY created_at DESC
+                        FROM notifications 
+                        WHERE firebase_uid = %s 
+                        ORDER BY created_at DESC 
                         LIMIT %s
                     """, (firebase_uid, limit))
 
@@ -5046,31 +5139,11 @@ def get_user_notifications():
                             'delivered_at': notif[8].isoformat() if notif[8] else None
                         })
 
-                    print(f"Found {len(notification_list)} notifications for {firebase_uid}")
-
-                    # Also check if there's an FCM token registered for this user
-                    cur.execute("""
-                        SELECT fcm_token, platform, updated_at
-                        FROM fcm_tokens
-                        WHERE firebase_uid = %s
-                        ORDER BY updated_at DESC
-                    """, (firebase_uid,))
-
-                    fcm_tokens = cur.fetchall()
-                    fcm_info = []
-                    for token in fcm_tokens:
-                        fcm_info.append({
-                            'token_preview': token[0][:20] + '...' if token[0] else None,
-                            'platform': token[1],
-                            'updated_at': token[2].isoformat() if token[2] else None
-                        })
-
                     return jsonify({
                         'success': True,
                         'notifications': notification_list,
                         'count': len(notification_list),
-                        'firebase_uid': firebase_uid,
-                        'fcm_tokens': fcm_info
+                        'firebase_uid': firebase_uid
                     })
 
         return jsonify({'success': False, 'message': 'Database connection error'}), 500
@@ -5091,14 +5164,14 @@ def mark_notification_read(notification_id):
                     # Update notification as read
                     if firebase_uid:
                         cur.execute("""
-                            UPDATE notifications
+                            UPDATE notifications 
                             SET read_status = TRUE
                             WHERE id = %s AND firebase_uid = %s
                             RETURNING title
                         """, (notification_id, firebase_uid))
                     else:
                         cur.execute("""
-                            UPDATE notifications
+                            UPDATE notifications 
                             SET read_status = TRUE
                             WHERE id = %s
                             RETURNING title
@@ -5137,9 +5210,9 @@ def update_personal_message():
                 with conn.cursor() as cur:
                     # Check if an invite already exists for this Firebase UID
                     cur.execute("""
-                        SELECT id, email FROM invites
+                        SELECT id, email FROM invites 
                         WHERE invited_by_firebase_uid = %s OR email = %s
-                        ORDER BY created_at DESC
+                        ORDER BY created_at DESC 
                         LIMIT 1
                     """, (firebase_uid, email))
 
@@ -5148,8 +5221,8 @@ def update_personal_message():
                     if existing_invite:
                         # Update existing invite
                         cur.execute("""
-                            UPDATE invites
-                            SET personal_message = %s,
+                            UPDATE invites 
+                            SET personal_message = %s, 
                                 updated_at = CURRENT_TIMESTAMP
                             WHERE id = %s
                             RETURNING id
@@ -5167,8 +5240,8 @@ def update_personal_message():
                         user_id = user_result[0] if user_result else None
 
                         cur.execute("""
-                            INSERT INTO invites
-                            (user_id, email, invitation_token, invited_by_firebase_uid,
+                            INSERT INTO invites 
+                            (user_id, email, invitation_token, invited_by_firebase_uid, 
                              personal_message, invitation_status)
                             VALUES (%s, %s, %s, %s, %s, 'draft')
                             RETURNING id
@@ -5317,7 +5390,7 @@ if __name__ == '__main__':
     print(f"Starting server on http://0.0.0.0:{port}")
     print(f"OXIO API endpoints should be available at:")
     print(f"  - GET  /api/oxio/test-connection")
-    print(f"  - GET  /api/oxio/test-plans")
+    print(f"  - GET  /api/oxio/test-plans") 
     print(f"  - POST /api/oxio/activate-line")
     print(f"  - POST /api/oxio/test-sample-activation")
 
