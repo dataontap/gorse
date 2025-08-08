@@ -3798,7 +3798,7 @@ def debug_fcm_notifications(firebase_uid):
         }), 500
 
                 # Create OXIO plan for 10 days
-                from oxio_service import OxioService
+from oxio_service import OxioService
                 oxio = OxioService()
 
                 # Get user email for OXIO plan
