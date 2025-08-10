@@ -136,6 +136,14 @@ document.addEventListener('DOMContentLoaded', function() {
     firebase.auth().onAuthStateChanged(async function(user) {
         if (user) {
             console.log('Firebase user detected:', user.email);
+            
+            // Check if this is a different user than what's cached
+            const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (cachedUser && cachedUser.uid !== user.uid) {
+                console.log('Different user detected, clearing cached data');
+                localStorage.clear();
+            }
+            
             // Only update UI with basic Firebase data, don't make API calls automatically
             updateAuthUI(user, null);
         } else {
@@ -549,6 +557,14 @@ document.addEventListener('DOMContentLoaded', function() {
     window.signUp = async function(email, password, displayName, imei) {
         try {
             console.log('Starting Firebase signup process...');
+
+            // First sign out any existing user to prevent caching issues
+            if (firebase.auth().currentUser) {
+                console.log('Signing out existing user before signup');
+                await firebase.auth().signOut();
+                // Clear local storage to prevent cached user data
+                localStorage.clear();
+            }
 
             // Create user with Firebase Auth
             const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);

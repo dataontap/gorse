@@ -349,8 +349,15 @@
             // Handle form submission
             let isSubmitting = false;
 
-            signupForm.addEventListener('submit', function(e) {
+            signupForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+
+                // Clear any cached user data before signup
+                localStorage.clear();
+
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+                const imei = imeiInput.value.trim();
 
                 // Prevent double submission
                 if (isSubmitting) {
@@ -373,10 +380,6 @@
                     isSubmitting = true;
                     submitButton.disabled = true;
                     submitButton.textContent = 'Creating Account...';
-
-                    const email = emailInput.value.trim();
-                    const password = passwordInput.value;
-                    const imei = imeiInput.value.trim();
 
                     // Clear any previous error messages
                     const errorDiv = document.getElementById('auth-error');
