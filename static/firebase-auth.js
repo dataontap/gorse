@@ -136,14 +136,14 @@ document.addEventListener('DOMContentLoaded', function() {
     firebase.auth().onAuthStateChanged(async function(user) {
         if (user) {
             console.log('Firebase user detected:', user.email);
-            
+
             // Check if this is a different user than what's cached
             const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
             if (cachedUser && cachedUser.uid !== user.uid) {
                 console.log('Different user detected, clearing cached data');
                 localStorage.clear();
             }
-            
+
             // Only update UI with basic Firebase data, don't make API calls automatically
             updateAuthUI(user, null);
         } else {
@@ -458,6 +458,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 // FCM token will be handled after user data is loaded
                 registerFCMToken();
 
+                // Force reload of profile page if we're on it
+                if (window.location.pathname === '/profile') {
+                    setTimeout(() => {
+                        if (typeof loadFirebaseUserData === 'function') {
+                            loadFirebaseUserData();
+                        }
+                    }, 1000);
+                }
+
                 return userCredential;
             })
             .catch((error) => {
@@ -482,6 +491,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // FCM token will be handled after user data is loaded
                 registerFCMToken();
+
+                // Force reload of profile page if we're on it
+                if (window.location.pathname === '/profile') {
+                    setTimeout(() => {
+                        if (typeof loadFirebaseUserData === 'function') {
+                            loadFirebaseUserData();
+                        }
+                    }, 1000);
+                }
 
                 return result;
             })
@@ -862,7 +880,7 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log('FCM token registration already in progress, skipping duplicate call');
       return;
     }
-    
+
     window.fcmRegistrationInProgress = true;
 
     // Request permission for notifications

@@ -282,10 +282,36 @@
 
         function loadFirebaseUserData() {
             try {
-                // Get current user data from localStorage (set by firebase-auth.js)
+                console.log('Loading Firebase user data...');
+                
+                // First check if there's a Firebase authenticated user
+                if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                    const firebaseUser = firebase.auth().currentUser;
+                    console.log('Found Firebase authenticated user:', firebaseUser.email);
+                    
+                    // Update email
+                    const emailElement = document.getElementById('profileUserEmail');
+                    if (emailElement) {
+                        emailElement.textContent = firebaseUser.email;
+                    }
+
+                    // Update display name
+                    const nameElement = document.getElementById('profileUserName');
+                    if (nameElement) {
+                        const displayName = firebaseUser.displayName || firebaseUser.email.split('@')[0];
+                        nameElement.innerHTML = `${displayName} <span class="founding-shield">Member</span>`;
+                    }
+                    
+                    // Load additional user data from our API
+                    loadUserDataFromAPI(firebaseUser.uid);
+                    return;
+                }
+                
+                // Fallback: Get current user data from localStorage (set by firebase-auth.js)
                 const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
 
-                if (currentUserData) {
+                if (currentUserData && currentUserData.uid && !currentUserData.uid.includes('demo')) {
+                    console.log('Found current user data:', currentUserData);
                     // Update email
                     const emailElement = document.getElementById('profileUserEmail');
                     if (emailElement && currentUserData.email) {
@@ -295,70 +321,76 @@
                     // Update display name
                     const nameElement = document.getElementById('profileUserName');
                     if (nameElement) {
-                        const displayName = currentUserData.displayName || 'User';
+                        const displayName = currentUserData.displayName || currentUserData.email.split('@')[0];
                         const founderBadge = currentUserData.founderStatus === 'Y' ? 'Founding Member' : 'Member';
                         nameElement.innerHTML = `${displayName} <span class="founding-shield">${founderBadge}</span>`;
                     }
                 } else {
-                    // Fallback to old method if currentUser data not available
-                    const userEmail = localStorage.getItem('userEmail');
-                    const userId = localStorage.getItem('userId');
-
-                    if (userEmail) {
-                        const emailElement = document.getElementById('profileUserEmail');
-                        if (emailElement) {
-                            emailElement.textContent = userEmail;
-                        }
-
-                        // Extract name from email as fallback
-                        const nameFromEmail = userEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                        const nameElement = document.getElementById('profileUserName');
-                        if (nameElement) {
-                            nameElement.innerHTML = `${nameFromEmail} <span class="founding-shield">Member</span>`;
-                        }
-                    } else {
-                        // Show demo data if nothing is available
-                        const emailElement = document.getElementById('profileUserEmail');
-                        const nameElement = document.getElementById('profileUserName');
-
-                        if (emailElement) {
-                            emailElement.textContent = 'demo@example.com';
-                        }
-                        if (nameElement) {
-                            nameElement.innerHTML = `Demo User <span class="founding-shield">Demo Member</span>`;
-                        }
-                    }
+                    console.log('No authenticated user found, redirecting to login');
+                    // Redirect to login if no user is found
+                    window.location.href = '/login';
                 }
             } catch (error) {
                 console.error('Error loading Firebase user data:', error);
-                // Fallback to demo data on error
-                const emailElement = document.getElementById('profileUserEmail');
-                const nameElement = document.getElementById('profileUserName');
-
-                if (emailElement) {
-                    emailElement.textContent = 'demo@example.com';
-                }
-                if (nameElement) {
-                    nameElement.innerHTML = `Demo User <span class="founding-shield">Demo Member</span>`;
-                }
+                // Redirect to login on error
+                window.location.href = '/login';
             }
+        }
+        
+        function loadUserDataFromAPI(firebaseUid) {
+            if (!firebaseUid) return;
+            
+            fetch(`/api/auth/current-user?firebaseUid=${firebaseUid}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('Loaded user data from API:', data);
+                        
+                        // Update display name with founder status
+                        const nameElement = document.getElementById('profileUserName');
+                        if (nameElement) {
+                            const displayName = data.displayName || data.email.split('@')[0];
+                            const founderBadge = data.founderStatus === 'Y' ? 'Founding Member' : 'Member';
+                            nameElement.innerHTML = `${displayName} <span class="founding-shield">${founderBadge}</span>`;
+                        }
+                        
+                        // Store updated user data
+                        const updatedUserData = {
+                            uid: firebaseUid,
+                            email: data.email,
+                            displayName: data.displayName,
+                            userId: data.userId,
+                            founderStatus: data.founderStatus,
+                            stripeCustomerId: data.stripeCustomerId
+                        };
+                        localStorage.setItem('currentUser', JSON.stringify(updatedUserData));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading user data from API:', error);
+                });
         }
 
         function loadOxioData() {
             try {
-                // Get current user data from localStorage (set by firebase-auth.js)
-                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-
                 let firebaseUid = null;
-
-                if (currentUserData) {
-                    firebaseUid = currentUserData.uid;
+                
+                // First check Firebase auth state
+                if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                    firebaseUid = firebase.auth().currentUser.uid;
+                    console.log('Using Firebase UID from auth state:', firebaseUid);
                 } else {
-                    // Fallback to old localStorage keys
-                    firebaseUid = localStorage.getItem('firebaseUid') || localStorage.getItem('userId');
+                    // Get current user data from localStorage (set by firebase-auth.js)
+                    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+                    if (currentUserData && currentUserData.uid && !currentUserData.uid.includes('demo')) {
+                        firebaseUid = currentUserData.uid;
+                        console.log('Using Firebase UID from localStorage:', firebaseUid);
+                    }
                 }
 
                 if (!firebaseUid) {
+                    console.log('No authenticated user found for OXIO data');
                     displayNoOxioData();
                     return;
                 }
