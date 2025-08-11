@@ -275,9 +275,12 @@
     <script>
         // Load Firebase user data from localStorage
         document.addEventListener('DOMContentLoaded', function() {
-            loadFirebaseUserData();
-            loadOxioData();
-            loadSubscriptionData();
+            console.log('Profile page DOM loaded, initializing Firebase auth...');
+            
+            // Small delay to ensure Firebase scripts are fully loaded
+            setTimeout(() => {
+                loadFirebaseUserData();
+            }, 100);
         });
 
         function loadFirebaseUserData() {
@@ -291,36 +294,46 @@
                     return;
                 }
                 
-                // Check if there's a Firebase authenticated user
-                const firebaseUser = firebase.auth().currentUser;
-                if (firebaseUser) {
-                    console.log('Found Firebase authenticated user:', firebaseUser.email);
-                    
-                    // Update email
-                    const emailElement = document.getElementById('profileUserEmail');
-                    if (emailElement) {
-                        emailElement.textContent = firebaseUser.email;
-                    }
+                // Set up auth state listener if not already set
+                firebase.auth().onAuthStateChanged(function(firebaseUser) {
+                    if (firebaseUser) {
+                        console.log('Found Firebase authenticated user:', firebaseUser.email);
+                        console.log('Firebase UID:', firebaseUser.uid);
+                        
+                        // Update email
+                        const emailElement = document.getElementById('profileUserEmail');
+                        if (emailElement) {
+                            emailElement.textContent = firebaseUser.email;
+                        }
 
-                    // Update display name
-                    const nameElement = document.getElementById('profileUserName');
-                    if (nameElement) {
-                        const displayName = firebaseUser.displayName || firebaseUser.email.split('@')[0];
-                        nameElement.innerHTML = `${displayName} <span class="founding-shield">Member</span>`;
+                        // Update display name
+                        const nameElement = document.getElementById('profileUserName');
+                        if (nameElement) {
+                            const displayName = firebaseUser.displayName || firebaseUser.email.split('@')[0];
+                            nameElement.innerHTML = `${displayName} <span class="founding-shield">Member</span>`;
+                        }
+                        
+                        // Load additional user data from our API
+                        loadUserDataFromAPI(firebaseUser.uid);
+                        
+                        // Load OXIO data with Firebase UID
+                        loadOxioDataWithUID(firebaseUser.uid);
+                        
+                        // Load subscription data with Firebase UID
+                        loadSubscriptionDataWithUID(firebaseUser.uid);
+                    } else {
+                        // No authenticated user found, redirect to login
+                        console.log('No authenticated user found, redirecting to login');
+                        window.location.href = '/login';
                     }
-                    
-                    // Load additional user data from our API
-                    loadUserDataFromAPI(firebaseUser.uid);
-                    return;
-                }
+                });
                 
-                // No authenticated user found, redirect to login
-                console.log('No authenticated user found, redirecting to login');
-                window.location.href = '/login';
             } catch (error) {
                 console.error('Error loading Firebase user data:', error);
-                // Redirect to login on error
-                window.location.href = '/login';
+                // Try to redirect to login on error
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 1000);
             }
         }
         
@@ -358,17 +371,22 @@
         }
 
         function loadOxioData() {
+            // This function is kept for backward compatibility but will use the new one
+            loadOxioDataWithUID(null);
+        }
+
+        function loadOxioDataWithUID(firebaseUid) {
             try {
-                let firebaseUid = null;
+                console.log('Loading OXIO data with Firebase UID:', firebaseUid);
                 
-                // Check Firebase auth state only
-                if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                // If no UID provided, try to get it from auth state
+                if (!firebaseUid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
                     firebaseUid = firebase.auth().currentUser.uid;
-                    console.log('Using Firebase UID from auth state:', firebaseUid);
+                    console.log('Retrieved Firebase UID from auth state:', firebaseUid);
                 }
 
                 if (!firebaseUid) {
-                    console.log('No authenticated user found for OXIO data');
+                    console.log('No Firebase UID available for OXIO data');
                     displayNoOxioData();
                     return;
                 }
@@ -381,6 +399,7 @@
                         return response.json();
                     })
                     .then(data => {
+                        console.log('OXIO data loaded successfully:', data);
                         displayOxioData(data);
                     })
                     .catch(error => {
@@ -388,7 +407,7 @@
                         displayOxioError(error.message);
                     });
             } catch (error) {
-                console.error('Error in loadOxioData:', error);
+                console.error('Error in loadOxioDataWithUID:', error);
                 displayOxioError(error.message);
             }
         }
@@ -744,8 +763,15 @@
                 </div>
             `;
 
-            // Reload OXIO data
-            loadOxioData();
+            // Get current Firebase UID and reload OXIO data
+            if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                const firebaseUid = firebase.auth().currentUser.uid;
+                console.log('Refreshing OXIO data for Firebase UID:', firebaseUid);
+                loadOxioDataWithUID(firebaseUid);
+            } else {
+                console.log('No Firebase user available for refresh');
+                loadOxioData();
+            }
         }
 
         function copyToClipboard(text, label) {
@@ -1181,23 +1207,25 @@
         }
 
         function loadSubscriptionData() {
+            // This function is kept for backward compatibility but will use the new one
+            loadSubscriptionDataWithUID(null);
+        }
+
+        function loadSubscriptionDataWithUID(firebaseUid) {
             try {
-                // Wait for Firebase to be available
-                if (typeof firebase === 'undefined' || !firebase.auth) {
-                    console.log('Firebase not available for subscription data, waiting...');
-                    setTimeout(loadSubscriptionData, 500);
-                    return;
+                console.log('Loading subscription data with Firebase UID:', firebaseUid);
+                
+                // If no UID provided, try to get it from auth state
+                if (!firebaseUid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                    firebaseUid = firebase.auth().currentUser.uid;
+                    console.log('Retrieved Firebase UID from auth state:', firebaseUid);
                 }
 
-                // Get Firebase UID from auth state
-                const firebaseUser = firebase.auth().currentUser;
-                if (!firebaseUser) {
-                    console.log('No authenticated user for subscription data');
+                if (!firebaseUid) {
+                    console.log('No Firebase UID available for subscription data');
                     displayNoSubscription();
                     return;
                 }
-
-                const firebaseUid = firebaseUser.uid;
 
                 // Also try to get userId from localStorage as fallback
                 const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
@@ -1218,6 +1246,7 @@
                         return response.json();
                     })
                     .then(data => {
+                        console.log('Subscription data loaded successfully:', data);
                         displaySubscriptionData(data);
                     })
                     .catch(error => {
@@ -1225,7 +1254,7 @@
                         displayNoSubscription();
                     });
             } catch (error) {
-                console.error('Error in loadSubscriptionData:', error);
+                console.error('Error in loadSubscriptionDataWithUID:', error);
                 displayNoSubscription();
             }
         }
