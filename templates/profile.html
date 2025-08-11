@@ -169,6 +169,44 @@
                             <span class="user-name" id="profileUserName">John Doe <span class="founding-shield">Founding Member</span></span>
                             <span class="user-email" id="profileUserEmail">john@example.com</span>
                         </div>
+                        <div class="user-ids mt-3">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Firebase UID:</strong><br>
+                                        <span class="text-break font-monospace" id="firebaseUID">Loading...</span>
+                                        <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyFirebaseUID()" title="Copy Firebase UID"><i class="fas fa-copy"></i></button>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>DOT User ID:</strong><br>
+                                        <span class="text-break" id="dotUserID">Loading...</span>
+                                        <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyDotUserID()" title="Copy DOT User ID"><i class="fas fa-copy"></i></button>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>OXIO User ID:</strong><br>
+                                        <span class="text-break font-monospace" id="oxioUserID">Loading...</span>
+                                        <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyOxioUserID()" title="Copy OXIO User ID"><i class="fas fa-copy"></i></button>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>OXIO Group ID:</strong><br>
+                                        <span class="text-break font-monospace" id="oxioGroupID">Loading...</span>
+                                        <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyOxioGroupID()" title="Copy OXIO Group ID"><i class="fas fa-copy"></i></button>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <p><strong>SIM Card Number (ICCID):</strong><br>
+                                        <span class="text-break font-monospace bg-light p-2 rounded d-inline-block" id="simCardNumber">Loading...</span>
+                                        <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySimCardNumber()" title="Copy SIM Card Number"><i class="fas fa-copy"></i></button>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -294,39 +332,68 @@
                     return;
                 }
                 
-                // Set up auth state listener if not already set
-                firebase.auth().onAuthStateChanged(function(firebaseUser) {
-                    if (firebaseUser) {
-                        console.log('Found Firebase authenticated user:', firebaseUser.email);
-                        console.log('Firebase UID:', firebaseUser.uid);
-                        
-                        // Update email
-                        const emailElement = document.getElementById('profileUserEmail');
-                        if (emailElement) {
-                            emailElement.textContent = firebaseUser.email;
-                        }
-
-                        // Update display name
-                        const nameElement = document.getElementById('profileUserName');
-                        if (nameElement) {
-                            const displayName = firebaseUser.displayName || firebaseUser.email.split('@')[0];
-                            nameElement.innerHTML = `${displayName} <span class="founding-shield">Member</span>`;
-                        }
-                        
-                        // Load additional user data from our API
-                        loadUserDataFromAPI(firebaseUser.uid);
-                        
-                        // Load OXIO data with Firebase UID
-                        loadOxioDataWithUID(firebaseUser.uid);
-                        
-                        // Load subscription data with Firebase UID
-                        loadSubscriptionDataWithUID(firebaseUser.uid);
-                    } else {
-                        // No authenticated user found, redirect to login
-                        console.log('No authenticated user found, redirecting to login');
-                        window.location.href = '/login';
+                // Check current auth state immediately
+                const currentUser = firebase.auth().currentUser;
+                if (currentUser) {
+                    console.log('Found current Firebase user:', currentUser.email);
+                    console.log('Firebase UID:', currentUser.uid);
+                    
+                    // Update email
+                    const emailElement = document.getElementById('profileUserEmail');
+                    if (emailElement) {
+                        emailElement.textContent = currentUser.email;
                     }
-                });
+
+                    // Update display name
+                    const nameElement = document.getElementById('profileUserName');
+                    if (nameElement) {
+                        const displayName = currentUser.displayName || currentUser.email.split('@')[0];
+                        nameElement.innerHTML = `${displayName} <span class="founding-shield">Member</span>`;
+                    }
+                    
+                    // Load additional user data from our API
+                    loadUserDataFromAPI(currentUser.uid);
+                    
+                    // Load OXIO data with Firebase UID
+                    loadOxioDataWithUID(currentUser.uid);
+                    
+                    // Load subscription data with Firebase UID
+                    loadSubscriptionDataWithUID(currentUser.uid);
+                } else {
+                    // Set up auth state listener for future changes
+                    firebase.auth().onAuthStateChanged(function(firebaseUser) {
+                        if (firebaseUser) {
+                            console.log('Auth state changed - Firebase user:', firebaseUser.email);
+                            console.log('Firebase UID:', firebaseUser.uid);
+                            
+                            // Update email
+                            const emailElement = document.getElementById('profileUserEmail');
+                            if (emailElement) {
+                                emailElement.textContent = firebaseUser.email;
+                            }
+
+                            // Update display name
+                            const nameElement = document.getElementById('profileUserName');
+                            if (nameElement) {
+                                const displayName = firebaseUser.displayName || firebaseUser.email.split('@')[0];
+                                nameElement.innerHTML = `${displayName} <span class="founding-shield">Member</span>`;
+                            }
+                            
+                            // Load additional user data from our API
+                            loadUserDataFromAPI(firebaseUser.uid);
+                            
+                            // Load OXIO data with Firebase UID
+                            loadOxioDataWithUID(firebaseUser.uid);
+                            
+                            // Load subscription data with Firebase UID
+                            loadSubscriptionDataWithUID(firebaseUser.uid);
+                        } else {
+                            // No authenticated user found, redirect to login
+                            console.log('No authenticated user found, redirecting to login');
+                            window.location.href = '/login';
+                        }
+                    });
+                }
                 
             } catch (error) {
                 console.error('Error loading Firebase user data:', error);
@@ -339,6 +406,12 @@
         
         function loadUserDataFromAPI(firebaseUid) {
             if (!firebaseUid) return;
+            
+            // Update Firebase UID display immediately
+            const firebaseUIDElement = document.getElementById('firebaseUID');
+            if (firebaseUIDElement) {
+                firebaseUIDElement.textContent = firebaseUid;
+            }
             
             fetch(`/api/auth/current-user?firebaseUid=${firebaseUid}`)
                 .then(response => response.json())
@@ -354,19 +427,54 @@
                             nameElement.innerHTML = `${displayName} <span class="founding-shield">${founderBadge}</span>`;
                         }
                         
+                        // Update DOT User ID
+                        const dotUserIDElement = document.getElementById('dotUserID');
+                        if (dotUserIDElement) {
+                            dotUserIDElement.textContent = data.userId || 'Not available';
+                        }
+                        
+                        // Update OXIO User ID
+                        const oxioUserIDElement = document.getElementById('oxioUserID');
+                        if (oxioUserIDElement) {
+                            oxioUserIDElement.textContent = data.oxioUserId || 'Not assigned';
+                        }
+                        
+                        // Update OXIO Group ID
+                        const oxioGroupIDElement = document.getElementById('oxioGroupID');
+                        if (oxioGroupIDElement) {
+                            oxioGroupIDElement.textContent = data.oxioGroupId || 'Not assigned';
+                        }
+                        
                         // Store updated user data (without Firebase UID)
                         const updatedUserData = {
                             email: data.email,
                             displayName: data.displayName,
                             userId: data.userId,
                             founderStatus: data.founderStatus,
-                            stripeCustomerId: data.stripeCustomerId
+                            stripeCustomerId: data.stripeCustomerId,
+                            oxioUserId: data.oxioUserId,
+                            oxioGroupId: data.oxioGroupId
                         };
                         localStorage.setItem('currentUser', JSON.stringify(updatedUserData));
                     }
                 })
                 .catch(error => {
                     console.error('Error loading user data from API:', error);
+                    // Update fields to show error state
+                    const dotUserIDElement = document.getElementById('dotUserID');
+                    if (dotUserIDElement) {
+                        dotUserIDElement.textContent = 'Error loading';
+                    }
+                    
+                    const oxioUserIDElement = document.getElementById('oxioUserID');
+                    if (oxioUserIDElement) {
+                        oxioUserIDElement.textContent = 'Error loading';
+                    }
+                    
+                    const oxioGroupIDElement = document.getElementById('oxioGroupID');
+                    if (oxioGroupIDElement) {
+                        oxioGroupIDElement.textContent = 'Error loading';
+                    }
                 });
         }
 
@@ -454,6 +562,12 @@
                 };
 
                 if (isDemoUser) {
+                    // Update SIM card number in user info section
+                    const simCardElement = document.getElementById('simCardNumber');
+                    if (simCardElement) {
+                        simCardElement.textContent = oxioData.iccid || 'Not assigned';
+                    }
+
                     // Display demo/setup message for demo users
                     container.innerHTML = `
                         <div class="address-card p-3 mb-3">
@@ -483,6 +597,7 @@
                                                 <p><strong>Line Status:</strong> Pending Activation</p>
                                                 <p><strong>Phone Number:</strong> Will be assigned after purchase</p>
                                                 <p><strong>Plan:</strong> Select from marketplace</p>
+                                                <p><strong>SIM Card (ICCID):</strong> ${oxioData.iccid || 'Not assigned'}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -491,6 +606,12 @@
                         </div>
                     `;
                 } else {
+                    // Update SIM card number in user info section
+                    const simCardElement = document.getElementById('simCardNumber');
+                    if (simCardElement) {
+                        simCardElement.textContent = oxioData.iccid || 'Not assigned';
+                    }
+
                     // Display comprehensive wireless service information for active users
                     const esimDetailsJson = JSON.stringify({
                         iccid: oxioData.iccid,
@@ -1163,6 +1284,31 @@
         function manageDataUsage(lineId) {
             // Redirect to dashboard data usage section
             window.location.href = '/dashboard#data-usage';
+        }
+
+        function copyFirebaseUID() {
+            const firebaseUID = document.getElementById('firebaseUID').textContent;
+            copyToClipboard(firebaseUID, 'Firebase UID');
+        }
+
+        function copyDotUserID() {
+            const dotUserID = document.getElementById('dotUserID').textContent;
+            copyToClipboard(dotUserID, 'DOT User ID');
+        }
+
+        function copyOxioUserID() {
+            const oxioUserID = document.getElementById('oxioUserID').textContent;
+            copyToClipboard(oxioUserID, 'OXIO User ID');
+        }
+
+        function copyOxioGroupID() {
+            const oxioGroupID = document.getElementById('oxioGroupID').textContent;
+            copyToClipboard(oxioGroupID, 'OXIO Group ID');
+        }
+
+        function copySimCardNumber() {
+            const simCardNumber = document.getElementById('simCardNumber').textContent;
+            copyToClipboard(simCardNumber, 'SIM Card Number');
         }
 
         function showToast(message, type = 'info') {
