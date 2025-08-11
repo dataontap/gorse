@@ -284,9 +284,16 @@
             try {
                 console.log('Loading Firebase user data...');
                 
+                // Wait for Firebase to be available
+                if (typeof firebase === 'undefined' || !firebase.auth) {
+                    console.log('Firebase not available yet, waiting...');
+                    setTimeout(loadFirebaseUserData, 500);
+                    return;
+                }
+                
                 // Check if there's a Firebase authenticated user
-                if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
-                    const firebaseUser = firebase.auth().currentUser;
+                const firebaseUser = firebase.auth().currentUser;
+                if (firebaseUser) {
                     console.log('Found Firebase authenticated user:', firebaseUser.email);
                     
                     // Update email
@@ -1175,31 +1182,31 @@
 
         function loadSubscriptionData() {
             try {
-                // Get current user data from localStorage (set by firebase-auth.js)
-                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-
-                let firebaseUid = null;
-                let userId = null;
-
-                if (currentUserData) {
-                    firebaseUid = currentUserData.uid;
-                    userId = currentUserData.userId;
-                } else {
-                    // Fallback to old localStorage keys
-                    firebaseUid = localStorage.getItem('firebaseUid') || localStorage.getItem('userId');
-                    userId = localStorage.getItem('userId');
+                // Wait for Firebase to be available
+                if (typeof firebase === 'undefined' || !firebase.auth) {
+                    console.log('Firebase not available for subscription data, waiting...');
+                    setTimeout(loadSubscriptionData, 500);
+                    return;
                 }
 
-                if (!firebaseUid && !userId) {
+                // Get Firebase UID from auth state
+                const firebaseUser = firebase.auth().currentUser;
+                if (!firebaseUser) {
+                    console.log('No authenticated user for subscription data');
                     displayNoSubscription();
                     return;
                 }
 
+                const firebaseUid = firebaseUser.uid;
+
+                // Also try to get userId from localStorage as fallback
+                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                const userId = currentUserData ? currentUserData.userId : null;
+
                 // Build query parameters
                 let queryParams = new URLSearchParams();
-                if (firebaseUid) {
-                    queryParams.append('firebaseUid', firebaseUid);
-                } else if (userId) {
+                queryParams.append('firebaseUid', firebaseUid);
+                if (userId) {
                     queryParams.append('userId', userId);
                 }
 
