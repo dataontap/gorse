@@ -79,13 +79,7 @@
     </div>
 
     <!-- Demo Section -->
-        <div class="demo-section">
-            <h3>Try Demo Mode</h3>
-            <p>Explore the platform without signing up</p>
-            <button onclick="enableDemoMode()" class="demo-btn">
-                🎮 Try Demo Mode
-            </button>
-        </div>
+        
 
         <!-- Force logout if needed -->
         <script>
@@ -119,14 +113,5 @@
 
 
     </script>
-<script>
-            // Demo mode activation from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('demo') === 'true') {
-                localStorage.setItem('demoMode', 'true');
-                // Remove demo parameter from URL
-                const newUrl = window.location.pathname;
-                window.history.replaceState({}, document.title, newUrl);
-            }
-        </script>
+
 </html>

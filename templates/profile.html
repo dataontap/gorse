@@ -284,7 +284,7 @@
             try {
                 console.log('Loading Firebase user data...');
                 
-                // First check if there's a Firebase authenticated user
+                // Check if there's a Firebase authenticated user
                 if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
                     const firebaseUser = firebase.auth().currentUser;
                     console.log('Found Firebase authenticated user:', firebaseUser.email);
@@ -307,29 +307,9 @@
                     return;
                 }
                 
-                // Fallback: Get current user data from localStorage (set by firebase-auth.js)
-                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-
-                if (currentUserData && currentUserData.uid && !currentUserData.uid.includes('demo')) {
-                    console.log('Found current user data:', currentUserData);
-                    // Update email
-                    const emailElement = document.getElementById('profileUserEmail');
-                    if (emailElement && currentUserData.email) {
-                        emailElement.textContent = currentUserData.email;
-                    }
-
-                    // Update display name
-                    const nameElement = document.getElementById('profileUserName');
-                    if (nameElement) {
-                        const displayName = currentUserData.displayName || currentUserData.email.split('@')[0];
-                        const founderBadge = currentUserData.founderStatus === 'Y' ? 'Founding Member' : 'Member';
-                        nameElement.innerHTML = `${displayName} <span class="founding-shield">${founderBadge}</span>`;
-                    }
-                } else {
-                    console.log('No authenticated user found, redirecting to login');
-                    // Redirect to login if no user is found
-                    window.location.href = '/login';
-                }
+                // No authenticated user found, redirect to login
+                console.log('No authenticated user found, redirecting to login');
+                window.location.href = '/login';
             } catch (error) {
                 console.error('Error loading Firebase user data:', error);
                 // Redirect to login on error
@@ -354,9 +334,8 @@
                             nameElement.innerHTML = `${displayName} <span class="founding-shield">${founderBadge}</span>`;
                         }
                         
-                        // Store updated user data
+                        // Store updated user data (without Firebase UID)
                         const updatedUserData = {
-                            uid: firebaseUid,
                             email: data.email,
                             displayName: data.displayName,
                             userId: data.userId,
@@ -375,18 +354,10 @@
             try {
                 let firebaseUid = null;
                 
-                // First check Firebase auth state
+                // Check Firebase auth state only
                 if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
                     firebaseUid = firebase.auth().currentUser.uid;
                     console.log('Using Firebase UID from auth state:', firebaseUid);
-                } else {
-                    // Get current user data from localStorage (set by firebase-auth.js)
-                    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-
-                    if (currentUserData && currentUserData.uid && !currentUserData.uid.includes('demo')) {
-                        firebaseUid = currentUserData.uid;
-                        console.log('Using Firebase UID from localStorage:', firebaseUid);
-                    }
                 }
 
                 if (!firebaseUid) {
@@ -854,13 +825,13 @@
                 </div>
             `;
 
-            // Get current user data
-            const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-
-            if (!currentUserData || !currentUserData.uid) {
+            // Get Firebase UID from auth state
+            if (!firebase.auth().currentUser) {
                 displayOxioError('No user authentication found');
                 return;
             }
+
+            const firebaseUid = firebase.auth().currentUser.uid;
 
             fetch('/api/create-oxio-user', {
                 method: 'POST',
@@ -868,7 +839,7 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    firebaseUid: currentUserData.uid
+                    firebaseUid: firebaseUid
                 })
             })
             .then(response => response.json())

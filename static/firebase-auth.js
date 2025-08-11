@@ -97,14 +97,6 @@ document.addEventListener('DOMContentLoaded', function() {
             </button>
           </div>
         </div>
-        <div class="demo-mode-section" style="text-align: center;">
-          <p style="color: #cccccc; margin-bottom: 15px; font-size: 16px;">
-            Or explore without signing in:
-          </p>
-          <button onclick="enableDemoMode()" class="demo-mode-btn" style="background: rgba(116, 192, 252, 0.2); border: 1px solid #74c0fc; color: #74c0fc; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px;">
-            🎮 Try Demo Mode
-          </button>
-        </div>
       `;
     }
 
@@ -112,17 +104,13 @@ document.addEventListener('DOMContentLoaded', function() {
       userInfo.innerHTML = `
         <div class="firebase-unavailable" style="text-align: center; padding: 20px;">
           <h2 style="color: #ff6b6b; margin-bottom: 15px;">🔥 Authentication Service Unavailable</h2>
-          <p style="color: #cccccc; margin-bottom: 20px;">The authentication service is currently not available. You can:</p>
+          <p style="color: #cccccc; margin-bottom: 20px;">The authentication service is currently not available. Please:</p>
           <div style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
             <ul style="text-align: left; color: #cccccc; margin: 0; padding-left: 20px;">
               <li>Refresh the page to retry the connection</li>
               <li>Check back later when the service is restored</li>
-              <li>Try demo mode to explore the platform features</li>
             </ul>
           </div>
-          <button onclick="enableDemoMode()" style="background: rgba(116, 192, 252, 0.2); border: 1px solid #74c0fc; color: #74c0fc; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
-            🎮 Try Demo Mode
-          </button>
         </div>
       `;
     }
@@ -214,14 +202,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" width="20">
                         Sign in with Google
                     </button>
-                    <div class="demo-mode-section" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <p style="text-align: center; color: #cccccc; margin-bottom: 10px; font-size: 14px;">
-                            Or explore without signing in:
-                        </p>
-                        <button onclick="enableDemoMode()" class="demo-mode-btn">
-                            🎮 Try Demo Mode
-                        </button>
-                    </div>
                 `;
             }
 
@@ -229,14 +209,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 userInfo.innerHTML = `
                     <div class="demo-notice">
                         <p>👋 You're not signed in</p>
-                        <p>Sign in to access your personal data, or try demo mode</p>
+                        <p>Sign in to access your personal data</p>
                     </div>
                 `;
-            }
-
-            // Show demo data if demo mode is active
-            if (isDemoMode()) {
-                showDemoData();
             }
         }
     }
@@ -249,104 +224,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function isDemoMode() {
-        return localStorage.getItem('demoMode') === 'true';
-    }
-
-    function enableDemoMode() {
-        localStorage.setItem('demoMode', 'true');
-        showDemoData();
-        updateAuthUI(null, null);
-
-        // Show success message
-        const successMessage = document.createElement('div');
-        successMessage.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(81, 207, 102, 0.2);
-            border: 1px solid #51cf66;
-            color: #51cf66;
-            padding: 12px 20px;
-            border-radius: 8px;
-            z-index: 10000;
-            font-size: 14px;
-        `;
-        successMessage.textContent = '🎮 Demo Mode Activated! You can now explore the platform.';
-        document.body.appendChild(successMessage);
-
-        setTimeout(() => {
-            if (document.body.contains(successMessage)) {
-                document.body.removeChild(successMessage);
-            }
-        }, 3000);
-    }
-
-    function disableDemoMode() {
-        localStorage.removeItem('demoMode');
-        updateAuthUI(null, null);
-
-        // Show exit message
-        const exitMessage = document.createElement('div');
-        exitMessage.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 193, 7, 0.2);
-            border: 1px solid #ffc107;
-            color: #ffc107;
-            padding: 12px 20px;
-            border-radius: 8px;
-            z-index: 10000;
-            font-size: 14px;
-        `;
-        exitMessage.textContent = '👋 Demo Mode Deactivated. Sign in to access your account.';
-        document.body.appendChild(exitMessage);
-
-        setTimeout(() => {
-            if (document.body.contains(exitMessage)) {
-                document.body.removeChild(exitMessage);
-            }
-        }, 3000);
-    }
-
-    function showDemoData() {
-        const userInfo = document.getElementById('user-info');
-        if (userInfo) {
-            userInfo.innerHTML = `
-                <div class="demo-mode-active" style="text-align: center; padding: 20px;">
-                    <h2 style="color: #74c0fc; margin-bottom: 15px;">🎮 You are in Demo Mode</h2>
-                    <div style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                        <p style="color: #cccccc; margin: 5px 0;">This is demo release without actual connectivity and 0 actual $ being charged. Request BETA access eSIM, pay $1 through Stripe and try service globally.</p>
-                    </div>
-                    <button onclick="disableDemoMode()" style="background: rgba(255, 193, 7, 0.2); border: 1px solid #ffc107; color: #ffc107; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
-                        Exit Demo Mode
-                    </button>
-                </div>
-            `;
-        }
-
-        // Update balance displays with demo data
-        updateBalanceDisplays(5.5);
-    }
-
     function getCurrentUser() {
         const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
-        if (user) {
-            return user;
-        } else if (isDemoMode()) {
-            return {
-                uid: 'demo_user',
-                email: 'demo@example.com',
-                displayName: 'Demo User',
-                userId: 1,
-                dataBalance: 5.5,
-                founderStatus: 'N'
-            };
-        }
-        return null;
+        return user;
     }
 
     // Function to load user data and balance
@@ -378,9 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (userData.status === 'success') {
                 console.log('Got user data:', userData);
 
-                // Create comprehensive user data object
+                // Create comprehensive user data object (without storing Firebase UID)
                 const currentUserData = {
-                    uid: user.uid,
                     email: user.email,
                     displayName: user.displayName,
                     photoURL: user.photoURL,
@@ -524,15 +403,9 @@ document.addEventListener('DOMContentLoaded', function() {
       signOut: function() {
         console.log('Starting Firebase sign out process...');
 
-        // Clear all local storage first
-        localStorage.removeItem('userId');
-        localStorage.removeItem('userEmail');
-        localStorage.removeItem('databaseUserId');
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('demoMode');
-
-        // Clear all localStorage (comprehensive cleanup)
+        // Clear all local storage completely
         localStorage.clear();
+        sessionStorage.clear();
 
         if (!firebase || !firebase.auth) {
           console.error('Firebase auth not available during signout');
@@ -752,10 +625,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Make nested functions globally available
-    window.enableDemoMode = enableDemoMode;
-    window.disableDemoMode = disableDemoMode;
-    window.isDemoMode = isDemoMode;
-    window.showDemoData = showDemoData;
     window.getCurrentUser = getCurrentUser;
     window.loadUserData = loadUserData; // Expose loadUserData
   }
@@ -786,48 +655,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     };
 
-    // Make demo functions available even in fallback mode
-    window.enableDemoMode = function() {
-      localStorage.setItem('demoMode', 'true');
-      showDemoData();
-    };
-
-    window.disableDemoMode = function() {
-      localStorage.removeItem('demoMode');
-    };
-
-    window.isDemoMode = function() {
-      return localStorage.getItem('demoMode') === 'true';
-    };
-
-    window.showDemoData = function() {
-      const userInfo = document.getElementById('user-info');
-      if (userInfo) {
-        userInfo.innerHTML = `
-          <div class="demo-mode-active" style="text-align: center; padding: 20px;">
-            <h2 style="color: #74c0fc; margin-bottom: 15px;">🎮 You are in Demo Mode</h2>
-            <div style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-              <p style="color: #cccccc; margin: 5px 0;">This is demo release without actual connectivity and 0 actual $ being charged. Request BETA access eSIM, pay $1 through Stripe and try service globally.</p>
-            </div>
-            <button onclick="disableDemoMode()" style="background: rgba(255, 193, 7, 0.2); border: 1px solid #ffc107; color: #ffc107; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
-              Exit Demo Mode
-            </button>
-          </div>
-        `;
-      }
-    };
-
     window.getCurrentUser = function() {
-      if (localStorage.getItem('demoMode') === 'true') {
-        return {
-          uid: 'demo_user',
-          email: 'demo@example.com',
-          displayName: 'Demo User',
-          userId: 1,
-          dataBalance: 5.5,
-          founderStatus: 'N'
-        };
-      }
       return null;
     };
   }
@@ -843,8 +671,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Get current user's Firebase UID if available
     let firebaseUid = null;
+    let userEmail = null;
     if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
       firebaseUid = firebase.auth().currentUser.uid;
+      userEmail = firebase.auth().currentUser.email;
+      console.log('FCM token registration for authenticated user:', userEmail);
+    } else {
+      console.log('FCM token registration for unauthenticated session');
     }
 
     fetch('/api/register-fcm-token', {
@@ -859,12 +692,16 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(response => response.json())
     .then(data => {
-      console.log('Token registered with server:', data);
+      console.log('FCM token registered successfully:', {
+        success: data.success || data.status,
+        userEmail: userEmail,
+        tokenPrefix: token.substring(0, 20) + '...'
+      });
       // Store the token to prevent duplicate registrations
       sessionStorage.setItem('lastRegisteredFCMToken', token);
     })
     .catch((error) => {
-      console.error('Error registering token:', error);
+      console.error('Error registering FCM token:', error);
     });
   }
 
