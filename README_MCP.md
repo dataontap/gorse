@@ -1,0 +1,195 @@
+
+# DOTM Platform MCP Server Documentation
+
+## Overview
+
+The DOTM Platform MCP (Model Context Protocol) Server provides detailed service information for AI assistants and automated systems. This server exposes a comprehensive catalog of services, pricing, and platform capabilities.
+
+## Features
+
+- **Service Catalog**: Complete listing of all platform services
+- **Pricing Information**: Real-time pricing for all services and memberships
+- **API Endpoints**: RESTful JSON API for programmatic access
+- **Pricing Calculator**: Dynamic cost calculation for service combinations
+- **Privacy Compliant**: No user data exposure, only public service information
+
+## Live Server
+
+The MCP server is available at: `https://get-dot-esim.replit.app/mcp`
+
+## API Endpoints
+
+### Main Endpoints
+
+| Endpoint | Description | Response Type |
+|----------|-------------|---------------|
+| `/mcp` | Interactive web interface with complete service catalog | HTML |
+| `/mcp/api` | JSON API with full service data | JSON |
+| `/mcp/service/{service_id}` | Details for specific service | JSON |
+| `/mcp/calculate` | Pricing calculator with service selection | JSON |
+
+### Service Categories
+
+1. **Connectivity Services** - Global eSIM and data plans
+2. **Membership Plans** - Annual subscriptions with benefits
+3. **Physical Products** - Hardware and collectibles
+4. **Network Features** - Add-on services and optimizations
+5. **Token Services** - DOTM cryptocurrency rewards
+6. **API Services** - Integration and developer tools
+7. **Support Services** - Customer assistance tiers
+
+## Usage Examples
+
+### Get All Services
+```bash
+curl https://get-dot-esim.replit.app/mcp/api
+```
+
+### Get Specific Service
+```bash
+curl https://get-dot-esim.replit.app/mcp/service/basic_membership
+```
+
+### Calculate Pricing
+```bash
+curl "https://get-dot-esim.replit.app/mcp/calculate?services=basic_membership,global_data_10gb"
+```
+
+## Cost Overview
+
+- **Free Tier**: $0.00/month (Beta access only)
+- **Basic Membership**: $24.00/year (Core connectivity)
+- **Full Membership**: $66.00/year (Premium features)
+- **Maximum with Add-ons**: ~$30-40/month (All network features)
+
+## Key Services
+
+### Membership Plans
+
+#### Basic Membership - $24 CAD/year
+- Global data access
+- 2FA SMS support
+- eSIM line activation
+- Unlimited hotspot
+- Data sharing with members
+- Device insights and protection
+
+#### Full Membership - $66 USD/year
+- Unlimited talk & text (North America)
+- Global Wi-Fi calling
+- Satellite connectivity (2026)
+- All Basic features included
+
+### Network Add-ons (Monthly)
+- Network Security: $5.00
+- VPN Access: $8.00
+- Priority Routing: $6.00
+- Network Monitoring: $4.00
+- Network Optimization: $3.00
+
+### One-time Purchases
+- Global Data 10GB: $10.00
+- DOTM Metal Card: $99.99
+- Beta eSIM Activation: $1.00
+
+## Privacy & Security
+
+The MCP server strictly adheres to privacy guidelines:
+- **No user data exposure** - Only public service information
+- **Static service catalog** - No dynamic user data retrieval
+- **Compliant responses** - Generic error handling without system internals
+- **Regular audits** - Quarterly compliance reviews
+
+## Technical Implementation
+
+### Technologies Used
+- **Flask** - Python web framework
+- **Jinja2** - Template engine for HTML responses
+- **JSON** - Structured data format for API responses
+- **Bootstrap** - Responsive web design
+- **RESTful API** - Standard HTTP methods and status codes
+
+### Response Formats
+- **HTML**: Interactive web interface with responsive design
+- **JSON**: Structured data for programmatic access
+- **Error Handling**: Graceful degradation with informative messages
+
+### Caching Strategy
+- Service catalog is static and can be cached
+- Pricing calculations are computed on-demand
+- No user-specific data caching
+
+## Integration Examples
+
+### Python Integration
+```python
+import requests
+
+# Get all services
+response = requests.get('https://get-dot-esim.replit.app/mcp/api')
+services = response.json()
+
+# Calculate pricing for specific services
+calc_response = requests.get(
+    'https://get-dot-esim.replit.app/mcp/calculate',
+    params={'services': ['basic_membership', 'network_security']}
+)
+pricing = calc_response.json()
+```
+
+### JavaScript Integration
+```javascript
+// Fetch service catalog
+fetch('https://get-dot-esim.replit.app/mcp/api')
+  .then(response => response.json())
+  .then(data => console.log('Services:', data.services));
+
+// Calculate pricing
+const services = ['basic_membership', 'vpn_access'];
+fetch(`https://get-dot-esim.replit.app/mcp/calculate?services=${services.join(',')}`)
+  .then(response => response.json())
+  .then(data => console.log('Pricing:', data.pricing));
+```
+
+## Service IDs Reference
+
+### Memberships
+- `basic_membership` - Basic annual membership
+- `full_membership` - Full annual membership  
+- `beta_tester` - Beta testing program
+
+### Connectivity
+- `global_data_10gb` - 10GB global data package
+- `beta_esim_activation` - Beta eSIM activation
+
+### Network Features
+- `network_security_basic` - Basic network security
+- `network_vpn_access` - VPN access service
+- `network_priority_routing` - Priority routing
+- `network_monitoring` - Network monitoring
+- `network_optimization` - Performance optimization
+
+### Physical Products
+- `metal_card` - DOTM Metal Card
+
+### Token Services
+- `founding_member_token` - 100 DOTM tokens
+- `new_member_token` - 1 DOTM welcome token
+- `purchase_rewards` - 10.33% cashback in DOTM
+
+## Support
+
+For technical support or integration assistance:
+- Platform: [DOTM Platform](https://get-dot-esim.replit.app)
+- Documentation: [MCP Server](https://get-dot-esim.replit.app/mcp)
+- Repository: Contact for access
+
+## License
+
+This MCP server documentation is part of the DOTM Platform ecosystem. Usage is subject to platform terms of service.
+
+---
+
+*Last Updated: January 2025*
+*Version: 1.0*
+*Total Services: 20+ across 7 categories*

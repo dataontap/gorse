@@ -1,0 +1,461 @@
+
+name: Publish MCP Documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'README_MCP.md'
+      - 'docs/**'
+      - 'mcp_server.py'
+      - 'mcp_server_rules.md'
+  workflow_dispatch:
+
+jobs:
+  publish-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Create docs directory structure
+      run: |
+        mkdir -p docs/api
+        mkdir -p docs/examples
+        mkdir -p docs/integration
+    
+    - name: Copy documentation files
+      run: |
+        cp README_MCP.md docs/
+        cp docs/MCP_API_REFERENCE.md docs/api/
+        cp mcp_server_rules.md docs/
+    
+    - name: Generate examples documentation
+      run: |
+        cat > docs/examples/README.md << 'EOF'
+        # MCP Server Examples
+        
+        This directory contains example implementations and usage patterns for the DOTM Platform MCP Server.
+        
+        ## Available Examples
+        
+        - [Python Integration](python_example.py) - Complete Python integration example
+        - [JavaScript Integration](javascript_example.js) - Node.js integration example
+        - [cURL Examples](curl_examples.sh) - Command-line usage examples
+        
+        ## Quick Start
+        
+        ```bash
+        # Test the MCP server
+        curl https://get-dot-esim.replit.app/mcp/api
+        ```
+        
+        See the [API Reference](../api/MCP_API_REFERENCE.md) for complete documentation.
+        EOF
+    
+    - name: Create Python example
+      run: |
+        cat > docs/examples/python_example.py << 'EOF'
+        #!/usr/bin/env python3
+        """
+        DOTM Platform MCP Server - Python Integration Example
+        """
+        
+        import requests
+        import json
+        from typing import Dict, List, Any
+        
+        class DOTMMCPClient:
+            def __init__(self, base_url: str = "https://get-dot-esim.replit.app/mcp"):
+                self.base_url = base_url.rstrip('/')
+            
+            def get_all_services(self) -> Dict[str, Any]:
+                """Get complete service catalog"""
+                response = requests.get(f"{self.base_url}/api")
+                response.raise_for_status()
+                return response.json()
+            
+            def get_service(self, service_id: str) -> Dict[str, Any]:
+                """Get details for specific service"""
+                response = requests.get(f"{self.base_url}/service/{service_id}")
+                response.raise_for_status()
+                return response.json()
+            
+            def calculate_pricing(self, service_ids: List[str]) -> Dict[str, Any]:
+                """Calculate pricing for selected services"""
+                params = {'services': ','.join(service_ids)}
+                response = requests.get(f"{self.base_url}/calculate", params=params)
+                response.raise_for_status()
+                return response.json()
+            
+            def list_services_by_category(self, category: str) -> List[Dict[str, Any]]:
+                """Get all services in a specific category"""
+                catalog = self.get_all_services()
+                if category in catalog['services']:
+                    return catalog['services'][category]['services']
+                return []
+        
+        def main():
+            # Initialize client
+            client = DOTMMCPClient()
+            
+            # Get all services
+            print("Fetching service catalog...")
+            catalog = client.get_all_services()
+            print(f"Platform: {catalog['platform']}")
+            print(f"Available categories: {list(catalog['services'].keys())}")
+            
+            # Get membership plans
+            print("\nMembership Plans:")
+            memberships = client.list_services_by_category('membership_plans')
+            for service in memberships:
+                price = service.get('price_usd', service.get('price_cad', 0))
+                print(f"- {service['name']}: ${price}/{service.get('billing_cycle', 'unknown')}")
+            
+            # Calculate pricing for a typical setup
+            print("\nCalculating pricing for Basic + Security...")
+            pricing = client.calculate_pricing(['basic_membership', 'network_security_basic'])
+            
+            print(f"Monthly recurring: ${pricing['pricing']['monthly_recurring']}")
+            print(f"Yearly recurring: ${pricing['pricing']['yearly_recurring']}")
+            print(f"First year total: ${pricing['pricing']['first_year_total']}")
+            
+            # Get specific service details
+            print("\nBasic Membership Details:")
+            basic_service = client.get_service('basic_membership')
+            service_info = basic_service['service']
+            print(f"Name: {service_info['name']}")
+            print(f"Description: {service_info['description']}")
+            print("Features:")
+            for feature in service_info['features'][:5]:  # Show first 5 features
+                print(f"  - {feature}")
+        
+        if __name__ == "__main__":
+            main()
+        EOF
+    
+    - name: Create JavaScript example
+      run: |
+        cat > docs/examples/javascript_example.js << 'EOF'
+        /**
+         * DOTM Platform MCP Server - JavaScript Integration Example
+         */
+        
+        class DOTMMCPClient {
+            constructor(baseUrl = 'https://get-dot-esim.replit.app/mcp') {
+                this.baseUrl = baseUrl.replace(/\/$/, '');
+            }
+        
+            async getAllServices() {
+                const response = await fetch(`${this.baseUrl}/api`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            }
+        
+            async getService(serviceId) {
+                const response = await fetch(`${this.baseUrl}/service/${serviceId}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            }
+        
+            async calculatePricing(serviceIds) {
+                const params = new URLSearchParams({
+                    services: serviceIds.join(',')
+                });
+                const response = await fetch(`${this.baseUrl}/calculate?${params}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            }
+        
+            async listServicesByCategory(category) {
+                const catalog = await this.getAllServices();
+                return catalog.services[category]?.services || [];
+            }
+        }
+        
+        // Example usage
+        async function main() {
+            try {
+                const client = new DOTMMCPClient();
+        
+                // Get service catalog
+                console.log('Fetching service catalog...');
+                const catalog = await client.getAllServices();
+                console.log(`Platform: ${catalog.platform}`);
+                console.log(`Categories: ${Object.keys(catalog.services).join(', ')}`);
+        
+                // Show network features
+                console.log('\nNetwork Features:');
+                const networkFeatures = await client.listServicesByCategory('network_features');
+                networkFeatures.forEach(service => {
+                    const price = service.price_usd === 0 ? 'FREE' : `$${service.price_usd}/month`;
+                    console.log(`- ${service.name}: ${price}`);
+                });
+        
+                // Calculate pricing
+                console.log('\nCalculating Full Membership + VPN...');
+                const pricing = await client.calculatePricing(['full_membership', 'network_vpn_access']);
+                console.log(`Monthly cost: $${pricing.pricing.monthly_recurring}`);
+                console.log(`First year total: $${pricing.pricing.first_year_total}`);
+        
+            } catch (error) {
+                console.error('Error:', error.message);
+            }
+        }
+        
+        // Run if called directly
+        if (typeof require !== 'undefined' && require.main === module) {
+            main();
+        }
+        
+        // Export for module use
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = DOTMMCPClient;
+        }
+        EOF
+    
+    - name: Create cURL examples
+      run: |
+        cat > docs/examples/curl_examples.sh << 'EOF'
+        #!/bin/bash
+        # DOTM Platform MCP Server - cURL Examples
+        
+        BASE_URL="https://get-dot-esim.replit.app/mcp"
+        
+        echo "=== DOTM Platform MCP Server Examples ==="
+        echo
+        
+        # Test 1: Get service catalog
+        echo "1. Getting complete service catalog..."
+        curl -s "${BASE_URL}/api" | jq '.platform, .cost_summary'
+        echo
+        
+        # Test 2: Get specific service
+        echo "2. Getting Basic Membership details..."
+        curl -s "${BASE_URL}/service/basic_membership" | jq '.service.name, .service.price_cad, .service.features[0:3]'
+        echo
+        
+        # Test 3: List all membership plans
+        echo "3. Listing all membership plans..."
+        curl -s "${BASE_URL}/api" | jq '.services.membership_plans.services[] | {name: .name, price: (.price_usd // .price_cad), cycle: .billing_cycle}'
+        echo
+        
+        # Test 4: Calculate pricing for multiple services
+        echo "4. Calculating pricing for Basic + Security + VPN..."
+        curl -s "${BASE_URL}/calculate?services=basic_membership,network_security_basic,network_vpn_access" | jq '.pricing'
+        echo
+        
+        # Test 5: Get all network features
+        echo "5. Getting all network add-on features..."
+        curl -s "${BASE_URL}/api" | jq '.services.network_features.services[] | {name: .name, price: .price_usd, monthly: .billing_cycle}'
+        echo
+        
+        # Test 6: Get token services
+        echo "6. Getting DOTM token services..."
+        curl -s "${BASE_URL}/api" | jq '.services.token_services.services[] | {name: .name, tokens: .token_amount, reward: .reward_percentage}'
+        echo
+        
+        echo "=== Examples Complete ==="
+        echo "For more information, visit: ${BASE_URL}"
+        EOF
+        
+        chmod +x docs/examples/curl_examples.sh
+    
+    - name: Create integration guide
+      run: |
+        cat > docs/integration/README.md << 'EOF'
+        # MCP Server Integration Guide
+        
+        This guide shows how to integrate the DOTM Platform MCP Server into your applications.
+        
+        ## Quick Integration
+        
+        ### 1. Basic Service Lookup
+        ```python
+        import requests
+        
+        def get_service_price(service_id):
+            response = requests.get(f'https://get-dot-esim.replit.app/mcp/service/{service_id}')
+            return response.json()['service']['price_usd']
+        
+        # Get Basic Membership price
+        price = get_service_price('basic_membership')
+        print(f"Basic Membership: ${price}")
+        ```
+        
+        ### 2. Pricing Calculator Integration
+        ```javascript
+        async function calculateUserCost(selectedServices) {
+            const response = await fetch(
+                `https://get-dot-esim.replit.app/mcp/calculate?services=${selectedServices.join(',')}`
+            );
+            const data = await response.json();
+            return data.pricing;
+        }
+        ```
+        
+        ### 3. Service Availability Check
+        ```python
+        def is_service_available(service_id):
+            try:
+                response = requests.get(f'https://get-dot-esim.replit.app/mcp/service/{service_id}')
+                service = response.json()['service']
+                return service['availability'] == 'Available'
+            except:
+                return False
+        ```
+        
+        ## Advanced Integration Patterns
+        
+        ### Caching Strategy
+        ```python
+        import time
+        from functools import lru_cache
+        
+        @lru_cache(maxsize=128)
+        def get_cached_service_catalog():
+            response = requests.get('https://get-dot-esim.replit.app/mcp/api')
+            return response.json()
+        
+        # Cache expires after 1 hour
+        def get_fresh_catalog():
+            current_time = int(time.time())
+            if not hasattr(get_fresh_catalog, 'last_fetch') or current_time - get_fresh_catalog.last_fetch > 3600:
+                get_cached_service_catalog.cache_clear()
+                get_fresh_catalog.last_fetch = current_time
+            return get_cached_service_catalog()
+        ```
+        
+        ### Error Handling
+        ```python
+        def safe_mcp_request(endpoint, **kwargs):
+            try:
+                response = requests.get(f'https://get-dot-esim.replit.app/mcp/{endpoint}', **kwargs)
+                response.raise_for_status()
+                return response.json(), None
+            except requests.RequestException as e:
+                return None, str(e)
+        
+        # Usage
+        data, error = safe_mcp_request('api')
+        if error:
+            print(f"MCP Server error: {error}")
+        else:
+            print(f"Retrieved {len(data['services'])} service categories")
+        ```
+        
+        ### Webhook Integration
+        ```python
+        from flask import Flask, request, jsonify
+        
+        app = Flask(__name__)
+        
+        @app.route('/webhook/pricing', methods=['POST'])
+        def pricing_webhook():
+            services = request.json.get('services', [])
+            
+            # Calculate pricing using MCP server
+            response = requests.get(
+                'https://get-dot-esim.replit.app/mcp/calculate',
+                params={'services': ','.join(services)}
+            )
+            
+            if response.status_code == 200:
+                return jsonify(response.json())
+            else:
+                return jsonify({'error': 'Pricing calculation failed'}), 500
+        ```
+        
+        ## Best Practices
+        
+        1. **Cache service catalog data** - The service catalog changes infrequently
+        2. **Handle network errors gracefully** - Always implement fallback behavior
+        3. **Validate service IDs** - Check if services exist before calculating pricing
+        4. **Monitor API availability** - Implement health checks for the MCP server
+        5. **Respect rate limits** - Don't exceed 100 requests per minute
+        
+        ## Security Considerations
+        
+        - The MCP server exposes only public pricing information
+        - No authentication required for read-only operations
+        - No user data is ever transmitted or stored
+        - Safe to call from client-side JavaScript
+        
+        ## Performance Tips
+        
+        - Use the `/api` endpoint to get all data in one request
+        - Cache responses for up to 1 hour
+        - Use HTTP/2 connection pooling for multiple requests
+        - Consider using CDN caching for static responses
+        
+        ## Testing Your Integration
+        
+        ```bash
+        # Test basic connectivity
+        curl -I https://get-dot-esim.replit.app/mcp/api
+        
+        # Test specific service lookup
+        curl https://get-dot-esim.replit.app/mcp/service/basic_membership
+        
+        # Test pricing calculation
+        curl "https://get-dot-esim.replit.app/mcp/calculate?services=basic_membership,network_security_basic"
+        ```
+        
+        ## Support
+        
+        - API Documentation: [MCP API Reference](../api/MCP_API_REFERENCE.md)
+        - Examples: [Integration Examples](../examples/)
+        - Live Server: https://get-dot-esim.replit.app/mcp
+        EOF
+    
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs
+        force_orphan: true
+        user_name: 'github-actions[bot]'
+        user_email: 'github-actions[bot]@users.noreply.github.com'
+        commit_message: 'Deploy MCP documentation'
+    
+    - name: Create release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: mcp-docs-v${{ github.run_number }}
+        release_name: MCP Documentation v${{ github.run_number }}
+        body: |
+          ## DOTM Platform MCP Server Documentation
+          
+          Complete documentation for the DOTM Platform MCP (Model Context Protocol) Server.
+          
+          ### What's Included
+          - 📚 Complete API documentation
+          - 🚀 Integration examples (Python, JavaScript, cURL)
+          - 🔧 Best practices and security guidelines
+          - 💰 Comprehensive pricing information
+          - 🌐 Live interactive documentation
+          
+          ### Quick Links
+          - [Live MCP Server](https://get-dot-esim.replit.app/mcp)
+          - [API Reference](https://get-dot-esim.replit.app/mcp/api)
+          - [Documentation Site](${{ github.server_url }}/${{ github.repository }}/tree/gh-pages)
+          
+          ### Service Categories
+          - eSIM Services & Global Connectivity
+          - Membership Plans (Basic & Full)
+          - Network Features & Add-ons
+          - DOTM Token Services
+          - Physical Products
+          - API & Integration Services
+          - Support Services
+          
+          The MCP server provides pricing and service information for 20+ services across 7 categories, with full privacy compliance.
+        draft: false
+        prerelease: false
