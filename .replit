@@ -40,3 +40,6 @@ exposeLocalhost = true
 localPort = 44983
 externalPort = 3000
 exposeLocalhost = true
+
+[agent]
+expertMode = true
