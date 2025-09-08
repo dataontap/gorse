@@ -5,6 +5,65 @@
 
 The DOTM Platform MCP (Model Context Protocol) Server provides detailed service information for AI assistants and automated systems. This server exposes a comprehensive catalog of services, pricing, and platform capabilities.
 
+## MCP Features
+
+### 🚀 Core Capabilities
+
+**Comprehensive Service Catalog**
+- **20+ Services** across 7 categories (Connectivity, Memberships, Physical Products, Network Features, Token Services, API Services, Support)
+- **Real-time Pricing** with dynamic cost calculations
+- **Service Availability** tracking (Available, Beta, Limited Edition, Invitation Only)
+- **Feature Listings** with detailed descriptions for each service
+
+**Multi-Format Access**
+- **Interactive Web Interface** - Responsive HTML with Bootstrap styling at `/mcp`
+- **JSON API** - RESTful endpoints for programmatic access at `/mcp/api`
+- **Service-Specific Endpoints** - Individual service details at `/mcp/service/{service_id}`
+- **Pricing Calculator** - Dynamic cost computation at `/mcp/calculate`
+
+**Privacy-First Architecture**
+- **Zero User Data Exposure** - Only public service information is accessible
+- **Static Service Catalog** - No dynamic user data retrieval
+- **Compliant Error Handling** - Generic responses without system internals
+- **Regular Privacy Audits** - Quarterly compliance reviews
+
+### 🛠 Advanced Features
+
+**Dynamic Pricing Engine**
+- **Cost Overview Dashboard** - Free tier ($0/month) to maximum configuration (~$30-40/month)
+- **Flexible Billing Cycles** - One-time, monthly, and annual options
+- **Multi-Currency Support** - USD and CAD pricing
+- **Service Bundling** - Calculate total costs for service combinations
+
+**Developer Integration**
+- **RESTful API Design** - Standard HTTP methods and status codes
+- **Multiple Response Formats** - JSON for APIs, HTML for interactive use
+- **Caching Strategy** - Static catalog data optimized for performance
+- **Error Handling** - Graceful degradation with informative messages
+
+**Service Categories Covered**
+1. **Connectivity Services** - Global eSIM and data plans (10GB packages, beta programs)
+2. **Membership Plans** - Basic ($24/year) and Full ($66/year) annual subscriptions
+3. **Physical Products** - DOTM Metal Card ($99.99) and hardware items
+4. **Network Features** - VPN ($8/month), Security ($5/month), Optimization add-ons
+5. **Token Services** - DOTM cryptocurrency rewards and founding member benefits
+6. **API Services** - OXIO integration, Stripe payment processing
+7. **Support Services** - Tiered customer assistance (Standard, Priority, Premium)
+
+### 📊 Analytics & Monitoring
+
+**Real-Time Metrics**
+- Service availability tracking
+- Pricing trend analysis
+- Category performance monitoring
+- API usage statistics
+
+**Business Intelligence**
+- Cost structure analysis
+- Service adoption patterns
+- Revenue optimization insights
+- Market positioning data
+
 ## Features
 
 - **Service Catalog**: Complete listing of all platform services
