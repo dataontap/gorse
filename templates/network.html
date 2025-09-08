@@ -1,0 +1,773 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network - dot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/help-styles.css">
+
+    <!-- Firebase v9+ modular SDK -->
+    <script type="module" src="/static/firebase-init.js"></script>
+    <script type="module" src="/static/firebase-auth.js"></script>
+
+    <style>
+        .usage-metrics {
+            display: flex;
+            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 0;
+        }
+
+        .metric {
+            flex: 1;
+            background: rgba(200, 200, 200, 0.2);
+            padding: 8px 5px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            text-align: center;
+            min-width: 90px;
+        }
+
+        .metric .usage-amount {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            white-space: nowrap;
+        }
+
+        .usage-label {
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .network-scan-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .network-scan-toggle span {
+            font-size: 14px;
+            color: #333;
+        }
+
+        /* Toggle switch styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: #0066ff;
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #0066ff;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        .network-scan-content.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .dark-mode .network-scan-toggle span {
+            color: #fff;
+        }
+
+        .usage-header {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .dark-mode .help-timer {
+            color: #aaa;
+        }
+
+        .network-setting-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 5px;
+            border-bottom: 1px solid rgba(200, 200, 200, 0.3);
+        }
+
+        .network-setting-option:last-child {
+            border-bottom: none;
+        }
+
+        .setting-name {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .dark-mode .setting-name {
+            color: #fff;
+        }
+
+        .network-settings-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .setting-box {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(200, 200, 200, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .setting-box:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .setting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .setting-name {
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .setting-description {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .dark-mode .setting-box {
+            background: rgba(40, 40, 40, 0.3);
+            border-color: rgba(60, 60, 60, 0.5);
+        }
+
+        .dark-mode .setting-box:hover {
+            background: rgba(50, 50, 50, 0.4);
+        }
+
+        .dark-mode .setting-description {
+            color: #aaa;
+        }
+
+        .member-count {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .dark-mode .member-count {
+            color: #aaa;
+        }
+
+        .qr-code-popup {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: none;
+            text-align: center;
+        }
+
+        .dark-mode .qr-code-popup {
+            background: #2a2a2a;
+            border-color: #444;
+            color: #fff;
+        }
+
+        .insights-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+            color: var(--text-primary);
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body class="landing-page">
+    <div class="top-bar">
+        <div class="menu-icon" onclick="toggleMenu(this)">
+            <i class="fas fa-bars"></i>
+            <div class="menu-dropdown">
+                <a href="/dashboard"><i class="fas fa-database"></i> Data</a>
+                <a href="/network" class="active"><i class="fas fa-network-wired"></i> Network</a>
+                <a href="/marketplace"><i class="fas fa-store"></i> Marketplace</a>
+                <a href="/notifications"><i class="fas fa-bell"></i> Notifications</a>
+                <a href="/bitchat"><i class="fas fa-comments"></i> Bitchat</a>
+            </div>
+        </div>
+        <div class="profile-section">
+            <i class="fas fa-user-circle" onclick="toggleProfileDropdown()"></i>
+            <div class="profile-dropdown">
+                <div class="profile-info">
+                    <div class="profile-header">
+                        <span class="account-text">My Account</span>
+                        <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
+                        <div id="qrCodePopup" class="qr-code-popup">
+                            <div id="qrcode"></div>
+                            <p>Scan to link accounts</p>
+                            <p id="qrMemberCount" class="member-count">Loading...</p>
+                        </div>
+                    </div>
+                    <div class="wallet-pill-container">
+                        <a href="/payments" class="wallet-value-pill">$542.00 USD</a>
+                    </div>
+                </div>
+                <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+                <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="/payments"><i class="fas fa-credit-card"></i> Payments</a>
+                <a href="/bitchat" class="nav-link">
+                    🔗 Bitchat
+                </a>
+                <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
+                <div class="settings-submenu" style="display: none;">
+                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
+                </div>
+                <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="#" id="helpToggle">
+                    <i class="fas fa-question-circle"></i> <span id="helpText">Help</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section-header">
+            <h2><i class="fas fa-chart-line"></i> Insights</h2>
+        </div>
+        <div class="dashboard-content mb-4">
+            <div class="insights-card">
+                <div class="data-usage">
+                    <div class="usage-header centered-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="usage-label trend-alert"><i class="fas fa-wifi"></i> Network Status</div>
+                        <div class="network-scan-toggle" style="margin: 0;">
+                            <span>Network Scans</span>
+                            <label class="switch">
+                                <input type="checkbox" id="scanToggle" onchange="toggleNetworkScanFeature()">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="usage-chart" style="display: none;">
+                        <canvas></canvas>
+                    </div>
+                    <div id="networkScanContent" class="network-scan-content disabled">
+                        <div class="usage-metrics">
+                            <div class="metric percentage">
+                                <div class="usage-label">Speed</div>
+                                <div class="usage-amount">35 Mbps</div>
+                            </div>
+                            <div class="metric screentime">
+                                <div class="usage-label">Uptime</div>
+                                <div class="usage-amount">95%</div>
+                            </div>
+                            <div class="metric dollars">
+                                <div class="usage-label">Devices</div>
+                                <div class="usage-amount" id="deviceCount">0</div>
+                            </div>
+                        </div>
+                        <div class="insight-message" style="margin-top: 15px;">Your network connection is stable with 95% uptime.</div>
+                        <div style="text-align: center; margin-top: 15px;">
+                            <a href="#" class="insight-link">See details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2><i class="fas fa-network-wired"></i> Network Settings</h2>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="network-settings mt-4">
+                <div class="insights-card">
+                    <div class="data-usage">
+                        <div id="networkSettings" class="network-settings-container">
+                            <!-- Network features will be loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="/static/app.js"></script>
+    <script>
+        // Toggle menu dropdown
+        function toggleMenu(element) {
+            element.querySelector('.menu-dropdown').classList.toggle('visible');
+        }
+
+        // Toggle profile dropdown
+        function toggleProfileDropdown() {
+            document.querySelector('.profile-dropdown').classList.toggle('visible');
+        }
+
+        // Toggle QR code popup
+        function toggleQRCode(event) {
+            event.stopPropagation();
+            const popup = document.getElementById('qrCodePopup');
+
+            if (popup.style.display === 'block') {
+                popup.style.display = 'none';
+            } else {
+                popup.style.display = 'block';
+
+                // Generate QR code if it doesn't exist yet
+                if (!document.querySelector('#qrcode canvas')) {
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: "https://gorse.dotmobile.app",
+                        width: 150,
+                        height: 150,
+                        colorDark: "#333333",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
+
+                // Update member count display in popup
+                updateMemberCountInPopup();
+            }
+        }
+
+        function updateMemberCountInPopup() {
+            const memberCountElement = document.getElementById('qrMemberCount');
+            if (memberCountElement) {
+                const currentMemberId = localStorage.getItem('userId') || '1';
+
+                // Show loading state first
+                memberCountElement.textContent = `#${currentMemberId}/X`;
+
+                // Fetch total member count
+                fetch('/api/member-count')
+                    .then(response => response.json())
+                    .then(data => {
+                        const totalCount = data && data.count ? data.count : 'X';
+                        memberCountElement.textContent = `#${currentMemberId}/${totalCount}`;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching member count:', error);
+                        memberCountElement.textContent = `#${currentMemberId}/X`;
+                    });
+            }
+        }
+
+        // Toggle Network Scans feature
+        async function toggleNetworkScanFeature() {
+            const scanToggle = document.getElementById('scanToggle');
+            const enabled = scanToggle.checked;
+            
+            try {
+                const firebaseUid = localStorage.getItem('firebase_uid');
+                if (!firebaseUid) {
+                    console.error('No Firebase UID found');
+                    alert('Authentication error - please refresh the page');
+                    scanToggle.checked = !enabled;
+                    return;
+                }
+
+                const response = await fetch(`/api/network-features/${firebaseUid}/network_scans`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ enabled: enabled })
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    console.log('Network Scans toggle successful:', data.message);
+                    toggleNetworkScan(); // Update the UI
+                    showToast(`Network Scans ${enabled ? 'enabled' : 'disabled'} successfully`, 'success');
+                } else {
+                    console.error('Failed to toggle Network Scans:', data.message);
+                    alert('Failed to update Network Scans: ' + data.message);
+                    scanToggle.checked = !enabled;
+                }
+            } catch (error) {
+                console.error('Error toggling Network Scans:', error);
+                alert('Error updating Network Scans: ' + error.message);
+                scanToggle.checked = !enabled;
+            }
+        }
+
+        // Toggle chart visibility
+        function toggleChart(link) {
+            const dataUsage = link.closest('.data-usage');
+            const chart = dataUsage.querySelector('.usage-chart');
+
+            if (chart.style.display === 'none') {
+                chart.style.display = 'block';
+                link.textContent = 'Hide details';
+
+                // Initialize chart if needed
+                if (!chart.querySelector('canvas').chart) {
+                    const ctx = chart.querySelector('canvas').getContext('2d');
+                    const newChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                            datasets: [{
+                                label: 'Network Usage',
+                                data: [65, 59, 80, 81, 56, 55, 40],
+                                borderColor: '#0066ff',
+                                tension: 0.3,
+                                fill: false
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
+                    });
+                    chart.querySelector('canvas').chart = newChart;
+                }
+            } else {
+                chart.style.display = 'none';
+                link.textContent = 'See details';
+            }
+        }
+
+        // Close QR code popup when clicking outside
+        document.addEventListener('click', function(e) {
+            const popup = document.getElementById('qrCodePopup');
+            const icon = document.querySelector('.qr-code-icon');
+
+            if (popup && popup.style.display === 'block' && !popup.contains(e.target) && e.target !== icon) {
+                popup.style.display = 'none';
+            }
+        });
+
+        // Load network features from API
+        async function loadNetworkFeatures() {
+            try {
+                // First ensure user is authenticated and get Firebase UID
+                let firebaseUid = localStorage.getItem('firebase_uid');
+                
+                // Try to get Firebase UID from current Firebase user if not in localStorage
+                if (!firebaseUid && window.firebaseAuth && window.firebaseAuth.getCurrentUser) {
+                    const currentUser = window.firebaseAuth.getCurrentUser();
+                    if (currentUser) {
+                        firebaseUid = currentUser.uid;
+                        localStorage.setItem('firebase_uid', firebaseUid);
+                    }
+                }
+
+                if (!firebaseUid) {
+                    console.error('No Firebase UID found - user may not be authenticated');
+                    showNetworkError('Please log in to view network features');
+                    return;
+                }
+
+                console.log('Loading network features for Firebase UID:', firebaseUid);
+
+                const response = await fetch(`/api/network-features/${firebaseUid}`);
+                const data = await response.json();
+
+                if (data.status === 'success' && data.features) {
+                    console.log('Loaded network features:', data.features);
+                    renderNetworkFeatures(data.features);
+                } else {
+                    console.error('Failed to load network features:', data.message);
+                    showNetworkError(data.message || 'No network features available');
+                }
+            } catch (error) {
+                console.error('Error loading network features:', error);
+                showNetworkError('Error loading network features: ' + error.message);
+            }
+        }
+
+        function showNetworkError(message) {
+            const container = document.getElementById('networkSettings');
+            container.innerHTML = `
+                <div class="setting-box" style="text-align: center; color: #666;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
+                    <p>${message}</p>
+                    <button onclick="loadNetworkFeatures()" class="btn btn-primary btn-sm">Retry</button>
+                </div>
+            `;
+        }
+
+        function renderNetworkFeatures(features) {
+            const container = document.getElementById('networkSettings');
+            container.innerHTML = '';
+
+            if (!features || features.length === 0) {
+                container.innerHTML = `
+                    <div class="setting-box" style="text-align: center; color: #666;">
+                        <i class="fas fa-info-circle" style="font-size: 24px; margin-bottom: 10px;"></i>
+                        <p>No network features configured yet.</p>
+                        <p style="font-size: 14px;">Network features will appear here once they are set up by the admin.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Update the Network Scans toggle in the header based on the network_scans feature
+            const networkScansFeature = features.find(f => f.stripe_product_id === 'network_scans');
+            if (networkScansFeature) {
+                const scanToggle = document.getElementById('scanToggle');
+                if (scanToggle) {
+                    scanToggle.checked = networkScansFeature.enabled;
+                    toggleNetworkScan(); // Update the UI state
+                }
+            }
+
+            features.forEach(feature => {
+                const featureBox = document.createElement('div');
+                featureBox.className = 'setting-box';
+                
+                featureBox.innerHTML = `
+                    <div class="setting-header">
+                        <span class="setting-name">${feature.feature_title || feature.feature_name || 'Network Feature'}</span>
+                        <label class="switch">
+                            <input type="checkbox" ${feature.enabled ? 'checked' : ''} 
+                                   onchange="toggleFeature('${feature.stripe_product_id}', this.checked)"
+                                   data-feature-id="${feature.stripe_product_id}">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <p class="setting-description">${feature.description || 'Network feature configuration'}</p>
+                    ${feature.price_cents ? `<p class="setting-price" style="font-size: 12px; color: #888; margin-top: 5px;">Price: $${(feature.price_cents / 100).toFixed(2)}/month</p>` : ''}
+                `;
+                
+                container.appendChild(featureBox);
+            });
+        }
+
+        async function toggleFeature(productId, enabled) {
+            const toggleElement = document.querySelector(`input[data-feature-id="${productId}"]`);
+            
+            try {
+                const firebaseUid = localStorage.getItem('firebase_uid');
+                if (!firebaseUid) {
+                    console.error('No Firebase UID found');
+                    alert('Authentication error - please refresh the page');
+                    if (toggleElement) toggleElement.checked = !enabled;
+                    return;
+                }
+
+                console.log(`Toggling feature ${productId} to ${enabled} for Firebase UID: ${firebaseUid}`);
+
+                const response = await fetch(`/api/network-features/${firebaseUid}/${productId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ enabled: enabled })
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    console.log('Feature toggle successful:', data.message);
+                    // Show success feedback
+                    showToast(`Feature ${enabled ? 'enabled' : 'disabled'} successfully`, 'success');
+                } else {
+                    console.error('Failed to toggle feature:', data.message);
+                    alert('Failed to update feature: ' + data.message);
+                    // Revert the toggle if the API call failed
+                    if (toggleElement) toggleElement.checked = !enabled;
+                }
+            } catch (error) {
+                console.error('Error toggling feature:', error);
+                alert('Error updating feature: ' + error.message);
+                // Revert the toggle if there was an error
+                if (toggleElement) toggleElement.checked = !enabled;
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 4px;
+                z-index: 10000;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.style.opacity = '1', 100);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // Check authentication and load features
+        function checkAuthenticationAndLoadFeatures() {
+            // Listen for Firebase auth state changes
+            window.addEventListener('firebaseAuthStateChanged', function(event) {
+                console.log('Firebase auth state changed:', event.detail);
+                if (event.detail.signedIn && event.detail.user) {
+                    // User is signed in, store Firebase UID and load features
+                    localStorage.setItem('firebase_uid', event.detail.user.uid);
+                    console.log('User authenticated with Firebase UID:', event.detail.user.uid);
+                    loadNetworkFeatures();
+                } else {
+                    // User is not signed in
+                    console.log('User not authenticated');
+                    showNetworkError('Please log in to view network features');
+                }
+            });
+
+            // Also check current auth state immediately
+            const firebaseUid = localStorage.getItem('firebase_uid');
+            if (firebaseUid) {
+                console.log('Found existing Firebase UID:', firebaseUid);
+                loadNetworkFeatures();
+            } else {
+                // Try to get from current Firebase user
+                setTimeout(() => {
+                    if (window.firebaseAuth && window.firebaseAuth.getCurrentUser) {
+                        const currentUser = window.firebaseAuth.getCurrentUser();
+                        if (currentUser) {
+                            localStorage.setItem('firebase_uid', currentUser.uid);
+                            console.log('Got Firebase UID from current user:', currentUser.uid);
+                            loadNetworkFeatures();
+                        } else {
+                            console.log('No current Firebase user found');
+                            showNetworkError('Please log in to view network features');
+                        }
+                    }
+                }, 1000); // Wait a bit for Firebase to initialize
+            }
+        }
+
+        // Document ready
+        function toggleNetworkScan() {
+            const content = document.getElementById('networkScanContent');
+            const isEnabled = document.getElementById('scanToggle').checked;
+
+            if (isEnabled) {
+                content.classList.remove('disabled');
+            } else {
+                content.classList.add('disabled');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication status first
+            checkAuthenticationAndLoadFeatures();
+
+            // Initialize insight link click handlers
+            document.querySelectorAll('.insight-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    toggleChart(this);
+                });
+            });
+
+            // Set device count to 3 to match the network status display
+            document.getElementById('deviceCount').textContent = '3';
+
+            // Settings toggle
+            document.getElementById('settingsToggle').addEventListener('click', function(e) {
+                e.preventDefault();
+                const submenu = document.querySelector('.settings-submenu');
+                submenu.style.display = submenu.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // Dark mode toggle
+            document.getElementById('darkModeToggle').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.body.classList.toggle('dark-mode');
+                const moonIcon = this.querySelector('i');
+                const modeText = this.querySelector('span');
+
+                if (document.body.classList.contains('dark-mode')) {
+                    moonIcon.classList.remove('fa-moon');
+                    moonIcon.classList.add('fa-sun');
+                    modeText.textContent = 'Light Mode';
+                } else {
+                    moonIcon.classList.remove('fa-sun');
+                    moonIcon.classList.add('fa-moon');
+                    modeText.textContent = 'Dark Mode';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

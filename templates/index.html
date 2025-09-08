@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>dot eSIM</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+
+    <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+
+  <!-- Custom Scripts - Load in correct order -->
+  <script src="/static/firebase-auth.js"></script>
+  <script src="/static/firebase-init.js"></script>
+  <script src="/static/app.js"></script>
+    <script>
+      window.CURRENT_KEY = "{{ current_key }}";
+    </script>
+    <script>
+    window.FIREBASE_API_KEY = "{{ firebase_api_key }}";
+    // Register service worker with API key
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(function(registration) {
+          // Pass API key to service worker
+          if (registration.active) {
+            registration.active.postMessage({
+              type: 'FIREBASE_CONFIG',
+              apiKey: "{{ firebase_api_key }}"
+            });
+          }
+        });
+    }
+  </script>
+
+    </head>
+<body class="landing-page">
+    <div class="hero-container">
+        <div class="hero-image"></div>
+        <div class="promo-text">
+            GLOBAL<br>
+            infinitely<br>
+            shareable<br>
+            fast 5G+<br>
+            no-expiry<br>
+            mobile<br>
+            DATA
+        </div>
+        <div class="content-overlay">
+            <div class="cta-container">
+                <a href="/signup" class="btn btn-primary btn-lg signup-btn">CONNECT in &lt;1 MIN</a>
+                <p class="signin-text">
+                    <a href="/login" class="signin-link">Members Access</a>
+                </p>
+                <div class="canada-service">
+                    <p style="color: white; font-size: 14px; margin: 20px 0 10px 0;">
+                        Connectivity Services for Canadians Everywhere 🇨🇦
+                    </p>
+                </div>
+                <div class="legal-links" style="margin-top: 30px;">
+                    <a href="/privacy" style="color: #CCCCFF; font-size: 12px; margin: 0 10px; text-decoration: none;">Privacy Policy</a>
+                    <a href="/terms" style="color: #CCCCFF; font-size: 12px; margin: 0 10px; text-decoration: none;">Terms of Service</a>
+                    <a href="/about" style="color: #CCCCFF; font-size: 12px; margin: 0 10px; text-decoration: none;">About</a>
+                    <a href="mailto:hq@dotmobile.app" style="color: #CCCCFF; font-size: 12px; margin: 0 10px; text-decoration: none;">
+                        <i class="fas fa-envelope" style="margin-right: 5px;"></i>Contact Us
+                    </a>
+                </div>
+
+                <div class="service-provider" style="margin-top: 30px; text-align: center; color: #CCCCFF; font-size: 11px;">
+                    <p style="margin: 0; line-height: 1.4;">Service Provided by Data On Tap Inc. Licensed Full MVNO. Network 302 100.<br>Parkdale, ON, CANADA</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Section -->
+        
+
+        <!-- Force logout if needed -->
+        <script>
+        // Check if user should be logged out when visiting home page
+        document.addEventListener('DOMContentLoaded', function() {
+            // If user is coming from a logout action, ensure they're signed out
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('logout') === 'true') {
+                if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                    console.log('Forcing logout on home page...');
+                    firebase.auth().signOut();
+                }
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
+        </script>
+</body>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Check if user is already logged in
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                // User is already signed in, redirect to dashboard
+                window.location.href = '/dashboard';
+            }
+        });
+
+
+    </script>
+
+</html>

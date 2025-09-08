@@ -1,0 +1,222 @@
+
+/* Token Value Pill Styles */
+.token-value-pill {
+    background-color: #f0f0f0;
+    border-radius: 20px;
+    padding: 4px 12px;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.token-value-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Animation for price updates */
+@keyframes pulse {
+    0% { background-color: #f0f0f0; transform: scale(1); }
+    50% { background-color: #e0f7fa; transform: scale(1.05); }
+    100% { background-color: #f0f0f0; transform: scale(1); }
+}
+
+.token-value-pill.updating {
+    animation: pulse 1s ease-in-out;
+}
+
+/* Sparkle animations */
+.sparkle {
+    position: absolute;
+    pointer-events: none;
+    background-image: radial-gradient(circle, #fff 10%, transparent 60%);
+    border-radius: 50%;
+    opacity: 0;
+    animation: sparkle 0.8s ease-in-out forwards;
+}
+
+@keyframes sparkle {
+    0% { transform: scale(0); opacity: 0; }
+    50% { opacity: 0.8; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+
+.token-dashboard {
+    padding: 20px 0;
+}
+
+.token-overview {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.token-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #f6f9fc 0%, #eef2f7 100%);
+    border-radius: 8px;
+}
+
+.token-balance {
+    display: flex;
+    flex-direction: column;
+}
+
+.balance-amount {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #4CAF50;
+}
+
+.balance-label {
+    font-size: 1rem;
+    color: #666;
+}
+
+/* Animation for balance updates */
+.highlight {
+    animation: highlight-pulse 1.5s ease-in-out;
+}
+
+@keyframes highlight-pulse {
+    0% { color: inherit; }
+    30% { color: #4CAF50; }
+    100% { color: inherit; }
+}
+
+
+.token-value {
+    text-align: right;
+}
+
+.value-amount {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.wallet-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.wallet-connect-options {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.connected-address {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 5px;
+}
+
+.address {
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.token-history {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.founding-member {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%);
+    border-left: 4px solid #FFC107;
+}
+
+.token-info {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.contract-address {
+    display: block;
+    padding: 8px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    word-break: break-all;
+}
+
+/* Animation for table updates */
+@keyframes highlight-table {
+    0% { background-color: transparent; }
+    30% { background-color: rgba(76, 175, 80, 0.1); }
+    100% { background-color: transparent; }
+}
+
+.table.highlight {
+    animation: highlight-table 1.5s ease-in-out;
+}
+
+/* Ping data table styles */
+.ping-data-table {
+    font-size: 0.85rem;
+}
+
+.ping-data-table th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 1;
+}
+
+.ping-data-container {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+}
+
+.ping-refresh-btn {
+    margin-left: 0.5rem;
+}
+
+/* Dark mode support */
+body.dark-mode .token-stats {
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+}
+
+body.dark-mode .balance-amount {
+    color: #81c784;
+}
+
+body.dark-mode .balance-label,
+body.dark-mode .value-label {
+    color: #a0aec0;
+}
+
+body.dark-mode .value-amount {
+    color: #e2e8f0;
+}
+
+body.dark-mode .connected-address {
+    background-color: #2d3748;
+}
+
+body.dark-mode .contract-address {
+    background-color: #2d3748;
+    color: #e2e8f0;
+}
+
+body.dark-mode .founding-member {
+    background: linear-gradient(135deg, #4a3404 0%, #4a3c19 100%);
+    border-left: 4px solid #FFC107;
+}

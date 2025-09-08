@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - dot eSIM</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <style>
+        .about-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .about-section {
+            margin-bottom: 40px;
+        }
+        .about-section h2 {
+            color: #6366f1;
+            border-bottom: 2px solid #6366f1;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .about-section h3 {
+            color: #4f46e5;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        .back-to-home {
+            margin-bottom: 30px;
+        }
+        .company-info {
+            background-color: #e7f3ff;
+            border-left: 4px solid #0066cc;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 8px;
+        }
+
+        /* Dark mode styles for company information */
+        .dark-mode .company-info {
+            background-color: rgba(30, 30, 40, 0.8);
+            border-left: 4px solid #66a3ff;
+            color: #e0e0e0;
+        }
+
+        .dark-mode .company-info h3 {
+            color: #66a3ff !important;
+        }
+
+        .dark-mode .company-info p {
+            color: #cccccc;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .feature-list li i {
+            color: #4CAF50;
+            margin-right: 10px;
+            width: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-5">
+        <div class="about-container">
+            <div class="back-to-home">
+                <a href="/" class="btn btn-outline-primary">← Back to Home</a>
+            </div>
+
+            <h1 class="text-center mb-5" style="color: #6366f1;">About dot eSIM</h1>
+
+            <div class="company-info">
+                <h3 style="color: #0066cc; margin-top: 0;">Company Information</h3>
+                <p><strong>Data On Tap Inc.</strong> is a Canadian independent connectivity provider operating under network code 302 100. We are a CRTC licensed Full MVNO (Mobile Virtual Network Operator) founded in 2018 in Parkdale, ON, Canada.</p>
+            </div>
+
+            <div class="video-container mt-4 mb-4" style="text-align: center;">
+                <div style="position: relative; width: 100%; max-width: 560px; margin: 0 auto;">
+                    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                        <iframe 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;"
+                            src="https://www.youtube.com/embed/MrjOEq0Irtw?si=yJSQhgp7mn3C8eKt" 
+                            title="dot eSIM Technology Overview" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            referrerpolicy="strict-origin-when-cross-origin" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-section">
+                <h2>Our Mission</h2>
+                <p>We provide affordable and awesome connectivity solutions for Canadians and global travelers. Our mission is to deliver seamless, high-quality mobile data services that keep you connected wherever you are.</p>
+            </div>
+
+            <div class="about-section">
+                <h2>What We Offer</h2>
+                <ul class="feature-list">
+                    <li><i class="fas fa-globe"></i> Global connectivity with no-expiry mobile data</li>
+                    <li><i class="fas fa-share-alt"></i> Infinitely shareable data plans</li>
+                    <li><i class="fas fa-signal"></i> Fast 5G+ network coverage</li>
+                    <li><i class="fas fa-mobile-alt"></i> Easy eSIM activation in under 1 minute</li>
+                    <li><i class="fas fa-maple-leaf"></i> Specialized services for Canadian users</li>
+                </ul>
+            </div>
+
+            <div class="about-section">
+                <h2>Our Technology</h2>
+                <p>As a Full MVNO, we operate our own core network infrastructure while partnering with established carriers to provide comprehensive coverage. Our eSIM technology allows for instant activation and seamless switching between networks as you travel.</p>
+            </div>
+
+            <div class="about-section">
+                <h2>Regulatory Compliance</h2>
+                <p>Data On Tap Inc. is fully licensed by the Canadian Radio-television and Telecommunications Commission (CRTC) as a Full Mobile Virtual Network Operator. We operate under strict regulatory guidelines to ensure reliable and compliant telecommunications services.</p>
+            </div>
+
+            <div class="about-section">
+                <h2>Contact Information</h2>
+                <p>For support, questions, or business inquiries, please reach out to us at <a href="mailto:hq@dotmobile.app">hq@dotmobile.app</a></p>
+                <p><strong>Founded:</strong> 2018<br>
+                <strong>Location:</strong> Parkdale, ON, Canada<br>
+                <strong>Network Code:</strong> 302 100<br>
+                <strong>License:</strong> CRTC Full MVNO</p>
+            </div>
+
+            <div class="text-center mt-5">
+                <a href="/signup" class="btn btn-primary btn-lg">Get Started Today</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

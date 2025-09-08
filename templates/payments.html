@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>dot Payments</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+    <div class="top-bar">
+        <div class="menu-icon">
+            <i class="fas fa-bars"></i>
+            <div class="menu-dropdown">
+                <a href="/dashboard"><i https://youtu.be/MrjOEq0Irtw?si=yJSQhgp7mn3C8eKt fa-database"></i> Data</a>
+                <a href="/network"><i class="fas fa-network-wired"></i> Network</a>
+                <a href="/marketplace"><i class="fas fa-store"></i> Marketplace</a>
+                <a href="/notifications"><i class="fas fa-bell"></i> Notifications</a>
+                <a href="/bitchat"><i class="fas fa-comments"></i> Bitchat</a>
+            </div>
+        </div>
+        <div class="profile-section">
+            <i class="fas fa-user-circle"></i>
+            <div class="profile-dropdown">
+                <div class="profile-info">
+                    <div class="profile-header">
+                        <span class="account-text">My Account</span>
+                        <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
+                    </div>
+                    <div class="wallet-pill-container">
+                        <a href="/payments" class="wallet-value-pill">$10,000.00 USD</a>
+                    </div>
+                    <div id="qrCodePopup" class="qr-code-popup">
+                        <div id="qrcode"></div>
+                        <p id="qrMemberCount" class="member-count-qr">#1/X</p>
+                        <p>Scan to link accounts</p>
+                    </div>
+                </div>
+                <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+                <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="/payments" class="active"><i class="fas fa-credit-card"></i> Payments</a>
+                <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
+                <div class="settings-submenu" style="display: none;">
+                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span data-translate="darkMode">Dark Mode</span></a>
+                    <div class="language-selector-container">
+                        <label for="languageSelect"><i class="fas fa-globe"></i> <span data-translate="language">Language</span></label>
+                        <select id="languageSelect" class="language-select">
+                            <option value="en" data-translate="english">English</option>
+                            <option value="es" data-translate="spanish">Español</option>
+                            <option value="fr" data-translate="french">Français</option>
+                        </select>
+                    </div>
+                </div>
+                <a href="#" id="helpToggle">
+                    <i class="fas fa-phone-alt"></i> Live Person Callback
+                    <span id="helpTimer" class="help-timer" style="display: none;">00:04:20</span>
+                    <i id="helpPhoneIcon" class="fas fa-phone-alt" style="display: none;"></i>
+                </a>
+                <div class="help-section" style="display: none;">
+                    <div class="help-content">
+                        <p><i class="fas fa-question-circle"></i> Talk to AI instead:</p>
+                        <ul>
+                            <li style="display: flex; align-items: center;">
+                                <span class="online-indicator chatgpt-indicator"></span>
+                                <a href="https://chat.openai.com" class="help-link" target="_blank">ChatGPT</a>
+                            </li>
+                            <li style="display: flex; align-items: center;">
+                                <span class="online-indicator gemini-indicator"></span>
+                                <a href="https://gemini.google.com" class="help-link" target="_blank">Google Gemini</a>
+                            </li>
+                        </ul>
+                        <p class="help-note">LLMs goto mcp.dotmobile.app</p>
+                    </div>
+                </div>
+            </div>
+                <div class="settings-submenu" style="display: none;">
+                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span data-translate="darkMode">Dark Mode</span></a>
+                    <div class="language-selector-container">
+                        <label for="languageSelect"><i class="fas fa-globe"></i> <span data-translate="language">Language</span></label>
+                        <select id="languageSelect" class="language-select">
+                            <option value="en" data-translate="english">English</option>
+                            <option value="es" data-translate="spanish">Español</option>
+                            <option value="fr" data-translate="french">Français</option>
+                        </select>
+                    </div>
+                </div>
+                <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="dashboard-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-credit-card"></i> Payment Methods</h2>
+                <a href="/dashboard" class="btn-close" aria-label="Close"></a>
+            </div>
+
+            <!-- Wallet Section -->
+            <div class="address-section mb-4">
+                <h3 class="mb-3"><i class="fab fa-ethereum"></i> My Wallet</h3>
+                <div class="wallet-card token-stats metamask-card">
+                    <div class="wallet-content">
+                        <div class="wallet-balance" style="display: flex; align-items: center; width: 100%;">
+                            <span class="balance-amount">100</span>
+                            <span class="wallet-symbol">DOTM</span>
+                            <button class="btn btn-sm btn-outline-secondary token-refresh-btn" style="margin: 0 10px;" title="Refresh balance" onclick="refreshBalance()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <span class="wallet-value">$100.00 USD</span>
+                        </div>
+                        <!-- Founding Member Info Section -->
+                        <div class="founding-member-info mt-3">
+                            <button class="btn btn-sm btn-outline-primary founding-member-toggle" onclick="toggleFoundingMemberInfo()">
+                                <i class="fas fa-crown"></i> Founding Member Benefits
+                                <i class="fas fa-chevron-down toggle-arrow"></i>
+                            </button>
+                            <div id="foundingMemberDetails" class="founding-member-details" style="display: none;">
+                                <div class="founding-member-content">
+                                    <p><strong>Congratulations! As a Founding Member:</strong></p>
+                                    <ul>
+                                        <li>✅ <strong>No membership fees for life</strong> (until Canada Day 2099)</li>
+                                        <li>✅ <strong>100.33 DOTM tokens</strong> (vs 10.33 for new members)</li>
+                                        <li>💰 <strong>Earn 1.33 DOTM</strong> for every 10,000MB purchase</li>
+                                        <li>🛍️ <strong>Earn DOTM</strong> on all store purchases via Stripe</li>
+                                        <li>💵 <strong>Each DOTM = $1</strong> in the dotmobile ecosystem</li>
+                                    </ul>
+                                    <div class="blockchain-info">
+                                        <p><small>
+                                            📊 Only <strong>10,333,333 DOTM</strong> will ever be minted according to our 
+                                            <a href="/about" class="blockchain-link">blockchain contract</a>
+                                        </small></p>
+                                        <p><small>
+                                            🔐 Your ETH wallet is powered by <strong>Infura and MetaMask</strong> - 
+                                            <a href="/about" class="blockchain-link">learn more</a>
+                                        </small></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="wallet-actions">
+                        <button class="btn btn-outline-primary btn-sm wallet-btn">
+                            <i class="fas fa-exchange-alt"></i> Transfer to member
+                        </button>
+                        <button class="btn btn-outline-success btn-sm wallet-btn">
+                            <i class="fas fa-sync"></i> Redeem for Data
+                        </button>
+                    </div>
+                    <div class="metal-card-section">
+                        <button class="btn btn-dark btn-sm metal-card-btn" onclick="preorderMetalCard()">
+                            <i class="fas fa-credit-card"></i> PRE-ORDER METAL CARD
+                        </button>
+                        <div class="metamask-powered">Powered by MetaMask</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Default Payment Method Section -->
+            <div class="address-section mb-4">
+                <h3 class="mb-3"><i class="fas fa-star"></i> Default</h3>
+                <div class="address-card">
+                    <div class="address-content">
+                        <h4 class="payment-title">Visa ending in 4242</h4>
+                        <p class="payment-detail">Expires 12/25</p>
+                        <p class="text-success">Default payment method</p>
+                    </div>
+                    <i class="fas fa-edit edit-icon" onclick="editPaymentMethod(this)"></i>
+                </div>
+            </div>
+
+            <!-- Other Payment Methods Section -->
+            <div class="address-section mb-4">
+                <h3 class="mb-3"><i class="fas fa-credit-card"></i> Other</h3>
+                <div class="address-card mb-3">
+                    <div class="address-content">
+                        <h4 class="payment-title">Mastercard ending in 5555</h4>
+                        <p class="payment-detail">Expires 08/25</p>
+                        <p class="payment-status">&nbsp;</p>
+                    </div>
+                    <i class="fas fa-edit edit-icon" onclick="editPaymentMethod(this)"></i>
+                </div>
+
+                <div class="address-card">
+                    <div class="address-content">
+                        <h4 class="payment-title">Bitcoin Wallet</h4>
+                        <p class="payment-detail">Connected via Stripe</p>
+                        <p class="payment-status">&nbsp;</p>
+                    </div>
+                    <i class="fas fa-edit edit-icon" onclick="editPaymentMethod(this)"></i>
+                </div>
+            </div>
+
+            <!-- Add Payment Method Section -->
+            <div class="address-section mb-4">
+                <h3 class="mb-3"><i class="fas fa-plus-circle"></i> Add</h3>
+                <div class="address-card">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add New Payment Method
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ethereum Transactions Section -->
+            <div class="address-section mb-4">
+                <h3 class="mb-3"><i class="fab fa-ethereum"></i> Recent Transactions</h3>
+                <div class="transactions-container">
+                    <div class="network-indicator">
+                        <span class="network-badge sepolia">Sepolia Testnet</span>
+                        <button class="btn btn-sm btn-outline-secondary refresh-transactions-btn" onclick="refreshTransactions()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div id="transactionsLoading" class="loading-state" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Fetching transactions from Sepolia...</p>
+                    </div>
+                    <div id="transactionsList" class="transactions-list">
+                        <!-- Transactions will be loaded here -->
+                    </div>
+                    <div id="transactionsEmpty" class="empty-state" style="display: none;">
+                        <i class="fas fa-receipt"></i>
+                        <p>No transactions found</p>
+                        <small>Transactions will appear here once you start using your wallet</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <style>
+        .token-refresh-btn {
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            position: relative;
+            z-index: 10;
+        }
+        .rotating {
+            animation: rotate 1s linear infinite;
+        }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .token-stats {
+            position: relative;
+        }
+        @keyframes ping {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .ping-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .ping-effect {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            border: 2px solid #6b21a8;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+        }
+        .update-time {
+            font-size: 0.8em;
+            opacity: 0.8;
+            margin-left: 4px;
+        }
+        .metamask-card {
+            background-color: #FFC000; /* Pure gorse yellow color without reddish tint */
+            border: 1px solid #E9D27E;
+            transition: all 0.3s ease;
+        }
+        .metal-card-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .metal-card-btn {
+            width: 80%;
+            background: linear-gradient(45deg, #888, #bbb); /* Grey brushed aluminum look */
+            color: white;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .metal-card-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, 
+                transparent 0%, 
+                rgba(255,255,255,0.2) 50%, 
+                transparent 100%);
+            transform: skewX(-20deg);
+            animation: shimmer 12s infinite; /* Doubled animation duration from 6s to 12s */
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) skewX(-20deg); }
+            100% { transform: translateX(300%) skewX(-20deg); }
+        }
+        .metal-card-btn:hover {
+            background: linear-gradient(45deg, #777, #999);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .metamask-powered {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 8px;
+        }
+        .dark-mode .metamask-card {
+            background-color: #9E7668;
+            border-color: #7D5D51;
+        }
+        .dark-mode .metamask-powered {
+            color: #aaa;
+        }
+
+        /* Transactions Section Styles */
+        .transactions-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .network-indicator {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .network-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .network-badge.sepolia {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #90caf9;
+        }
+
+        .network-badge.mainnet {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #81c784;
+        }
+
+        .refresh-transactions-btn {
+            border-radius: 20px;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-transactions-btn.rotating {
+            animation: rotate 1s linear infinite;
+        }
+
+        .transactions-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+
+        .transaction-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-hash {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .transaction-details {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .transaction-amount {
+            text-align: right;
+        }
+
+        .transaction-value {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .transaction-type {
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .transaction-type.received {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .transaction-type.sent {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+
+        .loading-state, .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+
+        .dark-mode .transactions-container {
+            background-color: #2d2d2d;
+            border-color: #444;
+        }
+
+        .dark-mode .transaction-item:hover {
+            background-color: #3a3a3a;
+        }
+
+        .dark-mode .network-badge.sepolia {
+            background-color: #1e3a8a;
+            color: #93c5fd;
+            border-color: #3b82f6;
+        }
+
+        /* Founding Member Info Styles */
+        .founding-member-info {
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 15px;
+        }
+
+        .founding-member-toggle {
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e9d27e;
+            background: rgba(255, 255, 255, 0.1);
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        .founding-member-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .toggle-arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-arrow.rotated {
+            transform: rotate(180deg);
+        }
+
+        .founding-member-details {
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e9d27e;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .founding-member-content ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 15px;
+        }
+
+        .founding-member-content li {
+            margin-bottom: 8px;
+            padding: 5px 0;
+        }
+
+        .blockchain-info {
+            border-top: 1px solid #e9d27e;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        .blockchain-link {
+            color: #6b21a8;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .blockchain-link:hover {
+            color: #581c87;
+            text-decoration: underline;
+        }
+
+        .dark-mode .founding-member-details {
+            background: rgba(45, 45, 45, 0.9);
+            color: #e0e0e0;
+            border-color: #7d5d51;
+        }
+
+        .dark-mode .founding-member-toggle {
+            background: rgba(45, 45, 45, 0.3);
+            color: #e0e0e0;
+            border-color: #7d5d51;
+        }
+
+        .dark-mode .founding-member-toggle:hover {
+            background: rgba(45, 45, 45, 0.5);
+        }
+
+        .dark-mode .blockchain-info {
+            border-color: #7d5d51;
+        }
+
+        .dark-mode .blockchain-link {
+            color: #a78bfa;
+        }
+
+        .dark-mode .blockchain-link:hover {
+            color: #c4b5fd;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="/static/translations.js"></script>
+    <script src="/static/app.js"></script>
+    <script>
+        function refreshBalance() {
+            const refreshButton = document.querySelector('.token-refresh-btn');
+            refreshButton.classList.add('rotating');
+
+            // Create status indicator if it doesn't exist
+            let statusIndicator = document.querySelector('.sepolia-status');
+            if (!statusIndicator) {
+                statusIndicator = document.createElement('div');
+                statusIndicator.className = 'sepolia-status';
+                statusIndicator.style.fontSize = '0.7rem';
+                statusIndicator.style.marginTop = '5px';
+                statusIndicator.style.textAlign = 'center';
+                document.querySelector('.token-stats').appendChild(statusIndicator);
+            }
+
+            statusIndicator.innerHTML = '<span style="color:#6b21a8">Connecting to Sepolia...</span>';
+
+            // In a real implementation, you would call your API endpoint
+            fetch('/api/token/balance/current_user')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.error) {
+                        document.querySelector('.balance-amount').textContent = data.balance.toFixed(2);
+                        document.querySelector('.wallet-value').textContent = '$' + data.value_usd.toFixed(2) + ' USD';
+                        statusIndicator.innerHTML = '<span style="color:green">✓ Updated from Sepolia <span class="update-time">just now</span></span>';
+
+                        // Start a timer to update the timestamp
+                        const updateTimeEl = statusIndicator.querySelector('.update-time');
+                        if (updateTimeEl) {
+                            let seconds = 0;
+                            const updateTimer = setInterval(() => {
+                                seconds++;
+                                if (seconds < 60) {
+                                    updateTimeEl.textContent = seconds < 10 ? 'just now' : `${seconds} sec ago`;
+                                } else if (seconds < 3600) {
+                                    const minutes = Math.floor(seconds / 60);
+                                    updateTimeEl.textContent = `${minutes} min ago`;
+                                } else {
+                                    const hours = Math.floor(seconds / 3600);
+                                    updateTimeEl.textContent = `${hours} hr ago`;
+                                    // Stop updating after a day
+                                    if (hours >= 24) {
+                                        clearInterval(updateTimer);
+                                    }
+                                }
+                            }, 1000);
+                        }
+
+                        // Create a ping effect perfectly aligned with the refresh button
+                        const refreshBtnRect = refreshButton.getBoundingClientRect();
+                        const tokenStatsRect = document.querySelector('.token-stats').getBoundingClientRect();
+
+                        // Create a container for the ping effect at the document level
+                        const pingContainer = document.createElement('div');
+                        pingContainer.className = 'ping-container';
+                        document.body.appendChild(pingContainer);
+
+                        // Position the container relative to the button's position in the viewport
+                        pingContainer.style.position = 'fixed';
+                        pingContainer.style.left = (refreshBtnRect.left + refreshBtnRect.width/2 - refreshBtnRect.width) + 'px';
+                        pingContainer.style.top = (refreshBtnRect.top + refreshBtnRect.height/2 - refreshBtnRect.height) + 'px';
+                        pingContainer.style.width = (refreshBtnRect.width * 2) + 'px';
+                        pingContainer.style.height = (refreshBtnRect.height * 2) + 'px';
+                        pingContainer.style.zIndex = '9999';
+
+                        // Create the ping effect
+                        const pingEffect = document.createElement('div');
+                        pingEffect.className = 'ping-effect';
+                        pingEffect.style.animation = 'ping 1s ease-out';
+                        pingContainer.appendChild(pingEffect);
+
+                        // Remove ping container after animation completes
+                        setTimeout(() => {
+                            document.body.removeChild(pingContainer);
+                        }, 1000);
+
+                        // Add ping animation style if not present
+                        if (!document.querySelector('style#ping-animation')) {
+                            const style = document.createElement('style');
+                            style.id = 'ping-animation';
+                            style.textContent = `
+                                @keyframes ping {
+                                    0% { transform: scale(0.5); opacity: 1; }
+                                    100% { transform: scale(1.5); opacity: 0; }
+                                }
+                            `;
+                            document.head.appendChild(style);
+                        }
+                    } else {
+                        statusIndicator.innerHTML = '<span style="color:red">Error updating from Sepolia</span>';
+                    }
+                    refreshButton.classList.remove('rotating');
+                })
+                .catch(error => {
+                    console.error('Error fetching balance:', error);
+                    statusIndicator.innerHTML = '<span style="color:red">Failed to connect to Sepolia</span>';
+                    refreshButton.classList.remove('rotating');
+                });
+        }
+
+        function preorderMetalCard() {
+            // Show confirmation dialog
+            const confirmOrder = confirm("Preorder your DOTM Metal Card for $99.99?");
+            if (!confirmOrder) return;
+
+            // Create loading overlay
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'loading-overlay';
+            loadingOverlay.innerHTML = `
+                <div class="spinner"></div>
+                <p>Processing your order...</p>
+            `;
+            document.body.appendChild(loadingOverlay);
+
+            // Make API call to add product to cart
+            fetch('/api/record-global-purchase', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    productId: 'metal_card' 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.body.removeChild(loadingOverlay);
+
+                if (data.status === 'success') {
+                    alert("Your DOTM Metal Card has been preordered! You'll receive an email with details shortly.");
+                } else {
+                    alert("There was an error processing your order. Please try again.");
+                }
+            })
+            .catch(error => {
+                document.body.removeChild(loadingOverlay);
+                console.error('Error ordering metal card:', error);
+                alert("There was an error processing your order. Please try again.");
+            });
+        }
+
+        function refreshTransactions() {
+            const refreshButton = document.querySelector('.refresh-transactions-btn');
+            const loadingState = document.getElementById('transactionsLoading');
+            const transactionsList = document.getElementById('transactionsList');
+            const emptyState = document.getElementById('transactionsEmpty');
+
+            // Show loading state
+            refreshButton.classList.add('rotating');
+            loadingState.style.display = 'block';
+            transactionsList.style.display = 'none';
+            emptyState.style.display = 'none';
+
+            // Get user ID (default to 1 for demo)
+            const userId = localStorage.getItem('userId') || '1';
+
+            // Fetch transactions from API
+            fetch(`/api/ethereum-transactions?userId=${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading state
+                    loadingState.style.display = 'none';
+                    refreshButton.classList.remove('rotating');
+
+                    if (data.status === 'success' && data.transactions && data.transactions.length > 0) {
+                        displayTransactions(data.transactions, data.network, data.address);
+                        transactionsList.style.display = 'block';
+                    } else {
+                        emptyState.style.display = 'block';
+                        transactionsList.innerHTML = '';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching transactions:', error);
+                    loadingState.style.display = 'none';
+                    refreshButton.classList.remove('rotating');
+                    emptyState.style.display = 'block';
+                    transactionsList.innerHTML = '';
+                });
+        }
+
+        function displayTransactions(transactions, network, userAddress) {
+            const transactionsList = document.getElementById('transactionsList');
+            transactionsList.innerHTML = '';
+
+            transactions.forEach(tx => {
+                const transactionItem = document.createElement('div');
+                transactionItem.className = 'transaction-item';
+
+                // Format timestamp
+                const date = new Date(tx.timestamp * 1000);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+                // Format hash (show first 10 and last 6 characters)
+                const shortHash = tx.hash.substring(0, 10) + '...' + tx.hash.substring(tx.hash.length - 6);
+
+                // Format value
+                const value = parseFloat(tx.value);
+                const valueDisplay = value > 0 ? `${value.toFixed(6)} ETH` : '0 ETH';
+
+                transactionItem.innerHTML = `
+                    <div class="transaction-info">
+                        <div class="transaction-hash">${shortHash}</div>
+                        <div class="transaction-details">
+                            Block: ${tx.block_number} • ${formattedDate}
+                        </div>
+                    </div>
+                    <div class="transaction-amount">
+                        <div class="transaction-value">${valueDisplay}</div>
+                        <span class="transaction-type ${tx.type}">${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}</span>
+                    </div>
+                `;
+
+                // Add click handler to show full transaction details
+                transactionItem.addEventListener('click', () => {
+                    showTransactionDetails(tx, network);
+                });
+
+                transactionsList.appendChild(transactionItem);
+            });
+        }
+
+        function showTransactionDetails(tx, network) {
+            const explorerUrl = network === 'sepolia' 
+                ? `https://sepolia.etherscan.io/tx/${tx.hash}`
+                : `https://etherscan.io/tx/${tx.hash}`;
+
+            const modal = document.createElement('div');
+            modal.className = 'transaction-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            `;
+
+            modal.innerHTML = `
+                <div style="background: white; padding: 20px; border-radius: 12px; max-width: 500px; width: 90%;">
+                    <h4>Transaction Details</h4>
+                    <p><strong>Hash:</strong> ${tx.hash}</p>
+                    <p><strong>From:</strong> ${tx.from}</p>
+                    <p><strong>To:</strong> ${tx.to}</p>
+                    <p><strong>Value:</strong> ${tx.value} ETH</p>
+                    <p><strong>Block:</strong> ${tx.block_number}</p>
+                    <p><strong>Gas:</strong> ${tx.gas}</p>
+                    <p><strong>Gas Price:</strong> ${tx.gas_price} Gwei</p>
+                    <div style="margin-top: 15px;">
+                        <button onclick="window.open('${explorerUrl}', '_blank')" class="btn btn-primary btn-sm">
+                            View on ${network === 'sepolia' ? 'Sepolia ' : ''}Etherscan
+                        </button>
+                        <button onclick="this.closest('.transaction-modal').remove()" class="btn btn-secondary btn-sm" style="margin-left: 10px;">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Close modal when clicking outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        // Toggle founding member information
+        function toggleFoundingMemberInfo() {
+            const details = document.getElementById('foundingMemberDetails');
+            const arrow = document.querySelector('.toggle-arrow');
+
+            if (details.style.display === 'none' || details.style.display === '') {
+                details.style.display = 'block';
+                arrow.classList.add('rotated');
+            } else {
+                details.style.display = 'none';
+                arrow.classList.remove('rotated');
+            }
+        }
+
+        // Check if user is founding member and show appropriate content
+        function checkFoundingMemberStatus() {
+            // This would typically check user's status from backend
+            // For now, we'll check if the user has the founding member badge
+            const userInfo = localStorage.getItem('userInfo');
+            const isFoundingMember = true; // Default to true for demo, would check actual status
+
+            if (!isFoundingMember) {
+                // Update content for regular members
+                const foundingContent = document.querySelector('.founding-member-content');
+                if (foundingContent) {
+                    foundingContent.innerHTML = `
+                        <p><strong>DOTM Token Rewards:</strong></p>
+                        <ul>
+                            <li>💰 <strong>Earn 1.33 DOTM</strong> for every 10,000MB purchase</li>
+                            <li>🛍️ <strong>Earn DOTM</strong> on all store purchases via Stripe</li>
+                            <li>💵 <strong>Each DOTM = $1</strong> in the dotmobile ecosystem</li>
+                        </ul>
+                        <div class="blockchain-info">
+                            <p><small>
+                                📊 Only <strong>10,333,333 DOTM</strong> will ever be minted according to our 
+                                <a href="/about" class="blockchain-link">blockchain contract</a>
+                            </small></p>
+                            <p><small>
+                                🔐 Your ETH wallet is powered by <strong>Infura and MetaMask</strong> - 
+                                <a href="/about" class="blockchain-link">learn more</a>
+                            </small></p>
+                        </div>
+                    `;
+
+                    // Update button text for regular members
+                    const toggleBtn = document.querySelector('.founding-member-toggle');
+                    if (toggleBtn) {
+                        toggleBtn.innerHTML = `
+                            <i class="fas fa-coins"></i> Token Rewards
+                            <i class="fas fa-chevron-down toggle-arrow"></i>
+                        `;
+                    }
+                }
+            }
+        }
+
+        // Load transactions on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshTransactions();
+            checkFoundingMemberStatus();
+
+            // Initialize translation
+            initializeTranslation();
+        });
+    </script>
+</body>
+</html>

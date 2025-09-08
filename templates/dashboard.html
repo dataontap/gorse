@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>dot Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/help-styles.css">
+
+    <!-- Firebase v9+ modular SDK -->
+    <script type="module" src="/static/firebase-init.js"></script>
+    <script type="module" src="/static/firebase-auth.js"></script>
+
+    <style>
+
+        .esim-info {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+
+        .esim-icon:hover + .esim-info {
+            display: block;
+        }
+
+        .name-with-esim {
+            position: relative;
+            display: inline-block;
+        }
+        .paused {
+            background-color: #f2f2f2; /* Grey background for paused cards */
+        }
+        .paused .pause-duration {
+            margin-left: 10px; /* Adjust spacing as needed */
+        }
+        .fa-play {
+            color: #007bff; /* Make play button more distinct */
+        }
+        .online-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: yellow;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 1s ease-out infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .subscription-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            word-wrap: break-word;
+            text-align: left;
+        }
+
+        .subscription-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 2.2em;
+            font-weight: bold;
+            white-space: normal;
+            word-wrap: break-word;
+            line-height: 1.2;
+        }
+
+        .subscription-card p {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+            opacity: 0.9;
+            line-height: 1.5;
+            white-space: normal;
+            word-wrap: break-word;
+            max-width: 100%;
+        }
+
+        .subscribe-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            margin-top: 15px;
+            white-space: nowrap;
+            overflow: visible;
+            text-overflow: clip;
+            min-width: fit-content;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 10px;
+            }
+
+            .subscription-card {
+                padding: 20px;
+                margin: 10px 0;
+            }
+
+            .subscription-card h3 {
+                font-size: 1.8em;
+            }
+
+            .subscription-card p {
+                font-size: 1em;
+            }
+        }
+
+        /* Styles for membership banner */
+        .subscription-status {
+            background: rgba(255, 255, 255, 0.1); /* Add transparency */
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            transition: all 0.3s ease;
+            opacity: 0.8;
+        }
+
+        .subscription-info {
+            flex-grow: 1;
+        }
+
+        .subscription-type {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .subscription-validity {
+            font-size: 0.9em;
+        }
+
+        .close-banner {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .close-banner:hover {
+            color: #ccc;
+        }
+
+        .menu-dropdown {
+            background-color: transparent; /* Transparent background */
+        }
+
+        /* Welcome message card styling */
+        .welcome-message-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .welcome-message-info {
+            flex-grow: 1;
+        }
+
+        .welcome-message-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .welcome-message-description {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .play-welcome-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .play-welcome-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .voice-controls select {
+            margin-right: 10px;
+            padding: 5px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255,255,255,0.9);
+        }
+
+        /* Styles for offers section */
+        .offers-section {
+            margin-top: 20px;
+        }
+
+        .offers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .offer-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            color: white;
+            text-align: center; /* Center the text */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .offer-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .offer-card p {
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+
+        .offer-card .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .offer-card .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body class="landing-page">
+    <div class="top-bar">
+        <div class="menu-icon" onclick="toggleMenu(this)">
+            <i class="fas fa-bars"></i>
+            <div class="menu-dropdown">
+                <a href="/dashboard"><i class="fas fa-database"></i> Data</a>
+                <a href="/network"><i class="fas fa-network-wired"></i> Network</a>
+                <a href="/marketplace"><i class="fas fa-store"></i> Marketplace</a>
+                <a href="/notifications"><i class="fas fa-bell"></i> Notifications</a>
+                <a href="/bitchat"><i class="fas fa-comments"></i> Bitchat</a>
+            </div>
+        </div>
+        <div class="theme-toggles">
+            <div id="darkModeToggle" class="theme-toggle active" title="Dark Mode">
+                <i class="fas fa-moon"></i>
+            </div>
+            <div id="lightModeToggle" class="theme-toggle" title="Light Mode">
+                <i class="fas fa-sun"></i>
+            </div>
+        </div>
+        <div class="profile-section">
+            <i class="fas fa-user-circle" onclick="toggleProfileDropdown()"></i>
+            <div class="profile-dropdown">
+                <div class="profile-info">
+                    <div class="profile-header">
+                        <span class="account-text">My Account</span>
+                        <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
+                    </div>
+                    <div class="wallet-pill-container">
+                        <a href="/payments" class="wallet-value-pill" id="tokenBalancePill">
+                            Loading DOTM...
+                        </a>
+                    </div>
+                    <div id="qrCodePopup" class="qr-code-popup">
+                        <div id="qrcode"></div>
+                        <p id="qrMemberCount" class="member-count-qr">#1/X</p>
+                        <p>Scan to link accounts</p>
+                    </div>
+                </div>
+                <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+                <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="/payments"><i class="fas fa-credit-card"></i> Payments</a>
+                <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
+                <div class="settings-submenu" style="display: none;">
+                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span data-translate="darkMode">Dark Mode</span></a>
+                    <div class="language-selector-container">
+                        <label for="languageSelect"><i class="fas fa-globe"></i> <span data-translate="language">Language</span></label>
+                        <select id="languageSelect" class="language-select">
+                            <option value="en" data-translate="english">English</option>
+                            <option value="es" data-translate="spanish">Español</option>
+                            <option value="fr" data-translate="french">Français</option>
+                        </select>
+                    </div>
+                </div>
+                <a href="#" id="logoutBtn" onclick="handleLogout(event)">
+                            <i class="fas fa-sign-out-alt"></i> <span data-translate="logout">Logout</span>
+                        </a>
+                <a href="#" id="helpToggle">
+                    <i class="fas fa-question-circle"></i> <span id="helpText">Help</span>
+                    <i id="helpPhoneIcon" class="fas fa-phone" style="display: none; margin-left: 8px;"></i>
+                </a>
+                <div class="help-section" style="display: none;">
+                    <div class="help-content">
+                        <p><i class="fas fa-question-circle"></i> Talk to AI instead:</p>
+                        <ul>
+                            <li style="display: flex; align-items: center;">
+                                <span class="online-indicator chatgpt-indicator"></span>
+                                <a href="https://chat.openai.com" class="help-link" target="_blank">ChatGPT</a>
+                            </li>
+                            <li style="display: flex; align-items: center;">
+                                <span class="online-indicator gemini-indicator"></span>
+                                <a href="https://gemini.google.com" class="help-link" target="_blank">Google Gemini</a>
+                            </li>
+                        </ul>
+                        <p class="help-note">LLMs goto mcp.dotmobile.app</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="dot-container">
+            <div class="dot-indicator" title="Long press to refresh">
+                <div class="dot-content">
+                    <div class="data-amount" id="dataDisplay" style="display: none">
+                        <i class="fas fa-sync-alt refresh-icon" title="Loading data..."></i><span>GB</span>
+                    </div>
+                    <div class="status" id="globalStatus" style="display: none"><i class="fas fa-globe"></i> GLOBAL DATA</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bitchat Status Card - positioned right after the bubble -->
+        <div class="bitchat-status-card" id="bitchatStatusCard">
+            <div class="bitchat-info">
+                <div class="bitchat-title">
+                    <i class="fas fa-comments"></i>
+                    Ensuring Minimal Connectivity
+                </div>
+                <div class="bitchat-description" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.8); margin: 5px 0;">
+                    Connect to Encrypted Bluetooth Mesh Network Anonymously.
+                </div>
+                <div class="bitchat-status">
+                    <span class="connection-status" id="connectionStatus">
+                        <i class="fas fa-circle status-indicator" id="statusIndicator"></i>
+                        <span id="connectionText">Connecting...</span>
+                    </span>
+                    <div class="nearby-users" id="nearbyUsers">
+                        <span id="userCount">0</span> people/relays nearby
+                    </div>
+                </div>
+            </div>
+            <button class="close-banner" onclick="dismissBitchatCard()" aria-label="Close bitchat card">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Welcome Message Player -->
+        <div class="welcome-message-card" id="welcomeMessageCard" style="display: none;">
+            <div class="welcome-message-info">
+                <div class="welcome-message-title">
+                    <i class="fas fa-volume-up"></i>
+                    Your Personalized Welcome Message
+                </div>
+                <div class="welcome-message-description">
+                    Listen to your custom welcome message with today's date and personalized greeting.
+                </div>
+                <div class="welcome-message-controls">
+                    <button class="play-welcome-btn" id="playWelcomeBtn" onclick="playWelcomeMessage()">
+                        <i class="fas fa-play"></i> Play Welcome Message
+                    </button>
+                    <div class="voice-controls" style="margin-top: 10px;">
+                        <select id="welcomeLanguage" onchange="updateWelcomeMessage()">
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                        </select>
+                        <select id="welcomeVoice" onchange="updateWelcomeMessage()">
+                            <option value="">Loading voices...</option>
+                        </select>
+                    </div>
+                    <audio id="welcomeAudio" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
+                </div>
+            </div>
+            <button class="close-banner" onclick="dismissWelcomeMessage()" aria-label="Close welcome message">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Membership Banner (hidden by default, shown when subscription exists) -->
+        <div class="subscription-status" id="membershipBanner" style="display: none;">
+            <div class="subscription-info">
+                <div class="subscription-type">Basic Membership</div>
+                <div class="subscription-validity">Valid for 27029 more days</div>
+            </div>
+            <button class="close-banner" onclick="dismissMembershipBanner()" aria-label="Close membership banner">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <!-- Offers Section -->
+        <div class="offers-section">
+            <div class="offers-stack-container" id="offersStackContainer">
+                <!-- Card stack will be populated here by JavaScript -->
+            </div>
+        </div>
+
+        <div id="confirmationDrawer" class="confirmation-drawer">
+            <div class="drawer-content">
+                <h3>Confirm Purchase</h3>
+                <div class="purchase-details">
+                    <div class="detail-row">
+                        <span>Data Amount:</span>
+                        <span id="confirmDataAmount">10GB</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Price:</span>
+                        <span id="confirmPrice">$10</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Payment Method:</span>
+                        <span>Visa •••• 4242</span>
+                    </div>
+                </div>
+                <div class="drawer-actions">
+
+                    <div class="setting-item">
+                        <div class="setting-title">Push Notifications</div>
+                        <div class="setting-toggle">
+                            <label class="switch">
+                                <input type="checkbox" id="notificationToggle" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="setting-description">
+                            Receive notifications about new offers and account updates
+                        </div>
+                    </div>
+
+                    <button class="btn" onclick="hideConfirmationDrawer()">Cancel</button>
+                    <button class="btn btn-primary" onclick="confirmPurchase()">Confirm</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2><i class="fas fa-exclamation-triangle"></i> Alerts</h2>
+        </div>
+        <div class="dashboard-content mb-4">
+            <div class="purchase-history">
+                <h3 class="insight-title" style="text-align: center; display: flex; justify-content: center; width: 100%;"><i class="fas fa-receipt" style="margin-right: 8px;"></i> Recent Purchases</h3>
+                <div class="purchase-list" id="purchaseList">
+                    <!-- Purchase items will be added here dynamically -->
+                    <div class="purchase-empty-state">No purchases yet</div>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-content">
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div class="insights-card">
+                <div class="data-usage">
+                    <div class="usage-header centered-header">
+                        <div class="usage-label trend-alert text-center w-100"><i class="fas fa-exclamation-triangle"></i> Usage Trend Alert</div>
+                    </div>
+                    <div class="insight-message">Jenny's data usage increased by 45% this week. <a href="#" class="insight-link" onclick="toggleChart(this)">See details</a></div>
+                    <div class="usage-chart" style="display: none;">
+                        <canvas id="usageChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="sort-container">
+            <h2 class="authorized-users-title">
+                <i class="fas fa-users"></i> Datashare Users
+                <span class="user-count">0</span>
+            </h2>
+            <div class="sort-controls">
+                <div class="sort-group">
+                    <select class="sort-select">
+                        <option value="percentage">Data %</option>
+                        <option value="screentime">Time %</option>
+                        <option value="dollars">Dollars</option>
+                        <option value="score">Score</option>
+                    </select>
+                </div>
+                <div class="sort-icons">
+                    <span class="sort-icon" data-sort="newest">
+                        <i class="fas fa-clock"></i>
+                        <i class="fas fa-arrow-down"></i>
+                    </span>
+                    <span class="sort-icon" data-sort="oldest">
+                        <i class="fas fa-clock"></i>
+                        <i class="fas fa-arrow-up"></i>
+                    </span>
+                    <span class="sort-icon" data-sort="desc">
+                        <i class="fas fa-arrow-down"></i>
+                    </span>
+                    <span class="sort-icon" data-sort="asc">
+                        <i class="fas fa-arrow-up"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="back-to-top">
+            <a href="#" id="backToTop">
+                Back to Top
+            </a>
+        </div>
+        <!-- User Cards for Accepted Invitations -->
+        <div class="accepted-users-container" id="acceptedUsersContainer">
+            <!-- User cards will be populated by JavaScript -->
+        </div>
+
+        <!-- Recent Invitations Section -->
+        <div class="recent-invitations-section" id="recentInvitationsSection" style="display: none;">
+            <h3 class="section-title">
+                <i class="fas fa-envelope"></i> Recent Invitations
+            </h3>
+            <div class="invitations-list" id="invitationsList">
+                <!-- Invitations will be populated here by JavaScript -->
+            </div>
+        </div>
+
+        <div class="add-user-container">
+            <a href="#" class="add-user-link" id="addUserBtn">
+                <i class="fas fa-plus-circle"></i> Add User
+            </a>
+        </div>
+        <!-- Beta Tester Toggle -->
+        <div class="beta-tester-card">
+            <h3>🔴 Live Demo Mode</h3>
+            <p>This is wireless service provider development live demo. Request BETA access, and try connectivity service anywhere on the planet Earth and up to 15km+ above (soon). Requires membership.</p>
+            <div class="beta-action-container">
+                <button id="betaEnrollBtn" class="beta-enroll-btn">Request $1 BETA eSIM</button>
+                <div id="betaStatus" class="beta-status" style="display: none;">
+                    <span id="betaStatusText">Loading...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Information -->
+        <div class="canada-service" style="text-align: center; margin: 40px 0 20px 0;">
+            <p style="color: white; font-size: 14px; margin: 20px 0 10px 0;">
+                Connectivity Services for Canadians Everywhere 🇨🇦
+            </p>
+            <p style="margin: 0; line-height: 1.4; color: white; font-size: 12px;">
+                Service Provided by Data On Tap Inc. Licensed Full MVNO. Network 302 100.<br>Parkdale, ON, CANADA
+            </p>
+        </div>
+    </div>
+                </div>
+
+
+            </div>
+        </main>
+
+        <!-- Confirmation Drawer -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="/static/translations.js"></script>
+    <script src="/static/app.js"></script>
+    <script>
+        // Load user data and display data balance
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserDataBalance();
+            loadMemberCount();
+            loadSubscriptionStatus();
+
+            // Check if banner was previously dismissed
+            checkBannerDismissedState();
+
+            // Load DOTM balance
+            loadDotmBalance();
+        });
+
+        var dataBalanceValue = 0;
+        var isShowingDays = false;
+        var alternatingInterval;
+        var userSubscription = null; // Store user's subscription status
+
+        function loadUserDataBalance() {
+            var firebaseUid = localStorage.getItem('userId');
+            if (firebaseUid) {
+                fetch('/api/user/data-balance?firebaseUid=' + firebaseUid)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('User data balance:', data);
+                        var dataDisplay = document.getElementById('dataDisplay');
+                        var globalStatus = document.getElementById('globalStatus');
+
+                        if (dataDisplay && data.dataBalance !== undefined) {
+                            dataBalanceValue = data.dataBalance;
+                            updateDataDisplay();
+                            dataDisplay.style.display = 'block';
+
+                            // Start alternating display
+                            startAlternatingDisplay();
+                        }
+
+                        if (globalStatus) {
+                            globalStatus.style.display = 'block';
+                            globalStatus.innerHTML = '<i class="fas fa-globe"></i> GLOBAL DATA';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading data balance:', error);
+                        // Show default values
+                        var dataDisplay = document.getElementById('dataDisplay');
+                        var globalStatus = document.getElementById('globalStatus');
+
+                        if (dataDisplay) {
+                            dataBalanceValue = 0;
+                            updateDataDisplay();
+                            dataDisplay.style.display = 'block';
+                            startAlternatingDisplay();
+                        }
+
+                        if (globalStatus) {
+                            globalStatus.style.display = 'block';
+                            globalStatus.innerHTML = '<i class="fas fa-globe"></i> GLOBAL DATA';
+                        }
+                    });
+            }
+        }
+
+        function formatNumber(num) {
+            return Math.floor(num).toString();
+        }
+
+        function updateDataDisplay() {
+            var dataDisplay = document.getElementById('dataDisplay');
+            if (!dataDisplay) return;
+
+            if (isShowingDays) {
+                // Calculate days based on 500MB per day
+                var totalMB = dataBalanceValue * 1000; // Convert GB to MB
+                var days = Math.floor(totalMB / 500);
+                dataDisplay.innerHTML = '<span class="main-number">' + days + '</span><span class="unit">days</span>';
+            } else {
+                var totalMB = dataBalanceValue * 1000; // Convert GB to MB
+
+                if (totalMB <= 1000) {
+                    // Show as XXXXMB for 1000MB or less
+                    var mainNumber = Math.floor(totalMB).toString();
+                    dataDisplay.innerHTML = '<span class="main-number">' + mainNumber + '</span><span class="unit">MB</span>';
+                } else {
+                    // Show as X.XXXGB for amounts greater than 1000MB
+                    var gb = totalMB / 1000;
+                    var wholeGB = Math.floor(gb);
+                    var decimalPart = Math.floor((gb - wholeGB) * 1000).toString().padStart(3, '0');
+
+                    dataDisplay.innerHTML = '<span class="main-number">' + wholeGB + '</span><span class="decimal-part">.' + decimalPart + '</span><span class="unit">GB</span>';
+                }
+            }
+        }
+
+        function startAlternatingDisplay() {
+            if (alternatingInterval) {
+                clearInterval(alternatingInterval);
+            }
+
+            alternatingInterval = setInterval(function() {
+                isShowingDays = !isShowingDays;
+                updateDataDisplay();
+            }, 10000);
+        }
+
+        function loadMemberCount() {
+            fetch('/api/member-count')
+                .then(response => response.json())
+                .then(data => {
+                    var userCountElement = document.querySelector('.user-count');
+                    if (userCountElement && data.count) {
+                        userCountElement.textContent = data.count;
+                    }
+
+                    // Update QR code member count
+                    var qrMemberCount = document.getElementById('qrMemberCount');
+                    if (qrMemberCount && data.count) {
+                        qrMemberCount.textContent = '#' + data.count + '/∞';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading member count:', error);
+                });
+        }
+
+        function loadSubscriptionStatus() {
+            var firebaseUid = localStorage.getItem('userId');
+            if (firebaseUid) {
+                fetch('/api/subscription-status?firebaseUid=' + firebaseUid)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Subscription status:', data);
+
+                        // Update global subscription status for offer filtering
+                        if (typeof updateSubscriptionStatus === 'function') {
+                            updateSubscriptionStatus(data);
+                        }
+
+                        // Update membership banner with proper date formatting
+                        updateMembershipBanner(data);
+                    })
+                    .catch(error => {
+                        console.error('Error loading subscription status:', error);
+                    });
+            }
+        }
+
+        function updateMembershipBanner(subscriptionData) {
+            var membershipBanner = document.getElementById('membershipBanner');
+            var bitchatCard = document.getElementById('bitchatStatusCard');
+            
+            if (!membershipBanner || !bitchatCard) return;
+
+            if (subscriptionData.status === 'active') {
+                var subscriptionType = subscriptionData.subscription_type || 'basic_membership';
+                var displayName = subscriptionType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+                // Format the end date
+                var endDate = new Date(subscriptionData.end_date);
+                var formattedDate = formatMembershipDate(endDate);
+
+                // Calculate days remaining
+                var now = new Date();
+                var daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+
+                var subscriptionInfo = membershipBanner.querySelector('.subscription-info');
+                if (subscriptionInfo) {
+                    subscriptionInfo.innerHTML = `
+                        <div class="subscription-type">${displayName}</div>
+                        <div class="subscription-validity">Valid for ${daysRemaining} more days until ${formattedDate}</div>
+                    `;
+                }
+
+                // Show membership banner and hide Bitchat card
+                membershipBanner.style.display = 'flex';
+                bitchatCard.style.display = 'none';
+            } else {
+                // Hide membership banner and show Bitchat card
+                membershipBanner.style.display = 'none';
+                bitchatCard.style.display = 'flex';
+                initializeBitchatStatus();
+            }
+        }
+
+        function initializeBitchatStatus() {
+            var statusIndicator = document.getElementById('statusIndicator');
+            var connectionText = document.getElementById('connectionText');
+            var userCount = document.getElementById('userCount');
+
+            // Simulate connection status
+            setTimeout(function() {
+                var isConnected = Math.random() > 0.3; // 70% chance of being connected
+                var nearbyCount = isConnected ? Math.floor(Math.random() * 15) + 1 : 0;
+
+                if (isConnected) {
+                    statusIndicator.classList.add('connected');
+                    statusIndicator.classList.remove('disconnected');
+                    connectionText.textContent = 'Connected';
+                } else {
+                    statusIndicator.classList.add('disconnected');
+                    statusIndicator.classList.remove('connected');
+                    connectionText.textContent = 'Disconnected';
+                }
+
+                userCount.textContent = nearbyCount;
+            }, 1500);
+        }
+
+        function dismissBitchatCard() {
+            var card = document.getElementById('bitchatStatusCard');
+            if (card) {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(-20px)';
+                setTimeout(function() {
+                    card.style.display = 'none';
+                }, 300);
+
+                // Save dismissed state to localStorage
+                localStorage.setItem('bitchatCardDismissed', 'true');
+            }
+        }
+
+        function formatMembershipDate(date) {
+            var month = (date.getMonth() + 1).toString().padStart(2, '0');
+            var day = date.getDate().toString().padStart(2, '0');
+            var year = date.getFullYear();
+            var hours = date.getHours().toString().padStart(2, '0');
+            var minutes = date.getMinutes().toString().padStart(2, '0');
+
+            return `${month}/${day}/${year} ${hours}:${minutes}`;
+        }
+
+        function toggleQRCode(event) {
+            event.stopPropagation();
+            const popup = document.getElementById('qrCodePopup');
+
+            if (popup.style.display === 'block') {
+                popup.style.display = 'none';
+            } else {
+                popup.style.display = 'block';
+
+                // Generate QR code if it doesn't exist yet
+                if (!document.querySelector('#qrcode canvas')) {
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: "https://gorse.dotmobile.app",
+                        width: 150,
+                        height: 150,
+                        colorDark: "#333333",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
+            }
+        }
+
+        function generateRandomLinkCode() {
+            return Math.random().toString(36).substring(2, 12);
+        }
+
+        // Close QR code popup when clicking outside
+        document.addEventListener('click', function(e) {
+            const popup = document.getElementById('qrCodePopup');
+            const icon = document.querySelector('.qr-code-icon');
+
+            if (popup && popup.style.display === 'block' && !popup.contains(e.target) && e.target !== icon) {
+                popup.style.display = 'none';
+            }
+        });
+
+        function updateSubscriptionStatus(data) {
+            userSubscription = data;
+            populateOfferCards(); // Re-populate offer cards based on updated subscription
+        }
+
+        function dismissMembershipBanner() {
+            var banner = document.getElementById('membershipBanner');
+            if (banner) {
+                banner.style.opacity = '0';
+                banner.style.transform = 'translateY(-20px)';
+                setTimeout(function() {
+                    banner.style.display = 'none';
+                }, 300);
+
+                // Save dismissed state to localStorage
+                localStorage.setItem('membershipBannerDismissed', 'true');
+            }
+        }
+
+        // Check if banner was previously dismissed
+        function checkBannerDismissedState() {
+            var membershipDismissed = localStorage.getItem('membershipBannerDismissed');
+            var bitchatDismissed = localStorage.getItem('bitchatCardDismissed');
+            
+            if (membershipDismissed === 'true') {
+                var banner = document.getElementById('membershipBanner');
+                if (banner) {
+                    banner.style.display = 'none';
+                }
+            }
+            
+            if (bitchatDismissed === 'true') {
+                var bitchatCard = document.getElementById('bitchatStatusCard');
+                if (bitchatCard) {
+                    bitchatCard.style.display = 'none';
+                }
+            }
+        }
+
+        function loadDotmBalance() {
+            const tokenBalancePill = document.getElementById('tokenBalancePill');
+            if (tokenBalancePill) {
+                tokenBalancePill.textContent = '100.33 DOTM'; // Hardcoded DOTM balance as requested
+            }
+        }
+
+        // Welcome message functionality
+        let currentWelcomeMessageId = null;
+        let availableVoices = [];
+
+        function loadWelcomeMessage() {
+            const firebaseUid = localStorage.getItem('userId');
+            if (!firebaseUid) return;
+
+            // Load available voices
+            fetch('/api/welcome-message/voices')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.voices) {
+                        availableVoices = data.voices;
+                        populateVoiceSelect();
+                    }
+                })
+                .catch(error => console.error('Error loading voices:', error));
+
+            // Check if user has notifications (welcome message)
+            fetch(`/api/notifications?firebaseUid=${firebaseUid}&limit=10`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.notifications) {
+                        const hasWelcomeNotification = data.notifications.some(n => n.type === 'welcome');
+                        const welcomeCardDismissed = localStorage.getItem('welcomeMessageDismissed');
+                        
+                        if (hasWelcomeNotification && welcomeCardDismissed !== 'true') {
+                            const welcomeCard = document.getElementById('welcomeMessageCard');
+                            if (welcomeCard) {
+                                welcomeCard.style.display = 'flex';
+                                // Add link to notifications
+                                const welcomeDescription = welcomeCard.querySelector('.welcome-message-description');
+                                if (welcomeDescription) {
+                                    welcomeDescription.innerHTML = `
+                                        Listen to your custom welcome message with today's date and personalized greeting.
+                                        <br><a href="/notifications" style="color: rgba(255,255,255,0.9); text-decoration: underline;">
+                                            View in Notifications →
+                                        </a>
+                                    `;
+                                }
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.error('Error checking for welcome notifications:', error));
+        }
+
+        function populateVoiceSelect() {
+            const voiceSelect = document.getElementById('welcomeVoice');
+            if (!voiceSelect || !availableVoices.length) return;
+
+            voiceSelect.innerHTML = '';
+            availableVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.voice_id;
+                option.textContent = `${voice.name} (${voice.labels?.gender || 'Unknown'})`;
+                voiceSelect.appendChild(option);
+            });
+
+            // Select default voice (Rachel)
+            voiceSelect.value = '21m00Tcm4TlvDq8ikWAM';
+        }
+
+        function playWelcomeMessage() {
+            const firebaseUid = localStorage.getItem('userId');
+            const language = document.getElementById('welcomeLanguage').value;
+            const voiceId = document.getElementById('welcomeVoice').value;
+            const playBtn = document.getElementById('playWelcomeBtn');
+            const audio = document.getElementById('welcomeAudio');
+
+            if (!firebaseUid) {
+                alert('Please log in to play welcome message');
+                return;
+            }
+
+            // Update button state
+            playBtn.disabled = true;
+            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+            // Generate new welcome message
+            fetch('/api/welcome-message/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    firebaseUid: firebaseUid,
+                    language: language,
+                    voiceId: voiceId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.audio_url) {
+                    currentWelcomeMessageId = data.message_id;
+                    audio.src = data.audio_url;
+                    audio.style.display = 'block';
+                    audio.play();
+                } else {
+                    alert('Error generating welcome message: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error playing welcome message:', error);
+                alert('Error playing welcome message. Please try again.');
+            })
+            .finally(() => {
+                playBtn.disabled = false;
+                playBtn.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
+            });
+        }
+
+        function updateWelcomeMessage() {
+            // Reset audio when settings change
+            const audio = document.getElementById('welcomeAudio');
+            audio.style.display = 'none';
+            audio.src = '';
+        }
+
+        function dismissWelcomeMessage() {
+            const welcomeCard = document.getElementById('welcomeMessageCard');
+            if (welcomeCard) {
+                welcomeCard.style.opacity = '0';
+                welcomeCard.style.transform = 'translateY(-20px)';
+                setTimeout(() => {
+                    welcomeCard.style.display = 'none';
+                }, 300);
+
+                localStorage.setItem('welcomeMessageDismissed', 'true');
+            }
+        }
+
+        // Load welcome message on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadWelcomeMessage();
+        });
+    </script>
+    <script>
+                    // Refresh invites list function
+                    window.refreshInvitesList = function() {
+                        loadInvitesList();
+                    };
+
+                    // Load invites when page loads
+                    loadInvitesList();
+
+        // Add event listener for resend eSIM button
+        document.addEventListener('DOMContentLoaded', function() {
+            const resendBtn = document.getElementById('resendEsimBtn');
+            if (resendBtn) {
+                resendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    resendEsimEmail();
+                });
+            }
+        });
+
+        function resendEsimEmail() {
+            const firebaseUid = localStorage.getItem('userId');
+            if (!firebaseUid) {
+                alert('User not authenticated');
+                return;
+            }
+
+            // Disable button and show loading
+            const resendBtn = document.getElementById('resendEsimBtn');
+            const originalText = resendBtn.textContent;
+            resendBtn.textContent = 'Sending...';
+            resendBtn.style.pointerEvents = 'none';
+
+            fetch('/api/resend-esim-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    firebaseUid: firebaseUid
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('eSIM details have been resent to your email!');
+                } else {
+                    alert('Failed to resend email: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error resending eSIM email:', error);
+                alert('Failed to resend email. Please try again.');
+            })
+            .finally(() => {
+                // Re-enable button
+                resendBtn.textContent = originalText;
+                resendBtn.style.pointerEvents = 'auto';
+            });
+        }
+    </script>
+</body>
+</html>
