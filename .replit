@@ -16,7 +16,7 @@ run = ["sh", "-c", "python main.py"]
 deploymentTarget = "cloudrun"
 
 [workflows]
-runButton = "Run"
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Run"
@@ -27,14 +27,30 @@ mode = "sequential"
 task = "shell.exec"
 args = "python -c \"import socket; s = socket.socket(); s.bind(('0.0.0.0', 0)); print(f'Available port: {s.getsockname()[1]}'); s.close()\" && python main.py"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Flask Server"
+
+[[workflows.workflow]]
+name = "Flask Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 35431
-externalPort = 3001
-exposeLocalhost = true
 
 [[ports]]
 localPort = 44983

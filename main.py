@@ -403,7 +403,11 @@ def register_fcm_token():
 
                             return jsonify({"status": "success", "platform": platform})
 
-        return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
+        except Exception as e:
+            print(f"Error processing FCM token registration: {str(e)}")
+            return jsonify({"error": "Failed to register FCM token"}), 500
+
+    return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
 
 
 # Send notifications to both web and app users
