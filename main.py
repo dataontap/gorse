@@ -1687,6 +1687,18 @@ def help_admin():
 def oxio_test():
     return render_template('oxio_test.html')
 
+@app.route('/privacy', methods=['GET'])
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/terms', methods=['GET'])
+def terms():
+    return render_template('terms.html')
+
+@app.route('/about', methods=['GET'])
+def about():
+    return render_template('about.html')
+
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
     try:
