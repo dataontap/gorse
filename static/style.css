@@ -1078,7 +1078,7 @@ body.light-mode {
     }
 }
 
-```
+/* Styles for .dark-mode .data-amount, .dark-mode .main-number, etc. */
 .dark-mode .data-amount,
 .dark-mode .main-number,
 .dark-mode .decimal-part,
@@ -1203,6 +1203,37 @@ body.light-mode {
 .light-mode .dashboard-content {
     background: rgba(255, 255, 255, 0.15);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode content boxes - make transparent */
+.dark-mode .dashboard-content,
+.dark-mode .onboarding-content,
+.dark-mode .floating-note {
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure text is visible in dark mode content boxes */
+.dark-mode .dashboard-content *,
+.dark-mode .onboarding-content *,
+.dark-mode .floating-note * {
+    color: #ffffff !important;
+}
+
+.dark-mode .dashboard-content a,
+.dark-mode .onboarding-content a,
+.dark-mode .floating-note a {
+    color: #66a3ff !important;
+}
+
+.dark-mode .dashboard-content h1,
+.dark-mode .dashboard-content h2,
+.dark-mode .dashboard-content h3,
+.dark-mode .dashboard-content h4,
+.dark-mode .dashboard-content h5,
+.dark-mode .dashboard-content h6 {
+    color: #ffffff !important;
 }
 
 .light-mode .menu-dropdown,
@@ -2741,7 +2772,6 @@ cursor: pointer;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
     transition: bottom 0.3s ease-out;
     z-index: 10001;
-    transform: translateZ(0);
     display: none;
 }
 
@@ -3540,7 +3570,7 @@ input:checked + .toggle-slider:before {
     transform: translateY(-2px);
 }
 
-.invite-option-btn i {
+.invite-option-btn i{
     font-size: 24px;
     color: var(--primary-color);
 }
