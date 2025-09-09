@@ -2487,41 +2487,6 @@ body.light-mode {
     color: #4d9aff;
 }
 
-/* Dark mode form inputs and text areas */
-.dark-mode input[type="text"],
-.dark-mode input[type="email"],
-.dark-mode input[type="password"],
-.dark-mode input[type="number"],
-.dark-mode input[type="tel"],
-.dark-mode textarea,
-.dark-mode select {
-    background-color: rgba(60, 60, 60, 0.9) !important;
-    color: #ffffff !important;
-    border-color: #555 !important;
-}
-
-.dark-mode input[type="text"]:focus,
-.dark-mode input[type="email"]:focus,
-.dark-mode input[type="password"]:focus,
-.dark-mode input[type="number"]:focus,
-.dark-mode input[type="tel"]:focus,
-.dark-mode textarea:focus,
-.dark-mode select:focus {
-    background-color: rgba(70, 70, 70, 0.95) !important;
-    border-color: #66a3ff !important;
-    color: #ffffff !important;
-    box-shadow: 0 0 0 3px rgba(102, 163, 255, 0.2) !important;
-}
-
-.dark-mode input[type="text"]::placeholder,
-.dark-mode input[type="email"]::placeholder,
-.dark-mode input[type="password"]::placeholder,
-.dark-mode input[type="number"]::placeholder,
-.dark-mode input[type="tel"]::placeholder,
-.dark-mode textarea::placeholder {
-    color: #aaaaaa !important;
-}
-
 .sort-icons {
     display: flex;
     gap: 20px;
