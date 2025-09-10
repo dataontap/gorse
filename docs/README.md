@@ -5,9 +5,8 @@ Welcome to the comprehensive documentation for the DOTM Platform - a next-genera
 
 ## 🌐 Live Platform
 
-- **Main Platform**: [get-dot-esim.replit.app](https://get-dot-esim.replit.app)
-- **MCP Server**: [get-dot-esim.replit.app/mcp](https://get-dot-esim.replit.app/mcp)
-- **Alternative MCP**: [mcp.dotmobile.app](https://mcp.dotmobile.app)
+- **Main**: [gorse.dotmobile.app](https://gorse.dotmobile.app)
+- **MCP Server**: [mcp.dotmobile.app](https://mcp.dotmobile.app) or [gorse.dotmobile.app/mcp](https://gorse.dotmobile.app/mcp)
 
 ## 📚 Documentation Structure
 

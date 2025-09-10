@@ -23,7 +23,7 @@ SERVICES_CATALOG = {
                 "name": "Global Data 10GB",
                 "description": "10GB of shareable data for global use",
                 "type": "one_time_purchase",
-                "price_usd": 10.00,
+                "price_usd": 20.00,
                 "features": [
                     "10GB data allowance",
                     "Global coverage",

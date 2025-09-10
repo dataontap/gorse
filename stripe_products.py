@@ -37,7 +37,7 @@ def create_stripe_products():
             if len(prices.data) == 0:
                 global_data_price = stripe.Price.create(
                     product=global_data_product.id,
-                    unit_amount=1000,  # $10.00
+                    unit_amount=2000,  # $20.00
                     currency='usd',
                     metadata={
                         'data_amount': '10GB'
