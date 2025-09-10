@@ -232,6 +232,15 @@
                 </div>
 
                 <div class="address-section mb-4">
+                    <h3 class="mb-3"><i class="fas fa-mobile-alt"></i> Beta Phone Numbers</h3>
+                    <div id="betaPhoneContainer">
+                        <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
+                            <p>Loading beta access information...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="address-section mb-4">
                     <h3 class="mb-3"><i class="fas fa-shipping-fast"></i> Shipping Address</h3>
                     <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
                         <div class="d-flex justify-content-between align-items-start">
@@ -359,6 +368,9 @@
                     
                     // Load subscription data with Firebase UID
                     loadSubscriptionDataWithUID(currentUser.uid);
+                    
+                    // Load beta phone numbers with Firebase UID
+                    loadBetaPhoneNumbers(currentUser.uid);
                 } else {
                     // Set up auth state listener for future changes
                     firebase.auth().onAuthStateChanged(function(firebaseUser) {
@@ -387,6 +399,9 @@
                             
                             // Load subscription data with Firebase UID
                             loadSubscriptionDataWithUID(firebaseUser.uid);
+                            
+                            // Load beta phone numbers with Firebase UID
+                            loadBetaPhoneNumbers(firebaseUser.uid);
                         } else {
                             // No authenticated user found, redirect to login
                             console.log('No authenticated user found, redirecting to login');
@@ -1499,6 +1514,237 @@
         function editSubscription(element) {
             // Navigate to marketplace for subscription management
             window.location.href = '/marketplace';
+        }
+
+        function loadBetaPhoneNumbers(firebaseUid) {
+            if (!firebaseUid) {
+                console.log('No Firebase UID provided for beta phone numbers');
+                displayNoBetaAccess();
+                return;
+            }
+
+            try {
+                console.log('Loading beta phone numbers for UID:', firebaseUid);
+
+                fetch(`/api/user-phone-numbers?firebase_uid=${firebaseUid}`)
+                    .then(response => {
+                        console.log('Beta phone numbers response status:', response.status);
+                        if (response.status === 403) {
+                            // User doesn't have beta access
+                            displayBetaRequestOption(firebaseUid);
+                            return null;
+                        }
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data) {
+                            console.log('Beta phone numbers loaded successfully:', data);
+                            displayBetaPhoneNumbers(data);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading beta phone numbers:', error);
+                        // Check if user can request beta access
+                        checkBetaStatus(firebaseUid);
+                    });
+            } catch (error) {
+                console.error('Error in loadBetaPhoneNumbers:', error);
+                displayNoBetaAccess();
+            }
+        }
+
+        function checkBetaStatus(firebaseUid) {
+            fetch(`/api/beta-status?firebase_uid=${firebaseUid}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Beta status:', data);
+                    if (data.has_request) {
+                        if (data.status === 'pending') {
+                            displayBetaPending();
+                        } else if (data.status === 'rejected') {
+                            displayBetaRejected();
+                        } else {
+                            displayBetaRequestOption(firebaseUid);
+                        }
+                    } else {
+                        displayBetaRequestOption(firebaseUid);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking beta status:', error);
+                    displayBetaRequestOption(firebaseUid);
+                });
+        }
+
+        function displayBetaPhoneNumbers(data) {
+            const container = document.getElementById('betaPhoneContainer');
+            
+            if (data.success && data.phone_numbers && data.phone_numbers.length > 0) {
+                const phoneNumber = data.phone_numbers[0];
+                const approvedDate = new Date(phoneNumber.approved_at).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+
+                container.innerHTML = `
+                    <div class="address-card p-3 mb-3" style="border-left: 4px solid #4CAF50;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <h4><i class="fas fa-mobile-alt"></i> ${phoneNumber.number}</h4>
+                                <p><strong>Group ID:</strong> ${phoneNumber.group_id}</p>
+                                <p><strong>OXIO User ID:</strong> ${phoneNumber.oxio_user_id}</p>
+                                <p class="text-success">Beta access approved on ${approvedDate}</p>
+                                <div class="mt-3">
+                                    <button class="btn btn-outline-primary btn-sm me-2" onclick="showQRCode('${phoneNumber.qr_codes.simple_qr}', 'Phone Number QR')">
+                                        <i class="fas fa-qrcode"></i> Phone QR
+                                    </button>
+                                    <button class="btn btn-outline-info btn-sm" onclick="showQRCode('${phoneNumber.qr_codes.resin_qr}', 'RESIN Data QR')">
+                                        <i class="fas fa-qrcode"></i> RESIN QR
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                displayNoBetaAccess();
+            }
+        }
+
+        function displayBetaRequestOption(firebaseUid) {
+            const container = document.getElementById('betaPhoneContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="border-left: 4px solid #2196F3;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="address-content">
+                            <h4>Beta Access Available</h4>
+                            <p>Request access to beta features and get your own phone number with OXIO activation</p>
+                            <button class="btn btn-primary btn-sm" onclick="requestBetaAccess('${firebaseUid}')">
+                                <i class="fas fa-paper-plane"></i> Request Beta Access
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayBetaPending() {
+            const container = document.getElementById('betaPhoneContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="border-left: 4px solid #ff9800;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="address-content">
+                            <h4><i class="fas fa-clock"></i> Beta Request Pending</h4>
+                            <p>Your beta access request is under review. We'll notify you via email once it's approved.</p>
+                            <p class="text-muted">Processing typically takes 1-2 business days.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayBetaRejected() {
+            const container = document.getElementById('betaPhoneContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="border-left: 4px solid #f44336;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="address-content">
+                            <h4><i class="fas fa-times-circle"></i> Beta Request Not Approved</h4>
+                            <p>Your beta access request was not approved at this time.</p>
+                            <p>You can apply again in the future as we continue to expand our beta program.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayNoBetaAccess() {
+            const container = document.getElementById('betaPhoneContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="border-left: 4px solid #6c757d;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="address-content">
+                            <h4>Beta Program</h4>
+                            <p>Beta access is currently not available</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function requestBetaAccess(firebaseUid) {
+            // Get current user info from Firebase
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) {
+                alert('Please log in to request beta access');
+                return;
+            }
+
+            const requestData = {
+                email: currentUser.email,
+                firebase_uid: firebaseUid,
+                name: currentUser.displayName || currentUser.email.split('@')[0]
+            };
+
+            // Show loading state
+            const container = document.getElementById('betaPhoneContainer');
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
+                    <p><i class="fas fa-spinner fa-spin"></i> Submitting beta request...</p>
+                </div>
+            `;
+
+            fetch('/api/beta-request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Beta request response:', data);
+                if (data.success) {
+                    displayBetaPending();
+                    alert('Beta access request submitted successfully! You will receive an email notification once approved.');
+                } else {
+                    alert('Error submitting beta request: ' + (data.error || 'Unknown error'));
+                    displayBetaRequestOption(firebaseUid);
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting beta request:', error);
+                alert('Error submitting beta request. Please try again.');
+                displayBetaRequestOption(firebaseUid);
+            });
+        }
+
+        function showQRCode(qrDataUrl, title) {
+            // Create modal
+            const modal = document.createElement('div');
+            modal.className = 'esim-qr-modal';
+            modal.innerHTML = `
+                <div class="esim-qr-content">
+                    <h3>${title}</h3>
+                    <img src="${qrDataUrl}" alt="${title}" style="max-width: 300px; max-height: 300px;">
+                    <p style="margin-top: 15px;">
+                        <button class="btn btn-secondary" onclick="this.closest('.esim-qr-modal').remove()">Close</button>
+                    </p>
+                </div>
+            `;
+            
+            // Close on click outside
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+            
+            document.body.appendChild(modal);
         }
 
         function toggleQRCode(event) {
