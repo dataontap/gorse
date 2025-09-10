@@ -3611,6 +3611,223 @@ def mcp_pricing_calculator():
     else:
         return jsonify({"error": "Pricing calculator not available"}), 503
 
+# Beta Approval System API Endpoints
+@app.route('/api/beta-request', methods=['POST'])
+def submit_beta_request():
+    """Submit a beta access request"""
+    try:
+        from beta_approval_service import BetaApprovalService
+        
+        data = request.get_json()
+        user_email = data.get('email')
+        firebase_uid = data.get('firebase_uid')
+        user_name = data.get('name')
+        
+        if not user_email or not firebase_uid:
+            return jsonify({
+                'success': False,
+                'error': 'Email and Firebase UID are required'
+            }), 400
+        
+        beta_service = BetaApprovalService()
+        result = beta_service.submit_beta_request(user_email, firebase_uid, user_name)
+        
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        print(f"Error in submit_beta_request: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/beta-approve/<request_id>')
+def approve_beta_request(request_id):
+    """Approve a beta request (admin endpoint)"""
+    try:
+        from beta_approval_service import BetaApprovalService
+        
+        beta_service = BetaApprovalService()
+        result = beta_service.approve_beta_request(request_id)
+        
+        if result['success']:
+            return f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px; background: #f0f8ff;">
+                <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h1 style="color: #4CAF50; text-align: center;">✅ Beta Request Approved!</h1>
+                    <p><strong>Request ID:</strong> {request_id}</p>
+                    <p><strong>Phone Number Assigned:</strong> {result.get('phone_number')}</p>
+                    <p><strong>OXIO User ID:</strong> {result.get('oxio_user_id')}</p>
+                    <p><strong>Group ID:</strong> {result.get('group_id')}</p>
+                    <p style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 5px;">
+                        The user has been notified via email and can now access beta features.
+                    </p>
+                </div>
+            </body>
+            </html>
+            """
+        else:
+            return f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px; background: #fff5f5;">
+                <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h1 style="color: #f44336; text-align: center;">❌ Approval Failed</h1>
+                    <p><strong>Request ID:</strong> {request_id}</p>
+                    <p><strong>Error:</strong> {result.get('error', 'Unknown error')}</p>
+                    <p><strong>Message:</strong> {result.get('message', 'No additional details')}</p>
+                </div>
+            </body>
+            </html>
+            """, 400
+            
+    except Exception as e:
+        print(f"Error in approve_beta_request: {str(e)}")
+        return f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; padding: 20px; background: #fff5f5;">
+            <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h1 style="color: #f44336; text-align: center;">❌ System Error</h1>
+                <p><strong>Request ID:</strong> {request_id}</p>
+                <p><strong>Error:</strong> {str(e)}</p>
+            </div>
+        </body>
+        </html>
+        """, 500
+
+@app.route('/api/beta-reject/<request_id>')
+def reject_beta_request(request_id):
+    """Reject a beta request (admin endpoint)"""
+    try:
+        from beta_approval_service import BetaApprovalService
+        
+        # Get optional reason from query parameter
+        reason = request.args.get('reason', 'Not specified')
+        
+        beta_service = BetaApprovalService()
+        result = beta_service.reject_beta_request(request_id, reason)
+        
+        if result['success']:
+            return f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px; background: #fff8e1;">
+                <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h1 style="color: #ff9800; text-align: center;">⚠️ Beta Request Rejected</h1>
+                    <p><strong>Request ID:</strong> {request_id}</p>
+                    <p><strong>Reason:</strong> {reason}</p>
+                    <p style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 5px;">
+                        The user has been notified via email about the rejection.
+                    </p>
+                </div>
+            </body>
+            </html>
+            """
+        else:
+            return f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px; background: #fff5f5;">
+                <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h1 style="color: #f44336; text-align: center;">❌ Rejection Failed</h1>
+                    <p><strong>Request ID:</strong> {request_id}</p>
+                    <p><strong>Error:</strong> {result.get('error', 'Unknown error')}</p>
+                </div>
+            </body>
+            </html>
+            """, 400
+            
+    except Exception as e:
+        print(f"Error in reject_beta_request: {str(e)}")
+        return f"<h1>Error: {str(e)}</h1>", 500
+
+@app.route('/api/beta-status')
+def get_beta_status():
+    """Get beta status for current user"""
+    try:
+        from beta_approval_service import BetaApprovalService
+        
+        # Get Firebase UID from request (you may need to implement proper auth)
+        firebase_uid = request.args.get('firebase_uid')
+        if not firebase_uid:
+            return jsonify({
+                'success': False,
+                'error': 'Firebase UID required'
+            }), 400
+        
+        beta_service = BetaApprovalService()
+        result = beta_service.get_user_beta_status(firebase_uid)
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        print(f"Error in get_beta_status: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/user-phone-numbers')
+def get_user_phone_numbers():
+    """Get user's phone numbers and generate QR codes"""
+    try:
+        from beta_approval_service import BetaApprovalService
+        from qr_generator import generate_resin_qr_code, generate_simple_phone_qr
+        
+        firebase_uid = request.args.get('firebase_uid')
+        if not firebase_uid:
+            return jsonify({
+                'success': False,
+                'error': 'Firebase UID required'
+            }), 400
+        
+        beta_service = BetaApprovalService()
+        beta_status = beta_service.get_user_beta_status(firebase_uid)
+        
+        if not beta_status.get('has_request') or beta_status.get('status') != 'approved':
+            return jsonify({
+                'success': False,
+                'error': 'User does not have approved beta access'
+            }), 403
+        
+        phone_number = beta_status.get('phone_number')
+        group_id = beta_status.get('group_id')
+        oxio_user_id = beta_status.get('oxio_user_id')
+        resin_data = beta_status.get('resin_data', {})
+        
+        # Generate QR codes
+        resin_qr = generate_resin_qr_code(
+            phone_number, 
+            group_id, 
+            oxio_user_id, 
+            resin_data
+        )
+        
+        simple_qr = generate_simple_phone_qr(phone_number)
+        
+        return jsonify({
+            'success': True,
+            'phone_numbers': [{
+                'number': phone_number,
+                'group_id': group_id,
+                'oxio_user_id': oxio_user_id,
+                'resin_data': resin_data,
+                'qr_codes': {
+                    'resin_qr': resin_qr,
+                    'simple_qr': simple_qr
+                },
+                'approved_at': beta_status.get('approved_at')
+            }]
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in get_user_phone_numbers: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
     print("\n=== Registered Flask Routes ===")

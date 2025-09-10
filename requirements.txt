@@ -5,3 +5,13 @@ openai==1.57.0
 opentelemetry-instrumentation-openai==0.33.12
 livekit-plugins-openai==0.10.9
 llama-index-llms-openai-like==0.3.0
+firebase-admin
+flask
+flask-restx
+flask-socketio
+psycopg2-binary
+pytz
+qrcode
+requests
+stripe
+web3
