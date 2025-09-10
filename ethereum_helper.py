@@ -411,9 +411,9 @@ def reward_data_purchase(user_address, purchase_amount_cents):
         print(f"Error in reward_data_purchase: {str(e)}")
         return None
 
-# Award $10.33 CAD worth of DOTM tokens to new member
+# Award $10.33 USD worth of DOTM tokens to new member
 def award_new_member_token(member_address):
-    """Awards 10.33 CAD worth of DOTM tokens to a new member's wallet"""
+    """Awards 10.33 USD worth of DOTM tokens to a new member's wallet"""
     web3 = get_web3_connection()
     token_contract = get_token_contract()
 
@@ -465,14 +465,14 @@ def award_new_member_token(member_address):
         # Continue with the token minting even if DB operations fail
 
     try:
-        # Build transaction - mint $10.33 CAD worth of DOTM tokens
-        cad_per_dotm = get_token_price_from_etherscan()['price']
-        if cad_per_dotm is None:
-            cad_per_dotm = 1.0
-        token_amount_cad = 10.33  # $10.33 CAD
+        # Build transaction - mint $10.33 USD worth of DOTM tokens
+        usd_per_dotm = get_token_price_from_etherscan()['price']
+        if usd_per_dotm is None:
+            usd_per_dotm = 1.0
+        token_amount_usd = 10.33  # $10.33 USD
 
-        # Convert CAD amount to DOTM equivalent
-        dotm_amount = token_amount_cad / cad_per_dotm
+        # Convert USD amount to DOTM equivalent
+        dotm_amount = token_amount_usd / usd_per_dotm
 
         # Convert DOTM amount to wei
         token_amount_wei = int(dotm_amount * (10 ** 18))

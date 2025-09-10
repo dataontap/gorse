@@ -1453,8 +1453,8 @@ class DeliveryResource(Resource):
                 print(f"Stripe error: {str(e)}")
                 # Create a price first
                 price = stripe.Price.create(
-                    unit_amount=100,  # $1.00 CAD in cents
-                    currency='cad',
+                    unit_amount=100,  # $1.00 USD in cents
+                    currency='usd',
                     product_data={
                         'id': 'esim_activation_v1',
                         'name': 'eSIM Activation',
@@ -1488,7 +1488,7 @@ class DeliveryResource(Resource):
                 stripe.InvoiceItem.create(
                     customer=customer.id,
                     amount=100,  # $1.00 in cents
-                    currency='cad',
+                    currency='usd',
                     description='eSIM Activation',
                     invoice=invoice.id
                 )
@@ -1633,7 +1633,7 @@ def submit_signup():
         stripe.InvoiceItem.create(
             customer=customer.id,
             amount=100,  # $1.00 in cents
-            currency='cad',
+            currency='usd',
             description='eSIM Activation',
             invoice=invoice.id
         )
