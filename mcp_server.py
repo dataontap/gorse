@@ -57,7 +57,7 @@ SERVICES_CATALOG = {
                 "name": "Basic Membership",
                 "description": "GLOBAL DATA ACCESS + 2FA SMS",
                 "type": "annual_subscription",
-                "price_cad": 24.0,
+                "price_usd": 24.00,
                 "billing_cycle": "yearly",
                 "features": [
                     "Global data access",
@@ -75,7 +75,7 @@ SERVICES_CATALOG = {
                     "Priority QCI-8 and 5G+ access where available",
                     "Premium live person callback support",
                     "1.33 DOTM for $10 purchase",
-                    "All prices are in CAD"
+                    "All prices are in USD"
                 ],
                 "availability": "Available"
             },
