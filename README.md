@@ -91,6 +91,25 @@ We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql d
 - **ElevenLabs**: Voice synthesis for personalized interactions
 - **OpenAI API**: AI-powered customer support
 
+## 🎙️ Advanced Communication Features
+
+### ElevenLabs.io Voice Synthesis
+- **Multilingual Support**: Welcome messages in English, Spanish, and French
+- **Personalized Messages**: Dynamic user-specific welcome audio content
+- **Premium Voices**: High-quality neural voice synthesis (default: Rachel voice)
+- **Custom Voice Settings**: Adjustable stability, similarity boost, and style parameters
+- **Real-time Generation**: On-demand text-to-speech conversion for user interactions
+- **Integration**: Seamless voice messages for onboarding and notifications
+
+### Bitchat Encrypted Messaging
+- **Zero Registration**: No accounts, emails, or phone numbers required
+- **Military-Grade Encryption**: X25519 key exchange, AES-256-GCM, Ed25519 signatures
+- **Mesh Networking**: Bluetooth LE peer-to-peer communication with store-and-forward capability
+- **Privacy First**: Ephemeral messages, emergency triple-tap data wipe
+- **Battery Optimized**: Adaptive power modes with intelligent message compression (LZ4)
+- **Offline Operation**: Complete functionality without internet or cellular connectivity
+- **Cover Traffic**: Timing obfuscation and dummy messages to prevent traffic analysis
+
 ### Model Context Protocol (MCP) Server
 - **AI Assistant Integration**: Structured service information access
 - **Multi-Format APIs**: JSON endpoints and interactive HTML interfaces
