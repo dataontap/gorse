@@ -134,24 +134,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Ensure Firebase UID is always available in localStorage for features like confirmPurchase
             if (!cachedUser || !cachedUser.uid) {
-                console.log('Firebase UID not in localStorage, ensuring basic auth data is stored');
-                // Store basic Firebase data to ensure UID is always available
+                console.log('Firebase UID not in localStorage, ensuring fresh auth data is stored');
+                
+                // Always clear localStorage completely and store fresh basic Firebase data
+                localStorage.clear();
                 const basicUserData = {
                     uid: user.uid,
                     email: user.email,
                     displayName: user.displayName,
                     photoURL: user.photoURL
                 };
+                localStorage.setItem('currentUser', JSON.stringify(basicUserData));
                 
-                // If there's existing data, merge it, otherwise start with basic data
-                if (cachedUser) {
-                    Object.assign(cachedUser, basicUserData);
-                    localStorage.setItem('currentUser', JSON.stringify(cachedUser));
-                } else {
-                    localStorage.setItem('currentUser', JSON.stringify(basicUserData));
-                }
-                
-                // Load complete user data in the background
+                // Load complete user data in the background (will overwrite with full data)
                 loadUserData(user);
             } else {
                 // Update UI with existing cached data
@@ -256,6 +251,10 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadUserData(user) {
         try {
             console.log('Loading user data for:', user.uid);
+            
+            // Clear localStorage completely to prevent stale data issues
+            console.log('Clearing localStorage to prevent stale user data');
+            localStorage.clear();
 
             // Register user in our database
             const registrationResponse = await fetch('/api/auth/register', {
@@ -306,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             currentUserData.dataBalance = balanceData.dataBalance;
                             console.log('Data balance loaded:', balanceData.dataBalance, 'GB');
 
-                            // Update localStorage with new balance
+                            // Completely overwrite localStorage with fresh complete user data
                             localStorage.setItem('currentUser', JSON.stringify(currentUserData));
                             updateAuthUI(user, currentUserData); // Update UI with balance
                         } else {
