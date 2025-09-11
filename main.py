@@ -48,6 +48,9 @@ import ethereum_helper
 import product_rules_helper
 from elevenlabs_service import elevenlabs_service
 
+# Import GitHub service
+from github_service import github_service
+
 # Create products in Stripe if they don't exist
 if stripe.api_key:
     try:
@@ -3823,6 +3826,160 @@ def get_user_phone_numbers():
         
     except Exception as e:
         print(f"Error in get_user_phone_numbers: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# GitHub API endpoints
+@app.route('/api/github/configure', methods=['POST'])
+def configure_github_repository():
+    """Configure GitHub repository for uploads"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Request body is required'
+            }), 400
+        
+        repo_owner = data.get('owner')
+        repo_name = data.get('repo_name')
+        branch = data.get('branch', 'main')
+        
+        if not repo_owner or not repo_name:
+            return jsonify({
+                'success': False,
+                'error': 'Repository owner and name are required'
+            }), 400
+        
+        github_service.set_repository(repo_owner, repo_name, branch)
+        
+        return jsonify({
+            'success': True,
+            'message': f'GitHub repository configured: {repo_owner}/{repo_name} (branch: {branch})'
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in configure_github_repository: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/github/upload-file', methods=['POST'])
+def upload_file_to_github():
+    """Upload a single file to GitHub repository"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Request body is required'
+            }), 400
+        
+        file_path = data.get('file_path')
+        content = data.get('content', '')
+        commit_message = data.get('commit_message')
+        repo_owner = data.get('repo_owner')
+        repo_name = data.get('repo_name')
+        
+        if not file_path:
+            return jsonify({
+                'success': False,
+                'error': 'File path is required'
+            }), 400
+            
+        if not commit_message:
+            commit_message = f'Update {file_path} - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+        
+        result = github_service.upload_file(
+            file_path=file_path,
+            content=content,
+            commit_message=commit_message,
+            repo_owner=repo_owner,
+            repo_name=repo_name
+        )
+        
+        if result['status'] == 'success':
+            return jsonify({
+                'success': True,
+                'message': f'Successfully uploaded {file_path}',
+                'result': result
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Upload failed'),
+                'result': result
+            }), 500
+        
+    except Exception as e:
+        print(f"Error in upload_file_to_github: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/github/upload-project', methods=['POST'])
+def upload_project_to_github():
+    """Upload key project files to GitHub repository"""
+    try:
+        data = request.get_json() or {}
+        
+        repo_owner = data.get('repo_owner')
+        repo_name = data.get('repo_name')
+        
+        # Get list of files to upload
+        files_to_upload = github_service.get_project_files_for_upload()
+        
+        if not files_to_upload:
+            return jsonify({
+                'success': False,
+                'error': 'No files found to upload'
+            }), 400
+        
+        # Perform batch upload
+        result = github_service.upload_multiple_files(
+            files=files_to_upload,
+            repo_owner=repo_owner,
+            repo_name=repo_name
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': f'Upload completed: {result["successful"]} successful, {result["failed"]} failed',
+            'result': result
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in upload_project_to_github: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/github/status', methods=['GET'])
+def get_github_status():
+    """Get GitHub service status and configuration"""
+    try:
+        # Test GitHub authentication
+        auth_result = github_service.get_authenticated_client()
+        
+        return jsonify({
+            'success': True,
+            'authentication': 'connected' if auth_result else 'failed',
+            'configuration': {
+                'repo_owner': github_service.repo_owner,
+                'repo_name': github_service.repo_name,
+                'default_branch': github_service.default_branch
+            }
+        }), 200
+        
+    except Exception as e:
+        print(f"Error in get_github_status: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)
