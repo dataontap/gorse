@@ -1,243 +1,360 @@
+# DOT Services
 
-# DOTM Platform Documentation
+![DOT](https://img.shields.io/badge/Status-Live-green) ![Ethereum](https://img.shields.io/badge/Ethereum-Mainnet-blue) ![Version](https://img.shields.io/badge/Version-1.0-brightgreen)
 
-Welcome to the comprehensive documentation for the DOTM Platform - a next-generation global connectivity ecosystem.
+## 🌐 Full MVNO framework
 
-## 🌐 Live Platform
+dotmobile is a smart tiny telecom. This gorse release is compact Alpha build of a Full MVNO. 
 
-- **Main Platform**: [get-dot-esim.replit.app](https://get-dot-esim.replit.app)
-- **MCP Server**: [get-dot-esim.replit.app/mcp](https://get-dot-esim.replit.app/mcp)
-- **Alternative MCP**: [mcp.dotmobile.app](https://mcp.dotmobile.app)
+Available for FREE and $1 per user above 100TPH. Etheruem and blockchain parts and many other things optional. Used Stripe for invoices, catalog and payments. 
 
-## 📚 Documentation Structure
+Please use this comprehensive telecommunications service toolset/framework to create better telecommunications experiences, bridge traditional mobile services with better digital and user experience, integrate newtech and AI and use our token (blockchain technology) for good. 
 
-### Core Documentation
-- **[MCP Server Documentation](README_MCP.md)** - Complete MCP server guide and features
-- **[API Reference](MCP_API_REFERENCE.md)** - Detailed API endpoints and usage
-- **[Architecture Guide](ARCHITECTURE.md)** - System architecture and design
-- **[Deployment Guide](DEPLOYMENT.md)** - Deployment and hosting information
-- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
+We provide global eSIM connectivity, automation, network services intelligence and network optimization features through a unified ecosystem in a public cloud. Our data servers are located colely in North America: N.Virginia, USA and in Montreal, Canada. We use Full MVNO type of connectivity in the USA, Mexico and in Canada soon hopefully. 
 
-### Quick Navigation
+We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql databases, ElevenLabs for voice synthesis, Bitchat for fallback connectivity and Ethereum blockchain integration. Full list of integrations below.  
 
-#### For Developers
-- [API Reference](MCP_API_REFERENCE.md) - Complete API documentation
-- [Integration Examples](#integration-examples) - Code examples in multiple languages
-- [Contributing Guide](CONTRIBUTING.md) - How to contribute
+### 🚀 Live Platform
 
-#### For Business Users
-- [Service Catalog](#service-catalog) - Available services and pricing
-- [Architecture Overview](ARCHITECTURE.md) - System design and capabilities
-- [Security & Privacy](#security--privacy) - Platform security features
+- **Main Platform**: [gorse.dotmobile.app](https://gorse.dotmobile.app)
+- **MCP Server**: [mcp.dotmobile.app](https://mcp.dotmobile.app)
+- **API Documentation**: [gorse.dotmobile.app/mcp](https://gorse.dotmobile.app/mcp)
 
-#### for System Administrators
-- [Deployment Guide](DEPLOYMENT.md) - Hosting and deployment
-- [Architecture Guide](ARCHITECTURE.md) - Technical architecture
-- [Monitoring & Maintenance](#monitoring--maintenance) - Operations guide
+## 💎 DOTM Token (Ethereum Mainnet)
 
-## 🚀 Platform Overview
+**Contract Address**: `0xF57ab8DEE7ebE3686DB8Bf89E8aCc15E94B97A8D`
 
-### Core Services
-- **Global eSIM Connectivity** - Worldwide mobile data access
-- **Membership Plans** - Tiered service offerings
-- **Network Features** - VPN, Security, Optimization
-- **Token Economy** - DOTM cryptocurrency rewards
-- **Developer APIs** - Integration capabilities
+### Token Economics
+- **Token Symbol**: DOTM
+- **Network**: Ethereum Mainnet
+- **Max Supply**: 10,333,333 DOTM
+- **Current Supply**: (mint-on-demand)
+- **Decimals**: 18
 
-### Key Features
-- **20+ Services** across 7 categories
-- **Real-time Pricing** with dynamic calculations
-- **Privacy-First Design** - No user data exposure
-- **RESTful APIs** - Standard HTTP endpoints
-- **Interactive Interface** - Responsive web design
+### Reward System
+- **10.33% Cashback**: Earn DOTM tokens on all service purchases
+- **New Member Bonus**: 10.33 DOTM tokens for joining the platform
+- **Usage Rewards**: Additional tokens based on service utilization
+- **Founding Member Benefits**: Special perks for early adopters
 
-## 🔌 Quick Start
+### Smart Contract Features
+- **ERC-20 Standard**: Full compatibility with Ethereum ecosystem
+- **Mintable**: Owner-controlled token distribution
+- **Reward Automation**: Automatic distribution based on platform activity
+- **Supply Cap**: Fixed maximum supply with deflationary mechanics
 
-### Access the MCP Server
-```bash
-# Get all services
-curl https://get-dot-esim.replit.app/mcp/api
+## 🌍 Core Services
 
-# Get specific service
-curl https://get-dot-esim.replit.app/mcp/service/basic_membership
+### Global eSIM Connectivity
+- **Global Data Package**: **$20.00 USD for 10GB**
+- **190+ Countries**: Worldwide coverage through OXIO network
+- **Instant Activation**: Immediate service provisioning
+- **No Roaming Fees**: Transparent, fixed pricing
 
-# Calculate pricing
-curl "https://get-dot-esim.replit.app/mcp/calculate?services=basic_membership,vpn_access"
-```
+### Membership Plans
+- **Basic Membership**: **$24.00 USD/year**
+  - Global data access
+  - Standard support
+  - DOTM token rewards
+  - Basic network features
 
-### Integration Examples
+- **Full Membership**: **$66.00 USD/year**
+  - Unlimited talk & text
+  - Priority support
+  - Enhanced token rewards
+  - Premium network features
+  - Beta access priority
 
-#### Python
-```python
-import requests
+### Beta Program
+- **Email Approval Workflow**: Admin-managed access control
+- **Phone Number Assignment**: Random North American numbers via OXIO
+- **QR Code Generation**: RESIN data and phone access codes
+- **Profile Integration**: Complete beta management in user profiles
+- **OXIO Integration**: Automatic user provisioning and GroupID management
 
-# Fetch service catalog
-response = requests.get('https://get-dot-esim.replit.app/mcp/api')
-services = response.json()['services']
+## 🔧 Platform Architecture
 
-# Calculate pricing
-pricing = requests.get(
-    'https://get-dot-esim.replit.app/mcp/calculate',
-    params={'services': 'basic_membership,network_security'}
-).json()
+### Backend Infrastructure
+- **Flask REST API**: Core application with Flask-RESTX documentation
+- **PostgreSQL Database**: Connection pooling and data management
+- **Firebase Authentication**: Secure user identity management
+- **Stripe Integration**: Complete payment processing infrastructure
+- **OXIO API**: Global eSIM and connectivity services
+- **Ethereum Integration**: Web3.py for blockchain interactions
 
-print(f"Monthly cost: ${pricing['pricing']['monthly_recurring']}")
-```
+### Key Integrations
+- **Firebase Admin SDK**: Server-side authentication and user management
+- **Stripe Payments**: Subscription management and billing
+- **OXIO Staging API**: eSIM provisioning and network services
+- **Ethereum Mainnet**: DOTM token rewards and transactions
+- **SMTP Email Services**: Automated notifications and communications
+- **ElevenLabs**: Voice synthesis for personalized interactions
+- **OpenAI API**: AI-powered customer support
 
-#### JavaScript
-```javascript
-// Fetch service data
-const response = await fetch('https://get-dot-esim.replit.app/mcp/api');
-const data = await response.json();
+### Model Context Protocol (MCP) Server
+- **AI Assistant Integration**: Structured service information access
+- **Multi-Format APIs**: JSON endpoints and interactive HTML interfaces
+- **Privacy-First Design**: Zero user data exposure
+- **Real-Time Pricing**: Dynamic cost calculations
+- **Service Catalog**: 20+ services across 7 categories
 
-// Display services
-console.log('Available services:', Object.keys(data.services));
-```
+## 📱 Beta Approval System
 
-## 💰 Pricing Overview
+### User Flow
+1. **Request Access**: Users submit beta requests through their Profile page
+2. **Admin Notification**: Automated email with approve/reject links
+3. **OXIO Integration**: Phone number assignment and user provisioning
+4. **QR Code Generation**: Service activation codes and RESIN data
+5. **Profile Display**: Phone numbers and service details in user interface
 
-| Service Category | Price Range | Billing |
-|-----------------|-------------|---------|
-| **Basic Membership** | $24 CAD/year | Annual |
-| **Full Membership** | $66 USD/year | Annual |
-| **Network Features** | $3-8/month | Monthly |
-| **Global Data** | $10/10GB | One-time |
-| **Physical Products** | $99.99 | One-time |
+### Technical Features
+- **Email Workflow**: HTML notifications with one-click approval
+- **Random Phone Generation**: North American area codes and numbers
+- **GroupID Management**: Unique service identifiers for organization
+- **Database Tracking**: Complete request history and status management
+- **API Endpoints**: RESTful interfaces for beta management
+
+### API Endpoints
+- `POST /api/beta-request` - Submit beta access request
+- `GET /api/beta-approve/<id>` - Admin approval endpoint
+- `GET /api/beta-reject/<id>` - Admin rejection endpoint
+- `GET /api/beta-status` - Check user beta status
+- `GET /api/user-phone-numbers` - Retrieve phone numbers with QR codes
+
+## 💰 Pricing Structure
+
+| Service | Price | Billing | Features |
+|---------|-------|---------|-----------|
+| **Global Data** | **$20.00 USD** | Per 10GB | Worldwide coverage, instant activation |
+| **Basic Membership** | **$24.00 USD** | Annual | Global access, standard support, token rewards |
+| **Full Membership** | **$66.00 USD** | Annual | Unlimited features, priority support, enhanced rewards |
+| **Network Security** | $5.00 USD | Monthly | VPN access, threat protection |
+| **VPN Access** | $8.00 USD | Monthly | Global server network, unlimited bandwidth |
+| **Priority Routing** | $6.00 USD | Monthly | Optimized network paths |
+| **DOTM Metal Card** | $99.99 USD | One-time | Physical collectible, founding member status |
 
 ### Cost Calculator
-- **Free Tier**: $0/month (Beta access)
+- **Free Tier**: $0/month (Beta access only)
 - **Basic Plan**: ~$2/month (Basic membership)
-- **Full Plan**: ~$5.50/month (Full membership)
-- **Maximum**: ~$30-40/month (All features)
+- **Premium Plan**: ~$5.50/month (Full membership)
+- **Maximum Configuration**: ~$30-40/month (All features enabled)
 
 ## 🛡️ Security & Privacy
 
 ### Privacy Protection
-- **Zero User Data Exposure** - Only public service information
-- **Static Service Catalog** - No dynamic user data retrieval
-- **Compliant Error Handling** - Generic responses only
-- **Regular Audits** - Quarterly compliance reviews
+- **Zero User Data Exposure**: MCP server only exposes public service information
+- **Data Isolation**: Strict separation between user data and public APIs
+- **Compliant Error Handling**: Generic responses without system internals
+- **Regular Audits**: Quarterly compliance and security reviews
 
 ### Security Features
-- **HTTPS/TLS Encryption** - All communications encrypted
-- **Rate Limiting** - API abuse protection
-- **Input Validation** - All parameters validated
-- **Audit Logging** - Complete action tracking
+- **HTTPS/TLS Encryption**: All communications encrypted end-to-end
+- **Firebase Authentication**: Industry-standard identity management
+- **Rate Limiting**: API abuse protection and traffic management
+- **Input Validation**: Comprehensive parameter sanitization
+- **Audit Logging**: Complete action tracking and compliance records
+
+## 🔌 Developer Integration
+
+### Quick Start
+```bash
+# Get all services
+curl https://gorse.dotmobile.app/mcp/api
+
+# Get specific service details
+curl https://gorse.dotmobile.app/mcp/service/basic_membership
+
+# Calculate pricing for multiple services
+curl "https://gorse.dotmobile.app/mcp/calculate?services=basic_membership,global_data_10gb"
+```
+
+### Python Integration
+```python
+import requests
+
+# Fetch service catalog
+response = requests.get('https://gorse.dotmobile.app/mcp/api')
+services = response.json()['services']
+
+# Calculate total pricing
+pricing = requests.get(
+    'https://gorse.dotmobile.app/mcp/calculate',
+    params={'services': 'basic_membership,network_security'}
+).json()
+
+print(f"Monthly cost: ${pricing['pricing']['monthly_recurring']}")
+print(f"Annual cost: ${pricing['pricing']['annual_total']}")
+```
+
+### JavaScript Integration
+```javascript
+// Fetch service data
+const response = await fetch('https://gorse.dotmobile.app/mcp/api');
+const data = await response.json();
+
+// Display available services
+console.log('Available services:', Object.keys(data.services));
+
+// Calculate pricing
+const pricing = await fetch(
+    'https://gorse.dotmobile.app/mcp/calculate?services=full_membership,vpn_access'
+).then(res => res.json());
+
+console.log(`Total monthly: $${pricing.pricing.monthly_recurring}`);
+```
 
 ## 📊 Service Categories
 
-### 1. **Connectivity Services**
-- Global eSIM activation
-- 10GB data packages
-- Beta testing programs
+### 1. Connectivity Services
+- **Global eSIM**: Worldwide mobile data access
+- **Data Packages**: 10GB packages at $20 USD
+- **Beta Programs**: Early access to new features
+- **Network Coverage**: 190+ countries supported
 
-### 2. **Membership Plans**
-- Basic: $24 CAD/year - Global data access
-- Full: $66 USD/year - Unlimited talk & text
-- Beta: Free - Early access features
+### 2. Membership Plans
+- **Basic**: $24/year - Essential connectivity features
+- **Full**: $66/year - Premium features and unlimited access
+- **Beta**: Free - Early access and testing privileges
 
-### 3. **Network Features** (Monthly Add-ons)
-- Network Security: $5/month
-- VPN Access: $8/month
-- Priority Routing: $6/month
-- Network Monitoring: $4/month
-- Performance Optimization: $3/month
+### 3. Network Features (Monthly Add-ons)
+- **Network Security**: $5/month - Advanced threat protection
+- **VPN Access**: $8/month - Global server network
+- **Priority Routing**: $6/month - Optimized network paths
+- **Network Monitoring**: $4/month - Real-time analytics
+- **Performance Optimization**: $3/month - Speed enhancements
 
-### 4. **Physical Products**
-- DOTM Metal Card: $99.99
-- Hardware accessories
-- Limited edition items
+### 4. Physical Products
+- **DOTM Metal Card**: $99.99 - Premium collectible
+- **Hardware Accessories**: Various pricing
+- **Limited Editions**: Exclusive items for members
 
-### 5. **Token Services**
-- DOTM cryptocurrency rewards
-- 10.33% cashback on purchases
-- Founding member benefits
+### 5. Token Services
+- **DOTM Rewards**: 10.33% cashback on purchases
+- **New Member Bonus**: 10.33 tokens for joining
+- **Founding Member Benefits**: Special perks and recognition
+- **Staking Rewards**: Additional benefits for token holders
 
-### 6. **API Services**
-- OXIO integration
-- Stripe payment processing
-- Developer tools
+### 6. API Services
+- **OXIO Integration**: eSIM provisioning and management
+- **Stripe Processing**: Payment handling and subscriptions
+- **Developer Tools**: SDKs and documentation
+- **Webhook Support**: Real-time event notifications
 
-### 7. **Support Services**
-- Standard support (all users)
-- Priority support (members)
-- Premium support (full members)
+### 7. Support Services
+- **Standard Support**: Available to all users
+- **Priority Support**: Enhanced assistance for members
+- **Premium Support**: Dedicated support for full members
+- **Community Forums**: Peer-to-peer assistance
 
-## 🔧 Technical Specifications
+## 🏗️ Technical Specifications
 
-### API Endpoints
-- **Base URL**: `https://get-dot-esim.replit.app/mcp`
+### API Specifications
+- **Base URL**: `https://gorse.dotmobile.app`
+- **MCP Server**: `https://gorse.dotmobile.app/mcp`
 - **Response Format**: JSON and HTML
-- **Authentication**: None required
-- **Rate Limiting**: 100 requests/minute
+- **Authentication**: Firebase-based for user endpoints
+- **Rate Limiting**: 100 requests/minute for public APIs
 
-### Integration Support
-- **REST API** - Standard HTTP methods
-- **JSON Responses** - Structured data format
-- **Error Handling** - Graceful degradation
-- **CORS Support** - Cross-origin requests
+### Database Schema
+- **Users**: Firebase UID mapping and profile data
+- **Subscriptions**: Stripe integration and billing cycles
+- **Purchases**: Transaction history and product tracking
+- **Beta Requests**: Approval workflow and phone assignments
+- **Network Features**: User preferences and service configurations
 
-## 📈 Monitoring & Maintenance
+### Blockchain Integration
+- **Network**: Ethereum Mainnet
+- **Token Standard**: ERC-20
+- **Wallet Integration**: MetaMask and Web3 compatible
+- **Transaction Tracking**: Complete on-chain activity monitoring
 
-### Real-time Metrics
-- Service availability tracking
-- API response time monitoring
-- Usage pattern analysis
-- Cost optimization insights
+## 📈 Platform Statistics
 
-### Maintenance Schedule
-- **Monthly Updates** - Feature releases
-- **Weekly Optimization** - Performance tuning
-- **Daily Monitoring** - Health checks
-- **Quarterly Reviews** - Security audits
+- **Total Services**: 20+ across 7 categories
+- **Global Coverage**: 190+ countries
+- **API Uptime**: 99.9%
+- **Active Integrations**: Firebase, Stripe, OXIO, Ethereum
+- **Token Contract**: Live on Ethereum Mainnet
+- **Beta Users**: Growing community of early adopters
 
-## 🤝 Contributing
+## 🚀 Getting Started
 
-We welcome contributions to the DOTM Platform documentation:
+### For Users
+1. **Sign Up**: Create account at [gorse.dotmobile.app](https://gorse.dotmobile.app)
+2. **Choose Plan**: Select Basic ($24/year) or Full ($66/year) membership
+3. **Purchase Data**: Buy global data packages ($20 for 10GB)
+4. **Request Beta**: Apply for beta access through your profile
+5. **Earn Tokens**: Receive DOTM rewards for all activities
 
-1. **Fork the Repository** - Create your own copy
-2. **Create Feature Branch** - `git checkout -b docs/improvement`
-3. **Make Changes** - Update documentation
-4. **Test Changes** - Verify all links and examples work
-5. **Submit Pull Request** - Include detailed description
+### For Developers
+1. **Explore API**: Visit [gorse.dotmobile.app/mcp](https://gorse.dotmobile.app/mcp)
+2. **Read Documentation**: Complete API reference available
+3. **Test Integration**: Use public endpoints for development
+4. **Build Applications**: Integrate DOTM services into your apps
+5. **Join Community**: Connect with other developers
 
-See our [Contributing Guide](CONTRIBUTING.md) for detailed instructions.
+### For Business Partners
+1. **API Access**: Programmatic service integration
+2. **White Label**: Custom branding options available
+3. **Bulk Pricing**: Volume discounts for enterprise
+4. **Custom Features**: Tailored solutions for specific needs
+5. **Partnership Program**: Revenue sharing opportunities
 
-## 📞 Support
+## 📞 Support & Community
 
 ### Getting Help
-- **Documentation Issues** - Create GitHub issue
-- **Integration Support** - Contact development team
-- **Business Inquiries** - Use platform contact form
-- **Technical Support** - Access help system in platform
+- **Documentation**: Comprehensive guides and API reference
+- **Community Forums**: Peer-to-peer assistance and discussions
+- **Email Support**: Direct assistance for technical issues
+- **Priority Support**: Enhanced assistance for members
+- **Emergency Support**: 24/7 availability for critical issues
+
+### Contributing
+We welcome contributions to the DOTM Platform:
+
+1. **Fork Repository**: Create your own copy for development
+2. **Create Branch**: `git checkout -b feature/improvement`
+3. **Make Changes**: Implement your enhancements
+4. **Test Thoroughly**: Ensure all functionality works correctly
+5. **Submit PR**: Include detailed description of changes
 
 ### Resources
-- **API Documentation** - Complete endpoint reference
-- **Code Examples** - Multiple language implementations
-- **Best Practices** - Integration guidelines
-- **Troubleshooting** - Common issues and solutions
+- **API Documentation**: [gorse.dotmobile.app/mcp](https://gorse.dotmobile.app/mcp)
+- **GitHub Repository**: Source code and issue tracking
+- **Technical Blog**: Implementation details and updates
+- **Community Discord**: Real-time discussions and support
 
 ## 📄 License
 
-This documentation is part of the DOTM Platform ecosystem. Usage is subject to platform terms of service.
-
----
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🔗 Quick Links
 
-- [MCP Server Interface](https://get-dot-esim.replit.app/mcp) - Interactive service catalog
-- [JSON API](https://get-dot-esim.replit.app/mcp/api) - Programmatic access
-- [Main Platform](https://get-dot-esim.replit.app) - Full DOTM platform
-- [API Reference](MCP_API_REFERENCE.md) - Complete endpoint documentation
+- **Main Platform**: [gorse.dotmobile.app](https://gorse.dotmobile.app)
+- **MCP Server**: [mcp.dotmobile.app](https://mcp.dotmobile.app)
+- **API Documentation**: [gorse.dotmobile.app/mcp](https://gorse.dotmobile.app/mcp)
+- **JSON API**: [gorse.dotmobile.app/mcp/api](https://gorse.dotmobile.app/mcp/api)
+- **DOTM Token**: [0xF57ab8DEE7ebE3686DB8Bf89E8aCc15E94B97A8D](https://etherscan.io/token/0xF57ab8DEE7ebE3686DB8Bf89E8aCc15E94B97A8D)
 
 ---
 
-*Last Updated: January 2025*  
-*Documentation Version: 1.0*  
-*Platform Status: ✅ Operational*
+**Built with**: Flask, PostgreSQL, Firebase, Stripe, OXIO, Ethereum, and ❤️
 
-**Total Services**: 20+ across 7 categories  
-**API Uptime**: 99.9%  
-**Global Coverage**: 190+ countries  
-**Active Integrations**: OXIO, Stripe, Firebase, Ethereum
+*Connecting the world through decentralized telecommunications*
 
+---
+
+### 🌟 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=dotmobile/dotm-platform&type=Date)](https://star-history.com/#dotmobile/dotm-platform&Date)
+
+### 📊 Platform Status
+
+![Platform Status](https://img.shields.io/badge/Platform-Operational-green)
+![API Status](https://img.shields.io/badge/API-99.9%25_Uptime-green)
+![Token Status](https://img.shields.io/badge/DOTM_Token-Live_on_Mainnet-blue)
+![Beta Program](https://img.shields.io/badge/Beta_Program-Active-orange)
+
+**Last Updated**: September 11, 2025  
+**Version**: 3.0.0  
+**DOTM Token Contract**: 0xF57ab8DEE7ebE3686DB8Bf89E8aCc15E94B97A8D
