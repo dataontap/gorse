@@ -334,7 +334,14 @@
             try {
                 console.log('Loading Firebase user data...');
                 
-                // Wait for Firebase to be available
+                // First, try to load data from localStorage (faster, works offline)
+                const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (cachedUser && cachedUser.uid) {
+                    console.log('Found cached user data:', cachedUser);
+                    displayUserData(cachedUser);
+                }
+                
+                // Then check Firebase for real-time updates
                 if (typeof firebase === 'undefined' || !firebase.auth) {
                     console.log('Firebase not available yet, waiting...');
                     setTimeout(loadFirebaseUserData, 500);
@@ -347,20 +354,17 @@
                     console.log('Found current Firebase user:', currentUser.email);
                     console.log('Firebase UID:', currentUser.uid);
                     
-                    // Update email
-                    const emailElement = document.getElementById('profileUserEmail');
-                    if (emailElement) {
-                        emailElement.textContent = currentUser.email;
-                    }
-
-                    // Update display name
-                    const nameElement = document.getElementById('profileUserName');
-                    if (nameElement) {
-                        const displayName = currentUser.displayName || currentUser.email.split('@')[0];
-                        nameElement.innerHTML = `${displayName} <span class="founding-shield">Member</span>`;
+                    // If we don't have cached data, show Firebase data immediately
+                    if (!cachedUser || !cachedUser.uid) {
+                        const basicUserData = {
+                            uid: currentUser.uid,
+                            email: currentUser.email,
+                            displayName: currentUser.displayName
+                        };
+                        displayUserData(basicUserData);
                     }
                     
-                    // Load additional user data from our API
+                    // Load additional user data from our API (in background)
                     loadUserDataFromAPI(currentUser.uid);
                     
                     // Load OXIO data with Firebase UID
@@ -419,14 +423,54 @@
             }
         }
         
+        function displayUserData(userData) {
+            console.log('Displaying user data:', userData);
+            
+            // Update email
+            if (userData.email) {
+                const emailElement = document.getElementById('profileUserEmail');
+                if (emailElement) {
+                    emailElement.textContent = userData.email;
+                }
+            }
+            
+            // Update display name and founder status
+            const nameElement = document.getElementById('profileUserName');
+            if (nameElement && userData.email) {
+                const displayName = userData.displayName || userData.email.split('@')[0];
+                const founderBadge = userData.founderStatus === 'Y' ? 'Founding Member' : 'Member';
+                nameElement.innerHTML = `${displayName} <span class="founding-shield">${founderBadge}</span>`;
+            }
+            
+            // Update Firebase UID
+            if (userData.uid) {
+                const firebaseUIDElement = document.getElementById('firebaseUID');
+                if (firebaseUIDElement) {
+                    firebaseUIDElement.textContent = userData.uid;
+                }
+            }
+            
+            // Update DOT User ID
+            const dotUserIDElement = document.getElementById('dotUserID');
+            if (dotUserIDElement) {
+                dotUserIDElement.textContent = userData.userId || '';
+            }
+            
+            // Update OXIO User ID
+            const oxioUserIDElement = document.getElementById('oxioUserID');
+            if (oxioUserIDElement) {
+                oxioUserIDElement.textContent = userData.oxioUserId || '';
+            }
+            
+            // Update OXIO Group ID
+            const oxioGroupIDElement = document.getElementById('oxioGroupID');
+            if (oxioGroupIDElement) {
+                oxioGroupIDElement.textContent = userData.oxioGroupId || '';
+            }
+        }
+        
         function loadUserDataFromAPI(firebaseUid) {
             if (!firebaseUid) return;
-            
-            // Update Firebase UID display immediately
-            const firebaseUIDElement = document.getElementById('firebaseUID');
-            if (firebaseUIDElement) {
-                firebaseUIDElement.textContent = firebaseUid;
-            }
             
             fetch(`/api/auth/current-user?firebaseUid=${firebaseUid}`)
                 .then(response => response.json())
@@ -434,43 +478,24 @@
                     if (data.status === 'success') {
                         console.log('Loaded user data from API:', data);
                         
-                        // Update display name with founder status
-                        const nameElement = document.getElementById('profileUserName');
-                        if (nameElement) {
-                            const displayName = data.displayName || data.email.split('@')[0];
-                            const founderBadge = data.founderStatus === 'Y' ? 'Founding Member' : 'Member';
-                            nameElement.innerHTML = `${displayName} <span class="founding-shield">${founderBadge}</span>`;
-                        }
-                        
-                        // Update DOT User ID
-                        const dotUserIDElement = document.getElementById('dotUserID');
-                        if (dotUserIDElement) {
-                            dotUserIDElement.textContent = data.userId || 'Not available';
-                        }
-                        
-                        // Update OXIO User ID
-                        const oxioUserIDElement = document.getElementById('oxioUserID');
-                        if (oxioUserIDElement) {
-                            oxioUserIDElement.textContent = data.oxioUserId || 'Not assigned';
-                        }
-                        
-                        // Update OXIO Group ID
-                        const oxioGroupIDElement = document.getElementById('oxioGroupID');
-                        if (oxioGroupIDElement) {
-                            oxioGroupIDElement.textContent = data.oxioGroupId || 'Not assigned';
-                        }
-                        
-                        // Store updated user data (without Firebase UID)
-                        const updatedUserData = {
+                        // Create complete user data object
+                        const completeUserData = {
+                            uid: firebaseUid,
                             email: data.email,
                             displayName: data.displayName,
                             userId: data.userId,
                             founderStatus: data.founderStatus,
                             stripeCustomerId: data.stripeCustomerId,
                             oxioUserId: data.oxioUserId,
+                            metamaskAddress: data.metamaskAddress,
                             oxioGroupId: data.oxioGroupId
                         };
-                        localStorage.setItem('currentUser', JSON.stringify(updatedUserData));
+                        
+                        // Update display with fresh API data
+                        displayUserData(completeUserData);
+                        
+                        // Store updated user data in localStorage
+                        localStorage.setItem('currentUser', JSON.stringify(completeUserData));
                     }
                 })
                 .catch(error => {
