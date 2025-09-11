@@ -132,8 +132,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.clear();
             }
 
-            // Only update UI with basic Firebase data, don't make API calls automatically
-            updateAuthUI(user, null);
+            // Ensure Firebase UID is always available in localStorage for features like confirmPurchase
+            if (!cachedUser || !cachedUser.uid) {
+                console.log('Firebase UID not in localStorage, ensuring basic auth data is stored');
+                // Store basic Firebase data to ensure UID is always available
+                const basicUserData = {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL
+                };
+                
+                // If there's existing data, merge it, otherwise start with basic data
+                if (cachedUser) {
+                    Object.assign(cachedUser, basicUserData);
+                    localStorage.setItem('currentUser', JSON.stringify(cachedUser));
+                } else {
+                    localStorage.setItem('currentUser', JSON.stringify(basicUserData));
+                }
+                
+                // Load complete user data in the background
+                loadUserData(user);
+            } else {
+                // Update UI with existing cached data
+                updateAuthUI(user, cachedUser);
+            }
         } else {
             console.log('No authenticated user');
             // Clear stored user data
@@ -258,8 +281,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (userData.status === 'success') {
                 console.log('Got user data:', userData);
 
-                // Create comprehensive user data object (without storing Firebase UID)
+                // Create comprehensive user data object (now including Firebase UID for feature functionality)
                 const currentUserData = {
+                    uid: user.uid,  // Include Firebase UID for authentication
                     email: user.email,
                     displayName: user.displayName,
                     photoURL: user.photoURL,
@@ -669,7 +693,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Get current user's Firebase UID if available
+    // Only allow FCM token registration for authenticated users
     let firebaseUid = null;
     let userEmail = null;
     if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
@@ -677,7 +701,8 @@ document.addEventListener('DOMContentLoaded', function() {
       userEmail = firebase.auth().currentUser.email;
       console.log('FCM token registration for authenticated user:', userEmail);
     } else {
-      console.log('FCM token registration for unauthenticated session');
+      console.log('FCM token registration skipped - user not authenticated');
+      return; // Don't register tokens for unauthenticated users
     }
 
     fetch('/api/register-fcm-token', {

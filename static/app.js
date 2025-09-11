@@ -207,10 +207,15 @@ function confirmPurchase() {
             firebaseUid = currentUserData.uid;
             console.log('Using Firebase UID from currentUser:', firebaseUid);
         } else {
-            // Fallback to other localStorage keys
-            firebaseUid = localStorage.getItem('firebaseUid') ||
-                         localStorage.getItem('userId') || null;
-            console.log('Using Firebase UID from fallback:', firebaseUid);
+            // Fallback to other Firebase UID storage (avoid 'userId' as it's internal DB ID, not Firebase UID)
+            firebaseUid = localStorage.getItem('firebaseUid') || null;
+            console.log('Using Firebase UID from fallback storage:', firebaseUid);
+        }
+
+        // Final fallback: check Firebase directly if localStorage doesn't have UID
+        if (!firebaseUid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+            firebaseUid = firebase.auth().currentUser.uid;
+            console.log('Using Firebase UID from direct Firebase auth:', firebaseUid);
         }
 
         if (!firebaseUid) {
