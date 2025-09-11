@@ -48,8 +48,9 @@ import ethereum_helper
 import product_rules_helper
 from elevenlabs_service import elevenlabs_service
 
-# Import GitHub service
-from github_service import github_service
+# Import secure GitHub service
+from github_service_secure import github_service_secure
+from auth_helpers import require_auth, require_admin_auth
 
 # Create products in Stripe if they don't exist
 if stripe.api_key:
@@ -3831,10 +3832,11 @@ def get_user_phone_numbers():
             'error': str(e)
         }), 500
 
-# GitHub API endpoints
+# Secure GitHub API endpoints
 @app.route('/api/github/configure', methods=['POST'])
+@require_admin_auth
 def configure_github_repository():
-    """Configure GitHub repository for uploads"""
+    """Configure GitHub repository for uploads (Admin only)"""
     try:
         data = request.get_json()
         
@@ -3854,7 +3856,7 @@ def configure_github_repository():
                 'error': 'Repository owner and name are required'
             }), 400
         
-        github_service.set_repository(repo_owner, repo_name, branch)
+        github_service_secure.set_repository(repo_owner, repo_name, branch)
         
         return jsonify({
             'success': True,
@@ -3869,8 +3871,9 @@ def configure_github_repository():
         }), 500
 
 @app.route('/api/github/upload-file', methods=['POST'])
+@require_admin_auth
 def upload_file_to_github():
-    """Upload a single file to GitHub repository"""
+    """Upload a single file to GitHub repository (Admin only)"""
     try:
         data = request.get_json()
         
@@ -3895,7 +3898,7 @@ def upload_file_to_github():
         if not commit_message:
             commit_message = f'Update {file_path} - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
         
-        result = github_service.upload_file(
+        result = github_service_secure.upload_file(
             file_path=file_path,
             content=content,
             commit_message=commit_message,
@@ -3924,16 +3927,17 @@ def upload_file_to_github():
         }), 500
 
 @app.route('/api/github/upload-project', methods=['POST'])
+@require_admin_auth
 def upload_project_to_github():
-    """Upload key project files to GitHub repository"""
+    """Upload key project files to GitHub repository (Admin only)"""
     try:
         data = request.get_json() or {}
         
         repo_owner = data.get('repo_owner')
         repo_name = data.get('repo_name')
         
-        # Get list of files to upload
-        files_to_upload = github_service.get_project_files_for_upload()
+        # Get list of files to upload securely
+        files_to_upload = github_service_secure.get_project_files_for_upload()
         
         if not files_to_upload:
             return jsonify({
@@ -3941,8 +3945,8 @@ def upload_project_to_github():
                 'error': 'No files found to upload'
             }), 400
         
-        # Perform batch upload
-        result = github_service.upload_multiple_files(
+        # Perform secure batch upload
+        result = github_service_secure.upload_multiple_files(
             files=files_to_upload,
             repo_owner=repo_owner,
             repo_name=repo_name
@@ -3962,19 +3966,20 @@ def upload_project_to_github():
         }), 500
 
 @app.route('/api/github/status', methods=['GET'])
+@require_auth
 def get_github_status():
-    """Get GitHub service status and configuration"""
+    """Get GitHub service status and configuration (Authenticated)"""
     try:
-        # Test GitHub authentication
-        auth_result = github_service.get_authenticated_client()
+        # Test GitHub authentication securely
+        auth_result = github_service_secure.get_authenticated_client()
         
         return jsonify({
             'success': True,
             'authentication': 'connected' if auth_result else 'failed',
             'configuration': {
-                'repo_owner': github_service.repo_owner,
-                'repo_name': github_service.repo_name,
-                'default_branch': github_service.default_branch
+                'repo_owner': github_service_secure.repo_owner,
+                'repo_name': github_service_secure.repo_name,
+                'default_branch': github_service_secure.default_branch
             }
         }), 200
         

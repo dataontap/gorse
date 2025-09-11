@@ -1,7 +1,7 @@
 // GitHub client using Replit's native integration
-// Based on the provided integration code snippet
+// Fixed for proper CommonJS compatibility
 
-import { Octokit } from '@octokit/rest'
+const { Octokit } = require('@octokit/rest');
 
 let connectionSettings;
 
@@ -10,7 +10,7 @@ async function getAccessToken() {
     return connectionSettings.settings.access_token;
   }
   
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME
+  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY 
     ? 'repl ' + process.env.REPL_IDENTITY 
     : process.env.WEB_REPL_RENEWAL 
@@ -21,7 +21,10 @@ async function getAccessToken() {
     throw new Error('X_REPLIT_TOKEN not found for repl/depl');
   }
 
-  connectionSettings = await fetch(
+  // Use node-fetch if available, otherwise built-in fetch
+  const fetchImpl = global.fetch || require('node-fetch');
+  
+  connectionSettings = await fetchImpl(
     'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=github',
     {
       headers: {
@@ -42,10 +45,9 @@ async function getAccessToken() {
 // WARNING: Never cache this client.
 // Access tokens expire, so a new client must be created each time.
 // Always call this function again to get a fresh client.
-export async function getUncachableGitHubClient() {
+async function getUncachableGitHubClient() {
   const accessToken = await getAccessToken();
   return new Octokit({ auth: accessToken });
 }
 
-// For CommonJS compatibility
 module.exports = { getUncachableGitHubClient };

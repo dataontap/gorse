@@ -62,8 +62,10 @@ class GitHubService:
                 raise Exception("Repository owner and name must be specified")
             
             # Create Node.js script for file upload
+            import os
+            current_dir = os.getcwd()
             upload_script = f'''
-const {{ getUncachableGitHubClient }} = require('./github_client.js');
+const {{ getUncachableGitHubClient }} = require('{current_dir}/github_client.js');
 
 async function uploadFile() {{
     try {{
