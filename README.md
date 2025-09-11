@@ -1,10 +1,18 @@
-# DOTM Platform
+# DOT Services
 
-![DOTM Platform](https://img.shields.io/badge/Status-Live-green) ![Ethereum](https://img.shields.io/badge/Ethereum-Mainnet-blue) ![Version](https://img.shields.io/badge/Version-1.0-brightgreen)
+![DOT](https://img.shields.io/badge/Status-Live-green) ![Ethereum](https://img.shields.io/badge/Ethereum-Mainnet-blue) ![Version](https://img.shields.io/badge/Version-1.0-brightgreen)
 
-## 🌐 Next-Generation Global Connectivity Ecosystem
+## 🌐 Full MVNO framework
 
-The DOTM Platform is a comprehensive telecommunications service platform that bridges traditional mobile services with blockchain technology. We provide global eSIM connectivity, cryptocurrency rewards, and network optimization features through a unified ecosystem powered by OXIO infrastructure, Firebase authentication, and Ethereum blockchain integration.
+dotmobile is a smart tiny telecom. This gorse release is compact Alpha build of a Full MVNO. 
+
+Available for FREE and $1 per user above 100TPH. Etheruem and blockchain parts and many other things optional. Used Stripe for invoices, catalog and payments. 
+
+Please use this comprehensive telecommunications service toolset/framework to create better telecommunications experiences, bridge traditional mobile services with better digital and user experience, integrate newtech and AI and use our token (blockchain technology) for good. 
+
+We provide global eSIM connectivity, automation, network services intelligence and network optimization features through a unified ecosystem in a public cloud. Our data servers are located colely in North America: N.Virginia, USA and in Montreal, Canada. We use Full MVNO type of connectivity in the USA, Mexico and in Canada soon hopefully. 
+
+We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql databases, ElevenLabs for voice synthesis, Bitchat for fallback connectivity and Ethereum blockchain integration. Full list of integrations below.  
 
 ### 🚀 Live Platform
 
@@ -20,7 +28,7 @@ The DOTM Platform is a comprehensive telecommunications service platform that br
 - **Token Symbol**: DOTM
 - **Network**: Ethereum Mainnet
 - **Max Supply**: 10,333,333 DOTM
-- **Current Supply**: 0 DOTM (mint-on-demand)
+- **Current Supply**: (mint-on-demand)
 - **Decimals**: 18
 
 ### Reward System
@@ -347,6 +355,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ![Token Status](https://img.shields.io/badge/DOTM_Token-Live_on_Mainnet-blue)
 ![Beta Program](https://img.shields.io/badge/Beta_Program-Active-orange)
 
-**Last Updated**: January 2025  
-**Version**: 1.0.0  
+**Last Updated**: September 11, 2025  
+**Version**: 3.0.0  
 **DOTM Token Contract**: 0xF57ab8DEE7ebE3686DB8Bf89E8aCc15E94B97A8D
