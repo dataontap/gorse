@@ -161,3 +161,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 firebase-credentials.json
+
+# Audio files - should not be committed to git
+static/audio/*.mp3
+static/audio/*.wav
+static/audio/*.m4a

@@ -14,15 +14,10 @@ def get_db_connection():
     return get_conn()
 
 def verify_admin_token(token: str) -> bool:
-    """Verify admin token against environment variable or GitHub token"""
-    # Check for dedicated admin token first
+    """Verify admin token against environment variable"""
+    # Only accept dedicated admin token for security
     admin_token = os.environ.get('ADMIN_TOKEN')
     if admin_token and token == admin_token:
-        return True
-    
-    # Fallback to GitHub token for GitHub operations
-    github_token = os.environ.get('GITHUB_TOKEN')
-    if github_token and token == github_token:
         return True
         
     return False

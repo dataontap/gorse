@@ -4061,7 +4061,7 @@ def generate_welcome_notification():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Create notifications table if it doesn't exist
+                    # Create notifications table if it doesn't exist (with audio_url column)
                     cur.execute("""
                         CREATE TABLE IF NOT EXISTS notifications (
                             id SERIAL PRIMARY KEY,
@@ -4076,6 +4076,12 @@ def generate_welcome_notification():
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             delivered_at TIMESTAMP
                         )
+                    """)
+                    
+                    # Ensure audio_url column exists for existing tables (migration)
+                    cur.execute("""
+                        ALTER TABLE notifications 
+                        ADD COLUMN IF NOT EXISTS audio_url VARCHAR(500)
                     """)
                     
                     # Insert the notification
