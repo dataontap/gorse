@@ -144,6 +144,51 @@ function hideConfirmationDrawer() {
     if (drawer) {
         drawer.classList.remove('show');
         drawer.style.display = 'none';
+        
+        // Reset to confirmation view when hiding
+        var confirmationView = document.getElementById('purchaseConfirmation');
+        var successView = document.getElementById('purchaseSuccess');
+        if (confirmationView) confirmationView.style.display = 'block';
+        if (successView) successView.style.display = 'none';
+    }
+}
+
+function showPurchaseSuccessView() {
+    var confirmationView = document.getElementById('purchaseConfirmation');
+    var successView = document.getElementById('purchaseSuccess');
+    
+    if (confirmationView && successView) {
+        confirmationView.style.display = 'none';
+        successView.style.display = 'block';
+    }
+}
+
+function updateMainGlobeDisplay() {
+    var dataDisplay = document.getElementById('dataDisplay');
+    var globalStatus = document.getElementById('globalStatus');
+    
+    if (dataDisplay) {
+        dataDisplay.style.display = 'block';
+        // Update to show 10.000 format
+        var dataAmountSpan = dataDisplay.querySelector('span');
+        if (dataAmountSpan) {
+            dataAmountSpan.textContent = '10.000';
+        }
+        // Remove the refresh icon and replace with data amount
+        var refreshIcon = dataDisplay.querySelector('.refresh-icon');
+        if (refreshIcon) {
+            refreshIcon.style.display = 'none';
+        }
+        dataDisplay.innerHTML = '<span style="font-size: 2rem; color: #28a745; font-weight: 700;">10.000</span>';
+    }
+    
+    if (globalStatus) {
+        globalStatus.style.display = 'block';
+        // Make globe icon green
+        var globeIcon = globalStatus.querySelector('.fa-globe');
+        if (globeIcon) {
+            globeIcon.style.color = '#28a745';
+        }
     }
 }
 
@@ -187,13 +232,12 @@ function confirmPurchase() {
         .then(response => response.json())
         .then(data => {
             console.log('Purchase recorded:', data);
-            hideConfirmationDrawer();
-
-            // Show success message
-            alert('Purchase successful! Your data will be available shortly.');
-
-            // Refresh the page to update data balance
-            window.location.reload();
+            
+            // Show success view instead of alert
+            showPurchaseSuccessView();
+            
+            // Update main dashboard globe display
+            updateMainGlobeDisplay();
         })
         .catch(error => {
             console.error('Error recording purchase:', error);
@@ -289,7 +333,7 @@ function stopAllCountdowns() {
 
 function orderCallback() {
     var callbackBtn = document.getElementById('orderCallbackBtn');
-	alert('Callback ordered! We will call you back shortly.');
+        alert('Callback ordered! We will call you back shortly.');
     if (callbackBtn) {
         callbackBtn.disabled = true;
         callbackBtn.textContent = 'Callback Ordered';
@@ -432,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle buy buttons
         if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
             e.preventDefault();
-            showConfirmationDrawer(10, 10, 'global_data_10gb');
+            showConfirmationDrawer(10, 20, 'global_data_10gb');
         }
 
         // Handle subscribe buttons
@@ -1172,7 +1216,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle buy buttons
         if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
             e.preventDefault();
-            showConfirmationDrawer(10, 10, 'global_data_10gb');
+            showConfirmationDrawer(10, 20, 'global_data_10gb');
         }
 
         // Handle subscribe buttons
@@ -2069,11 +2113,11 @@ function populateOfferCards() {
         {
             id: 'global_data',
             title: 'Truly Global Data',
-            description: ['10000MB no expiry data for $10', 'Priority fast 5G+ when available', 'Share infinitely with any member', 'Works on most of planet Earth +10km above it'],
-            price: '$10',
+            description: ['10000MB no expiry data for $20', 'Priority fast 5G+ when available', 'Share infinitely with any member', 'Works on most of planet Earth +10km above it'],
+            price: '$20',
             buttonText: 'Buy',
             buttonClass: 'btn-primary',
-            action: "showConfirmationDrawer(10, 10, 'global_data_10gb')",
+            action: "showConfirmationDrawer(10, 20, 'global_data_10gb')",
             alwaysShow: true
         },
         {
@@ -2824,7 +2868,7 @@ function hideHelpModal() {
     const modalOverlay = document.getElementById('helpModalOverlay');
     if (modalOverlay) {
         modalOverlay.remove();
-		stopAllCountdowns();
+                stopAllCountdowns();
     }
 }
 

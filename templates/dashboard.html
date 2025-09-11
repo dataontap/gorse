@@ -455,38 +455,53 @@
 
         <div id="confirmationDrawer" class="confirmation-drawer">
             <div class="drawer-content">
-                <h3>Confirm Purchase</h3>
-                <div class="purchase-details">
-                    <div class="detail-row">
-                        <span>Data Amount:</span>
-                        <span id="confirmDataAmount">10GB</span>
+                <div id="purchaseConfirmation" class="purchase-confirmation-view">
+                    <h3>Confirm Purchase</h3>
+                    <div class="purchase-details">
+                        <div class="detail-row">
+                            <span>Data Amount:</span>
+                            <span id="confirmDataAmount">10GB</span>
+                        </div>
+                        <div class="detail-row">
+                            <span>Price:</span>
+                            <span id="confirmPrice">$20</span>
+                        </div>
+                        <div class="detail-row">
+                            <span>Payment Method:</span>
+                            <span>Visa •••• 4242</span>
+                        </div>
                     </div>
-                    <div class="detail-row">
-                        <span>Price:</span>
-                        <span id="confirmPrice">$20</span>
-                    </div>
-                    <div class="detail-row">
-                        <span>Payment Method:</span>
-                        <span>Visa •••• 4242</span>
+                    <div class="drawer-actions">
+                        <div class="setting-item">
+                            <div class="setting-title">Push Notifications</div>
+                            <div class="setting-toggle">
+                                <label class="switch">
+                                    <input type="checkbox" id="notificationToggle" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="setting-description">
+                                Receive notifications about new offers and account updates
+                            </div>
+                        </div>
+                        <button class="btn" onclick="hideConfirmationDrawer()">Cancel</button>
+                        <button class="btn btn-primary" onclick="confirmPurchase()">Confirm</button>
                     </div>
                 </div>
-                <div class="drawer-actions">
-
-                    <div class="setting-item">
-                        <div class="setting-title">Push Notifications</div>
-                        <div class="setting-toggle">
-                            <label class="switch">
-                                <input type="checkbox" id="notificationToggle" checked>
-                                <span class="slider round"></span>
-                            </label>
+                
+                <div id="purchaseSuccess" class="purchase-success-view" style="display: none;">
+                    <h3>Purchase Successful!</h3>
+                    <div class="success-globe-display">
+                        <div class="success-data-amount">10.000</div>
+                        <div class="success-globe-status">
+                            <i class="fas fa-globe" style="color: #28a745;"></i>
                         </div>
-                        <div class="setting-description">
-                            Receive notifications about new offers and account updates
-                        </div>
+                        <div class="success-global-text">GLOBAL</div>
                     </div>
-
-                    <button class="btn" onclick="hideConfirmationDrawer()">Cancel</button>
-                    <button class="btn btn-primary" onclick="confirmPurchase()">Confirm</button>
+                    <p>Your global data is now active and ready to use!</p>
+                    <div class="drawer-actions">
+                        <button class="btn btn-primary" onclick="hideConfirmationDrawer()">Continue</button>
+                    </div>
                 </div>
             </div>
         </div>
