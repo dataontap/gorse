@@ -64,14 +64,144 @@ class SecureGitHubService:
         return file_path
     
     def _validate_content(self, content: str) -> str:
-        """Validate file content"""
+        """Validate file content with comprehensive security and privacy checks"""
         if not isinstance(content, str):
             raise ValueError("Content must be a string")
             
         if len(content.encode('utf-8')) > self.max_file_size:
             raise ValueError(f"Content exceeds maximum size of {self.max_file_size} bytes")
-            
+        
+        # Run comprehensive security and privacy validation
+        self._check_for_sensitive_content(content)
+        
         return content
+    
+    def _check_for_sensitive_content(self, content: str) -> None:
+        """
+        Comprehensive security and privacy check for sensitive information.
+        Raises ValueError if any sensitive content is detected.
+        """
+        content_lower = content.lower()
+        
+        # 1. Check for API Keys and Secrets
+        api_key_patterns = [
+            r'api[_-]?key["\s]*[:=]["\s]*[a-zA-Z0-9_-]{20,}',
+            r'secret[_-]?key["\s]*[:=]["\s]*[a-zA-Z0-9_-]{20,}',
+            r'access[_-]?token["\s]*[:=]["\s]*[a-zA-Z0-9_.-]{20,}',
+            r'private[_-]?key["\s]*[:=]["\s]*[a-zA-Z0-9_.-]{20,}',
+            r'github[_-]?token["\s]*[:=]["\s]*[a-zA-Z0-9_.-]{20,}',
+            r'firebase[_-]?key["\s]*[:=]["\s]*[a-zA-Z0-9_.-]{20,}',
+            r'stripe[_-]?key["\s]*[:=]["\s]*[a-zA-Z0-9_.-]{20,}',
+            r'elevenlabs[_-]?key["\s]*[:=]["\s]*[a-zA-Z0-9_.-]{20,}',
+            r'openai[_-]?key["\s]*[:=]["\s]*[a-zA-Z0-9_.-]{20,}',
+            r'sk-[a-zA-Z0-9]{32,}',  # OpenAI API key format
+            r'ghp_[a-zA-Z0-9]{36,}',  # GitHub personal access token
+            r'pk_live_[a-zA-Z0-9]{24,}',  # Stripe live key
+            r'sk_live_[a-zA-Z0-9]{24,}',  # Stripe secret key
+        ]
+        
+        for pattern in api_key_patterns:
+            if re.search(pattern, content, re.IGNORECASE):
+                raise ValueError("🔒 SECURITY VIOLATION: Content contains potential API keys or secrets")
+        
+        # 2. Check for Database Connection Strings
+        db_patterns = [
+            r'postgresql://[^/\s]+:[^/\s]+@[^/\s]+:[0-9]+/[^/\s]+',
+            r'mysql://[^/\s]+:[^/\s]+@[^/\s]+:[0-9]+/[^/\s]+',
+            r'mongodb://[^/\s]+:[^/\s]+@[^/\s]+:[0-9]+/[^/\s]+',
+            r'DATABASE_URL["\s]*[:=]["\s]*[a-zA-Z0-9:/._@-]{20,}',
+            r'DB_PASSWORD["\s]*[:=]["\s]*[a-zA-Z0-9_.-]{8,}',
+        ]
+        
+        for pattern in db_patterns:
+            if re.search(pattern, content, re.IGNORECASE):
+                raise ValueError("🔒 SECURITY VIOLATION: Content contains database connection strings")
+        
+        # 3. Check for Customer/Personal Information
+        pii_patterns = [
+            r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',  # Email addresses
+            r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # Phone numbers
+            r'\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b',  # Credit card numbers
+            r'\b\d{3}-\d{2}-\d{4}\b',  # SSN format
+        ]
+        
+        # Check for suspicious personal data contexts
+        if any(keyword in content_lower for keyword in [
+            'customer_email', 'user_phone', 'credit_card', 'ssn', 
+            'personal_info', 'private_data', 'user_password'
+        ]):
+            raise ValueError("🔒 PRIVACY VIOLATION: Content may contain customer personal information")
+        
+        # 4. Check for Firebase Configuration
+        firebase_indicators = [
+            'firebase-credentials.json',
+            'serviceAccount',
+            'private_key_id',
+            'client_email',
+            'auth_uri',
+            'token_uri',
+            'project_id.*firebase'
+        ]
+        
+        for indicator in firebase_indicators:
+            if re.search(indicator, content, re.IGNORECASE):
+                raise ValueError("🔒 SECURITY VIOLATION: Content contains Firebase credentials")
+        
+        # 5. Check for Cryptocurrency/Wallet Information
+        crypto_patterns = [
+            r'0x[a-fA-F0-9]{40}',  # Ethereum addresses (but allow contract addresses in comments)
+            r'private.*key.*[0-9a-fA-F]{64}',  # Private keys
+            r'mnemonic.*phrase',  # Seed phrases
+            r'wallet.*secret',
+        ]
+        
+        # Allow documented contract addresses but block private keys
+        for pattern in crypto_patterns:
+            matches = re.finditer(pattern, content, re.IGNORECASE)
+            for match in matches:
+                # Allow if it's clearly a public contract address in documentation
+                context = content[max(0, match.start()-50):match.end()+50].lower()
+                if 'contract address' in context or 'mainnet' in context:
+                    continue  # This is likely a public contract address
+                if 'private' in pattern.lower():
+                    raise ValueError("🔒 SECURITY VIOLATION: Content contains cryptocurrency private keys")
+        
+        # 6. Check for Environment Variables with Sensitive Values
+        env_patterns = [
+            r'export\s+[A-Z_]+=.*[a-zA-Z0-9_.-]{20,}',
+            r'setenv\s+[A-Z_]+=.*[a-zA-Z0-9_.-]{20,}',
+            r'os\.environ\[["\'][A-Z_]+["\']\]\s*=.*[a-zA-Z0-9_.-]{20,}',
+        ]
+        
+        for pattern in env_patterns:
+            matches = re.finditer(pattern, content)
+            for match in matches:
+                # Check if it looks like a real secret (long alphanumeric string)
+                if re.search(r'[a-zA-Z0-9_.-]{32,}', match.group()):
+                    raise ValueError("🔒 SECURITY VIOLATION: Content contains environment variables with secret values")
+        
+        # 7. Check for Internal URLs and IPs
+        internal_patterns = [
+            r'127\.0\.0\.1:[0-9]+',  # Localhost with ports (but allow documentation)
+            r'localhost:[0-9]+',
+            r'192\.168\.\d+\.\d+',  # Private IP ranges
+            r'10\.\d+\.\d+\.\d+',
+            r'172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+',
+        ]
+        
+        # Allow these in documentation but flag in code
+        for pattern in internal_patterns:
+            matches = re.finditer(pattern, content)
+            for match in matches:
+                context = content[max(0, match.start()-100):match.end()+100].lower()
+                # Allow in documentation, comments, or README files
+                if any(doc_indicator in context for doc_indicator in [
+                    'example', 'documentation', 'readme', 'comment', '//', '#', '<!--'
+                ]):
+                    continue
+                raise ValueError("🔒 SECURITY VIOLATION: Content contains internal network addresses")
+        
+        print("✅ Security and privacy validation passed - no sensitive content detected")
     
     def _validate_repository_info(self, owner: str, repo: str) -> tuple:
         """Validate repository owner and name"""
