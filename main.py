@@ -3413,7 +3413,7 @@ def get_user_notifications():
                 with conn.cursor() as cur:
                     # Get notifications for this user
                     cur.execute("""
-                        SELECT id, title, body, notification_type, delivered, read_status, 
+                        SELECT id, title, body, notification_type, audio_url, delivered, read_status, 
                                fcm_response, created_at, delivered_at
                         FROM notifications 
                         WHERE firebase_uid = %s 
@@ -3430,11 +3430,12 @@ def get_user_notifications():
                             'title': notif[1],
                             'body': notif[2],
                             'type': notif[3],
-                            'delivered': notif[4],
-                            'read': notif[5],
-                            'fcm_response': notif[6],
-                            'created_at': notif[7].isoformat() if notif[7] else None,
-                            'delivered_at': notif[8].isoformat() if notif[8] else None
+                            'audio_url': notif[4],
+                            'delivered': notif[5],
+                            'read': notif[6],
+                            'fcm_response': notif[7],
+                            'created_at': notif[8].isoformat() if notif[8] else None,
+                            'delivered_at': notif[9].isoformat() if notif[9] else None
                         })
 
                     return jsonify({
