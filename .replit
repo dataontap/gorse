@@ -63,3 +63,4 @@ exposeLocalhost = true
 
 [agent]
 expertMode = true
+integrations = ["github:1.0.0"]
