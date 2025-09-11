@@ -14,11 +14,18 @@ def get_db_connection():
     return get_conn()
 
 def verify_admin_token(token: str) -> bool:
-    """Verify admin token against environment variable"""
+    """Verify admin token against environment variable or GitHub token"""
+    # Check for dedicated admin token first
     admin_token = os.environ.get('ADMIN_TOKEN')
-    if not admin_token:
-        return False
-    return token == admin_token
+    if admin_token and token == admin_token:
+        return True
+    
+    # Fallback to GitHub token for GitHub operations
+    github_token = os.environ.get('GITHUB_TOKEN')
+    if github_token and token == github_token:
+        return True
+        
+    return False
 
 def verify_firebase_uid(firebase_uid: str) -> bool:
     """Verify Firebase UID exists in database"""

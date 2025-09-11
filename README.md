@@ -356,5 +356,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ![Beta Program](https://img.shields.io/badge/Beta_Program-Active-orange)
 
 **Last Updated**: September 11, 2025  
-**Version**: 3.0.0  
+**Version**: 3.0.1  
 **DOTM Token Contract**: 0xF57ab8DEE7ebE3686DB8Bf89E8aCc15E94B97A8D
