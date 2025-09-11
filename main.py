@@ -3996,6 +3996,127 @@ def get_github_status():
             'error': str(e)
         }), 500
 
+@app.route('/api/admin/generate-welcome-notification', methods=['POST'])
+@require_admin_auth
+def generate_welcome_notification():
+    """Generate a welcome notification with audio for specific users (Admin only)"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Request body is required'
+            }), 400
+        
+        target_email = data.get('target_email')  # User to generate welcome message for
+        recipient_uid = data.get('recipient_uid')  # User who should receive the notification
+        language = data.get('language', 'en')
+        voice_id = data.get('voice_id')  # Optional custom voice
+        
+        if not target_email:
+            return jsonify({
+                'success': False,
+                'error': 'target_email is required'
+            }), 400
+            
+        if not recipient_uid:
+            return jsonify({
+                'success': False,
+                'error': 'recipient_uid is required (Firebase UID of notification recipient)'
+            }), 400
+        
+        # Extract user name from email for personalization
+        user_name = target_email.split('@')[0]
+        
+        print(f"Generating welcome notification for {target_email}, recipient: {recipient_uid}")
+        
+        # Generate the audio message using ElevenLabs service
+        audio_result = elevenlabs_service.generate_welcome_message(
+            user_name=user_name,
+            language=language,
+            voice_id=voice_id
+        )
+        
+        if not audio_result.get('success'):
+            return jsonify({
+                'success': False,
+                'error': f'Failed to generate audio: {audio_result.get("error")}'
+            }), 500
+        
+        # Create unique filename for the audio file
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"welcome_{user_name}_{timestamp}.mp3"
+        file_path = os.path.join('static', 'audio', filename)
+        
+        # Save the audio file
+        with open(file_path, 'wb') as f:
+            f.write(audio_result['audio_data'])
+        
+        # Create download URL (relative to app root)
+        download_url = f"/static/audio/{filename}"
+        
+        # Create notification record in database
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Create notifications table if it doesn't exist
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS notifications (
+                            id SERIAL PRIMARY KEY,
+                            firebase_uid VARCHAR(128) NOT NULL,
+                            title VARCHAR(255),
+                            body TEXT,
+                            notification_type VARCHAR(50),
+                            audio_url VARCHAR(500),
+                            delivered BOOLEAN DEFAULT FALSE,
+                            read_status BOOLEAN DEFAULT FALSE,
+                            fcm_response TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            delivered_at TIMESTAMP
+                        )
+                    """)
+                    
+                    # Insert the notification
+                    cur.execute("""
+                        INSERT INTO notifications (firebase_uid, title, body, notification_type, audio_url)
+                        VALUES (%s, %s, %s, %s, %s)
+                        RETURNING id
+                    """, (
+                        recipient_uid,
+                        f"Welcome Message for {target_email}",
+                        f"A personalized welcome message has been generated for {target_email}. Click to download the audio file.",
+                        'welcome_audio',
+                        download_url
+                    ))
+                    
+                    notification_id = cur.fetchone()[0]
+                    conn.commit()
+                    
+                    print(f"Created notification {notification_id} for recipient {recipient_uid}")
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': f'Welcome notification generated successfully for {target_email}',
+                        'notification_id': notification_id,
+                        'audio_file': filename,
+                        'download_url': download_url,
+                        'recipient_uid': recipient_uid,
+                        'target_email': target_email
+                    }), 200
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Database connection error'
+                }), 500
+                
+    except Exception as e:
+        print(f"Error generating welcome notification: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
     print("\n=== Registered Flask Routes ===")
