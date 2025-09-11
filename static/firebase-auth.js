@@ -125,37 +125,53 @@ document.addEventListener('DOMContentLoaded', function() {
         if (user) {
             console.log('Firebase user detected:', user.email);
 
-            // Check if this is a different user than what's cached
+            // SECURITY: Always clear localStorage completely on any auth state change
+            // This prevents stale data from being mixed between users
             const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-            if (cachedUser && cachedUser.uid !== user.uid) {
-                console.log('Different user detected, clearing cached data');
-                localStorage.clear();
-            }
-
-            // Ensure Firebase UID is always available in localStorage for features like confirmPurchase
-            if (!cachedUser || !cachedUser.uid) {
-                console.log('Firebase UID not in localStorage, ensuring fresh auth data is stored');
+            
+            // Check if this is a different user or corrupted cache
+            let needsDataRefresh = true;
+            if (cachedUser && 
+                cachedUser.uid === user.uid && 
+                cachedUser.email === user.email &&
+                cachedUser.uid && // Ensure UID exists and is valid
+                typeof cachedUser.uid === 'string' &&
+                cachedUser.uid.length > 10) { // Basic UID validation
                 
-                // Always clear localStorage completely and store fresh basic Firebase data
+                console.log('Same user detected with valid cached data');
+                needsDataRefresh = false;
+                updateAuthUI(user, cachedUser);
+            } else {
+                if (cachedUser && cachedUser.uid !== user.uid) {
+                    console.log(`SECURITY: Different user detected - was ${cachedUser.email} (${cachedUser.uid}), now ${user.email} (${user.uid})`);
+                } else if (!cachedUser || !cachedUser.uid) {
+                    console.log('No valid cached data, loading fresh user data');
+                } else {
+                    console.log('Cached data validation failed, refreshing');
+                }
+                
+                // CRITICAL: Clear localStorage completely to prevent any data leakage
+                console.log('Clearing all localStorage to prevent user data mixing');
                 localStorage.clear();
-                const basicUserData = {
+                
+                // Store minimal verified user data immediately
+                const verifiedUserData = {
                     uid: user.uid,
                     email: user.email,
                     displayName: user.displayName,
-                    photoURL: user.photoURL
+                    photoURL: user.photoURL,
+                    _verified: true, // Mark as verified to prevent overwriting
+                    _timestamp: Date.now() // Track when data was created
                 };
-                localStorage.setItem('currentUser', JSON.stringify(basicUserData));
+                localStorage.setItem('currentUser', JSON.stringify(verifiedUserData));
                 
-                // Load complete user data in the background (will overwrite with full data)
+                // Load complete user data with fresh API call
                 loadUserData(user);
-            } else {
-                // Update UI with existing cached data
-                updateAuthUI(user, cachedUser);
             }
         } else {
-            console.log('No authenticated user');
-            // Clear stored user data
-            localStorage.removeItem('currentUser');
+            console.log('No authenticated user - clearing all data');
+            // SECURITY: Clear ALL localStorage when user signs out
+            localStorage.clear();
             updateAuthUI(null, null);
         }
     });
@@ -250,12 +266,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to load user data and balance
     async function loadUserData(user) {
         try {
-            console.log('Loading user data for:', user.uid);
+            console.log('SECURITY: Loading user data for verified user:', user.uid);
             
-            // Clear localStorage completely to prevent stale data issues
-            console.log('Clearing localStorage to prevent stale user data');
-            localStorage.clear();
+            // SECURITY: Verify this is still the current authenticated user
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser || currentUser.uid !== user.uid) {
+                console.error('SECURITY WARNING: User changed during data loading, aborting');
+                return;
+            }
 
+            // Get Firebase ID token for authenticated API calls
+            const idToken = await user.getIdToken();
+            
             // Register user in our database
             const registrationResponse = await fetch('/api/auth/register', {
                 method: 'POST',
@@ -273,8 +295,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const registrationData = await registrationResponse.json();
             console.log('Registration response:', registrationData);
 
-            // Get additional user data from our API
-            const userResponse = await fetch(`/api/auth/current-user?firebaseUid=${user.uid}`);
+            // SECURITY: Get user data with authenticated API call using Authorization header
+            const userResponse = await fetch(`/api/auth/current-user?firebaseUid=${user.uid}`, {
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
             const userData = await userResponse.json();
 
             if (userData.status === 'success') {

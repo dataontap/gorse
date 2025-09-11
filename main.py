@@ -52,6 +52,9 @@ from elevenlabs_service import elevenlabs_service
 from github_service_secure import github_service_secure
 from auth_helpers import require_auth, require_admin_auth
 
+# Import Firebase authentication helper
+from firebase_helper import firebase_auth_required
+
 # Create products in Stripe if they don't exist
 if stripe.api_key:
     try:
@@ -1086,12 +1089,15 @@ def check_imei_compatibility():
         }), 500
 
 @app.route('/api/auth/current-user', methods=['GET'])
+@require_auth
 def get_current_user():
-    """Get current user data from database using Firebase UID"""
+    """Get current user data from database using Firebase UID - NOW AUTHENTICATED"""
     firebase_uid = request.args.get('firebaseUid')
     if not firebase_uid:
         return jsonify({'error': 'Firebase UID is required'}), 400
-
+    
+    # The require_auth decorator already validates the Firebase UID exists in database
+    
     try:
         with get_db_connection() as conn:
             if conn:

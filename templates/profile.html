@@ -469,14 +469,43 @@
             }
         }
         
-        function loadUserDataFromAPI(firebaseUid) {
-            if (!firebaseUid) return;
+        async function loadUserDataFromAPI(firebaseUid) {
+            if (!firebaseUid) {
+                console.error('SECURITY: No Firebase UID provided to loadUserDataFromAPI');
+                return;
+            }
             
-            fetch(`/api/auth/current-user?firebaseUid=${firebaseUid}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        console.log('Loaded user data from API:', data);
+            try {
+                // SECURITY: Verify this matches the current authenticated user
+                if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                    const currentUser = firebase.auth().currentUser;
+                    if (currentUser.uid !== firebaseUid) {
+                        console.error(`SECURITY WARNING: Profile trying to load data for ${firebaseUid} but current user is ${currentUser.uid}`);
+                        return;
+                    }
+                    
+                    // Get Firebase ID token for authenticated API call
+                    const idToken = await currentUser.getIdToken();
+                    
+                    console.log('SECURITY: Loading profile data with authentication for:', firebaseUid);
+                    
+                    const response = await fetch(`/api/auth/current-user?firebaseUid=${firebaseUid}`, {
+                        headers: {
+                            'Authorization': `Bearer ${idToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === 'success') {
+                        console.log('Loaded authenticated user data from API:', data);
+                        
+                        // SECURITY: Double-check the email matches what we expect
+                        if (data.email !== currentUser.email) {
+                            console.error(`SECURITY WARNING: API returned data for ${data.email} but current user is ${currentUser.email}`);
+                            return;
+                        }
                         
                         // Create complete user data object
                         const completeUserData = {
@@ -488,7 +517,9 @@
                             stripeCustomerId: data.stripeCustomerId,
                             oxioUserId: data.oxioUserId,
                             metamaskAddress: data.metamaskAddress,
-                            oxioGroupId: data.oxioGroupId
+                            oxioGroupId: data.oxioGroupId,
+                            _verified: true, // Mark as verified
+                            _timestamp: Date.now()
                         };
                         
                         // Update display with fresh API data
@@ -496,26 +527,36 @@
                         
                         // Store updated user data in localStorage
                         localStorage.setItem('currentUser', JSON.stringify(completeUserData));
+                    } else {
+                        console.error('API error:', data);
+                        showProfileError('Failed to load user data');
                     }
-                })
-                .catch(error => {
-                    console.error('Error loading user data from API:', error);
-                    // Update fields to show error state
-                    const dotUserIDElement = document.getElementById('dotUserID');
-                    if (dotUserIDElement) {
-                        dotUserIDElement.textContent = 'Error loading';
-                    }
-                    
-                    const oxioUserIDElement = document.getElementById('oxioUserID');
-                    if (oxioUserIDElement) {
-                        oxioUserIDElement.textContent = 'Error loading';
-                    }
-                    
-                    const oxioGroupIDElement = document.getElementById('oxioGroupID');
-                    if (oxioGroupIDElement) {
-                        oxioGroupIDElement.textContent = 'Error loading';
-                    }
-                });
+                } else {
+                    console.error('SECURITY: Firebase not available or user not authenticated');
+                    showProfileError('Authentication required');
+                }
+            } catch (error) {
+                console.error('Error loading user data from API:', error);
+                showProfileError('Error loading user data');
+            }
+        }
+        
+        function showProfileError(message) {
+            // Update fields to show error state
+            const dotUserIDElement = document.getElementById('dotUserID');
+            if (dotUserIDElement) {
+                dotUserIDElement.textContent = message;
+            }
+            
+            const oxioUserIDElement = document.getElementById('oxioUserID');
+            if (oxioUserIDElement) {
+                oxioUserIDElement.textContent = message;
+            }
+            
+            const oxioGroupIDElement = document.getElementById('oxioGroupID');
+            if (oxioGroupIDElement) {
+                oxioGroupIDElement.textContent = message;
+            }
         }
 
         function loadOxioData() {
