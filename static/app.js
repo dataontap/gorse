@@ -45,6 +45,22 @@ function initializeUser() {
     }
 }
 
+// Helper function to get Firebase UID safely
+function getFirebaseUID() {
+    // Try to get current user data from the auth system
+    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (currentUserData && currentUserData.uid) {
+        return currentUserData.uid;
+    }
+    
+    // Fallback: try to get from Firebase directly
+    if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+        return firebase.auth().currentUser.uid;
+    }
+    
+    return null;
+}
+
 // Call initialization when the page loads
 document.addEventListener('DOMContentLoaded', initializeUser);
 
@@ -208,7 +224,7 @@ function confirmPurchase() {
             console.log('Using Firebase UID from currentUser:', firebaseUid);
         } else {
             // Fallback to other Firebase UID storage (avoid 'userId' as it's internal DB ID, not Firebase UID)
-            firebaseUid = localStorage.getItem('firebaseUid') || null;
+            firebaseUid = getFirebaseUID();
             console.log('Using Firebase UID from fallback storage:', firebaseUid);
         }
 
@@ -674,7 +690,7 @@ function sendInvitation() {
         return;
     }
 
-    const firebaseUid = localStorage.getItem('userId');
+    const firebaseUid = getFirebaseUID();
 
     // Disable button during processing
     const sendBtn = document.getElementById('sendInvitationBtn');
@@ -722,7 +738,7 @@ function sendInvitation() {
 function createDemoUser() {
     const timestamp = Date.now();
     const demoEmail = `demo${timestamp}@example.com`;
-    const firebaseUid = localStorage.getItem('userId');
+    const firebaseUid = getFirebaseUID();
 
     fetch('/api/send-invitation', {
         method: 'POST',
@@ -756,7 +772,7 @@ function createDemoUser() {
 
 // Invites List Functions
 function loadInvitesList() {
-    const firebaseUid = localStorage.getItem('userId');
+    const firebaseUid = getFirebaseUID();
     if (!firebaseUid) return;
 
     fetch(`/api/invites?firebaseUid=${firebaseUid}&limit=10`)
@@ -1414,7 +1430,7 @@ function sendInvitation() {
         return;
     }
 
-    const firebaseUid = localStorage.getItem('userId');
+    const firebaseUid = getFirebaseUID();
 
     // Disable button during processing
     const sendBtn = document.getElementById('sendInvitationBtn');
@@ -1462,7 +1478,7 @@ function sendInvitation() {
 function createDemoUser() {
     const timestamp = Date.now();
     const demoEmail = `demo${timestamp}@example.com`;
-    const firebaseUid = localStorage.getItem('userId');
+    const firebaseUid = getFirebaseUID();
 
     fetch('/api/send-invitation', {
         method: 'POST',
@@ -1496,7 +1512,7 @@ function createDemoUser() {
 
 // Invites List Functions
 function loadInvitesList() {
-    const firebaseUid = localStorage.getItem('userId');
+    const firebaseUid = getFirebaseUID();
     if (!firebaseUid) return;
 
     fetch(`/api/invites?firebaseUid=${firebaseUid}&limit=10`)
@@ -1900,7 +1916,7 @@ function cancelInvitation(inviteId) {
         return;
     }
 
-    const firebaseUid = localStorage.getItem('userId');
+    const firebaseUid = getFirebaseUID();
 
     fetch(`/api/invites/${inviteId}/cancel`, {
         method: 'POST',
@@ -2645,7 +2661,7 @@ function trackHelpInteraction(type, data) {
 
 // Beta enrollment functions
 function handleBetaEnrollment() {
-    const firebaseUid = localStorage.getItem('userId');
+    const firebaseUid = getFirebaseUID();
     if (!firebaseUid) {
         alert('Please sign in to enroll in the beta program.');
         return;
@@ -2689,7 +2705,7 @@ function handleBetaEnrollment() {
 }
 
 function checkBetaStatus() {
-    const firebaseUid = localStorage.getItem('userId');
+    const firebaseUid = getFirebaseUID();
     if (!firebaseUid) return;
 
     fetch(`/api/beta-status?firebaseUid=${firebaseUid}`)
@@ -2883,7 +2899,7 @@ function startChat() {
 
 // Function to resend the eSIM ready email
 function send_esim_ready_email() {
-    const firebaseUid = localStorage.getItem('userId');
+    const firebaseUid = getFirebaseUID();
     if (!firebaseUid) {
         alert('Please sign in to resend the email.');
         return;

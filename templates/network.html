@@ -367,6 +367,30 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="/static/app.js"></script>
     <script>
+        // Helper function to get Firebase UID safely
+        function getFirebaseUID() {
+            const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (currentUserData && currentUserData.uid) {
+                return currentUserData.uid;
+            }
+            
+            // Fallback: try to get from Firebase directly
+            if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                return firebase.auth().currentUser.uid;
+            }
+            
+            return null;
+        }
+
+        // Listen for authentication state changes
+        document.addEventListener('firebaseAuthStateChanged', function(e) {
+            console.log('Network page received auth state change:', e.detail);
+            if (e.detail.isSignedIn && e.detail.uid) {
+                // Reload network features when user signs in
+                loadNetworkFeatures();
+            }
+        });
+
         // Toggle menu dropdown
         function toggleMenu(element) {
             element.querySelector('.menu-dropdown').classList.toggle('visible');
@@ -407,7 +431,9 @@
         function updateMemberCountInPopup() {
             const memberCountElement = document.getElementById('qrMemberCount');
             if (memberCountElement) {
-                const currentMemberId = localStorage.getItem('userId') || '1';
+                // Get current user data for member ID display
+                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                const currentMemberId = currentUserData?.userId || '1';
 
                 // Show loading state first
                 memberCountElement.textContent = `#${currentMemberId}/X`;
@@ -432,7 +458,7 @@
             const enabled = scanToggle.checked;
             
             try {
-                const firebaseUid = localStorage.getItem('firebase_uid');
+                const firebaseUid = getFirebaseUID();
                 if (!firebaseUid) {
                     console.error('No Firebase UID found');
                     alert('Authentication error - please refresh the page');
@@ -517,16 +543,7 @@
         async function loadNetworkFeatures() {
             try {
                 // First ensure user is authenticated and get Firebase UID
-                let firebaseUid = localStorage.getItem('firebase_uid');
-                
-                // Try to get Firebase UID from current Firebase user if not in localStorage
-                if (!firebaseUid && window.firebaseAuth && window.firebaseAuth.getCurrentUser) {
-                    const currentUser = window.firebaseAuth.getCurrentUser();
-                    if (currentUser) {
-                        firebaseUid = currentUser.uid;
-                        localStorage.setItem('firebase_uid', firebaseUid);
-                    }
-                }
+                const firebaseUid = getFirebaseUID();
 
                 if (!firebaseUid) {
                     console.error('No Firebase UID found - user may not be authenticated');
@@ -614,7 +631,7 @@
             const toggleElement = document.querySelector(`input[data-feature-id="${productId}"]`);
             
             try {
-                const firebaseUid = localStorage.getItem('firebase_uid');
+                const firebaseUid = getFirebaseUID();
                 if (!firebaseUid) {
                     console.error('No Firebase UID found');
                     alert('Authentication error - please refresh the page');
@@ -694,7 +711,7 @@
             });
 
             // Also check current auth state immediately
-            const firebaseUid = localStorage.getItem('firebase_uid');
+            const firebaseUid = getFirebaseUID();
             if (firebaseUid) {
                 console.log('Found existing Firebase UID:', firebaseUid);
                 loadNetworkFeatures();

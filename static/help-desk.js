@@ -433,8 +433,8 @@ HelpDeskClient.prototype.requestCallback = function(phoneNumber, preferredTime) 
 
 HelpDeskClient.prototype.getCurrentUserData = function() {
     return {
-        userId: window.currentUser && window.currentUser.userId || localStorage.getItem('userId') || '1',
-        firebaseUid: window.currentUser && window.currentUser.firebaseUid || localStorage.getItem('firebaseUid')
+        userId: window.currentUser && window.currentUser.userId || '1',
+        firebaseUid: window.currentUser && window.currentUser.uid || null
     };
 };
 

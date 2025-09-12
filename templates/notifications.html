@@ -324,8 +324,12 @@
                     console.log('getCurrentUser() error:', e);
                 }
                 if (!firebaseUid) {
-                    firebaseUid = localStorage.getItem('firebaseUid');
-                    console.log('localStorage firebaseUid:', firebaseUid);
+                    // Use consistent UID retrieval pattern
+                    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                    if (currentUserData && currentUserData.uid) {
+                        firebaseUid = currentUserData.uid;
+                    }
+                    console.log('consistent UID retrieval:', firebaseUid);
                 }
                 if (!firebaseUid && window.firebase && firebase.auth && firebase.auth().currentUser) { 
                     firebaseUid = firebase.auth().currentUser.uid; 
@@ -605,7 +609,12 @@
                     const u = window.getCurrentUser ? window.getCurrentUser() : null; 
                     if (u && u.uid) firebaseUid = u.uid; 
                 } catch(e) {}
-                if (!firebaseUid) firebaseUid = localStorage.getItem('firebaseUid');
+                if (!firebaseUid) {
+                    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                    if (currentUserData && currentUserData.uid) {
+                        firebaseUid = currentUserData.uid;
+                    }
+                }
                 if (!firebaseUid && window.firebase && firebase.auth && firebase.auth().currentUser) { 
                     firebaseUid = firebase.auth().currentUser.uid; 
                 }
@@ -659,7 +668,12 @@
                 const u = window.getCurrentUser ? window.getCurrentUser() : null; 
                 if (u && u.uid) firebaseUid = u.uid; 
             } catch(e) {}
-            if (!firebaseUid) firebaseUid = localStorage.getItem('firebaseUid');
+            if (!firebaseUid) {
+                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (currentUserData && currentUserData.uid) {
+                    firebaseUid = currentUserData.uid;
+                }
+            }
             if (!firebaseUid && window.firebase && firebase.auth && firebase.auth().currentUser) { 
                 firebaseUid = firebase.auth().currentUser.uid; 
             }

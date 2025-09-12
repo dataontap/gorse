@@ -141,6 +141,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Same user detected with valid cached data');
                 needsDataRefresh = false;
                 updateAuthUI(user, cachedUser);
+                
+                // Broadcast auth state change even for same user to refresh UI
+                broadcastAuthStateChange(user, cachedUser);
             } else {
                 if (cachedUser && cachedUser.uid !== user.uid) {
                     console.log(`SECURITY: Different user detected - was ${cachedUser.email} (${cachedUser.uid}), now ${user.email} (${user.uid})`);
@@ -165,6 +168,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 localStorage.setItem('currentUser', JSON.stringify(verifiedUserData));
                 
+                // Broadcast immediate auth state change with minimal data
+                broadcastAuthStateChange(user, verifiedUserData);
+                
                 // Load complete user data with fresh API call
                 loadUserData(user);
             }
@@ -172,6 +178,10 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('No authenticated user - clearing all data');
             // SECURITY: Clear ALL localStorage when user signs out
             localStorage.clear();
+            
+            // Broadcast sign-out state change
+            broadcastAuthStateChange(null, null);
+            
             updateAuthUI(null, null);
         }
     });
@@ -263,6 +273,34 @@ document.addEventListener('DOMContentLoaded', function() {
         return user;
     }
 
+    // Broadcast authentication state changes to all pages
+    function broadcastAuthStateChange(firebaseUser, userData) {
+        console.log('Broadcasting auth state change:', {
+            user: firebaseUser ? firebaseUser.email : 'signed out',
+            uid: firebaseUser ? firebaseUser.uid : null,
+            hasUserData: !!userData
+        });
+
+        // Create custom event with auth state information
+        const authEvent = new CustomEvent('firebaseAuthStateChanged', {
+            detail: {
+                firebaseUser: firebaseUser,
+                userData: userData,
+                isSignedIn: !!firebaseUser,
+                uid: firebaseUser ? firebaseUser.uid : null,
+                timestamp: Date.now()
+            }
+        });
+
+        // Dispatch event on document
+        document.dispatchEvent(authEvent);
+
+        // Also trigger global functions if they exist
+        if (typeof window.onFirebaseAuthStateChanged === 'function') {
+            window.onFirebaseAuthStateChanged(firebaseUser, userData);
+        }
+    }
+
     // Function to load user data and balance
     async function loadUserData(user) {
         try {
@@ -335,6 +373,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Completely overwrite localStorage with fresh complete user data
                             localStorage.setItem('currentUser', JSON.stringify(currentUserData));
                             updateAuthUI(user, currentUserData); // Update UI with balance
+                            
+                            // Broadcast updated user data with balance
+                            broadcastAuthStateChange(user, currentUserData);
                         } else {
                             console.error('Balance API error:', balanceData);
                             currentUserData.dataBalance = 0;
@@ -354,6 +395,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Update UI with real user data (without balance initially)
                 updateAuthUI(user, currentUserData);
+
+                // Broadcast complete user data loaded
+                broadcastAuthStateChange(user, currentUserData);
 
             } else {
                 console.error('Failed to get user data:', userData);

@@ -624,11 +624,38 @@
     <script src="/static/translations.js"></script>
     <script src="/static/app.js"></script>
     <script>
+        // Helper function to get Firebase UID safely
+        function getFirebaseUID() {
+            const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (currentUserData && currentUserData.uid) {
+                return currentUserData.uid;
+            }
+            
+            // Fallback: try to get from Firebase directly
+            if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                return firebase.auth().currentUser.uid;
+            }
+            
+            return null;
+        }
+
+        // Listen for authentication state changes
+        document.addEventListener('firebaseAuthStateChanged', function(e) {
+            console.log('Dashboard page received auth state change:', e.detail);
+            if (e.detail.isSignedIn && e.detail.uid) {
+                // Reload dashboard data when user signs in
+                loadUserDataBalance();
+                loadSubscriptionStatus();
+                loadWelcomeMessage();
+            }
+        });
+
         // Load user data and display data balance
         document.addEventListener('DOMContentLoaded', function() {
             loadUserDataBalance();
             loadMemberCount();
             loadSubscriptionStatus();
+            loadWelcomeMessage();
 
             // Check if banner was previously dismissed
             checkBannerDismissedState();
@@ -643,7 +670,7 @@
         var userSubscription = null; // Store user's subscription status
 
         function loadUserDataBalance() {
-            var firebaseUid = localStorage.getItem('userId');
+            var firebaseUid = getFirebaseUID();
             if (firebaseUid) {
                 fetch('/api/user/data-balance?firebaseUid=' + firebaseUid)
                     .then(response => response.json())
@@ -750,7 +777,7 @@
         }
 
         function loadSubscriptionStatus() {
-            var firebaseUid = localStorage.getItem('userId');
+            var firebaseUid = getFirebaseUID();
             if (firebaseUid) {
                 fetch('/api/subscription-status?firebaseUid=' + firebaseUid)
                     .then(response => response.json())
@@ -944,7 +971,7 @@
         let availableVoices = [];
 
         function loadWelcomeMessage() {
-            const firebaseUid = localStorage.getItem('userId');
+            const firebaseUid = getFirebaseUID();
             if (!firebaseUid) return;
 
             // Load available voices
@@ -1004,7 +1031,7 @@
         }
 
         function playWelcomeMessage() {
-            const firebaseUid = localStorage.getItem('userId');
+            const firebaseUid = getFirebaseUID();
             const language = document.getElementById('welcomeLanguage').value;
             const voiceId = document.getElementById('welcomeVoice').value;
             const playBtn = document.getElementById('playWelcomeBtn');
@@ -1098,7 +1125,7 @@
         });
 
         function resendEsimEmail() {
-            const firebaseUid = localStorage.getItem('userId');
+            const firebaseUid = getFirebaseUID();
             if (!firebaseUid) {
                 alert('User not authenticated');
                 return;
