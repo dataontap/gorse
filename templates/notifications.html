@@ -314,7 +314,24 @@
 
         async function loadNotifications() {
             try {
-                const firebaseUid = localStorage.getItem('userId');
+                console.log('loadNotifications() started');
+                let firebaseUid = null;
+                try { 
+                    const u = window.getCurrentUser ? window.getCurrentUser() : null; 
+                    console.log('getCurrentUser() returned:', u);
+                    if (u && u.uid) firebaseUid = u.uid; 
+                } catch(e) {
+                    console.log('getCurrentUser() error:', e);
+                }
+                if (!firebaseUid) {
+                    firebaseUid = localStorage.getItem('firebaseUid');
+                    console.log('localStorage firebaseUid:', firebaseUid);
+                }
+                if (!firebaseUid && window.firebase && firebase.auth && firebase.auth().currentUser) { 
+                    firebaseUid = firebase.auth().currentUser.uid; 
+                    console.log('firebase.auth().currentUser.uid:', firebaseUid);
+                }
+                console.log('Final firebaseUid:', firebaseUid);
                 if (!firebaseUid) {
                     console.error('No Firebase UID found');
                     return;
@@ -324,7 +341,7 @@
                 const notificationsResponse = await fetch(`/api/notifications?firebaseUid=${firebaseUid}&limit=50`);
                 const notificationsData = await notificationsResponse.json();
 
-                if (notificationsData.success && notificationsData.notifications) {
+                if (Array.isArray(notificationsData?.notifications)) {
                     // Convert database notifications
                     const dbNotifications = notificationsData.notifications.map(notification => ({
                         id: `db_${notification.id}`,
@@ -345,7 +362,7 @@
                 const invitesResponse = await fetch(`/api/invites?firebaseUid=${firebaseUid}`);
                 const invitesData = await invitesResponse.json();
 
-                if (invitesData.success) {
+                if (Array.isArray(invitesData?.invites)) {
                     // Convert invitations to notifications
                     const inviteNotifications = invitesData.invites.map(invite => ({
                         id: `invite_${invite.id}`,
@@ -450,11 +467,12 @@
             }
 
             if (filteredNotifications.length === 0) {
+                container.innerHTML = '';
                 emptyState.style.display = 'block';
                 return;
+            } else {
+                emptyState.style.display = 'none';
             }
-
-            emptyState.style.display = 'none';
 
             const notificationsHtml = filteredNotifications.map(notification => `
                 <div class="notification-item ${notification.read ? 'read' : 'unread'} ${notification.isWelcome ? 'welcome-message-notification' : ''}" data-id="${notification.id}">
@@ -582,7 +600,15 @@
             }
 
             try {
-                const firebaseUid = localStorage.getItem('userId');
+                let firebaseUid = null;
+                try { 
+                    const u = window.getCurrentUser ? window.getCurrentUser() : null; 
+                    if (u && u.uid) firebaseUid = u.uid; 
+                } catch(e) {}
+                if (!firebaseUid) firebaseUid = localStorage.getItem('firebaseUid');
+                if (!firebaseUid && window.firebase && firebase.auth && firebase.auth().currentUser) { 
+                    firebaseUid = firebase.auth().currentUser.uid; 
+                }
                 const response = await fetch(`/api/invites/${inviteId}/cancel`, {
                     method: 'POST',
                     headers: {
@@ -628,7 +654,15 @@
     <script>
         // Welcome message functionality for notifications page
         function playNotificationWelcomeMessage() {
-            const firebaseUid = localStorage.getItem('userId');
+            let firebaseUid = null;
+            try { 
+                const u = window.getCurrentUser ? window.getCurrentUser() : null; 
+                if (u && u.uid) firebaseUid = u.uid; 
+            } catch(e) {}
+            if (!firebaseUid) firebaseUid = localStorage.getItem('firebaseUid');
+            if (!firebaseUid && window.firebase && firebase.auth && firebase.auth().currentUser) { 
+                firebaseUid = firebase.auth().currentUser.uid; 
+            }
             const language = document.getElementById('notificationLanguage').value;
             const voiceId = document.getElementById('notificationVoice').value;
 
