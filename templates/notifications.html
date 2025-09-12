@@ -334,7 +334,8 @@
                         time: new Date(notification.created_at),
                         read: notification.read,
                         data: notification,
-                        isWelcome: notification.type === 'welcome'
+                        isWelcome: notification.type === 'welcome_audio',
+                        audioUrl: notification.audio_url
                     }));
 
                     notifications = [...dbNotifications];
@@ -462,20 +463,15 @@
                         <div class="notification-title">${notification.title}</div>
                         <div class="notification-message">${notification.message}</div>
                         <div class="notification-time">${formatTime(notification.time)}</div>
-                        ${notification.isWelcome ? `
+                        ${notification.isWelcome && notification.audioUrl ? `
                             <div class="welcome-message-controls">
-                                <button class="play-welcome-btn" onclick="playNotificationWelcomeMessage()">
-                                    <i class="fas fa-play"></i> Play Message
-                                </button>
-                                <select id="notificationLanguage" onchange="updateNotificationWelcomeMessage()">
-                                    <option value="en">English</option>
-                                    <option value="es">Español</option>
-                                    <option value="fr">Français</option>
-                                </select>
-                                <select id="notificationVoice" onchange="updateNotificationWelcomeMessage()">
-                                    <option value="">Loading voices...</option>
-                                </select>
-                                <audio id="notificationWelcomeAudio" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
+                                <a href="${notification.audioUrl}" download="welcome-message.mp3" class="play-welcome-btn" style="text-decoration: none; display: inline-block;">
+                                    <i class="fas fa-download"></i> Download Audio Message
+                                </a>
+                                <audio controls style="width: 100%; margin-top: 10px;">
+                                    <source src="${notification.audioUrl}" type="audio/mpeg">
+                                    Your browser does not support the audio element.
+                                </audio>
                             </div>
                         ` : ''}
                     </div>
