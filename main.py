@@ -1786,6 +1786,17 @@ def create_checkout_session():
 def serve_static(path):
     return send_from_directory('static', path)
 
+@app.route('/download/audio/<filename>')
+def download_audio(filename):
+    """Force download of audio files with proper headers"""
+    try:
+        response = send_from_directory('static/audio', filename, as_attachment=True)
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response.headers['Content-Type'] = 'audio/mpeg'
+        return response
+    except FileNotFoundError:
+        return jsonify({'error': 'Audio file not found'}), 404
+
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory('static', 'favicon.ico')

@@ -465,7 +465,7 @@
                         <div class="notification-time">${formatTime(notification.time)}</div>
                         ${notification.isWelcome && notification.audioUrl ? `
                             <div class="welcome-message-controls">
-                                <a href="${notification.audioUrl}" download="welcome-message.mp3" class="play-welcome-btn" style="text-decoration: none; display: inline-block;">
+                                <a href="/download/audio/${notification.audioUrl.split('/').pop()}" class="play-welcome-btn" style="text-decoration: none; display: inline-block;">
                                     <i class="fas fa-download"></i> Download Audio Message
                                 </a>
                                 <audio controls style="width: 100%; margin-top: 10px;">
