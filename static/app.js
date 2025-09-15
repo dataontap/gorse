@@ -2671,7 +2671,7 @@ function handleBetaEnrollment() {
     betaEnrollBtn.disabled = true;
     betaEnrollBtn.textContent = 'Processing...';
 
-    fetch('/api/beta-enrollment', {
+    fetch('/api/beta-request', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
