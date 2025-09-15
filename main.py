@@ -4008,6 +4008,53 @@ def get_github_status():
             'error': str(e)
         }), 500
 
+@app.route('/api/admin/upload-to-github', methods=['POST'])
+@require_auth
+def upload_documentation_to_github():
+    """Upload updated documentation to GitHub repository"""
+    try:
+        from github_service import github_service
+        
+        # Set repository configuration
+        github_service.set_repository("dataontap", "gorse", "main")
+        
+        # Check GitHub authentication
+        if not github_service.get_authenticated_client():
+            return jsonify({
+                'success': False,
+                'error': 'GitHub authentication failed'
+            }), 401
+        
+        # Read current README content
+        with open('README.md', 'r', encoding='utf-8') as f:
+            readme_content = f.read()
+        
+        # Upload README.md
+        result = github_service.upload_file(
+            file_path='README.md',
+            content=readme_content.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t'),
+            commit_message='Update README with Resend email integration information'
+        )
+        
+        if result['status'] == 'success':
+            return jsonify({
+                'success': True,
+                'message': 'Documentation uploaded successfully to GitHub',
+                'result': result
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            }), 500
+            
+    except Exception as e:
+        print(f"Error uploading to GitHub: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/admin/generate-welcome-notification', methods=['POST'])
 @require_admin_auth
 def generate_welcome_notification():

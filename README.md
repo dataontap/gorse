@@ -12,7 +12,7 @@ Please use this comprehensive telecommunications service toolset/framework to cr
 
 We provide global eSIM connectivity, automation, network services intelligence and network optimization features through a unified ecosystem in a public cloud. Our data servers are located colely in North America: N.Virginia, USA and in Montreal, Canada. We use Full MVNO type of connectivity in the USA, Mexico and in Canada soon hopefully. 
 
-We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql databases, ElevenLabs for voice synthesis, Bitchat for fallback connectivity and Ethereum blockchain integration. Full list of integrations below.  
+We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql databases, Resend for professional email delivery, ElevenLabs for voice synthesis, Bitchat for fallback connectivity and Ethereum blockchain integration. Full list of integrations below.  
 
 ### 🚀 Live Platform
 
@@ -81,17 +81,27 @@ We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql d
 - **Stripe Integration**: Complete payment processing infrastructure
 - **OXIO API**: Global eSIM and connectivity services
 - **Ethereum Integration**: Web3.py for blockchain interactions
+- **Resend Email API**: Professional email delivery with 99.9% deliverability
 
 ### Key Integrations
 - **Firebase Admin SDK**: Server-side authentication and user management
 - **Stripe Payments**: Subscription management and billing
 - **OXIO Staging API**: eSIM provisioning and network services
 - **Ethereum Mainnet**: DOTM token rewards and transactions
-- **SMTP Email Services**: Automated notifications and communications
+- **Resend Email API**: Professional email delivery and notifications
 - **ElevenLabs**: Voice synthesis for personalized interactions
 - **OpenAI API**: AI-powered customer support
 
 ## 🎙️ Advanced Communication Features
+
+### Resend Email Service Integration
+- **Professional Email Delivery**: High-deliverability email service with 99.9% uptime
+- **Verified Domain**: emails sent from @dotmobile.app with proper SPF/DKIM authentication
+- **Transactional Emails**: Magic link authentication, welcome messages, and notifications
+- **Template Support**: HTML email templates with dynamic content injection
+- **Delivery Analytics**: Real-time email delivery tracking and bounce management
+- **API Integration**: RESTful email API with automatic failover to SMTP backup
+- **Scalable Infrastructure**: Handle high-volume email campaigns and notifications
 
 ### ElevenLabs.io Voice Synthesis
 - **Multilingual Support**: Welcome messages in English, Spanish, and French
