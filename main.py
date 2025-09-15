@@ -1709,6 +1709,84 @@ def terms():
 def about():
     return render_template('about.html')
 
+@app.route('/buy/esim')
+def buy_esim():
+    """Direct $1 eSIM checkout - redirects to Stripe"""
+    try:
+        # Create Stripe checkout session
+        session = stripe.checkout.Session.create(
+            mode='payment',
+            line_items=[{
+                'price': 'price_1S7Yc6JnTfh0bNQQVeLeprXe',  # $1 eSIM Beta (one-time payment)
+                'quantity': 1,
+            }],
+            success_url=request.url_root + 'esim/success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=request.url_root,
+            metadata={
+                'oxio_user_id': '0468edb8-ea36-4f17-ba62-10fbca186ac3',
+                'product': 'esim_beta'
+            }
+        )
+        
+        # Redirect to Stripe checkout
+        return redirect(session.url)
+        
+    except Exception as e:
+        print(f"Error creating eSIM checkout session: {str(e)}")
+        return f"Error creating checkout session: {str(e)}", 500
+
+@app.route('/esim/success')
+def esim_success():
+    """eSIM purchase success confirmation page"""
+    session_id = request.args.get('session_id')
+    
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>eSIM Purchase Successful - DOT Mobile</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }}
+            .container {{ max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+            .success {{ color: #22c55e; font-size: 48px; text-align: center; margin-bottom: 20px; }}
+            h1 {{ color: #333; text-align: center; margin-bottom: 30px; }}
+            .details {{ background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+            .next-steps {{ background: #e3f2fd; padding: 20px; border-radius: 8px; border-left: 4px solid #2196f3; }}
+            .btn {{ display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 5px; }}
+            .btn:hover {{ background: #0056b3; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="success">✅</div>
+            <h1>eSIM Purchase Successful!</h1>
+            
+            <div class="details">
+                <h3>Payment Confirmed</h3>
+                <p>Your $1 eSIM purchase has been processed successfully.</p>
+                <p><strong>Session ID:</strong> {session_id or 'N/A'}</p>
+                <p><strong>Status:</strong> OXIO eSIM activation in progress...</p>
+            </div>
+            
+            <div class="next-steps">
+                <h3>What's Next?</h3>
+                <p>🔄 Your eSIM is being activated automatically with OXIO</p>
+                <p>📧 You'll receive activation details and QR code via email</p>
+                <p>📱 Follow the setup instructions to activate your eSIM</p>
+                <p>🌍 Enjoy global connectivity with DOT Mobile!</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="/" class="btn">Return to Home</a>
+                <a href="/profile" class="btn">View Profile</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
     try:
@@ -1812,14 +1890,48 @@ def handle_stripe_webhook():
             session = event['data']['object']
             
             # Extract product information from metadata
-            product_id = session['metadata'].get('product_id')
-            firebase_uid = session['metadata'].get('firebase_uid')
+            product_id = session['metadata'].get('product_id')  # Legacy format
+            product = session['metadata'].get('product')        # New format
+            firebase_uid = session['metadata'].get('firebase_uid')  # Legacy
+            oxio_user_id = session['metadata'].get('oxio_user_id')  # New direct OXIO format
             customer_id = session.get('customer')
             
-            print(f"Payment successful for product: {product_id}, Firebase UID: {firebase_uid}")
+            print(f"Payment successful - Product: {product or product_id}, Firebase UID: {firebase_uid}, OXIO User: {oxio_user_id}")
             
-            # Handle eSIM Beta activation
-            if product_id == 'esim_beta' and firebase_uid:
+            # Handle direct OXIO eSIM activation (new simplified flow)
+            if product == 'esim_beta' and oxio_user_id:
+                try:
+                    print(f"Activating OXIO eSIM for user: {oxio_user_id}")
+                    
+                    # Direct OXIO activation without Firebase dependency
+                    from oxio_service import OXIOService
+                    oxio = OXIOService()
+                    
+                    # Activate eSIM line for the specified OXIO user
+                    activation_result = oxio.activate_line(oxio_user_id)
+                    
+                    if activation_result.get('success'):
+                        print(f"✅ OXIO eSIM activation successful: {activation_result}")
+                        # Optional: Record successful activation
+                        try:
+                            with get_db_connection() as conn:
+                                if conn:
+                                    with conn.cursor() as cur:
+                                        cur.execute("""
+                                            INSERT INTO purchases (stripe_session_id, oxio_user_id, product, amount, status, created_at)
+                                            VALUES (%s, %s, %s, %s, %s, %s)
+                                        """, (session['id'], oxio_user_id, 'esim_beta', 100, 'completed', 'NOW()'))
+                                        conn.commit()
+                        except Exception as db_e:
+                            print(f"Note: Could not record purchase in DB: {db_e}")
+                    else:
+                        print(f"❌ OXIO eSIM activation failed: {activation_result}")
+                        
+                except Exception as e:
+                    print(f"Error in direct OXIO eSIM activation: {str(e)}")
+            
+            # Handle legacy Firebase-based eSIM activation
+            elif product_id == 'esim_beta' and firebase_uid:
                 try:
                     result = activate_esim_for_user(firebase_uid, session)
                     if result['success']:
@@ -1830,8 +1942,8 @@ def handle_stripe_webhook():
                     print(f"Error activating eSIM: {str(e)}")
             
             # Handle other product activations (existing logic)
-            elif product_id in ['basic_membership', 'full_membership'] and firebase_uid:
-                print(f"Membership activation for {product_id} will be handled by existing subscription flow")
+            elif (product_id in ['basic_membership', 'full_membership'] or product in ['basic_membership', 'full_membership']) and firebase_uid:
+                print(f"Membership activation for {product or product_id} will be handled by existing subscription flow")
         
         return jsonify({'status': 'success'}), 200
         
