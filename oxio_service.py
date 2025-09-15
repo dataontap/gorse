@@ -92,10 +92,10 @@ class OXIOService:
             if response.status_code == 200:
                 sim_data = response.json()
                 if sim_data.get('status') == 'WARM' and sim_data.get('simType') == 'EMBEDDED':
-                    print(f"Found WARM eSIM: {test_iccid}")
+                    print(f"Found WARM eSIM for activation")
                     return test_iccid
             
-            print(f"Could not find WARM eSIM, using fallback ICCID: {test_iccid}")
+            print(f"Could not find WARM eSIM, using fallback test ICCID")
             return test_iccid  # Always return the working ICCID from our test
             
         except Exception as e:

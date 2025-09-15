@@ -18,3 +18,4 @@ web3
 python-dotenv
 pillow
 qrcode
+qrcode

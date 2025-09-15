@@ -4999,8 +4999,8 @@ if __name__ == '__main__':
     print(f"  - POST /api/oxio/test-sample-activation")
 
     try:
-        socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
     except Exception as e:
         print(f"Error starting server: {str(e)}")
         # Fallback to standard Flask run
-        app.run(host='0.0.0.0', port=port, debug=True)
+        app.run(host='0.0.0.0', port=port, debug=False)
