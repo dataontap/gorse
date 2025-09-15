@@ -3869,14 +3869,36 @@ def submit_beta_request():
         from beta_approval_service import BetaApprovalService
         
         data = request.get_json()
+        # Support both parameter formats from frontend
+        firebase_uid = data.get('firebaseUid') or data.get('firebase_uid')
         user_email = data.get('email')
-        firebase_uid = data.get('firebase_uid')
         user_name = data.get('name')
         
-        if not user_email or not firebase_uid:
+        if not firebase_uid:
             return jsonify({
                 'success': False,
-                'error': 'Email and Firebase UID are required'
+                'message': 'Firebase UID is required',
+                'error': 'Missing firebaseUid parameter'
+            }), 400
+            
+        # Get user email from database if not provided
+        if not user_email:
+            try:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cursor:
+                            cursor.execute("SELECT email FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                            user_data = cursor.fetchone()
+                            if user_data:
+                                user_email = user_data[0]
+            except Exception as e:
+                print(f"Error getting user email: {str(e)}")
+                
+        if not user_email:
+            return jsonify({
+                'success': False,
+                'message': 'User not found. Please sign up first.',
+                'error': 'Cannot find user email for firebaseUid'
             }), 400
         
         beta_service = BetaApprovalService()
@@ -3885,12 +3907,16 @@ def submit_beta_request():
         if result['success']:
             return jsonify(result), 200
         else:
+            # Ensure error response has message field
+            if 'message' not in result and 'error' in result:
+                result['message'] = result['error']
             return jsonify(result), 400
             
     except Exception as e:
         print(f"Error in submit_beta_request: {str(e)}")
         return jsonify({
             'success': False,
+            'message': f'Server error: {str(e)}',
             'error': str(e)
         }), 500
 

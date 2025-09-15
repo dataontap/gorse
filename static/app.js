@@ -2691,7 +2691,7 @@ function handleBetaEnrollment() {
                 updateBetaStatus(data.status, data.message);
             }
         } else {
-            alert('Error enrolling in beta: ' + (data.message || 'Unknown error'));
+            alert('Error enrolling in beta: ' + (data.message || data.error || 'Unknown error'));
             betaEnrollBtn.disabled = false;
             betaEnrollBtn.textContent = 'Request BETA eSIM';
         }
