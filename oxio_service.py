@@ -102,15 +102,17 @@ class OXIOService:
             print(f"Error getting eSIM ICCID: {str(e)}")
             return "8910650420001501340F"  # Fallback to test ICCID
 
-    def activate_line(self, oxio_user_id_or_payload) -> Dict[str, Any]:
+    def activate_line(self, oxio_user_id_or_payload, plan_id=None, group_id=None) -> Dict[str, Any]:
         """
-        Activate a line using OXIO API
+        Activate a line using OXIO API with plan and group support
 
         Args:
             oxio_user_id_or_payload: Either a simple OXIO user ID string, or a complex payload dict
+            plan_id: Optional plan ID for line activation (e.g., 'basic_esim_plan', 'premium_esim_plan')
+            group_id: Optional OXIO group ID for the user
 
         Returns:
-            API response as dictionary
+            API response as dictionary with activation details
         """
         try:
             url = f"{self.base_url}/v2/lines"
@@ -138,6 +140,16 @@ class OXIOService:
                     "endUserId": oxio_user_id,  # v2 uses direct endUserId, not nested
                     "activateOnAttach": False
                 }
+                
+                # Add plan ID if provided
+                if plan_id:
+                    payload["planId"] = plan_id
+                    print(f"Including plan ID in activation: {plan_id}")
+                
+                # Add group ID if provided
+                if group_id:
+                    payload["groupId"] = group_id
+                    print(f"Including group ID in activation: {group_id}")
             elif isinstance(oxio_user_id_or_payload, dict):
                 # Complex case: full payload provided (legacy support)
                 payload = oxio_user_id_or_payload
@@ -164,6 +176,15 @@ class OXIOService:
                     # Add optional fields if they exist (but exclude phoneNumberRequirements)
                     if "activateOnAttach" in payload:
                         clean_payload["activateOnAttach"] = payload["activateOnAttach"]
+                    
+                    # Add plan ID and group ID from parameters or payload
+                    if plan_id or payload.get("planId"):
+                        clean_payload["planId"] = plan_id or payload.get("planId")
+                        print(f"Including plan ID in complex activation: {clean_payload['planId']}")
+                    
+                    if group_id or payload.get("groupId"):
+                        clean_payload["groupId"] = group_id or payload.get("groupId")
+                        print(f"Including group ID in complex activation: {clean_payload['groupId']}")
                     
                     print(f"Excluded ICCID and preferredAreaCode from payload")
                         
