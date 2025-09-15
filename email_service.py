@@ -20,8 +20,8 @@ def send_email_via_resend(to_email: str, subject: str, body: str, html_body: Opt
             
         resend.api_key = api_key
         
-        # Default sender email - use Resend's verified domain until dotmobile.app is verified
-        from_email = os.environ.get('FROM_EMAIL', 'onboarding@resend.dev')
+        # Default sender email - now using your verified domain
+        from_email = os.environ.get('FROM_EMAIL', 'rbm@dotmobile.app')
         
         # Use HTML body if available, otherwise use plain text
         email_content = html_body if html_body else body
