@@ -2,6 +2,8 @@
 
 ![DOT](https://img.shields.io/badge/Status-Live-green) ![Ethereum](https://img.shields.io/badge/Ethereum-Mainnet-blue) ![Version](https://img.shields.io/badge/Version-1.0-brightgreen)
 
+**Code, APIs and App Available for FREE. $1/month license for globally connected active users. Ask for above 100TPH access.**
+
 ## 🌐 Full MVNO framework
 
 dotmobile is a smart tiny telecom. This gorse release is compact Alpha build of a Full MVNO. 
