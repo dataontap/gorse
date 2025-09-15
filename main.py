@@ -209,6 +209,13 @@ except Exception as e:
 
 
 app = Flask(__name__, static_url_path='/static', template_folder='templates') # Added template_folder
+
+# CRITICAL SECURITY: Set session secret key from environment
+app.secret_key = os.environ.get("SESSION_SECRET")
+if not app.secret_key:
+    print("WARNING: SESSION_SECRET not configured - using fallback for development")
+    app.secret_key = "dev-fallback-secret-change-in-production"
+
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Define OXIO endpoints FIRST, before any Flask-RESTX setup
@@ -2010,7 +2017,7 @@ def handle_stripe_webhook():
                     activation_result = oxio.activate_line(oxio_user_id, plan_id=esim_plan_id, group_id=esim_group_id)
                     
                     if activation_result.get('success'):
-                        print(f"✅ OXIO eSIM activation successful: {activation_result}")
+                        print(f"✅ OXIO eSIM activation successful")
                         
                         # Extract eSIM profile information from OXIO response
                         activation_data = activation_result.get('data', {})
@@ -2018,7 +2025,7 @@ def handle_stripe_webhook():
                         line_id = activation_data.get('lineId')
                         iccid = activation_data.get('iccid') or activation_data.get('sim', {}).get('iccid')
                         
-                        print(f"eSIM Profile Details - Phone: {phone_number}, Line ID: {line_id}, ICCID: {iccid}")
+                        print(f"eSIM Profile Details extracted - activation successful")
                         
                         # Generate eSIM activation QR code
                         esim_qr_code = None
@@ -2097,7 +2104,7 @@ def handle_stripe_webhook():
                         except Exception as email_error:
                             print(f"Could not send activation email: {email_error}")
                     else:
-                        print(f"❌ OXIO eSIM activation failed: {activation_result}")
+                        print(f"❌ OXIO eSIM activation failed")
                         
                 except Exception as e:
                     print(f"Error in direct OXIO eSIM activation: {str(e)}")
@@ -2107,9 +2114,9 @@ def handle_stripe_webhook():
                 try:
                     result = activate_esim_for_user(firebase_uid, session)
                     if result['success']:
-                        print(f"eSIM activation successful: {result}")
+                        print(f"eSIM activation successful")
                     else:
-                        print(f"eSIM activation failed: {result}")
+                        print(f"eSIM activation failed")
                 except Exception as e:
                     print(f"Error activating eSIM: {str(e)}")
             
@@ -2262,7 +2269,7 @@ def generate_esim_activation_qr(iccid, phone_number, line_id):
         buffer.seek(0)
         qr_base64 = base64.b64encode(buffer.getvalue()).decode()
         
-        print(f"✅ Generated QR code for ICCID: {iccid}, Phone: {phone_number}")
+        print(f"✅ Generated QR code successfully")
         return qr_base64
         
     except Exception as e:
@@ -2356,7 +2363,7 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
             line_id = activation_data.get('lineId') or oxio_result.get('line_id')
             iccid = activation_data.get('iccid') or activation_data.get('sim', {}).get('iccid')
             
-            print(f"eSIM Profile Details - Phone: {phone_number}, Line ID: {line_id}, ICCID: {iccid}")
+            print(f"eSIM Profile Details extracted successfully")
             
             # Generate eSIM activation QR code
             esim_qr_code = None

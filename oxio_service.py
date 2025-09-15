@@ -75,7 +75,7 @@ class OXIOService:
                              destination_url, 'oxio_api', json.dumps(ping_data))
                         )
                         conn.commit()
-                        print(f"Recorded OXIO API ping: {endpoint_name} (Request: {request_time_ms}ms, Response: {response_time_ms}ms, Status: {status_code})")
+                        print(f"Recorded OXIO API ping: {endpoint_name} (Request: {request_time_ms}ms, Status: {status_code})")
         except Exception as e:
             print(f"Error recording OXIO API ping: {str(e)}")
 
