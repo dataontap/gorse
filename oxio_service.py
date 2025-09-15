@@ -113,7 +113,7 @@ class OXIOService:
             API response as dictionary
         """
         try:
-            url = f"{self.base_url}/v3/lines"
+            url = f"{self.base_url}/v2/lines"
             headers = self.get_headers()
 
             # Handle both simple OXIO user ID and complex payload
@@ -130,20 +130,12 @@ class OXIOService:
                 # Get a WARM eSIM ICCID from inventory for activation
                 iccid = self._get_available_esim_iccid()
                 
-                # Create proper payload with nested endUser structure
+                # Create v2 payload with iccids parameter (plural)
                 payload = {
                     "lineType": "LINE_TYPE_MOBILITY",
                     "countryCode": "US",
-                    "sim": { 
-                        "simType": "EMBEDDED",
-                        "iccid": iccid if iccid else "8910650420001501340F"  # Fallback from test
-                    },
-                    "endUser": { 
-                        "endUserId": oxio_user_id 
-                    },
-                    "phoneNumberRequirements": {
-                        "preferredAreaCode": "212"
-                    },
+                    "iccids": [iccid if iccid else "8910650420001501340F"],  # v2 expects array
+                    "endUserId": oxio_user_id,  # v2 uses direct endUserId, not nested
                     "activateOnAttach": False
                 }
             elif isinstance(oxio_user_id_or_payload, dict):
@@ -157,12 +149,16 @@ class OXIOService:
                     print(f"OXIO user ID found in complex payload: {oxio_user_id}")
                     print("Removing email and user details since endUserId is provided")
                     
-                    # Create clean payload with only endUserId - no email, ICCID, or area code
+                    # Get a WARM eSIM ICCID for v2 API
+                    iccid = self._get_available_esim_iccid()
+                    
+                    # Create v2 clean payload with iccids array
                     clean_payload = {
                         "lineType": payload.get("lineType", "LINE_TYPE_MOBILITY"),
                         "countryCode": payload.get("countryCode", "US"),
-                        "sim": {"simType": "EMBEDDED"},  # Remove ICCID, keep only simType  
-                        "endUser": { "endUserId": oxio_user_id },  # Use proper nested structure
+                        "iccids": [iccid if iccid else "8910650420001501340F"],  # v2 expects array
+                        "endUserId": oxio_user_id,  # v2 uses direct endUserId
+                        "activateOnAttach": False
                     }
                     
                     # Add optional fields if they exist (but exclude phoneNumberRequirements)
