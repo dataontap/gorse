@@ -4222,7 +4222,7 @@ def get_beta_status():
 
 @app.route('/api/user-phone-numbers')
 def get_user_phone_numbers():
-    """Get user's phone numbers and generate QR codes"""
+    """Get ALL user's phone numbers from multiple sources"""
     try:
         from beta_approval_service import BetaApprovalService
         from qr_generator import generate_resin_qr_code, generate_simple_phone_qr
@@ -4234,43 +4234,122 @@ def get_user_phone_numbers():
                 'error': 'Firebase UID required'
             }), 400
         
-        beta_service = BetaApprovalService()
-        beta_status = beta_service.get_user_beta_status(firebase_uid)
+        all_phone_numbers = []
         
-        if not beta_status.get('has_request') or beta_status.get('status') != 'approved':
-            return jsonify({
-                'success': False,
-                'error': 'User does not have approved beta access'
-            }), 403
+        # 1. Get user's primary phone number from users table
+        try:
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            SELECT phone_number FROM users 
+                            WHERE firebase_uid = %s AND phone_number IS NOT NULL
+                        """, (firebase_uid,))
+                        result = cur.fetchone()
+                        if result and result[0]:
+                            all_phone_numbers.append({
+                                'phoneNumber': result[0],
+                                'source': 'user_profile',
+                                'type': 'Primary',
+                                'countryCode': 'US'
+                            })
+                            print(f"Found primary phone number: {result[0]}")
+        except Exception as e:
+            print(f"Error getting user profile phone number: {e}")
         
-        phone_number = beta_status.get('phone_number')
-        group_id = beta_status.get('group_id')
-        oxio_user_id = beta_status.get('oxio_user_id')
-        resin_data = beta_status.get('resin_data', {})
+        # 2. Get phone numbers from OXIO activations
+        try:
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            SELECT DISTINCT phone_number, line_id, activation_status, created_at
+                            FROM oxio_activations 
+                            WHERE firebase_uid = %s AND phone_number IS NOT NULL
+                            ORDER BY created_at DESC
+                        """, (firebase_uid,))
+                        oxio_results = cur.fetchall()
+                        
+                        for result in oxio_results:
+                            phone_num, line_id, status, created_at = result
+                            all_phone_numbers.append({
+                                'phoneNumber': phone_num,
+                                'source': 'oxio_activation',
+                                'type': 'eSIM',
+                                'lineId': line_id,
+                                'status': status,
+                                'activatedAt': created_at.isoformat() if created_at else None,
+                                'countryCode': 'US'
+                            })
+                            print(f"Found OXIO phone number: {phone_num} (Line: {line_id})")
+        except Exception as e:
+            print(f"Error getting OXIO phone numbers: {e}")
         
-        # Generate QR codes
-        resin_qr = generate_resin_qr_code(
-            phone_number, 
-            group_id, 
-            oxio_user_id, 
-            resin_data
-        )
+        # 3. Get beta phone number (if approved)
+        try:
+            beta_service = BetaApprovalService()
+            beta_status = beta_service.get_user_beta_status(firebase_uid)
+            
+            if beta_status.get('has_request') and beta_status.get('status') == 'approved':
+                beta_phone = beta_status.get('phone_number')
+                group_id = beta_status.get('group_id')
+                oxio_user_id = beta_status.get('oxio_user_id')
+                
+                if beta_phone:
+                    # Generate QR codes for beta phone
+                    try:
+                        resin_qr = generate_resin_qr_code(
+                            beta_phone, 
+                            group_id, 
+                            oxio_user_id, 
+                            beta_status.get('resin_data', {})
+                        )
+                        simple_qr = generate_simple_phone_qr(beta_phone)
+                        
+                        all_phone_numbers.append({
+                            'phoneNumber': beta_phone,
+                            'source': 'beta_access',
+                            'type': 'Beta',
+                            'groupId': group_id,
+                            'oxioUserId': oxio_user_id,
+                            'resinQr': resin_qr,
+                            'simpleQr': simple_qr,
+                            'countryCode': 'US',
+                            'approvedAt': beta_status.get('approved_at')
+                        })
+                        print(f"Found beta phone number: {beta_phone}")
+                    except Exception as qr_error:
+                        print(f"Error generating QR codes: {qr_error}")
+                        # Add phone without QR codes
+                        all_phone_numbers.append({
+                            'phoneNumber': beta_phone,
+                            'source': 'beta_access',
+                            'type': 'Beta',
+                            'groupId': group_id,
+                            'oxioUserId': oxio_user_id,
+                            'countryCode': 'US',
+                            'approvedAt': beta_status.get('approved_at')
+                        })
+                        print(f"Found beta phone number: {beta_phone} (no QR codes)")
+        except Exception as e:
+            print(f"Error getting beta phone number: {e}")
         
-        simple_qr = generate_simple_phone_qr(phone_number)
+        # Remove duplicates based on phone number
+        unique_numbers = []
+        seen_numbers = set()
+        
+        for phone_data in all_phone_numbers:
+            phone_num = phone_data['phoneNumber']
+            if phone_num not in seen_numbers:
+                seen_numbers.add(phone_num)
+                unique_numbers.append(phone_data)
+        
+        print(f"Found {len(unique_numbers)} unique phone numbers for user {firebase_uid}")
         
         return jsonify({
             'success': True,
-            'phone_numbers': [{
-                'number': phone_number,
-                'group_id': group_id,
-                'oxio_user_id': oxio_user_id,
-                'resin_data': resin_data,
-                'qr_codes': {
-                    'resin_qr': resin_qr,
-                    'simple_qr': simple_qr
-                },
-                'approved_at': beta_status.get('approved_at')
-            }]
+            'phoneNumbers': unique_numbers,
+            'total_count': len(unique_numbers)
         }), 200
         
     except Exception as e:

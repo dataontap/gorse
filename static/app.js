@@ -3151,21 +3151,111 @@ function displayBetaPhoneNumbers(data) {
     
     if (data.success && data.phoneNumbers && data.phoneNumbers.length > 0) {
         let html = "";
-        data.phoneNumbers.forEach(phone => {
+        
+        // Show count if multiple numbers
+        if (data.phoneNumbers.length > 1) {
+            html += `
+                <div class="mb-3 text-center">
+                    <span class="badge bg-info">
+                        <i class="fas fa-phone"></i> ${data.phoneNumbers.length} Phone Numbers Found
+                    </span>
+                </div>
+            `;
+        }
+        
+        data.phoneNumbers.forEach((phone, index) => {
+            const sourceIcon = getPhoneSourceIcon(phone.source);
+            const statusBadge = getPhoneStatusBadge(phone);
+            
             html += `
                 <div class="address-card p-3 mb-3" style="background: rgba(40, 167, 69, 0.1); border-radius: 8px;">
-                    <h5><i class="fas fa-phone"></i> ${phone.phoneNumber}</h5>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="phone-info">
+                            <h5>
+                                ${sourceIcon} ${phone.phoneNumber}
+                                ${statusBadge}
+                            </h5>
+                            <p class="mb-1"><strong>Type:</strong> ${phone.type || 'Mobile'}</p>
+                            <p class="mb-1"><strong>Source:</strong> ${formatPhoneSource(phone.source)}</p>
+                            ${phone.lineId ? `<p class="mb-1"><strong>Line ID:</strong> ${phone.lineId}</p>` : ''}
+                            ${phone.activatedAt ? `<p class="mb-1"><strong>Activated:</strong> ${new Date(phone.activatedAt).toLocaleDateString()}</p>` : ''}
+                            ${phone.approvedAt ? `<p class="mb-1"><strong>Approved:</strong> ${new Date(phone.approvedAt).toLocaleDateString()}</p>` : ''}
+                        </div>
+                        <div class="phone-actions">
+                            ${phone.resinQr || phone.simpleQr ? `
+                                <button class="btn btn-sm btn-outline-primary" onclick="showPhoneQR('${phone.phoneNumber}', '${phone.resinQr || phone.simpleQr}')" title="Show QR Code">
+                                    <i class="fas fa-qrcode"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
                 </div>
             `;
         });
+        
         betaPhoneContainer.innerHTML = html;
     } else {
         betaPhoneContainer.innerHTML = `
             <div class="address-card p-3 mb-3" style="background: rgba(108, 117, 125, 0.1); border-radius: 8px;">
-                <p>No beta phone numbers available</p>
+                <div class="text-center">
+                    <i class="fas fa-phone mb-2" style="font-size: 2em; color: #6c757d;"></i>
+                    <p>No phone numbers available</p>
+                    <small>Phone numbers will appear here when you have active services</small>
+                </div>
             </div>
         `;
     }
+}
+
+// Helper functions for phone number display
+function getPhoneSourceIcon(source) {
+    switch (source) {
+        case 'user_profile': return '<i class="fas fa-user" style="color: #007bff;"></i>';
+        case 'oxio_activation': return '<i class="fas fa-sim-card" style="color: #28a745;"></i>';
+        case 'beta_access': return '<i class="fas fa-flask" style="color: #ffc107;"></i>';
+        default: return '<i class="fas fa-phone" style="color: #6c757d;"></i>';
+    }
+}
+
+function getPhoneStatusBadge(phone) {
+    if (phone.status === 'activated') {
+        return '<span class="badge bg-success ms-2"><i class="fas fa-check-circle"></i> Active</span>';
+    } else if (phone.status) {
+        return `<span class="badge bg-warning ms-2">${phone.status}</span>`;
+    }
+    return '<span class="badge bg-success ms-2"><i class="fas fa-check-circle"></i> Active</span>';
+}
+
+function formatPhoneSource(source) {
+    switch (source) {
+        case 'user_profile': return 'User Profile';
+        case 'oxio_activation': return 'OXIO eSIM Activation';
+        case 'beta_access': return 'Beta Program';
+        default: return 'Unknown';
+    }
+}
+
+function showPhoneQR(phoneNumber, qrCode) {
+    // Create modal to display QR code
+    const modal = document.createElement('div');
+    modal.className = 'esim-qr-modal';
+    modal.innerHTML = `
+        <div class="esim-qr-content">
+            <h3>QR Code for ${phoneNumber}</h3>
+            <div style="text-align: center; margin: 20px;">
+                <img src="data:image/png;base64,${qrCode}" alt="QR Code" style="max-width: 300px;"/>
+            </div>
+            <button onclick="this.closest('.esim-qr-modal').remove()" class="btn btn-primary">Close</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Close on background click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
 }
 
 function refreshOxioData() {
