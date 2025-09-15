@@ -48,37 +48,43 @@ def generate_unique_group_id(existing_ids: Set[str], max_retries: int = 10) -> s
     
     raise RuntimeError(f"Unable to generate unique OXIO Group ID after {max_retries} attempts")
 
-def ensure_unique_index(conn) -> bool:
+def ensure_unique_index() -> bool:
     """
     Ensure there's a unique index on oxio_group_id to prevent duplicates.
-    Creates index outside transaction to avoid Postgres restrictions.
+    Creates index using a separate connection to avoid transaction issues.
     
     Returns:
         True if index exists or was created successfully, False otherwise
     """
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        print("ERROR: DATABASE_URL not set")
+        return False
+    
     try:
-        # First check if unique index already exists
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT indexname, indexdef
-                FROM pg_indexes 
-                WHERE tablename = 'users' 
-                AND indexdef LIKE '%UNIQUE%' 
-                AND indexdef LIKE '%oxio_group_id%'
-            """)
-            
-            existing_index = cur.fetchone()
-            if existing_index:
-                print(f"✅ Unique index already exists: {existing_index[0]}")
-                return True
-        
-        print("Creating unique index on oxio_group_id...")
-        
-        # Create index outside transaction using autocommit
-        old_autocommit = conn.autocommit
-        conn.autocommit = True
+        # Use a separate connection for index operations
+        conn = psycopg2.connect(database_url)
+        conn.autocommit = True  # Set autocommit from the start
         
         try:
+            # First check if unique index already exists
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT indexname, indexdef
+                    FROM pg_indexes 
+                    WHERE tablename = 'users' 
+                    AND indexdef LIKE '%UNIQUE%' 
+                    AND indexdef LIKE '%oxio_group_id%'
+                """)
+                
+                existing_index = cur.fetchone()
+                if existing_index:
+                    print(f"✅ Unique index already exists: {existing_index[0]}")
+                    return True
+            
+            print("Creating unique index on oxio_group_id...")
+            
+            # Create the index
             with conn.cursor() as cur:
                 cur.execute("""
                     CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS 
@@ -103,7 +109,7 @@ def ensure_unique_index(conn) -> bool:
                     return False
                     
         finally:
-            conn.autocommit = old_autocommit
+            conn.close()
             
     except Exception as e:
         print(f"❌ Error creating unique index: {str(e)}")
@@ -185,7 +191,7 @@ def add_oxio_group_ids_to_users(dry_run: bool = True, batch_size: int = 500) -> 
         
         # Ensure unique index exists (critical for production safety)
         if not dry_run:
-            if not ensure_unique_index(conn):
+            if not ensure_unique_index():
                 print("❌ CRITICAL: Cannot proceed without unique index on oxio_group_id")
                 print("   This is required to prevent duplicate group IDs.")
                 return False
