@@ -6,15 +6,15 @@
 
 ## 🌐 Full MVNO framework
 
-dotmobile is a smart tiny telecom. This gorse release is compact Alpha build of a Full MVNO. 
+dotmobile is a smart tiny telecom. This gorse release is compact Alpha build of a Full MVNO.
 
-Available for FREE and $1 per user above 100TPH. Etheruem and blockchain parts and many other things optional. Used Stripe for invoices, catalog and payments. 
+Available for FREE and $1 per user above 100TPH. Etheruem and blockchain parts and many other things optional. Used Stripe for invoices, catalog and payments.
 
-Please use this comprehensive telecommunications service toolset/framework to create better telecommunications experiences, bridge traditional mobile services with better digital and user experience, integrate newtech and AI and use our token (blockchain technology) for good. 
+Please use this comprehensive telecommunications service toolset/framework to create better telecommunications experiences, bridge traditional mobile services with better digital and user experience, integrate newtech and AI and use our token (blockchain technology) for good.
 
-We provide global eSIM connectivity, automation, network services intelligence and network optimization features through a unified ecosystem in a public cloud. Our data servers are located colely in North America: N.Virginia, USA and in Montreal, Canada. We use Full MVNO type of connectivity in the USA, Mexico and in Canada soon hopefully. 
+We provide global eSIM connectivity, automation, network services intelligence and network optimization features through a unified ecosystem in a public cloud. Our data servers are located colely in North America: N.Virginia, USA and in Montreal, Canada. We use Full MVNO type of connectivity in the USA, Mexico and in Canada soon hopefully.
 
-We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql databases, Resend for professional email delivery, ElevenLabs for voice synthesis, Bitchat for fallback connectivity and Ethereum blockchain integration. Full list of integrations below.  
+We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql databases, Resend for professional email delivery, ElevenLabs for voice synthesis, Bitchat for fallback connectivity and Ethereum blockchain integration. Full list of integrations below.
 
 ### 🚀 Live Platform
 
@@ -275,7 +275,7 @@ console.log(`Total monthly: $${pricing.pricing.monthly_recurring}`);
 - **Standard Support**: Available to all users
 - **Priority Support**: Enhanced assistance for members
 - **Premium Support**: Dedicated support for full members
-- **Community Forums**: Peer-to-peer assistance
+- **Community Forums**: Peer-to-peer assistance and discussions
 
 ## 🏗️ Technical Specifications
 
@@ -322,7 +322,7 @@ console.log(`Total monthly: $${pricing.pricing.monthly_recurring}`);
 2. **Read Documentation**: Complete API reference available
 3. **Test Integration**: Use public endpoints for development
 4. **Build Applications**: Integrate DOTM services into your apps
-5. **Join Community**: Connect with other developers
+5. **Join Community**: Connect with with other developers
 
 ### For Business Partners
 1. **API Access**: Programmatic service integration
@@ -386,6 +386,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ![Token Status](https://img.shields.io/badge/DOTM_Token-Live_on_Mainnet-blue)
 ![Beta Program](https://img.shields.io/badge/Beta_Program-Active-orange)
 
-**Last Updated**: September 11, 2025  
-**Version**: 3.0.1  
+**Last Updated**: September 11, 2025
+**Version**: 3.0.1
 **DOTM Token Contract**: 0xF57ab8DEE7ebE3686DB8Bf89E8aCc15E94B97A8D
