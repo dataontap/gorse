@@ -16,3 +16,5 @@ requests
 stripe
 web3
 python-dotenv
+pillow
+qrcode

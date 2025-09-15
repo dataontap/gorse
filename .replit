@@ -3,7 +3,7 @@ modules = ["nodejs-20", "postgresql-16", "python-3.11", "python3"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["libxcrypt"]
+packages = ["freetype", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tk", "zlib"]
 
 [unitTest]
 language = "python3"
