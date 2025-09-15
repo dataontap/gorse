@@ -52,22 +52,17 @@
             DATA
         </div>
         <div class="content-overlay">
-            <div class="cta-container" style="position: relative;">
-                <!-- eSIM Beta Button - Lower Z-level, now first -->
-                <div class="esim-beta-section" style="margin: 0 0 20px 0; position: relative; z-index: 1;">
-                    <a href="/signup" id="esimBetaBtn" class="btn btn-primary btn-lg" style="background: linear-gradient(45deg, #00DDDD, #00AAAA); border: none; padding: 20px 60px; font-size: 1.4rem; color: white; font-weight: 500; border-radius: 8px; transition: all 0.3s ease; text-decoration: none; display: inline-block; width: 100%; text-align: center;">
-                        🔥 Get eSIM Beta Access - $1
-                    </a>
-                </div>
-                
-                <!-- Connect Button - Higher Z-level, now second -->
-                <div style="position: relative; z-index: 2;">
-                    <a href="/signup" class="btn btn-primary btn-lg signup-btn">CONNECT in &lt;1 MIN</a>
-                </div>
-                
+            <div class="cta-container">
+                <a href="/signup" class="btn btn-primary btn-lg signup-btn">CONNECT in &lt;1 MIN</a>
                 <p class="signin-text">
                     <a href="/login" class="signin-link">Members Access</a>
                 </p>
+                <!-- eSIM Direct Checkout Button -->
+                <div class="esim-beta-section" style="margin: 20px 0;">
+                    <a href="#" onclick="buyESIM()" id="esimBetaBtn" class="btn btn-outline-light" style="border: 2px solid #00FFFF; color: #00FFFF; font-weight: 500; padding: 12px 24px; border-radius: 8px; background: rgba(0, 255, 255, 0.1); transition: all 0.3s ease; text-decoration: none; display: inline-block;">
+                        🔥 Get eSIM Beta Access - $1
+                    </a>
+                </div>
                 <div class="canada-service">
                     <p style="color: white; font-size: 14px; margin: 20px 0 10px 0;">
                         Connectivity Services for Canadians Everywhere 🇨🇦
