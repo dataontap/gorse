@@ -1971,8 +1971,14 @@ def handle_stripe_webhook():
                     from oxio_service import OXIOService
                     oxio = OXIOService()
                     
-                    # Activate eSIM line for the specified OXIO user
-                    activation_result = oxio.activate_line(oxio_user_id)
+                    # Define plan and group for $1 eSIM Beta activation
+                    esim_plan_id = "basic_esim_plan"  # Basic eSIM plan for $1 beta access
+                    esim_group_id = session['metadata'].get('group_id')  # Get from metadata if available
+                    
+                    print(f"eSIM activation with Plan ID: {esim_plan_id}, Group ID: {esim_group_id}")
+                    
+                    # Activate eSIM line with plan and group parameters
+                    activation_result = oxio.activate_line(oxio_user_id, plan_id=esim_plan_id, group_id=esim_group_id)
                     
                     if activation_result.get('success'):
                         print(f"✅ OXIO eSIM activation successful: {activation_result}")
@@ -2070,8 +2076,22 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
         # Activate OXIO line with Basic Membership plan
         print(f"Activating OXIO line for eSIM Beta user {user_id}")
         
-        # Use simplified activation with just OXIO user ID (base plan)
-        oxio_result = oxio_service.activate_line(oxio_user_id)
+        # Use enhanced activation with plan ID and group ID for eSIM Beta
+        esim_plan_id = "basic_esim_plan"  # Basic eSIM plan for $1 beta access
+        
+        # Try to get group ID from user data or beta service
+        esim_group_id = None
+        try:
+            from beta_approval_service import BetaApprovalService
+            beta_service = BetaApprovalService()
+            beta_status = beta_service.get_user_beta_status(firebase_uid)
+            esim_group_id = beta_status.get('group_id')
+            print(f"Retrieved group ID from beta service: {esim_group_id}")
+        except Exception as e:
+            print(f"Could not get group ID from beta service: {e}")
+        
+        print(f"Activating OXIO line with Plan ID: {esim_plan_id}, Group ID: {esim_group_id}")
+        oxio_result = oxio_service.activate_line(oxio_user_id, plan_id=esim_plan_id, group_id=esim_group_id)
         
         if oxio_result.get('success'):
             print(f"Successfully activated OXIO base plan: {oxio_result}")
