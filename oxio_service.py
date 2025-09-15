@@ -189,9 +189,9 @@ class OXIOService:
                     print(f"Excluded ICCID and preferredAreaCode from payload")
                         
                     payload = clean_payload
-                    print(f"Using cleaned payload with only endUserId: {payload}")
+                    print(f"Using cleaned payload with only endUserId")
                 else:
-                    print(f"Using complex payload for line activation (no endUserId found): {payload}")
+                    print(f"Using complex payload for line activation (no endUserId found)")
             else:
                 return {
                     'success': False,
@@ -201,7 +201,7 @@ class OXIOService:
 
             print(f"OXIO API Request URL: {url}")
             print(f"OXIO API Request Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
-            print(f"OXIO API Request Payload: {json.dumps(payload, indent=2)}")
+            print(f"OXIO API Request Payload: [REDACTED - contains sensitive eSIM data]")
 
             response = requests.post(
                 url,
@@ -332,7 +332,7 @@ class OXIOService:
 
             print(f"OXIO Create Group Request URL: {url}")
             print(f"OXIO Create Group Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
-            print(f"OXIO Create Group Payload: {json.dumps(payload, indent=2)}")
+            print(f"OXIO Create Group Payload: [REDACTED - contains sensitive data]")
 
             # Track timing
             start_time = time.time() * 1000  # Convert to milliseconds
@@ -498,7 +498,7 @@ class OXIOService:
 
             print(f"OXIO Create User Request URL: {url}")
             print(f"OXIO Create User Headers (Auth masked): {dict(headers, **{'Authorization': '***'})}")
-            print(f"OXIO Create User Payload: {json.dumps(payload, indent=2)}")
+            print(f"OXIO Create User Payload: [REDACTED - contains sensitive data]")
 
             response = requests.post(
                 url,
