@@ -1709,11 +1709,72 @@ def terms():
 def about():
     return render_template('about.html')
 
-@app.route('/buy/esim')
+@app.route('/buy/esim', methods=['GET', 'POST'])
 def buy_esim():
     """Direct $1 eSIM checkout - redirects to Stripe"""
     try:
-        # Create Stripe checkout session
+        # Get Firebase UID from request parameters
+        firebase_uid = request.args.get('firebaseUid') or request.form.get('firebaseUid')
+        
+        if not firebase_uid:
+            # If no UID provided, show error with redirect to login
+            return """
+            <!DOCTYPE html>
+            <html>
+            <head><title>Authentication Required</title></head>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                <h2>🔒 Authentication Required</h2>
+                <p>You must be logged in to purchase an eSIM.</p>
+                <a href="/login" style="display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px;">Login to Continue</a>
+                <script>
+                    // Try to get Firebase UID from localStorage and retry
+                    setTimeout(() => {
+                        const userData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                        if (userData && userData.uid) {
+                            window.location.href = '/buy/esim?firebaseUid=' + userData.uid;
+                        }
+                    }, 1000);
+                </script>
+            </body>
+            </html>
+            """, 401
+        
+        # Get user's OXIO ID from database
+        oxio_user_id = None
+        try:
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            SELECT oxio_user_id FROM users 
+                            WHERE firebase_uid = %s AND oxio_user_id IS NOT NULL
+                        """, (firebase_uid,))
+                        result = cur.fetchone()
+                        if result:
+                            oxio_user_id = result[0]
+                            print(f"Found OXIO user ID for Firebase UID {firebase_uid}: {oxio_user_id}")
+                        else:
+                            print(f"No OXIO user ID found for Firebase UID: {firebase_uid}")
+        except Exception as db_error:
+            print(f"Database error getting OXIO user ID: {db_error}")
+        
+        if not oxio_user_id:
+            # If no OXIO user ID found, show error with instructions
+            return f"""
+            <!DOCTYPE html>
+            <html>
+            <head><title>OXIO Account Required</title></head>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                <h2>🔗 OXIO Account Required</h2>
+                <p>You need an OXIO account to purchase an eSIM.</p>
+                <p>Your Firebase UID: <code>{firebase_uid}</code></p>
+                <p>Please contact support to link your OXIO account.</p>
+                <a href="/dashboard" style="display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px;">Return to Dashboard</a>
+            </body>
+            </html>
+            """, 400
+        
+        # Create Stripe checkout session with the user's OXIO ID
         session = stripe.checkout.Session.create(
             mode='payment',
             line_items=[{
@@ -1723,10 +1784,13 @@ def buy_esim():
             success_url=request.url_root + 'esim/success?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=request.url_root,
             metadata={
-                'oxio_user_id': '0468edb8-ea36-4f17-ba62-10fbca186ac3',
+                'oxio_user_id': oxio_user_id,  # Use the authenticated user's OXIO ID
+                'firebase_uid': firebase_uid,   # Also store Firebase UID for reference
                 'product': 'esim_beta'
             }
         )
+        
+        print(f"✅ Created eSIM checkout session for user {firebase_uid} (OXIO: {oxio_user_id})")
         
         # Redirect to Stripe checkout
         return redirect(session.url)

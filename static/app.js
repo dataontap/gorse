@@ -2983,3 +2983,265 @@ function updateBetaStatus(status, message) {
             break;
     }
 }
+// Profile page functions for loading user data
+function loadOxioDataWithUID(firebaseUid) {
+    if (!firebaseUid) {
+        console.error("No Firebase UID provided for OXIO data loading");
+        return;
+    }
+    
+    console.log("Loading OXIO data for Firebase UID:", firebaseUid);
+    
+    fetch(`/api/oxio-activation-status?firebaseUid=${firebaseUid}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log("OXIO activation status response:", data);
+            displayOxioData(data);
+        })
+        .catch(error => {
+            console.error("Error loading OXIO data:", error);
+            const oxioContainer = document.getElementById("oxioContainer");
+            if (oxioContainer) {
+                oxioContainer.innerHTML = `
+                    <div class="address-card p-3 mb-3" style="background: rgba(255, 0, 0, 0.1); border-radius: 8px;">
+                        <p style="color: #ff6b6b;">Unable to load OXIO information</p>
+                        <small>Error: ${error.message}</small>
+                    </div>
+                `;
+            }
+        });
+}
+
+function displayOxioData(data) {
+    const oxioContainer = document.getElementById("oxioContainer");
+    if (!oxioContainer) return;
+    
+    if (data.success && data.activations && data.activations.length > 0) {
+        let html = "";
+        data.activations.forEach(activation => {
+            const statusClass = activation.status === "active" ? "success" : "warning";
+            const statusIcon = activation.status === "active" ? "fas fa-check-circle" : "fas fa-clock";
+            
+            html += `
+                <div class="address-card p-3 mb-3" style="background: rgba(40, 167, 69, 0.1); border-radius: 8px;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="service-info">
+                            <h5><i class="fas fa-mobile-alt"></i> eSIM Service</h5>
+                            <p><strong>Status:</strong> 
+                                <span class="badge bg-${statusClass}">
+                                    <i class="${statusIcon}"></i> ${activation.status.charAt(0).toUpperCase() + activation.status.slice(1)}
+                                </span>
+                            </p>
+                            <p><strong>Line ID:</strong> ${activation.lineId || "N/A"}</p>
+                            <p><strong>Phone Number:</strong> ${activation.phoneNumber || "N/A"}</p>
+                            <p><strong>Data Plan:</strong> ${activation.dataPlan || "1GB"}</p>
+                            <p><strong>Activated:</strong> ${activation.activatedAt ? new Date(activation.activatedAt).toLocaleDateString() : "N/A"}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        oxioContainer.innerHTML = html;
+    } else if (data.message && data.message.includes("purchased")) {
+        oxioContainer.innerHTML = `
+            <div class="address-card p-3 mb-3" style="background: rgba(255, 193, 7, 0.1); border-radius: 8px;">
+                <div class="text-center">
+                    <i class="fas fa-hourglass-half mb-2" style="font-size: 2em; color: #ffc107;"></i>
+                    <h5>eSIM Purchase Detected</h5>
+                    <p>Your eSIM purchase was successful! Activation is in progress.</p>
+                    <small>This may take a few minutes to complete. Refresh this page to check status.</small>
+                    <div class="mt-3">
+                        <button class="btn btn-primary btn-sm" onclick="loadOxioDataWithUID(getFirebaseUID())">
+                            <i class="fas fa-sync-alt"></i> Refresh Status
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        oxioContainer.innerHTML = `
+            <div class="address-card p-3 mb-3" style="background: rgba(108, 117, 125, 0.1); border-radius: 8px;">
+                <div class="text-center">
+                    <i class="fas fa-mobile-alt mb-2" style="font-size: 2em; color: #6c757d;"></i>
+                    <p>No active eSIM services found</p>
+                    <small>Purchase an eSIM to see activation details here</small>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function loadSubscriptionDataWithUID(firebaseUid) {
+    if (!firebaseUid) {
+        console.error("No Firebase UID provided for subscription data loading");
+        return;
+    }
+    
+    fetch(`/api/subscription-status?firebaseUid=${firebaseUid}`)
+        .then(response => response.json())
+        .then(data => {
+            displaySubscriptionData(data);
+        })
+        .catch(error => {
+            console.error("Error loading subscription data:", error);
+            const subscriptionContainer = document.getElementById("subscriptionContainer");
+            if (subscriptionContainer) {
+                subscriptionContainer.innerHTML = `
+                    <div class="address-card p-3 mb-3" style="background: rgba(255, 0, 0, 0.1); border-radius: 8px;">
+                        <p style="color: #ff6b6b;">Unable to load subscription information</p>
+                    </div>
+                `;
+            }
+        });
+}
+
+function displaySubscriptionData(data) {
+    const subscriptionContainer = document.getElementById("subscriptionContainer");
+    if (!subscriptionContainer) return;
+    
+    if (data.success && data.subscriptions && data.subscriptions.length > 0) {
+        let html = "";
+        data.subscriptions.forEach(subscription => {
+            const statusClass = subscription.status === "active" ? "success" : "warning";
+            
+            html += `
+                <div class="address-card p-3 mb-3" style="background: rgba(40, 167, 69, 0.1); border-radius: 8px;">
+                    <h5><i class="fas fa-sync"></i> ${subscription.productName || "Subscription"}</h5>
+                    <p><strong>Status:</strong> <span class="badge bg-${statusClass}">${subscription.status}</span></p>
+                    <p><strong>Amount:</strong> $${(subscription.amount / 100).toFixed(2)}</p>
+                </div>
+            `;
+        });
+        subscriptionContainer.innerHTML = html;
+    } else {
+        subscriptionContainer.innerHTML = `
+            <div class="address-card p-3 mb-3" style="background: rgba(108, 117, 125, 0.1); border-radius: 8px;">
+                <div class="text-center">
+                    <p>No active subscriptions found</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function loadBetaPhoneNumbers(firebaseUid) {
+    if (!firebaseUid) return;
+    
+    fetch(`/api/user-phone-numbers?firebase_uid=${firebaseUid}`)
+        .then(response => response.json())
+        .then(data => {
+            displayBetaPhoneNumbers(data);
+        })
+        .catch(error => {
+            console.error("Error loading beta phone numbers:", error);
+            const betaPhoneContainer = document.getElementById("betaPhoneContainer");
+            if (betaPhoneContainer) {
+                betaPhoneContainer.innerHTML = `
+                    <div class="address-card p-3 mb-3" style="background: rgba(108, 117, 125, 0.1); border-radius: 8px;">
+                        <p>No beta phone numbers available</p>
+                    </div>
+                `;
+            }
+        });
+}
+
+function displayBetaPhoneNumbers(data) {
+    const betaPhoneContainer = document.getElementById("betaPhoneContainer");
+    if (!betaPhoneContainer) return;
+    
+    if (data.success && data.phoneNumbers && data.phoneNumbers.length > 0) {
+        let html = "";
+        data.phoneNumbers.forEach(phone => {
+            html += `
+                <div class="address-card p-3 mb-3" style="background: rgba(40, 167, 69, 0.1); border-radius: 8px;">
+                    <h5><i class="fas fa-phone"></i> ${phone.phoneNumber}</h5>
+                </div>
+            `;
+        });
+        betaPhoneContainer.innerHTML = html;
+    } else {
+        betaPhoneContainer.innerHTML = `
+            <div class="address-card p-3 mb-3" style="background: rgba(108, 117, 125, 0.1); border-radius: 8px;">
+                <p>No beta phone numbers available</p>
+            </div>
+        `;
+    }
+}
+
+function refreshOxioData() {
+    const firebaseUid = getFirebaseUID();
+    if (firebaseUid) {
+        loadOxioDataWithUID(firebaseUid);
+    }
+}
+
+// Copy functions for profile elements
+function copyFirebaseUID() {
+    const element = document.getElementById("firebaseUID");
+    if (element) {
+        navigator.clipboard.writeText(element.textContent);
+    }
+}
+
+function copyDotUserID() {
+    const element = document.getElementById("dotUserID");
+    if (element) {
+        navigator.clipboard.writeText(element.textContent);
+    }
+}
+
+function copyOxioUserID() {
+    const element = document.getElementById("oxioUserID");
+    if (element) {
+        navigator.clipboard.writeText(element.textContent);
+    }
+}
+
+function copyOxioGroupID() {
+    const element = document.getElementById("oxioGroupID");
+    if (element) {
+        navigator.clipboard.writeText(element.textContent);
+    }
+}
+
+function copySimCardNumber() {
+    const element = document.getElementById("simCardNumber");
+    if (element) {
+        navigator.clipboard.writeText(element.textContent);
+    }
+}
+
+// eSIM checkout function
+function buyESIM() {
+    console.log("buyESIM() called");
+    
+    // Try to get Firebase UID from multiple sources
+    let firebaseUid = null;
+    
+    // First, try localStorage
+    try {
+        const userData = JSON.parse(localStorage.getItem("currentUser") || "null");
+        if (userData && userData.uid) {
+            firebaseUid = userData.uid;
+            console.log("Found Firebase UID in localStorage:", firebaseUid);
+        }
+    } catch (e) {
+        console.log("No valid user data in localStorage");
+    }
+    
+    // If not found in localStorage, try Firebase directly
+    if (!firebaseUid && typeof firebase !== "undefined" && firebase.auth && firebase.auth().currentUser) {
+        firebaseUid = firebase.auth().currentUser.uid;
+        console.log("Found Firebase UID from Firebase auth:", firebaseUid);
+    }
+    
+    // Redirect to checkout with Firebase UID (if available)
+    if (firebaseUid) {
+        const checkoutUrl = `/buy/esim?firebaseUid=${firebaseUid}`;
+        console.log("Redirecting to:", checkoutUrl);
+        window.location.href = checkoutUrl;
+    } else {
+        console.log("No Firebase UID found, redirecting to checkout anyway (will handle authentication)");
+        window.location.href = "/buy/esim";
+    }
+}
