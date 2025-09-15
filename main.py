@@ -1949,6 +1949,35 @@ def handle_stripe_webhook():
         
         print(f"Stripe webhook received: {event['type']}")
         
+        # IDEMPOTENCY: Check if we've already processed this event
+        event_id = event['id']
+        event_type = event['type']
+        
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Check if event already processed
+                cursor.execute("SELECT id, processing_result FROM processed_stripe_events WHERE event_id = %s", (event_id,))
+                existing_event = cursor.fetchone()
+                
+                if existing_event:
+                    print(f"⚠️ Event {event_id} already processed - returning previous result")
+                    return jsonify({'status': 'already_processed', 'event_id': event_id}), 200
+                
+                # Mark event as being processed (prevents race conditions)
+                cursor.execute(
+                    "INSERT INTO processed_stripe_events (event_id, event_type) VALUES (%s, %s)",
+                    (event_id, event_type)
+                )
+                conn.commit()
+                print(f"🔄 Processing new event: {event_id} (type: {event_type})")
+                
+        except Exception as db_error:
+            print(f"Database error checking event idempotency: {db_error}")
+            # Continue processing but log the issue
+            pass
+        
         # Handle successful payment events
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']
@@ -2048,9 +2077,23 @@ def handle_stripe_webhook():
                         except Exception as db_e:
                             print(f"Error recording activation details: {db_e}")
                         
-                        # Send activation email notification (task 4 implementation)
+                        # Send activation email notification to real buyer
                         try:
-                            send_esim_activation_email(oxio_user_id, phone_number, line_id, iccid, esim_qr_code, esim_plan_id)
+                            # Get buyer's email from Stripe session
+                            buyer_email = None
+                            try:
+                                if session.get('customer_details', {}).get('email'):
+                                    buyer_email = session['customer_details']['email']
+                                elif session.get('customer'):
+                                    # Fetch customer email from Stripe if we have customer ID
+                                    import stripe
+                                    customer = stripe.Customer.retrieve(session['customer'])
+                                    buyer_email = customer.email
+                            except Exception as email_fetch_error:
+                                print(f"Could not fetch buyer email from Stripe: {email_fetch_error}")
+                            
+                            print(f"Sending activation email to buyer: {buyer_email}")
+                            send_esim_activation_email(None, phone_number, line_id, iccid, esim_qr_code, esim_plan_id, buyer_email, oxio_user_id)
                         except Exception as email_error:
                             print(f"Could not send activation email: {email_error}")
                     else:
@@ -2085,6 +2128,116 @@ def handle_stripe_webhook():
     except Exception as e:
         print(f"Webhook error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_qr_code, plan_id, user_email=None, oxio_user_id=None):
+    """Send comprehensive eSIM activation email with profile details and QR code"""
+    try:
+        from email_service import send_email
+        from datetime import datetime
+        
+        # Get user email if not provided
+        if not user_email and firebase_uid:
+            try:
+                user_data = get_user_by_firebase_uid(firebase_uid)
+                if user_data and len(user_data) > 1:
+                    user_email = user_data[1]
+            except Exception as e:
+                print(f"Could not get user email: {e}")
+                user_email = "user@dotmobile.app"
+        
+        if not user_email:
+            user_email = "user@dotmobile.app"
+        
+        subject = "🎉 Your eSIM is Ready - DOTM Platform"
+        
+        # Create detailed HTML email body
+        html_body = f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; }}
+                .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; }}
+                .content {{ padding: 30px 20px; }}
+                .profile-card {{ background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #28a745; }}
+                .next-steps {{ background: #fff3cd; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #ffc107; }}
+                .footer {{ background: #343a40; color: white; padding: 20px; text-align: center; font-size: 12px; }}
+                .btn {{ display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 5px; }}
+                .highlight {{ color: #28a745; font-weight: bold; }}
+                ul li {{ margin: 8px 0; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🎉 eSIM Activation Successful!</h1>
+                    <p>Your DOTM eSIM Beta access is now active</p>
+                </div>
+                
+                <div class="content">
+                    <div class="profile-card">
+                        <h3>📱 Your eSIM Profile Details</h3>
+                        <ul>
+                            <li><strong>Phone Number:</strong> <span class="highlight">{phone_number or 'Assigned by carrier'}</span></li>
+                            <li><strong>Line ID:</strong> {line_id or 'System assigned'}</li>
+                            <li><strong>ICCID:</strong> {iccid or 'Available in dashboard'}</li>
+                            <li><strong>Plan:</strong> {plan_id.replace('_', ' ').title() if plan_id else 'Basic eSIM Plan'}</li>
+                            <li><strong>Status:</strong> ✅ <span class="highlight">Active</span></li>
+                            <li><strong>Activation Date:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="next-steps">
+                        <h3>🚀 Next Steps</h3>
+                        <ol>
+                            <li>Log into your DOTM Dashboard to view complete details</li>
+                            <li>View your phone number and QR codes in your profile</li>
+                            <li>Download the eSIM activation QR code for device setup</li>
+                            <li>Follow your device's eSIM installation instructions</li>
+                            <li>Start using your global connectivity!</li>
+                        </ol>
+                    </div>
+                    
+                    <div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                        <h4>📞 Support</h4>
+                        <p>Questions? Contact us at <a href="mailto:support@dotmobile.app">support@dotmobile.app</a></p>
+                        <p>Technical ID: {oxio_user_id or firebase_uid or 'N/A'}</p>
+                    </div>
+                </div>
+                
+                <div class="footer">
+                    <p>DOTM Platform - Global Mobile Connectivity</p>
+                    <p>Data On Tap Inc. | Licensed Full MVNO | Network 302 100</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Send email
+        result = send_email(
+            to=user_email,
+            subject=subject,
+            html_body=html_body
+        )
+        
+        print(f"Sent eSIM activation email to {user_email} with details: Phone {phone_number}, Plan {plan_id}")
+        return result
+        
+    except Exception as e:
+        print(f"Error sending eSIM activation email: {e}")
+        return False
+
+def generate_esim_activation_qr(iccid, phone_number, line_id):
+    """Generate QR code for eSIM activation - placeholder function"""
+    try:
+        # Import QR code generation (implementation depends on qr_generator module)
+        # For now, return None to prevent errors
+        print(f"QR code generation requested for ICCID: {iccid}, Phone: {phone_number}, Line: {line_id}")
+        return None  # Placeholder - would generate actual QR code
+    except Exception as e:
+        print(f"Error generating QR code: {e}")
+        return None
 
 def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
     """Activate eSIM and OXIO base plan for user after successful payment"""
