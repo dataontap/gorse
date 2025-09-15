@@ -1982,18 +1982,77 @@ def handle_stripe_webhook():
                     
                     if activation_result.get('success'):
                         print(f"✅ OXIO eSIM activation successful: {activation_result}")
-                        # Optional: Record successful activation
+                        
+                        # Extract eSIM profile information from OXIO response
+                        activation_data = activation_result.get('data', {})
+                        phone_number = activation_data.get('phoneNumber')
+                        line_id = activation_data.get('lineId')
+                        iccid = activation_data.get('iccid') or activation_data.get('sim', {}).get('iccid')
+                        
+                        print(f"eSIM Profile Details - Phone: {phone_number}, Line ID: {line_id}, ICCID: {iccid}")
+                        
+                        # Generate eSIM activation QR code
+                        esim_qr_code = None
+                        try:
+                            from qr_generator import generate_esim_activation_qr
+                            if iccid and phone_number:
+                                esim_qr_code = generate_esim_activation_qr(iccid, phone_number, line_id)
+                                print(f"Generated eSIM activation QR code")
+                        except Exception as qr_error:
+                            print(f"Could not generate eSIM QR code: {qr_error}")
+                        
+                        # Record comprehensive activation details
                         try:
                             with get_db_connection() as conn:
                                 if conn:
                                     with conn.cursor() as cur:
+                                        # Create or update oxio_activations table
+                                        cur.execute("""
+                                            CREATE TABLE IF NOT EXISTS oxio_activations (
+                                                id SERIAL PRIMARY KEY,
+                                                user_id INTEGER,
+                                                firebase_uid VARCHAR(100),
+                                                purchase_id VARCHAR(200),
+                                                product_id VARCHAR(100),
+                                                iccid VARCHAR(50),
+                                                line_id VARCHAR(100),
+                                                phone_number VARCHAR(20),
+                                                activation_status VARCHAR(50),
+                                                plan_id VARCHAR(100),
+                                                group_id VARCHAR(100),
+                                                esim_qr_code TEXT,
+                                                oxio_response TEXT,
+                                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                            )
+                                        """)
+                                        
+                                        # Insert activation record
+                                        cur.execute("""
+                                            INSERT INTO oxio_activations 
+                                            (user_id, firebase_uid, purchase_id, product_id, iccid, 
+                                             line_id, phone_number, activation_status, plan_id, group_id,
+                                             esim_qr_code, oxio_response)
+                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                        """, (0, 'direct_oxio', session['id'], 'esim_beta', iccid, 
+                                              line_id, phone_number, 'activated', esim_plan_id, esim_group_id,
+                                              esim_qr_code, str(activation_result)))
+                                        
+                                        # Record purchase
                                         cur.execute("""
                                             INSERT INTO purchases (stripe_session_id, oxio_user_id, product, amount, status, created_at)
                                             VALUES (%s, %s, %s, %s, %s, %s)
                                         """, (session['id'], oxio_user_id, 'esim_beta', 100, 'completed', 'NOW()'))
+                                        
                                         conn.commit()
+                                        print(f"Stored eSIM activation details in database")
                         except Exception as db_e:
-                            print(f"Note: Could not record purchase in DB: {db_e}")
+                            print(f"Error recording activation details: {db_e}")
+                        
+                        # Send activation email notification (task 4 implementation)
+                        try:
+                            send_esim_activation_email(oxio_user_id, phone_number, line_id, iccid, esim_qr_code, esim_plan_id)
+                        except Exception as email_error:
+                            print(f"Could not send activation email: {email_error}")
                     else:
                         print(f"❌ OXIO eSIM activation failed: {activation_result}")
                         
@@ -2108,16 +2167,31 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                 stripe_transaction_id=checkout_session.get('payment_intent')
             )
             
-            # Store OXIO activation details
-            phone_number = oxio_result.get('phone_number')
-            line_id = oxio_result.get('line_id')
+            # Extract comprehensive eSIM profile information
+            activation_data = oxio_result.get('data', {})
+            phone_number = activation_data.get('phoneNumber') or oxio_result.get('phone_number')
+            line_id = activation_data.get('lineId') or oxio_result.get('line_id')
+            iccid = activation_data.get('iccid') or activation_data.get('sim', {}).get('iccid')
             
-            if phone_number or line_id:
+            print(f"eSIM Profile Details - Phone: {phone_number}, Line ID: {line_id}, ICCID: {iccid}")
+            
+            # Generate eSIM activation QR code
+            esim_qr_code = None
+            try:
+                from qr_generator import generate_esim_activation_qr
+                if iccid and phone_number:
+                    esim_qr_code = generate_esim_activation_qr(iccid, phone_number, line_id)
+                    print(f"Generated eSIM activation QR code")
+            except Exception as qr_error:
+                print(f"Could not generate eSIM QR code: {qr_error}")
+            
+            # Store comprehensive OXIO activation details
+            if phone_number or line_id or iccid:
                 try:
                     with get_db_connection() as conn:
                         if conn:
                             with conn.cursor() as cur:
-                                # Store activation details
+                                # Create enhanced oxio_activations table
                                 cur.execute("""
                                     CREATE TABLE IF NOT EXISTS oxio_activations (
                                         id SERIAL PRIMARY KEY,
@@ -2125,9 +2199,13 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                                         firebase_uid VARCHAR(128),
                                         purchase_id INTEGER,
                                         product_id VARCHAR(100),
+                                        iccid VARCHAR(50),
                                         line_id VARCHAR(100),
                                         phone_number VARCHAR(20),
                                         activation_status VARCHAR(50),
+                                        plan_id VARCHAR(100),
+                                        group_id VARCHAR(100),
+                                        esim_qr_code TEXT,
                                         oxio_response TEXT,
                                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                                     )
@@ -2135,14 +2213,17 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                                 
                                 cur.execute("""
                                     INSERT INTO oxio_activations 
-                                    (user_id, firebase_uid, purchase_id, product_id, line_id, phone_number, activation_status, oxio_response)
-                                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                                    (user_id, firebase_uid, purchase_id, product_id, iccid, 
+                                     line_id, phone_number, activation_status, plan_id, group_id,
+                                     esim_qr_code, oxio_response)
+                                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                                 """, (
-                                    user_id, firebase_uid, purchase_id, 'esim_beta',
-                                    line_id, phone_number, 'activated', str(oxio_result)
+                                    user_id, firebase_uid, purchase_id, 'esim_beta', iccid,
+                                    line_id, phone_number, 'activated', esim_plan_id, esim_group_id,
+                                    esim_qr_code, str(oxio_result)
                                 ))
                                 conn.commit()
-                                print(f"Stored OXIO activation details for user {user_id}")
+                                print(f"Stored comprehensive eSIM activation details for user {user_id}")
                 except Exception as db_error:
                     print(f"Error storing activation details: {str(db_error)}")
             
