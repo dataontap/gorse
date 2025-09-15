@@ -4,22 +4,77 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
 
-def send_email(to_email: str, subject: str, body: str, html_body: Optional[str] = None) -> bool:
+def send_email_via_resend(to_email: str, subject: str, body: str, html_body: Optional[str] = None) -> bool:
+    """
+    Send an email using Resend API - preferred method for reliable delivery
+    Returns True if successful, False otherwise
+    """
+    try:
+        import resend
+        
+        # Get Resend API key from environment
+        api_key = os.environ.get('RESEND_API_KEY')
+        if not api_key:
+            print("RESEND_API_KEY not configured in environment variables")
+            return False
+            
+        resend.api_key = api_key
+        
+        # Default sender email - use Resend's verified domain until dotmobile.app is verified
+        from_email = os.environ.get('FROM_EMAIL', 'onboarding@resend.dev')
+        
+        # Use HTML body if available, otherwise use plain text
+        email_content = html_body if html_body else body
+        content_type = 'html' if html_body else 'text'
+        
+        # Send email via Resend
+        params = {
+            "from": from_email,
+            "to": [to_email],
+            "subject": subject,
+        }
+        
+        if content_type == 'html':
+            params["html"] = email_content
+        else:
+            params["text"] = email_content
+            
+        response = resend.Emails.send(params)
+        
+        # Handle response format - can be dict or object
+        email_id = None
+        if hasattr(response, 'id'):
+            email_id = response.id
+        elif isinstance(response, dict) and 'id' in response:
+            email_id = response['id']
+            
+        print(f"Email sent successfully via Resend to {to_email}. ID: {email_id}")
+        return True
+        
+    except ImportError:
+        print("Resend library not installed. Install with: pip install resend")
+        return False
+    except Exception as e:
+        print(f"Failed to send email via Resend to {to_email}: {str(e)}")
+        return False
+
+def send_email_via_smtp(to_email: str, subject: str, body: str, html_body: Optional[str] = None) -> bool:
     """
     Send an email using SMTP configuration from environment variables
-    Returns True if successful, False otherwise
+    DEPRECATED: Use send_email_via_resend() for better deliverability
+    Only use this as emergency fallback with Gmail App Password
     """
     try:
         # Get SMTP configuration from environment variables
         smtp_server = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
         smtp_port = int(os.environ.get('SMTP_PORT', '587'))
         smtp_username = os.environ.get('SMTP_USERNAME')
-        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_password = os.environ.get('SMTP_PASSWORD')  # Must be App Password for Gmail
         from_email = os.environ.get('FROM_EMAIL', smtp_username)
 
         if not smtp_username or not smtp_password:
             print("SMTP credentials not configured in environment variables")
-            print("Required: SMTP_USERNAME, SMTP_PASSWORD")
+            print("Required: SMTP_USERNAME, SMTP_PASSWORD (use App Password for Gmail)")
             print("Optional: SMTP_SERVER (default: smtp.gmail.com), SMTP_PORT (default: 587), FROM_EMAIL")
             return False
 
@@ -47,39 +102,47 @@ def send_email(to_email: str, subject: str, body: str, html_body: Optional[str] 
         server.sendmail(from_email, to_email, text)
         server.quit()
 
-        print(f"Email sent successfully to {to_email}")
+        print(f"Email sent successfully via SMTP to {to_email}")
         return True
 
     except Exception as e:
-        print(f"Failed to send email to {to_email}: {str(e)}")
+        print(f"Failed to send email via SMTP to {to_email}: {str(e)}")
         return False
+
+def send_email(to_email: str, subject: str, body: str, html_body: Optional[str] = None) -> bool:
+    """
+    Send an email using the best available method
+    Priority: 1) Resend API, 2) SMTP fallback
+    Returns True if successful, False otherwise
+    """
+    # Try Resend first (preferred method)
+    if send_email_via_resend(to_email, subject, body, html_body):
+        return True
+    
+    # Fall back to SMTP if Resend fails
+    print("Resend failed, attempting SMTP fallback...")
+    return send_email_via_smtp(to_email, subject, body, html_body)
 
 def send_test_email(to_email: str = "aa@dotmobile.app") -> bool:
     """Send a test email to verify email functionality"""
-    subject = "Test Email from GORSE System"
-    body = """
-    This is a test email to verify that the email system is working correctly.
-
-    If you receive this email, the Firebase authentication email sending is functional.
-
-    Best regards,
-    GORSE System
-    """
-
-    html_body = """
-    <html>
-        <body>
-            <h2>Test Email from GORSE System</h2>
-            <p>This is a test email to verify that the email system is working correctly.</p>
-            <p>If you receive this email, the Firebase authentication email sending is functional.</p>
-            <br>
-            <p>Best regards,<br>
-            <strong>GORSE System</strong></p>
-        </body>
-    </html>
-    """
-
-    return send_email(to_email, subject, body, html_body)
+    # Test directly with Resend, bypassing the fallback logic for testing
+    return send_email_via_resend(
+        to_email=to_email,
+        subject="Test Email from DOTM System - Fixed!",
+        body="This is a test email to verify that the email system is working correctly.",
+        html_body="""
+        <html>
+            <body>
+                <h2>✅ Email System Fixed!</h2>
+                <p>This test confirms the DOTM email system is now working with Resend.</p>
+                <p>Magic link emails should now be delivered successfully.</p>
+                <br>
+                <p>Best regards,<br>
+                <strong>DOTM Team</strong></p>
+            </body>
+        </html>
+        """
+    )
 
 def send_invitation_email(self, to_email, personal_message="", invitation_link=""):
         """Send invitation email to new user"""
