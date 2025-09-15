@@ -1782,6 +1782,232 @@ def create_checkout_session():
         print(f"Error creating checkout session: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/stripe/webhook', methods=['POST'])
+def handle_stripe_webhook():
+    """Handle Stripe webhook events, especially payment success"""
+    payload = request.data
+    sig_header = request.headers.get('stripe-signature')
+    
+    # Get webhook endpoint secret from environment
+    endpoint_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
+    
+    try:
+        # Verify webhook signature - MANDATORY for security
+        if not endpoint_secret:
+            print("ERROR: STRIPE_WEBHOOK_SECRET not configured - webhook verification required")
+            return jsonify({'error': 'Webhook verification not configured'}), 500
+        
+        if not sig_header:
+            print("ERROR: Missing stripe-signature header")
+            return jsonify({'error': 'Missing webhook signature'}), 400
+            
+        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+        
+        print(f"Stripe webhook received: {event['type']}")
+        
+        # Handle successful payment events
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            
+            # Extract product information from metadata
+            product_id = session['metadata'].get('product_id')
+            firebase_uid = session['metadata'].get('firebase_uid')
+            customer_id = session.get('customer')
+            
+            print(f"Payment successful for product: {product_id}, Firebase UID: {firebase_uid}")
+            
+            # Handle eSIM Beta activation
+            if product_id == 'esim_beta' and firebase_uid:
+                try:
+                    result = activate_esim_for_user(firebase_uid, session)
+                    if result['success']:
+                        print(f"eSIM activation successful: {result}")
+                    else:
+                        print(f"eSIM activation failed: {result}")
+                except Exception as e:
+                    print(f"Error activating eSIM: {str(e)}")
+            
+            # Handle other product activations (existing logic)
+            elif product_id in ['basic_membership', 'full_membership'] and firebase_uid:
+                print(f"Membership activation for {product_id} will be handled by existing subscription flow")
+        
+        return jsonify({'status': 'success'}), 200
+        
+    except ValueError as e:
+        print(f"Invalid payload: {str(e)}")
+        return jsonify({'error': 'Invalid payload'}), 400
+    except stripe.error.SignatureVerificationError as e:
+        print(f"Invalid signature: {str(e)}")
+        return jsonify({'error': 'Invalid signature'}), 400
+    except Exception as e:
+        print(f"Webhook error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
+    """Activate eSIM and OXIO base plan for user after successful payment"""
+    try:
+        # Get user data from Firebase UID
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            return {
+                'success': False, 
+                'error': 'User not found',
+                'message': f'No user found for Firebase UID: {firebase_uid}'
+            }
+        
+        user_id = user_data[0]
+        user_email = user_data[1] if len(user_data) > 1 else "unknown@example.com"
+        oxio_user_id = user_data[7] if len(user_data) > 7 else None
+        
+        print(f"Activating eSIM for user {user_id} ({user_email}) with OXIO user ID: {oxio_user_id}")
+        
+        # Create OXIO user if not exists
+        if not oxio_user_id:
+            print("Creating new OXIO user for eSIM activation...")
+            oxio_user_result = oxio_service.create_user({
+                'email': user_email,
+                'firstName': user_data[2] if len(user_data) > 2 else '',
+                'lastName': user_data[3] if len(user_data) > 3 else ''
+            })
+            
+            if oxio_user_result.get('success') and oxio_user_result.get('user_id'):
+                oxio_user_id = oxio_user_result['user_id']
+                
+                # Update user record with OXIO user ID
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            cur.execute("""
+                                UPDATE users SET oxio_user_id = %s WHERE id = %s
+                            """, (oxio_user_id, user_id))
+                            conn.commit()
+                print(f"Created OXIO user: {oxio_user_id}")
+            else:
+                return {
+                    'success': False,
+                    'error': 'OXIO user creation failed',
+                    'message': oxio_user_result.get('message', 'Unknown error')
+                }
+        
+        # Activate OXIO line with Basic Membership plan
+        print(f"Activating OXIO line for eSIM Beta user {user_id}")
+        
+        # Use simplified activation with just OXIO user ID (base plan)
+        oxio_result = oxio_service.activate_line(oxio_user_id)
+        
+        if oxio_result.get('success'):
+            print(f"Successfully activated OXIO base plan: {oxio_result}")
+            
+            # Record the purchase in database
+            purchase_id = record_purchase(
+                stripe_id=checkout_session.get('id'),
+                product_id='esim_beta',
+                price_id=checkout_session.get('price_id', 'price_1S7Yc6JnTfh0bNQQVeLeprXe'),
+                amount=1.00,
+                user_id=user_id,
+                transaction_id=checkout_session.get('payment_intent'),
+                firebase_uid=firebase_uid,
+                stripe_transaction_id=checkout_session.get('payment_intent')
+            )
+            
+            # Store OXIO activation details
+            phone_number = oxio_result.get('phone_number')
+            line_id = oxio_result.get('line_id')
+            
+            if phone_number or line_id:
+                try:
+                    with get_db_connection() as conn:
+                        if conn:
+                            with conn.cursor() as cur:
+                                # Store activation details
+                                cur.execute("""
+                                    CREATE TABLE IF NOT EXISTS oxio_activations (
+                                        id SERIAL PRIMARY KEY,
+                                        user_id INTEGER NOT NULL,
+                                        firebase_uid VARCHAR(128),
+                                        purchase_id INTEGER,
+                                        product_id VARCHAR(100),
+                                        line_id VARCHAR(100),
+                                        phone_number VARCHAR(20),
+                                        activation_status VARCHAR(50),
+                                        oxio_response TEXT,
+                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                    )
+                                """)
+                                
+                                cur.execute("""
+                                    INSERT INTO oxio_activations 
+                                    (user_id, firebase_uid, purchase_id, product_id, line_id, phone_number, activation_status, oxio_response)
+                                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                                """, (
+                                    user_id, firebase_uid, purchase_id, 'esim_beta',
+                                    line_id, phone_number, 'activated', str(oxio_result)
+                                ))
+                                conn.commit()
+                                print(f"Stored OXIO activation details for user {user_id}")
+                except Exception as db_error:
+                    print(f"Error storing activation details: {str(db_error)}")
+            
+            # Send confirmation email
+            try:
+                from email_service import send_email
+                subject = "🎉 Your eSIM is Ready!"
+                
+                html_body = f"""
+                <html>
+                <body>
+                    <h2>🎉 eSIM Activation Successful!</h2>
+                    <p>Great news! Your $1 eSIM Beta access has been activated.</p>
+                    
+                    <h3>📱 Your Details:</h3>
+                    <ul>
+                        <li><strong>Phone Number:</strong> {phone_number or 'Assigned by carrier'}</li>
+                        <li><strong>Plan:</strong> OXIO Base Plan (Basic Membership)</li>
+                        <li><strong>Status:</strong> ✅ Active</li>
+                    </ul>
+                    
+                    <p><strong>Next Steps:</strong></p>
+                    <ol>
+                        <li>Log into your <a href="{request.url_root}dashboard">DOTM Dashboard</a></li>
+                        <li>View your phone number and QR code for eSIM setup</li>
+                        <li>Scan the QR code with your device to activate eSIM</li>
+                    </ol>
+                    
+                    <p>Welcome to global connectivity!</p>
+                    <br>
+                    <p>Best regards,<br><strong>DOTM Team</strong></p>
+                </body>
+                </html>
+                """
+                
+                send_email(user_email, subject, "eSIM activated successfully!", html_body)
+                print(f"Sent eSIM activation confirmation to {user_email}")
+                
+            except Exception as email_error:
+                print(f"Error sending confirmation email: {str(email_error)}")
+            
+            return {
+                'success': True,
+                'message': 'eSIM activated successfully',
+                'phone_number': phone_number,
+                'line_id': line_id,
+                'purchase_id': purchase_id
+            }
+        else:
+            return {
+                'success': False,
+                'error': 'OXIO activation failed',
+                'message': oxio_result.get('message', 'Unknown activation error')
+            }
+            
+    except Exception as e:
+        print(f"Error in activate_esim_for_user: {str(e)}")
+        return {
+            'success': False,
+            'error': 'Activation error',
+            'message': str(e)
+        }
+
 @app.route('/static/<path:path>')
 def serve_static(path):
     return send_from_directory('static', path)
