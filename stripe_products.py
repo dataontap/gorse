@@ -199,7 +199,43 @@ def create_stripe_products():
         except Exception as e:
             print(f"Error creating Beta Tester price: {str(e)}")
 
-        # 6. Create Meter for Data Usage Tracking
+        # 6. eSIM Beta - One-time purchase for $1
+        try:
+            esim_beta_product = stripe.Product.retrieve('esim_beta')
+            print(f"eSIM Beta product already exists: {esim_beta_product.id}")
+        except stripe.error.InvalidRequestError:
+            esim_beta_product = stripe.Product.create(
+                id='esim_beta',
+                name='eSIM Beta Access',
+                description='Beta access to eSIM with basic plan activation - $1 early access',
+                metadata={
+                    'type': 'esim',
+                    'product_catalog': 'beta_services',
+                    'tier': 'beta'
+                }
+            )
+            print(f"Created eSIM Beta product: {esim_beta_product.id}")
+        
+        # Create price for eSIM Beta
+        try:
+            prices = stripe.Price.list(product=esim_beta_product.id, active=True)
+            if len(prices.data) == 0:
+                esim_beta_price = stripe.Price.create(
+                    product=esim_beta_product.id,
+                    unit_amount=100,  # $1.00
+                    currency='usd',
+                    metadata={
+                        'access_type': 'beta_esim',
+                        'plan_type': 'basic'
+                    }
+                )
+                print(f"Created eSIM Beta price: {esim_beta_price.id}")
+            else:
+                print(f"eSIM Beta price already exists: {prices.data[0].id}")
+        except Exception as e:
+            print(f"Error creating eSIM Beta price: {str(e)}")
+
+        # 7. Create Meter for Data Usage Tracking
         try:
             # Check if meter already exists
             meters = stripe.billing.Meter.list(limit=100)

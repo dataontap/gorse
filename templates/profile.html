@@ -1836,6 +1836,145 @@
             }
         }
 
+        function loadBetaPhoneNumbers(firebaseUid) {
+            console.log('Loading beta phone numbers for:', firebaseUid);
+            
+            if (!firebaseUid) {
+                console.error('No Firebase UID provided for beta phone numbers');
+                displayBetaPhoneError('Authentication required');
+                return;
+            }
+            
+            // Call the existing API endpoint
+            fetch(`/api/user-phone-numbers?firebase_uid=${encodeURIComponent(firebaseUid)}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Beta phone numbers response:', data);
+                    
+                    if (data.success && data.phone_numbers && data.phone_numbers.length > 0) {
+                        displayBetaPhoneNumbers(data.phone_numbers);
+                    } else {
+                        // Check if user has purchased eSIM beta but not yet activated
+                        displayBetaPhoneInfo('No active eSIM found. Purchase eSIM Beta access to get your phone number.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading beta phone numbers:', error);
+                    displayBetaPhoneInfo('Ready to get your eSIM! Purchase Beta access to receive your phone number.');
+                });
+        }
+        
+        function displayBetaPhoneNumbers(phoneNumbers) {
+            const container = document.getElementById('betaPhoneContainer');
+            if (!container) return;
+            
+            let html = '';
+            
+            phoneNumbers.forEach((phoneInfo, index) => {
+                const qrCodes = phoneInfo.qr_codes || {};
+                const phoneNumber = phoneInfo.number;
+                const groupId = phoneInfo.group_id;
+                const oxioUserId = phoneInfo.oxio_user_id;
+                
+                html += `
+                    <div class="address-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 style="color: #00FFFF; margin: 0;">
+                                <i class="fas fa-mobile-alt"></i> eSIM Phone Number
+                            </h5>
+                            <span class="service-status-badge" style="background: #4CAF50; color: white;">Active</span>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Phone Number:</strong><br>
+                                    <span class="text-break font-monospace" style="font-size: 1.2em; color: #00FFFF;">${phoneNumber}</span>
+                                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyToClipboard('${phoneNumber}')" title="Copy Phone Number">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>OXIO User ID:</strong><br>
+                                    <span class="text-break font-monospace">${oxioUserId}</span>
+                                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyToClipboard('${oxioUserId}')" title="Copy OXIO User ID">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <p><strong>Group ID:</strong><br>
+                                    <span class="text-break font-monospace">${groupId}</span>
+                                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyToClipboard('${groupId}')" title="Copy Group ID">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="btn-group" role="group">
+                                    ${qrCodes.resin_qr ? `
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="showQRCode('${qrCodes.resin_qr}', 'eSIM Activation QR Code')">
+                                        <i class="fas fa-qrcode"></i> eSIM QR Code
+                                    </button>
+                                    ` : ''}
+                                    ${qrCodes.simple_qr ? `
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="showQRCode('${qrCodes.simple_qr}', 'Phone Number QR Code')">
+                                        <i class="fas fa-phone"></i> Phone QR
+                                    </button>
+                                    ` : ''}
+                                </div>
+                                <p class="mt-2" style="font-size: 0.9em; color: #CCCCFF;">
+                                    <i class="fas fa-info-circle"></i> Scan the eSIM QR code to activate your cellular service
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function displayBetaPhoneInfo(message) {
+            const container = document.getElementById('betaPhoneContainer');
+            if (!container) return;
+            
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="text-align: center; color: #CCCCFF; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                    <p><i class="fas fa-mobile-alt"></i> ${message}</p>
+                    <p style="margin-top: 15px;">
+                        <a href="/" class="btn btn-outline-primary btn-sm">Get eSIM Beta Access</a>
+                    </p>
+                </div>
+            `;
+        }
+        
+        function displayBetaPhoneError(error) {
+            const container = document.getElementById('betaPhoneContainer');
+            if (!container) return;
+            
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="text-align: center; color: #ff6b6b;">
+                    <p>Error loading phone numbers: ${error}</p>
+                </div>
+            `;
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                // Simple feedback - could be enhanced with a toast notification
+                console.log('Copied to clipboard:', text);
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
+
         function generateRandomLinkCode() {
             return Math.random().toString(36).substring(2, 12);
         }

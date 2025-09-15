@@ -57,6 +57,13 @@
                 <p class="signin-text">
                     <a href="/login" class="signin-link">Members Access</a>
                 </p>
+                <!-- eSIM Beta Request Button -->
+                <div class="esim-beta-section" style="margin: 20px 0;">
+                    <button id="esimBetaBtn" class="btn btn-outline-light" style="border: 2px solid #00FFFF; color: #00FFFF; font-weight: 500; padding: 12px 24px; border-radius: 8px; background: rgba(0, 255, 255, 0.1); transition: all 0.3s ease;">
+                        🔥 Get eSIM Beta Access - $1
+                    </button>
+                    <p style="color: #CCCCFF; font-size: 12px; margin-top: 8px;">Early access • Basic Plan • Phone Number included</p>
+                </div>
                 <div class="canada-service">
                     <p style="color: white; font-size: 14px; margin: 20px 0 10px 0;">
                         Connectivity Services for Canadians Everywhere 🇨🇦
@@ -110,6 +117,63 @@
                 window.location.href = '/dashboard';
             }
         });
+
+        // eSIM Beta button functionality
+        document.getElementById('esimBetaBtn').addEventListener('click', function() {
+            // Check if user is logged in first
+            if (firebase.auth().currentUser) {
+                // User is logged in, proceed with checkout
+                initiateEsimCheckout();
+            } else {
+                // User not logged in, redirect to signup first
+                alert('Please sign up or login first to get eSIM access.');
+                window.location.href = '/signup';
+            }
+        });
+
+        function initiateEsimCheckout() {
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                alert('Please login first');
+                return;
+            }
+
+            // Show loading state
+            const btn = document.getElementById('esimBetaBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Processing...';
+            btn.disabled = true;
+
+            // Create Stripe checkout session for eSIM
+            fetch('/create-checkout-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    productId: 'esim_beta',
+                    email: user.email,
+                    firebaseUid: user.uid,
+                    isSubscription: false
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.url) {
+                    // Redirect to Stripe checkout
+                    window.location.href = data.url;
+                } else {
+                    throw new Error(data.error || 'Failed to create checkout session');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creating checkout: ' + error.message);
+                // Reset button
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
 
 
     </script>
