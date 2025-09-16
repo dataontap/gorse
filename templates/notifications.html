@@ -682,9 +682,9 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    firebaseUid: firebaseUid,
+                    firebase_uid: firebaseUid,
                     language: 'en',  // Default to English
-                    voiceId: '21m00Tcm4TlvDq8ikWAM'  // Default voice
+                    voice_id: '21m00Tcm4TlvDq8ikWAM'  // Default voice
                 })
             })
             .then(response => response.json())
@@ -740,9 +740,9 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    firebaseUid: firebaseUid,
+                    firebase_uid: firebaseUid,
                     language: language,
-                    voiceId: voiceId
+                    voice_id: voiceId
                 })
             })
             .then(response => response.json())
