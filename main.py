@@ -2084,11 +2084,8 @@ def handle_stripe_webhook():
                     if oxio_user_id:
                         print(f"Activating eSIM line for OXIO user: {oxio_user_id}")
                         
-                        # Define plan for $1 eSIM Beta activation
-                        esim_plan_id = "basic_esim_plan"
-                        
-                        # Activate eSIM line
-                        activation_result = oxio_service.activate_line(oxio_user_id, plan_id=esim_plan_id)
+                        # Activate eSIM line (without plan ID for now - OXIO will use default)
+                        activation_result = oxio_service.activate_line(oxio_user_id)
                         
                         if activation_result.get('success'):
                             print(f"✅ OXIO eSIM activation successful")
