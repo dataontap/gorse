@@ -485,15 +485,27 @@
                         <div class="notification-title">${notification.title}</div>
                         <div class="notification-message">${notification.message}</div>
                         <div class="notification-time">${formatTime(notification.time)}</div>
-                        ${notification.isWelcome && notification.audioUrl ? `
+                        ${notification.isWelcome ? `
                             <div class="welcome-message-controls">
-                                <a href="/download/audio/${notification.audioUrl.split('/').pop()}" class="play-welcome-btn" style="text-decoration: none; display: inline-block;">
-                                    <i class="fas fa-download"></i> Download Audio Message
-                                </a>
-                                <audio controls style="width: 100%; margin-top: 10px;">
-                                    <source src="${notification.audioUrl}" type="audio/mpeg">
-                                    Your browser does not support the audio element.
-                                </audio>
+                                ${notification.audioUrl ? `
+                                    <a href="/download/audio/${notification.audioUrl.split('/').pop()}" class="play-welcome-btn" style="text-decoration: none; display: inline-block;">
+                                        <i class="fas fa-download"></i> Download Audio Message
+                                    </a>
+                                    <audio controls style="width: 100%; margin-top: 10px;">
+                                        <source src="${notification.audioUrl}" type="audio/mpeg">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                ` : `
+                                    <button class="play-welcome-btn" onclick="generateWelcomeAudio('${notification.data.firebase_uid}', this)">
+                                        <i class="fas fa-play"></i> Play Welcome Message
+                                    </button>
+                                    <div id="welcome-audio-${notification.id}" style="display: none; margin-top: 10px;">
+                                        <audio controls style="width: 100%;">
+                                            <source type="audio/mpeg">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </div>
+                                `}
                             </div>
                         ` : ''}
                     </div>
@@ -662,6 +674,63 @@
     </script>
     <script>
         // Welcome message functionality for notifications page
+        function generateWelcomeAudio(firebaseUid, buttonElement) {
+            if (!firebaseUid) {
+                alert('Error generating welcome message: Firebase UID is required');
+                return;
+            }
+
+            // Disable button and show loading state
+            buttonElement.disabled = true;
+            buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+            // Find the audio container for this notification
+            const notificationItem = buttonElement.closest('.notification-item');
+            const notificationId = notificationItem.dataset.id;
+            const audioContainer = document.getElementById(`welcome-audio-${notificationId.split('_')[1]}`);
+
+            fetch('/api/welcome-message/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    firebaseUid: firebaseUid,
+                    language: 'en',  // Default to English
+                    voiceId: '21m00Tcm4TlvDq8ikWAM'  // Default voice
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.audioUrl) {
+                    // Show the audio player and set the source
+                    const audioElement = audioContainer.querySelector('audio');
+                    const sourceElement = audioElement.querySelector('source');
+                    sourceElement.src = data.audioUrl;
+                    audioElement.load(); // Reload audio element with new source
+                    audioContainer.style.display = 'block';
+                    
+                    // Update button to show it's ready to play again or download
+                    buttonElement.innerHTML = '<i class="fas fa-check"></i> Generated! Play above';
+                    buttonElement.disabled = false;
+                    
+                    // Auto-play the audio
+                    audioElement.play().catch(e => {
+                        console.log('Auto-play blocked by browser, user needs to click play');
+                    });
+                } else {
+                    alert('Error generating welcome message: ' + (data.error || 'Unknown error'));
+                    buttonElement.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
+                    buttonElement.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error generating welcome message:', error);
+                alert('Error generating welcome message. Please try again.');
+                buttonElement.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
+                buttonElement.disabled = false;
+            });
+        }
         function playNotificationWelcomeMessage() {
             let firebaseUid = null;
             try { 
@@ -704,8 +773,8 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success && data.audio_url) {
-                    audio.src = data.audio_url;
+                if (data.success && data.audioUrl) {
+                    audio.src = data.audioUrl;
                     audio.style.display = 'block';
                     audio.play();
                 } else {
