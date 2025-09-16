@@ -2156,6 +2156,38 @@ def handle_stripe_webhook():
                             except Exception as db_e:
                                 print(f"Error recording activation details: {db_e}")
                             
+                            # 🎯 UPDATE STRIPE RECEIPT WITH eSIM DETAILS
+                            try:
+                                print(f"📧 Updating Stripe receipt with eSIM details...")
+                                
+                                # Prepare enhanced metadata for Stripe receipt
+                                enhanced_metadata = {
+                                    **session.get('metadata', {}),  # Preserve existing metadata
+                                    'esim_phone_number': phone_number or 'Pending assignment',
+                                    'esim_iccid': iccid or 'Processing',
+                                    'esim_line_id': line_id or 'Assigned by system',
+                                    'esim_activation_status': 'completed',
+                                    'esim_activation_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                    'esim_qr_available': 'yes' if esim_qr_code else 'no',
+                                    'esim_plan': 'Default eSIM Plan',
+                                    'receipt_enhanced': 'true'
+                                }
+                                
+                                # Update Stripe checkout session metadata
+                                stripe.checkout.Session.modify(
+                                    session['id'],
+                                    metadata=enhanced_metadata
+                                )
+                                
+                                print(f"✅ Stripe receipt enhanced with eSIM details:")
+                                print(f"   📱 Phone: {phone_number}")
+                                print(f"   🏷️  ICCID: {iccid}")
+                                print(f"   📷 QR Code: {'Available' if esim_qr_code else 'Not generated'}")
+                                
+                            except Exception as stripe_update_error:
+                                print(f"⚠️ Could not update Stripe receipt: {stripe_update_error}")
+                                # Continue processing - this is not critical
+                            
                             # Send activation email
                             try:
                                 # Get buyer's email from session or metadata
