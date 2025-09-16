@@ -295,6 +295,13 @@ document.addEventListener('click', function(event) {
 
 // Notification tester functionality
 function showNotificationTester() {
+    // Check if user is authenticated before requesting notification permissions
+    const firebaseUid = getFirebaseUID();
+    if (!firebaseUid) {
+        alert('Please sign in first to enable notifications.');
+        return;
+    }
+
     // Simple notification tester - you can expand this as needed
     if (Notification.permission === 'granted') {
         new Notification('🚀 GORSE Network Alert', {

@@ -30,8 +30,29 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Notification tester functionality for marketplace
+// Reliable Firebase UID retrieval function (consistent across app)
+function getFirebaseUID() {
+    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (currentUserData && currentUserData.uid) {
+        return currentUserData.uid;
+    }
+    
+    if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+        return firebase.auth().currentUser.uid;
+    }
+    
+    return null;
+}
+
+// Notification tester functionality for marketplace  
 function showNotificationTester() {
+    // Check if user is authenticated before requesting notification permissions
+    const firebaseUid = getFirebaseUID();
+    if (!firebaseUid) {
+        alert('Please sign in first to enable notifications.');
+        return;
+    }
+
     // Simple notification tester - you can expand this as needed
     if (Notification.permission === 'granted') {
         new Notification('🚀 GORSE Network Alert', {
