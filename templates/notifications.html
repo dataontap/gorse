@@ -312,32 +312,27 @@
             }
         }
 
+        // Reliable Firebase UID retrieval function (consistent across app)
+        function getFirebaseUID() {
+            const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (currentUserData && currentUserData.uid) {
+                return currentUserData.uid;
+            }
+            
+            if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                return firebase.auth().currentUser.uid;
+            }
+            
+            return null;
+        }
+
         async function loadNotifications() {
             try {
                 console.log('loadNotifications() started');
-                let firebaseUid = null;
-                try { 
-                    const u = window.getCurrentUser ? window.getCurrentUser() : null; 
-                    console.log('getCurrentUser() returned:', u);
-                    if (u && u.uid) firebaseUid = u.uid; 
-                } catch(e) {
-                    console.log('getCurrentUser() error:', e);
-                }
+                const firebaseUid = getFirebaseUID();
+                console.log('Firebase UID retrieved:', firebaseUid);
                 if (!firebaseUid) {
-                    // Use consistent UID retrieval pattern
-                    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                    if (currentUserData && currentUserData.uid) {
-                        firebaseUid = currentUserData.uid;
-                    }
-                    console.log('consistent UID retrieval:', firebaseUid);
-                }
-                if (!firebaseUid && window.firebase && firebase.auth && firebase.auth().currentUser) { 
-                    firebaseUid = firebase.auth().currentUser.uid; 
-                    console.log('firebase.auth().currentUser.uid:', firebaseUid);
-                }
-                console.log('Final firebaseUid:', firebaseUid);
-                if (!firebaseUid) {
-                    console.error('No Firebase UID found');
+                    console.error('No Firebase UID found - user not authenticated');
                     return;
                 }
 
@@ -616,20 +611,7 @@
             }
 
             try {
-                let firebaseUid = null;
-                try { 
-                    const u = window.getCurrentUser ? window.getCurrentUser() : null; 
-                    if (u && u.uid) firebaseUid = u.uid; 
-                } catch(e) {}
-                if (!firebaseUid) {
-                    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                    if (currentUserData && currentUserData.uid) {
-                        firebaseUid = currentUserData.uid;
-                    }
-                }
-                if (!firebaseUid && window.firebase && firebase.auth && firebase.auth().currentUser) { 
-                    firebaseUid = firebase.auth().currentUser.uid; 
-                }
+                const firebaseUid = getFirebaseUID();
                 const response = await fetch(`/api/invites/${inviteId}/cancel`, {
                     method: 'POST',
                     headers: {
@@ -677,19 +659,7 @@
         function generateWelcomeAudio(firebaseUid, buttonElement) {
             // Get Firebase UID from current user if not provided
             if (!firebaseUid) {
-                try { 
-                    const u = window.getCurrentUser ? window.getCurrentUser() : null; 
-                    if (u && u.uid) firebaseUid = u.uid; 
-                } catch(e) {}
-                if (!firebaseUid) {
-                    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                    if (currentUserData && currentUserData.uid) {
-                        firebaseUid = currentUserData.uid;
-                    }
-                }
-                if (!firebaseUid && window.firebase && firebase.auth && firebase.auth().currentUser) { 
-                    firebaseUid = firebase.auth().currentUser.uid; 
-                }
+                firebaseUid = getFirebaseUID();
             }
 
             if (!firebaseUid) {
@@ -749,20 +719,7 @@
             });
         }
         function playNotificationWelcomeMessage() {
-            let firebaseUid = null;
-            try { 
-                const u = window.getCurrentUser ? window.getCurrentUser() : null; 
-                if (u && u.uid) firebaseUid = u.uid; 
-            } catch(e) {}
-            if (!firebaseUid) {
-                const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                if (currentUserData && currentUserData.uid) {
-                    firebaseUid = currentUserData.uid;
-                }
-            }
-            if (!firebaseUid && window.firebase && firebase.auth && firebase.auth().currentUser) { 
-                firebaseUid = firebase.auth().currentUser.uid; 
-            }
+            const firebaseUid = getFirebaseUID();
             const language = document.getElementById('notificationLanguage').value;
             const voiceId = document.getElementById('notificationVoice').value;
 
@@ -849,14 +806,14 @@
         // Load user notifications
         async function loadNotifications() {
             try {
-                const currentUser = await getCurrentUser();
-                if (!currentUser || !currentUser.firebaseUid) {
+                const firebaseUid = getFirebaseUID();
+                if (!firebaseUid) {
                     document.getElementById('notifications-container').innerHTML = 
                         '<div class="error-message">Please log in to view notifications</div>';
                     return;
                 }
 
-                const response = await fetch(`/api/notifications?firebaseUid=${currentUser.firebaseUid}&limit=50`);
+                const response = await fetch(`/api/notifications?firebaseUid=${firebaseUid}&limit=50`);
                 const data = await response.json();
 
                 const container = document.getElementById('notifications-container');
@@ -892,14 +849,14 @@
         // Mark notification as read
         async function markAsRead(notificationId) {
             try {
-                const currentUser = await getCurrentUser();
+                const firebaseUid = getFirebaseUID();
                 const response = await fetch(`/api/notifications/${notificationId}/read`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        firebaseUid: currentUser.firebaseUid
+                        firebaseUid: firebaseUid
                     })
                 });
 
