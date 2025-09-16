@@ -43,30 +43,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
       // Wait for service worker to be ready
       await navigator.serviceWorker.ready;
-
-      // Request notification permission
-      const permission = await Notification.requestPermission();
-      console.log('Notification permission status:', permission);
-
-      if (permission === 'granted') {
-        // Get FCM token with service worker registration
-        const currentToken = await getToken(messaging, {
-          serviceWorkerRegistration: registration
-        });
-
-        if (currentToken) {
-          console.log('FCM token:', currentToken);
-          // Send token to server for targeting this device
-          sendTokenToServer(currentToken);
-          // Show success message to user
-          showNotificationStatus('Notifications enabled successfully!');
-        } else {
-          console.log('No registration token available. Request permission to generate one.');
-          showNotificationStatus('Failed to get notification token. Please try again.');
-        }
-      } else {
-        throw new Error('Notification permission denied');
-      }
+      
+      console.log('Firebase messaging service worker ready. Notification permissions will be requested after user authentication.');
         // Handle foreground messages
       onMessage(messaging, (payload) => {
         console.log('Message received in foreground: ', payload);
@@ -113,18 +91,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('Error details:', JSON.stringify(err));
 
     // Special handling for common errors
-    if (err.message === 'Notification permission denied') {
-      showNotificationStatus('Notification permission denied. Please enable notifications in your browser settings and reload the page.');
-    } else if (err.code === 'messaging/permission-blocked') {
-      showNotificationStatus('Notification permission blocked. Please reset permissions in your browser settings.');
-    } else if (err.code === 'installations/request-failed') {
-      showNotificationStatus('Firebase installation failed. Please verify your Firebase project settings in Firebase Console.');
+    if (err.code === 'installations/request-failed') {
+      console.log('Firebase installation failed. Please verify your Firebase project settings in Firebase Console.');
     } else if (err.code === 'messaging/use-sw-after-get-token') {
-      showNotificationStatus('Service worker setup error. Please refresh the page.');
+      console.log('Service worker setup error. Please refresh the page.');
     } else if (err.message && err.message.includes('no active Service Worker')) {
-      showNotificationStatus('Service worker registration failed. Please refresh the page and try again.');
+      console.log('Service worker registration failed. Please refresh the page and try again.');
     } else {
-      showNotificationStatus('Error setting up notifications: ' + err.message);
+      console.log('Error setting up Firebase messaging: ' + err.message);
     }
   }
    
