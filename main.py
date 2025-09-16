@@ -4616,6 +4616,52 @@ def get_beta_status():
             'error': str(e)
         }), 500
 
+@app.route('/api/user-esim-details')
+def get_user_esim_details():
+    """Get user's eSIM details including phone numbers, ICCID, and QR codes"""
+    firebase_uid = request.args.get('firebaseUid')
+    if not firebase_uid:
+        return jsonify({'error': 'Firebase UID is required'}), 400
+    
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get all eSIM activations for this user
+                    cur.execute("""
+                        SELECT phone_number, iccid, line_id, activation_status, 
+                               esim_qr_code, created_at, product_id
+                        FROM oxio_activations 
+                        WHERE firebase_uid = %s 
+                        ORDER BY created_at DESC
+                    """, (firebase_uid,))
+                    
+                    activations = cur.fetchall()
+                    esim_details = []
+                    
+                    for activation in activations:
+                        esim_details.append({
+                            'phone_number': activation[0],
+                            'iccid': activation[1], 
+                            'line_id': activation[2],
+                            'status': activation[3],
+                            'qr_code': activation[4],
+                            'activated_date': activation[5].isoformat() if activation[5] else None,
+                            'product_type': activation[6]
+                        })
+                    
+                    return jsonify({
+                        'success': True,
+                        'esim_count': len(esim_details),
+                        'esims': esim_details
+                    })
+        
+        return jsonify({'success': False, 'error': 'Database connection failed'})
+        
+    except Exception as e:
+        print(f"Error getting eSIM details: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/user-phone-numbers')
 def get_user_phone_numbers():
     """Get ALL user's phone numbers from multiple sources"""

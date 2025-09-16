@@ -123,6 +123,7 @@
                 </div>
                 <a href="/profile"><i class="fas fa-user"></i> Profile</a>
                 <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
+                <a href="#" onclick="loadESIMDetails()"><i class="fas fa-sim-card"></i> My eSIMs</a>
                 <a href="/payments"><i class="fas fa-credit-card"></i> Payments</a>
                 <a href="/bitchat" class="nav-link">
                     🔗 Bitchat
@@ -197,6 +198,41 @@
                                         <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyOxioGroupID()" title="Copy OXIO Group ID"><i class="fas fa-copy"></i></button>
                                     </p>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- eSIM Details Section -->
+                    <div class="esim-section mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h4><i class="fas fa-sim-card"></i> My eSIMs</h4>
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadESIMDetails()">
+                                    <i class="fas fa-refresh"></i> Refresh
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="esimLoading" class="text-center" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading eSIM details...
+                                </div>
+                                <div id="esimNoData" class="text-center text-muted" style="display: none;">
+                                    <i class="fas fa-sim-card"></i><br>
+                                    No eSIMs found. <a href="/buy/esim">Purchase your first eSIM for $1</a>
+                                </div>
+                                <div id="esimDetails" style="display: none;">
+                                    <!-- eSIM details will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card address-card">
+                                <div class="card-body d-flex align-items-center">
+                                    <div class="address-content">
+                                        <h5>Account Details</h5>
+                                        <div class="info-grid">
                             </div>
                             <div class="row">
                                 <div class="col-md-12">
@@ -1978,6 +2014,96 @@
         function generateRandomLinkCode() {
             return Math.random().toString(36).substring(2, 12);
         }
+
+        // Load eSIM details function
+        function loadESIMDetails() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const loadingEl = document.getElementById('esimLoading');
+            const noDataEl = document.getElementById('esimNoData');
+            const detailsEl = document.getElementById('esimDetails');
+
+            // Show loading state
+            loadingEl.style.display = 'block';
+            noDataEl.style.display = 'none';
+            detailsEl.style.display = 'none';
+
+            fetch(`/api/user-esim-details?firebaseUid=${user.uid}`)
+                .then(response => response.json())
+                .then(data => {
+                    loadingEl.style.display = 'none';
+                    
+                    if (data.success && data.esims && data.esims.length > 0) {
+                        // Display eSIM details
+                        detailsEl.innerHTML = data.esims.map(esim => `
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5><i class="fas fa-phone"></i> ${esim.phone_number || 'Activating...'}</h5>
+                                            <p><strong>ICCID:</strong> <code>${esim.iccid || 'N/A'}</code></p>
+                                            <p><strong>Status:</strong> 
+                                                <span class="badge ${esim.status === 'active' ? 'badge-success' : 'badge-warning'}">
+                                                    ${esim.status || 'Pending'}
+                                                </span>
+                                            </p>
+                                            <p><strong>Activated:</strong> ${esim.activated_date ? new Date(esim.activated_date).toLocaleDateString() : 'Pending'}</p>
+                                        </div>
+                                        <div class="col-md-6 text-center">
+                                            ${esim.qr_code ? `
+                                                <h6>eSIM QR Code</h6>
+                                                <img src="data:image/png;base64,${esim.qr_code}" 
+                                                     alt="eSIM QR Code" 
+                                                     style="width: 150px; height: 150px; border: 1px solid #ddd; border-radius: 8px;"
+                                                     onclick="showQRModal('${esim.qr_code}', '${esim.phone_number || 'eSIM'}')">
+                                                <p class="text-muted small">Click to enlarge</p>
+                                            ` : '<p class="text-muted">QR Code generating...</p>'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                        detailsEl.style.display = 'block';
+                    } else {
+                        // No eSIMs found
+                        noDataEl.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading eSIM details:', error);
+                    loadingEl.style.display = 'none';
+                    noDataEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i><br>Error loading eSIM details';
+                    noDataEl.style.display = 'block';
+                });
+        }
+
+        // Show QR code in modal
+        function showQRModal(qrCode, title) {
+            const modal = document.createElement('div');
+            modal.className = 'esim-qr-modal';
+            modal.innerHTML = `
+                <div class="esim-qr-content">
+                    <h3>${title} eSIM QR Code</h3>
+                    <img src="data:image/png;base64,${qrCode}" 
+                         alt="eSIM QR Code" 
+                         style="max-width: 300px; max-height: 300px;">
+                    <p>Scan this QR code to add the eSIM to your device</p>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            class="btn btn-secondary mt-3">Close</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Auto-load eSIM details when page loads
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                setTimeout(() => {
+                    loadESIMDetails();
+                }, 1000);
+            }
+        });
 
         // Close QR code popup when clicking outside
         document.addEventListener('click', function(e) {
