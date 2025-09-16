@@ -2015,11 +2015,92 @@ def handle_stripe_webhook():
             # Handle eSIM Beta activation (new flow with OXIO user creation)
             if product == 'esim_beta':
                 try:
-                    print(f"Processing eSIM Beta activation")
+                    print(f"💰 Processing $1 eSIM Beta activation with ERC-20 token rewards")
                     
                     # Get user details from session metadata
                     user_email = session['metadata'].get('user_email', '')
                     user_name = session['metadata'].get('user_name', '')
+                    
+                    # Extract purchase amount for token rewards
+                    total_amount = session.get('amount_total', 100)  # Default $1.00 in cents
+                    print(f"💰 eSIM purchase amount: ${total_amount/100:.2f}")
+                    
+                    # Get user's Firebase UID for database lookup
+                    firebase_uid = session['metadata'].get('firebase_uid')
+                    user_eth_address = None
+                    
+                    if firebase_uid:
+                        try:
+                            # Get user's ETH address from database for token reward
+                            with get_db_connection() as conn:
+                                if conn:
+                                    with conn.cursor() as cur:
+                                        cur.execute("""
+                                            SELECT eth_address FROM users 
+                                            WHERE firebase_uid = %s AND eth_address IS NOT NULL
+                                        """, (firebase_uid,))
+                                        result = cur.fetchone()
+                                        if result:
+                                            user_eth_address = result[0]
+                                            print(f"🔗 Found user ETH address: {user_eth_address}")
+                        except Exception as eth_lookup_error:
+                            print(f"⚠️ Error looking up ETH address: {eth_lookup_error}")
+                    
+                    # Process AUTOMATIC ERC-20 token reward for real revenue
+                    if user_eth_address and total_amount > 0:
+                        try:
+                            print(f"🪙 Awarding DOTM tokens for $1 eSIM purchase (10.33% reward)")
+                            from ethereum_helper import reward_data_purchase
+                            
+                            # Award 10.33% of purchase amount in DOTM tokens
+                            tx_hash = reward_data_purchase(user_eth_address, total_amount)
+                            
+                            if tx_hash:
+                                print(f"✅ Token reward transaction successful: {tx_hash}")
+                                
+                                # Record token reward in database
+                                with get_db_connection() as conn:
+                                    if conn:
+                                        with conn.cursor() as cur:
+                                            reward_amount = (total_amount / 100) * 0.1033  # 10.33% in USD
+                                            cur.execute("""
+                                                INSERT INTO token_transactions 
+                                                (user_id, purchase_amount_cents, reward_amount_usd, 
+                                                 tx_hash, transaction_type, stripe_session_id, created_at)
+                                                VALUES ((SELECT id FROM users WHERE firebase_uid = %s), 
+                                                       %s, %s, %s, 'esim_purchase_reward', %s, CURRENT_TIMESTAMP)
+                                            """, (firebase_uid, total_amount, reward_amount, tx_hash, session['id']))
+                                            conn.commit()
+                                            print(f"💾 Token transaction recorded: ${reward_amount:.4f} DOTM")
+                                            
+                                            # Enhance Stripe payment intent with ERC-20 transaction details
+                                            try:
+                                                import stripe
+                                                stripe.PaymentIntent.modify(
+                                                    session.get('payment_intent'),
+                                                    metadata={
+                                                        'dotm_token_reward': f"{reward_amount:.4f} DOTM",
+                                                        'token_transaction_hash': tx_hash,
+                                                        'blockchain_network': 'ethereum',
+                                                        'reward_percentage': '10.33%'
+                                                    }
+                                                )
+                                                print(f"📧 Enhanced Stripe receipt with token transaction: {tx_hash}")
+                                            except Exception as stripe_update_error:
+                                                print(f"⚠️ Could not update Stripe metadata: {stripe_update_error}")
+                            else:
+                                print(f"❌ Token reward transaction failed")
+                                
+                        except Exception as token_error:
+                            print(f"❌ Error processing token reward: {token_error}")
+                            # Continue with eSIM activation even if token reward fails
+                    else:
+                        if not user_eth_address:
+                            print(f"⚠️ User has no ETH address - skipping token reward")
+                        if total_amount <= 0:
+                            print(f"⚠️ Invalid purchase amount - skipping token reward")
+                    
+                    # Continue with eSIM activation
                     firebase_uid = session['metadata'].get('firebase_uid', '')
                     existing_oxio_user_id = session['metadata'].get('oxio_user_id', '')
                     
