@@ -496,7 +496,7 @@
                                         Your browser does not support the audio element.
                                     </audio>
                                 ` : `
-                                    <button class="play-welcome-btn" onclick="generateWelcomeAudio('${notification.data.firebase_uid}', this)">
+                                    <button class="play-welcome-btn" onclick="generateWelcomeAudio(null, this)">
                                         <i class="fas fa-play"></i> Play Welcome Message
                                     </button>
                                     <div id="welcome-audio-${notification.id}" style="display: none; margin-top: 10px;">
@@ -675,8 +675,25 @@
     <script>
         // Welcome message functionality for notifications page
         function generateWelcomeAudio(firebaseUid, buttonElement) {
+            // Get Firebase UID from current user if not provided
             if (!firebaseUid) {
-                alert('Error generating welcome message: Firebase UID is required');
+                try { 
+                    const u = window.getCurrentUser ? window.getCurrentUser() : null; 
+                    if (u && u.uid) firebaseUid = u.uid; 
+                } catch(e) {}
+                if (!firebaseUid) {
+                    const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                    if (currentUserData && currentUserData.uid) {
+                        firebaseUid = currentUserData.uid;
+                    }
+                }
+                if (!firebaseUid && window.firebase && firebase.auth && firebase.auth().currentUser) { 
+                    firebaseUid = firebase.auth().currentUser.uid; 
+                }
+            }
+
+            if (!firebaseUid) {
+                alert('Please log in to play welcome message');
                 return;
             }
 
