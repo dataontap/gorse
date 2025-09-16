@@ -1746,42 +1746,44 @@ def buy_esim():
             </html>
             """, 401
         
-        # Get user's OXIO ID from database
+        # Get user data from database
+        user_email = None
+        user_name = None
         oxio_user_id = None
+        
         try:
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
                         cur.execute("""
-                            SELECT oxio_user_id FROM users 
-                            WHERE firebase_uid = %s AND oxio_user_id IS NOT NULL
+                            SELECT email, display_name, oxio_user_id 
+                            FROM users 
+                            WHERE firebase_uid = %s
                         """, (firebase_uid,))
                         result = cur.fetchone()
                         if result:
-                            oxio_user_id = result[0]
-                            print(f"Found OXIO user ID for Firebase UID {firebase_uid}: {oxio_user_id}")
+                            user_email = result[0]
+                            user_name = result[1]
+                            oxio_user_id = result[2]
+                            print(f"Found user data for Firebase UID {firebase_uid}: email={user_email}, oxio_user_id={oxio_user_id}")
                         else:
-                            print(f"No OXIO user ID found for Firebase UID: {firebase_uid}")
+                            print(f"No user data found for Firebase UID: {firebase_uid}")
+                            return """
+                            <!DOCTYPE html>
+                            <html>
+                            <head><title>User Not Found</title></head>
+                            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                                <h2>❌ User Not Found</h2>
+                                <p>Please ensure you are properly registered and logged in.</p>
+                                <a href="/login" style="display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px;">Login Again</a>
+                            </body>
+                            </html>
+                            """, 404
         except Exception as db_error:
-            print(f"Database error getting OXIO user ID: {db_error}")
+            print(f"Database error getting user data: {db_error}")
+            return "Database error", 500
         
-        if not oxio_user_id:
-            # If no OXIO user ID found, show error with instructions
-            return f"""
-            <!DOCTYPE html>
-            <html>
-            <head><title>OXIO Account Required</title></head>
-            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-                <h2>🔗 OXIO Account Required</h2>
-                <p>You need an OXIO account to purchase an eSIM.</p>
-                <p>Your Firebase UID: <code>{firebase_uid}</code></p>
-                <p>Please contact support to link your OXIO account.</p>
-                <a href="/dashboard" style="display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px;">Return to Dashboard</a>
-            </body>
-            </html>
-            """, 400
-        
-        # Create Stripe checkout session with the user's OXIO ID
+        # Create Stripe checkout session - OXIO user creation will happen during webhook processing
         session = stripe.checkout.Session.create(
             mode='payment',
             line_items=[{
@@ -1789,22 +1791,34 @@ def buy_esim():
                 'quantity': 1,
             }],
             success_url=request.url_root + 'esim/success?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=request.url_root,
+            cancel_url=request.url_root + 'dashboard',
             metadata={
-                'oxio_user_id': oxio_user_id,  # Use the authenticated user's OXIO ID
-                'firebase_uid': firebase_uid,   # Also store Firebase UID for reference
+                'firebase_uid': firebase_uid,
+                'user_email': user_email or '',
+                'user_name': user_name or '',
+                'oxio_user_id': oxio_user_id or '',  # May be empty if not yet created
                 'product': 'esim_beta'
             }
         )
         
-        print(f"✅ Created eSIM checkout session for user {firebase_uid} (OXIO: {oxio_user_id})")
+        print(f"✅ Created eSIM checkout session for user {firebase_uid}")
         
         # Redirect to Stripe checkout
         return redirect(session.url)
         
     except Exception as e:
         print(f"Error creating eSIM checkout session: {str(e)}")
-        return f"Error creating checkout session: {str(e)}", 500
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head><title>Checkout Error</title></head>
+        <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+            <h2>❌ Error Creating Checkout</h2>
+            <p>There was an error setting up your eSIM purchase: {str(e)}</p>
+            <a href="/dashboard" style="display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px;">Return to Dashboard</a>
+        </body>
+        </html>
+        """, 500
 
 @app.route('/esim/success')
 def esim_success():
@@ -1998,116 +2012,178 @@ def handle_stripe_webhook():
             
             print(f"Payment successful - Product: {product or product_id}, Firebase UID: {firebase_uid}, OXIO User: {oxio_user_id}")
             
-            # Handle direct OXIO eSIM activation (new simplified flow)
-            if product == 'esim_beta' and oxio_user_id:
+            # Handle eSIM Beta activation (new flow with OXIO user creation)
+            if product == 'esim_beta':
                 try:
-                    print(f"Activating OXIO eSIM for user: {oxio_user_id}")
+                    print(f"Processing eSIM Beta activation")
                     
-                    # Direct OXIO activation without Firebase dependency
-                    from oxio_service import OXIOService
-                    oxio = OXIOService()
+                    # Get user details from session metadata
+                    user_email = session['metadata'].get('user_email', '')
+                    user_name = session['metadata'].get('user_name', '')
+                    firebase_uid = session['metadata'].get('firebase_uid', '')
+                    existing_oxio_user_id = session['metadata'].get('oxio_user_id', '')
                     
-                    # Define plan and group for $1 eSIM Beta activation
-                    esim_plan_id = "basic_esim_plan"  # Basic eSIM plan for $1 beta access
-                    esim_group_id = session['metadata'].get('group_id')  # Get from metadata if available
+                    print(f"eSIM activation for: email={user_email}, name={user_name}, firebase_uid={firebase_uid}")
                     
-                    print(f"eSIM activation with Plan ID: {esim_plan_id}, Group ID: {esim_group_id}")
+                    # Use existing OXIO user ID or create new one
+                    oxio_user_id = existing_oxio_user_id
                     
-                    # Activate eSIM line with plan and group parameters
-                    activation_result = oxio.activate_line(oxio_user_id, plan_id=esim_plan_id, group_id=esim_group_id)
-                    
-                    if activation_result.get('success'):
-                        print(f"✅ OXIO eSIM activation successful")
+                    if not oxio_user_id:
+                        print(f"Creating new OXIO user for eSIM activation")
                         
-                        # Extract eSIM profile information from OXIO response
-                        activation_data = activation_result.get('data', {})
-                        phone_number = activation_data.get('phoneNumber')
-                        line_id = activation_data.get('lineId')
-                        iccid = activation_data.get('iccid') or activation_data.get('sim', {}).get('iccid')
+                        # Parse user name
+                        name_parts = (user_name or "Anonymous User").split(' ', 1)
+                        first_name = name_parts[0] if name_parts else "Anonymous"
+                        last_name = name_parts[1] if len(name_parts) > 1 else "User"
                         
-                        print(f"eSIM Profile Details extracted - activation successful")
+                        # Create OXIO group first
+                        group_name = f"eSIM_User_{firebase_uid[:8]}" if firebase_uid else f"eSIM_User_{int(time.time())}"
+                        group_result = oxio_service.create_oxio_group(
+                            group_name=group_name,
+                            description=f"eSIM Beta group for {user_name or 'user'}"
+                        )
                         
-                        # Generate eSIM activation QR code
-                        esim_qr_code = None
-                        try:
-                            from qr_generator import generate_esim_activation_qr
-                            if iccid and phone_number:
-                                esim_qr_code = generate_esim_activation_qr(iccid, phone_number, line_id)
-                                print(f"Generated eSIM activation QR code")
-                        except Exception as qr_error:
-                            print(f"Could not generate eSIM QR code: {qr_error}")
+                        oxio_group_id = None
+                        if group_result.get('success'):
+                            oxio_group_id = group_result.get('oxio_group_id')
+                            print(f"Created OXIO group: {oxio_group_id}")
+                        else:
+                            print(f"Failed to create OXIO group: {group_result.get('message', 'Unknown error')}")
                         
-                        # Record comprehensive activation details
-                        try:
-                            with get_db_connection() as conn:
-                                if conn:
-                                    with conn.cursor() as cur:
-                                        # Create or update oxio_activations table
-                                        cur.execute("""
-                                            CREATE TABLE IF NOT EXISTS oxio_activations (
-                                                id SERIAL PRIMARY KEY,
-                                                user_id INTEGER,
-                                                firebase_uid VARCHAR(100),
-                                                purchase_id VARCHAR(200),
-                                                product_id VARCHAR(100),
-                                                iccid VARCHAR(50),
-                                                line_id VARCHAR(100),
-                                                phone_number VARCHAR(20),
-                                                activation_status VARCHAR(50),
-                                                plan_id VARCHAR(100),
-                                                group_id VARCHAR(100),
-                                                esim_qr_code TEXT,
-                                                oxio_response TEXT,
-                                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                            )
-                                        """)
-                                        
-                                        # Insert activation record
-                                        cur.execute("""
-                                            INSERT INTO oxio_activations 
-                                            (user_id, firebase_uid, purchase_id, product_id, iccid, 
-                                             line_id, phone_number, activation_status, plan_id, group_id,
-                                             esim_qr_code, oxio_response)
-                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                                        """, (0, 'direct_oxio', session['id'], 'esim_beta', iccid, 
-                                              line_id, phone_number, 'activated', esim_plan_id, esim_group_id,
-                                              esim_qr_code, str(activation_result)))
-                                        
-                                        # Record purchase
-                                        cur.execute("""
-                                            INSERT INTO purchases (stripe_session_id, oxio_user_id, product, amount, status, created_at)
-                                            VALUES (%s, %s, %s, %s, %s, %s)
-                                        """, (session['id'], oxio_user_id, 'esim_beta', 100, 'completed', 'NOW()'))
-                                        
-                                        conn.commit()
-                                        print(f"Stored eSIM activation details in database")
-                        except Exception as db_e:
-                            print(f"Error recording activation details: {db_e}")
+                        # Create OXIO user
+                        oxio_user_result = oxio_service.create_oxio_user(
+                            first_name=first_name,
+                            last_name=last_name,
+                            email=user_email,
+                            firebase_uid=firebase_uid,
+                            oxio_group_id=oxio_group_id
+                        )
                         
-                        # Send activation email notification to real buyer
-                        try:
-                            # Get buyer's email from Stripe session
-                            buyer_email = None
-                            try:
-                                if session.get('customer_details', {}).get('email'):
-                                    buyer_email = session['customer_details']['email']
-                                elif session.get('customer'):
-                                    # Fetch customer email from Stripe if we have customer ID
-                                    import stripe
-                                    customer = stripe.Customer.retrieve(session['customer'])
-                                    buyer_email = customer.email
-                            except Exception as email_fetch_error:
-                                print(f"Could not fetch buyer email from Stripe: {email_fetch_error}")
+                        if oxio_user_result.get('success'):
+                            oxio_user_id = oxio_user_result.get('oxio_user_id')
+                            print(f"Created OXIO user: {oxio_user_id}")
                             
-                            print(f"Sending activation email to buyer: {buyer_email}")
-                            send_esim_activation_email(None, phone_number, line_id, iccid, esim_qr_code, esim_plan_id, buyer_email, oxio_user_id)
-                        except Exception as email_error:
-                            print(f"Could not send activation email: {email_error}")
+                            # Update user record with OXIO user ID
+                            if firebase_uid:
+                                try:
+                                    with get_db_connection() as conn:
+                                        if conn:
+                                            with conn.cursor() as cur:
+                                                cur.execute("""
+                                                    UPDATE users SET oxio_user_id = %s, oxio_group_id = %s 
+                                                    WHERE firebase_uid = %s
+                                                """, (oxio_user_id, oxio_group_id, firebase_uid))
+                                                conn.commit()
+                                                print(f"Updated user record with OXIO IDs")
+                                except Exception as db_update_error:
+                                    print(f"Error updating user with OXIO IDs: {db_update_error}")
+                        else:
+                            print(f"Failed to create OXIO user: {oxio_user_result.get('message', 'Unknown error')}")
+                            return jsonify({'status': 'error', 'message': 'Failed to create OXIO user'}), 500
+                    
+                    if oxio_user_id:
+                        print(f"Activating eSIM line for OXIO user: {oxio_user_id}")
+                        
+                        # Define plan for $1 eSIM Beta activation
+                        esim_plan_id = "basic_esim_plan"
+                        
+                        # Activate eSIM line
+                        activation_result = oxio_service.activate_line(oxio_user_id, plan_id=esim_plan_id)
+                        
+                        if activation_result.get('success'):
+                            print(f"✅ OXIO eSIM activation successful")
+                            
+                            # Extract eSIM profile information from OXIO response
+                            activation_data = activation_result.get('data', {})
+                            phone_number = activation_data.get('phoneNumber')
+                            line_id = activation_data.get('lineId')
+                            iccid = activation_data.get('iccid') or activation_data.get('sim', {}).get('iccid')
+                            
+                            print(f"eSIM Profile Details: phone={phone_number}, line={line_id}, iccid={iccid}")
+                            
+                            # Generate eSIM activation QR code
+                            esim_qr_code = None
+                            try:
+                                if iccid and phone_number:
+                                    esim_qr_code = generate_esim_activation_qr(iccid, phone_number, line_id)
+                                    print(f"Generated eSIM activation QR code")
+                            except Exception as qr_error:
+                                print(f"Could not generate eSIM QR code: {qr_error}")
+                            
+                            # Record activation details in database
+                            try:
+                                with get_db_connection() as conn:
+                                    if conn:
+                                        with conn.cursor() as cur:
+                                            # Ensure oxio_activations table exists
+                                            cur.execute("""
+                                                CREATE TABLE IF NOT EXISTS oxio_activations (
+                                                    id SERIAL PRIMARY KEY,
+                                                    user_id INTEGER,
+                                                    firebase_uid VARCHAR(128),
+                                                    purchase_id VARCHAR(200),
+                                                    product_id VARCHAR(100),
+                                                    iccid VARCHAR(50),
+                                                    line_id VARCHAR(100),
+                                                    phone_number VARCHAR(20),
+                                                    activation_status VARCHAR(50),
+                                                    plan_id VARCHAR(100),
+                                                    group_id VARCHAR(100),
+                                                    esim_qr_code TEXT,
+                                                    oxio_response TEXT,
+                                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                                )
+                                            """)
+                                            
+                                            # Get user ID if available
+                                            user_id = 0
+                                            if firebase_uid:
+                                                cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                                                user_result = cur.fetchone()
+                                                if user_result:
+                                                    user_id = user_result[0]
+                                            
+                                            # Insert activation record
+                                            cur.execute("""
+                                                INSERT INTO oxio_activations 
+                                                (user_id, firebase_uid, purchase_id, product_id, iccid, 
+                                                 line_id, phone_number, activation_status, plan_id, group_id,
+                                                 esim_qr_code, oxio_response)
+                                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                            """, (user_id, firebase_uid, session['id'], 'esim_beta', iccid, 
+                                                  line_id, phone_number, 'activated', esim_plan_id, None,
+                                                  esim_qr_code, str(activation_result)))
+                                            
+                                            conn.commit()
+                                            print(f"Stored eSIM activation details in database")
+                            except Exception as db_e:
+                                print(f"Error recording activation details: {db_e}")
+                            
+                            # Send activation email
+                            try:
+                                # Get buyer's email from session or metadata
+                                buyer_email = user_email
+                                if not buyer_email:
+                                    if session.get('customer_details', {}).get('email'):
+                                        buyer_email = session['customer_details']['email']
+                                    elif session.get('customer'):
+                                        customer = stripe.Customer.retrieve(session['customer'])
+                                        buyer_email = customer.email
+                                
+                                if buyer_email:
+                                    print(f"Sending activation email to: {buyer_email}")
+                                    send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_qr_code, esim_plan_id, buyer_email, oxio_user_id)
+                                else:
+                                    print("No email address available for activation notification")
+                            except Exception as email_error:
+                                print(f"Could not send activation email: {email_error}")
+                        else:
+                            print(f"❌ OXIO eSIM activation failed: {activation_result.get('message', 'Unknown error')}")
                     else:
-                        print(f"❌ OXIO eSIM activation failed")
+                        print(f"❌ No OXIO user ID available for activation")
                         
                 except Exception as e:
-                    print(f"Error in direct OXIO eSIM activation: {str(e)}")
+                    print(f"Error in eSIM Beta activation: {str(e)}")
             
             # Handle legacy Firebase-based eSIM activation
             elif product_id == 'esim_beta' and firebase_uid:
@@ -4999,8 +5075,8 @@ if __name__ == '__main__':
     print(f"  - POST /api/oxio/test-sample-activation")
 
     try:
-        socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
     except Exception as e:
         print(f"Error starting server: {str(e)}")
         # Fallback to standard Flask run
-        app.run(host='0.0.0.0', port=port, debug=False)
+        app.run(host='0.0.0.0', port=port, debug=True)
