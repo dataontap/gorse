@@ -355,7 +355,7 @@
                         time: new Date(notification.created_at),
                         read: notification.read,
                         data: notification,
-                        isWelcome: notification.type === 'welcome_audio',
+                        isWelcome: notification.type === 'welcome',
                         audioUrl: notification.audio_url
                     }));
 
@@ -465,7 +465,7 @@
                 filteredNotifications = notifications.filter(n => {
                     if (currentFilter === 'unread') return !n.read;
                     if (currentFilter === 'invitations') return n.type === 'invitation';
-                    if (currentFilter === 'system') return n.type === 'system';
+                    if (currentFilter === 'system') return n.type === 'system' || n.type === 'welcome';
                     return true;
                 });
             }
