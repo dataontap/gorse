@@ -6,8 +6,15 @@ from datetime import datetime
 
 class ElevenLabsService:
     def __init__(self):
-        self.api_key = os.environ.get('ElevenLabs_Key')
+        # Try the correct environment variable name first, with fallback for backward compatibility
+        self.api_key = os.environ.get('ELEVENLABS_API_KEY') or os.environ.get('ElevenLabs_Key')
         self.base_url = "https://api.elevenlabs.io/v1"
+        
+        # Log if API key is missing for easier debugging
+        if not self.api_key:
+            print("WARNING: ElevenLabs API key not found in environment variables (ELEVENLABS_API_KEY or ElevenLabs_Key)")
+        else:
+            print("ElevenLabs API key configured successfully")
         
     def get_voices(self):
         """Get available voices from ElevenLabs"""
