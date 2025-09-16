@@ -117,7 +117,23 @@ class ElevenLabsService:
     def text_to_speech(self, text, voice_id, language="en"):
         """Convert text to speech using ElevenLabs API"""
         try:
+            # First verify the API key is available
+            if not self.api_key:
+                print("ERROR: No ElevenLabs API key available for text-to-speech")
+                return {"success": False, "error": "No API key configured"}
+            
+            # Verify the voice ID exists in available voices
+            available_voices = self.get_voices()
+            voice_ids = [voice.get('voice_id') for voice in available_voices]
+            print(f"DEBUG: Available voice IDs: {voice_ids}")
+            print(f"DEBUG: Requested voice ID: {voice_id}")
+            
+            if voice_id not in voice_ids and available_voices:
+                print(f"WARNING: Voice ID {voice_id} not found in available voices, using default")
+                voice_id = voice_ids[0] if voice_ids else "21m00Tcm4TlvDq8ikWAM"
+            
             url = f"{self.base_url}/text-to-speech/{voice_id}"
+            print(f"DEBUG: Making TTS request to: {url}")
             
             # Voice settings for different tones
             voice_settings = {
@@ -139,7 +155,16 @@ class ElevenLabsService:
                 "voice_settings": voice_settings
             }
             
+            print(f"DEBUG: Request headers (API key masked): {dict(headers, **{'xi-api-key': '***MASKED***'})}")
+            print(f"DEBUG: Request data: {dict(data, text='[TEXT TRUNCATED]')}")
+            
             response = requests.post(url, json=data, headers=headers)
+            print(f"DEBUG: Response status: {response.status_code}")
+            
+            if response.status_code != 200:
+                print(f"DEBUG: Response headers: {dict(response.headers)}")
+                print(f"DEBUG: Response body: {response.text}")
+            
             response.raise_for_status()
             
             return {
