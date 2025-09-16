@@ -5087,6 +5087,109 @@ def upload_documentation_to_github():
             'error': str(e)
         }), 500
 
+@app.route('/api/welcome-message/voices', methods=['GET'])
+def get_welcome_message_voices():
+    """Get available voices for welcome message generation"""
+    try:
+        voices = elevenlabs_service.get_voices()
+        
+        # Filter and format voices for frontend
+        formatted_voices = []
+        for voice in voices:
+            formatted_voices.append({
+                'voice_id': voice.get('voice_id'),
+                'name': voice.get('name'),
+                'description': voice.get('description', ''),
+                'gender': voice.get('labels', {}).get('gender', 'unknown'),
+                'accent': voice.get('labels', {}).get('accent', 'unknown')
+            })
+        
+        return jsonify({
+            'success': True,
+            'voices': formatted_voices
+        })
+        
+    except Exception as e:
+        print(f"Error getting voices: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get voices'
+        }), 500
+
+@app.route('/api/welcome-message/generate', methods=['POST'])
+def generate_welcome_message_audio():
+    """Generate personalized welcome message audio"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebase_uid')
+        language = data.get('language', 'en')
+        voice_id = data.get('voice_id')
+        
+        if not firebase_uid:
+            return jsonify({
+                'success': False,
+                'error': 'Firebase UID is required'
+            }), 400
+        
+        # Get user's name from database
+        user_name = None
+        try:
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT display_name FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                        result = cur.fetchone()
+                        if result:
+                            user_name = result[0]
+        except Exception as db_error:
+            print(f"Error getting user name: {str(db_error)}")
+        
+        # Generate the audio message using ElevenLabs service
+        audio_result = elevenlabs_service.generate_welcome_message(
+            user_name=user_name,
+            language=language,
+            voice_id=voice_id
+        )
+        
+        if audio_result['success']:
+            # Save audio file and return download URL
+            import uuid
+            import os
+            
+            # Create audio directory if it doesn't exist
+            audio_dir = os.path.join('static', 'audio')
+            os.makedirs(audio_dir, exist_ok=True)
+            
+            # Generate unique filename
+            filename = f"welcome_{firebase_uid[:8]}_{uuid.uuid4().hex[:8]}.mp3"
+            file_path = os.path.join(audio_dir, filename)
+            
+            # Save audio data to file
+            with open(file_path, 'wb') as f:
+                f.write(audio_result['audio_data'])
+            
+            # Return download URL
+            download_url = f"/download/audio/{filename}"
+            
+            return jsonify({
+                'success': True,
+                'audio_url': download_url,
+                'content_type': audio_result.get('content_type', 'audio/mpeg'),
+                'message': 'Welcome message generated successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': audio_result.get('error', 'Failed to generate audio')
+            }), 500
+            
+    except Exception as e:
+        print(f"Error generating welcome message: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/admin/generate-welcome-notification', methods=['POST'])
 @require_admin_auth
 def generate_welcome_notification():
