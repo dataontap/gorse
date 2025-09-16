@@ -34,32 +34,32 @@ window.handleLogout = handleLogout;
 // Global variables
 let currentUser = null;
 
-// Initialize user data
-function initializeUser() {
-    const user = getCurrentUser(); // From firebase-auth.js
-    if (user) {
-        currentUser = user;
-        console.log('App initialized with user:', currentUser);
-    } else {
-        console.log('App initialized without user (guest mode)');
-    }
-}
-
-// Helper function to get Firebase UID safely
+// Reliable Firebase UID retrieval function (consistent across app)
 function getFirebaseUID() {
-    // Try to get current user data from the auth system
     const currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
     if (currentUserData && currentUserData.uid) {
         return currentUserData.uid;
     }
     
-    // Fallback: try to get from Firebase directly
     if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
         return firebase.auth().currentUser.uid;
     }
     
     return null;
 }
+
+// Initialize user data
+function initializeUser() {
+    const firebaseUid = getFirebaseUID();
+    if (firebaseUid) {
+        // Create user object with Firebase UID
+        currentUser = { uid: firebaseUid, firebaseUid: firebaseUid };
+        console.log('App initialized with user:', currentUser);
+    } else {
+        console.log('App initialized without user (guest mode)');
+    }
+}
+
 
 // Call initialization when the page loads
 document.addEventListener('DOMContentLoaded', initializeUser);
