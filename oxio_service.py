@@ -187,7 +187,11 @@ class OXIOService:
                     payload = clean_payload
                     print(f"Using cleaned v3 payload with structured endUser")
                 else:
-                    print(f"Using complex payload for line activation (no endUserId found)")
+                    # Check if this is the new corrected payload format
+                    if payload.get('endUserId'):
+                        print(f"Using corrected payload format with endUserId: {payload.get('endUserId')}")
+                    else:
+                        print(f"Using complex payload for line activation (no endUserId found)")
             else:
                 return {
                     'success': False,

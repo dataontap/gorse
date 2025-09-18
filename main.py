@@ -2007,303 +2007,65 @@ def handle_stripe_webhook():
             
             print(f"Payment successful - Product: {product or product_id}, Firebase UID: {firebase_uid}, OXIO User: {oxio_user_id}")
             
-            # Handle eSIM Beta activation (new flow with OXIO user creation)
+            # Handle eSIM Beta activation using dedicated service
             if product == 'esim_beta':
                 try:
-                    print(f"💰 Processing $1 eSIM Beta activation with ERC-20 token rewards")
+                    print(f"💰 Processing $1 eSIM Beta activation with dedicated service")
+                    
+                    # Import the new eSIM activation service
+                    from esim_activation_service import esim_activation_service
                     
                     # Get user details from session metadata
+                    firebase_uid = session['metadata'].get('firebase_uid', '')
                     user_email = session['metadata'].get('user_email', '')
                     user_name = session['metadata'].get('user_name', '')
-                    
-                    # Set OXIO plan ID for eSIM activation
-                    esim_plan_id = os.environ.get('OXIO_BASIC_MEMBERSHIP_BASEPLANID', 'OXIO_BASIC_MEMBERSHIP_BASEPLANID')
-                    
-                    # Extract purchase amount for token rewards
                     total_amount = session.get('amount_total', 100)  # Default $1.00 in cents
-                    print(f"💰 eSIM purchase amount: ${total_amount/100:.2f}")
                     
-                    # Get user's Firebase UID for database lookup
-                    firebase_uid = session['metadata'].get('firebase_uid')
-                    user_eth_address = None
+                    print(f"🎯 eSIM activation parameters: Firebase UID={firebase_uid}, Email={user_email}, Amount=${total_amount/100:.2f}")
                     
-                    if firebase_uid:
+                    if not firebase_uid or not user_email:
+                        print(f"❌ Missing required parameters for eSIM activation")
+                        return jsonify({'status': 'error', 'message': 'Missing Firebase UID or email'}), 400
+                    
+                    # Call the dedicated eSIM activation service
+                    activation_result = esim_activation_service.activate_esim_after_payment(
+                        firebase_uid=firebase_uid,
+                        user_email=user_email,
+                        user_name=user_name,
+                        stripe_session_id=session['id'],
+                        purchase_amount=total_amount
+                    )
+                    
+                    if activation_result.get('success'):
+                        print(f"✅ eSIM activation service completed successfully")
+                        
+                        # Update Stripe receipt with eSIM details
                         try:
-                            # Get user's ETH address from database for token reward
-                            with get_db_connection() as conn:
-                                if conn:
-                                    with conn.cursor() as cur:
-                                        cur.execute("""
-                                            SELECT eth_address FROM users 
-                                            WHERE firebase_uid = %s AND eth_address IS NOT NULL
-                                        """, (firebase_uid,))
-                                        result = cur.fetchone()
-                                        if result:
-                                            user_eth_address = result[0]
-                                            print(f"🔗 Found user ETH address: {user_eth_address}")
-                        except Exception as eth_lookup_error:
-                            print(f"⚠️ Error looking up ETH address: {eth_lookup_error}")
-                    
-                    # Process AUTOMATIC ERC-20 token reward for real revenue
-                    if user_eth_address and total_amount > 0:
-                        try:
-                            print(f"🪙 Awarding DOTM tokens for $1 eSIM purchase (10.33% reward)")
-                            from ethereum_helper import reward_data_purchase
+                            esim_data = activation_result.get('esim_data', {})
+                            enhanced_metadata = {
+                                **session.get('metadata', {}),
+                                'esim_phone_number': esim_data.get('phone_number', 'Pending assignment'),
+                                'esim_iccid': esim_data.get('iccid', 'Processing'),
+                                'esim_line_id': esim_data.get('line_id', 'Assigned by system'),
+                                'esim_activation_status': 'completed',
+                                'esim_activation_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                'esim_qr_available': 'yes' if esim_data.get('qr_code') else 'no',
+                                'oxio_user_id': activation_result.get('oxio_user_id', ''),
+                                'oxio_group_id': activation_result.get('oxio_group_id', ''),
+                                'receipt_enhanced': 'true'
+                            }
                             
-                            # Award 10.33% of purchase amount in DOTM tokens
-                            tx_hash = reward_data_purchase(user_eth_address, total_amount)
+                            stripe.checkout.Session.modify(session['id'], metadata=enhanced_metadata)
+                            print(f"✅ Enhanced Stripe receipt with eSIM details")
                             
-                            if tx_hash:
-                                print(f"✅ Token reward transaction successful: {tx_hash}")
-                                
-                                # Record token reward in database
-                                with get_db_connection() as conn:
-                                    if conn:
-                                        with conn.cursor() as cur:
-                                            reward_amount = (total_amount / 100) * 0.1033  # 10.33% in USD
-                                            cur.execute("""
-                                                INSERT INTO token_transactions 
-                                                (user_id, purchase_amount_cents, reward_amount_usd, 
-                                                 tx_hash, transaction_type, stripe_session_id, created_at)
-                                                VALUES ((SELECT id FROM users WHERE firebase_uid = %s), 
-                                                       %s, %s, %s, 'esim_purchase_reward', %s, CURRENT_TIMESTAMP)
-                                            """, (firebase_uid, total_amount, reward_amount, tx_hash, session['id']))
-                                            conn.commit()
-                                            print(f"💾 Token transaction recorded: ${reward_amount:.4f} DOTM")
-                                            
-                                            # Enhance Stripe payment intent with ERC-20 transaction details
-                                            try:
-                                                import stripe
-                                                stripe.PaymentIntent.modify(
-                                                    session.get('payment_intent'),
-                                                    metadata={
-                                                        'dotm_token_reward': f"{reward_amount:.4f} DOTM",
-                                                        'token_transaction_hash': tx_hash,
-                                                        'blockchain_network': 'ethereum',
-                                                        'reward_percentage': '10.33%'
-                                                    }
-                                                )
-                                                print(f"📧 Enhanced Stripe receipt with token transaction: {tx_hash}")
-                                            except Exception as stripe_update_error:
-                                                print(f"⚠️ Could not update Stripe metadata: {stripe_update_error}")
-                            else:
-                                print(f"❌ Token reward transaction failed")
-                                
-                        except Exception as token_error:
-                            print(f"❌ Error processing token reward: {token_error}")
-                            # Continue with eSIM activation even if token reward fails
+                        except Exception as stripe_update_error:
+                            print(f"⚠️ Could not update Stripe receipt: {stripe_update_error}")
                     else:
-                        if not user_eth_address:
-                            print(f"⚠️ User has no ETH address - skipping token reward")
-                        if total_amount <= 0:
-                            print(f"⚠️ Invalid purchase amount - skipping token reward")
-                    
-                    # Continue with eSIM activation
-                    firebase_uid = session['metadata'].get('firebase_uid', '')
-                    existing_oxio_user_id = session['metadata'].get('oxio_user_id', '')
-                    
-                    print(f"eSIM activation for: email={user_email}, name={user_name}, firebase_uid={firebase_uid}")
-                    
-                    # Check database for existing OXIO user ID if not in metadata
-                    oxio_user_id = existing_oxio_user_id
-                    if not oxio_user_id and firebase_uid:
-                        try:
-                            with get_db_connection() as conn:
-                                if conn:
-                                    with conn.cursor() as cur:
-                                        cur.execute("SELECT oxio_user_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                                        result = cur.fetchone()
-                                        if result and result[0]:
-                                            oxio_user_id = result[0]
-                                            print(f"Found existing OXIO user ID in database: {oxio_user_id}")
-                        except Exception as db_error:
-                            print(f"Error checking database for OXIO user ID: {db_error}")
-                    
-                    if not oxio_user_id:
-                        print(f"Creating new OXIO user for eSIM activation")
-                        
-                        # Parse user name
-                        name_parts = (user_name or "Anonymous User").split(' ', 1)
-                        first_name = name_parts[0] if name_parts else "Anonymous"
-                        last_name = name_parts[1] if len(name_parts) > 1 else "User"
-                        
-                        # Create OXIO group first
-                        group_name = f"eSIM_User_{firebase_uid[:8]}" if firebase_uid else f"eSIM_User_{int(time.time())}"
-                        group_result = oxio_service.create_oxio_group(
-                            group_name=group_name,
-                            description=f"eSIM Beta group for {user_name or 'user'}"
-                        )
-                        
-                        oxio_group_id = None
-                        if group_result.get('success'):
-                            oxio_group_id = group_result.get('oxio_group_id')
-                            print(f"Created OXIO group: {oxio_group_id}")
-                        else:
-                            print(f"Failed to create OXIO group: {group_result.get('message', 'Unknown error')}")
-                        
-                        # Create OXIO user
-                        oxio_user_result = oxio_service.create_oxio_user(
-                            first_name=first_name,
-                            last_name=last_name,
-                            email=user_email,
-                            firebase_uid=firebase_uid,
-                            oxio_group_id=oxio_group_id
-                        )
-                        
-                        if oxio_user_result.get('success'):
-                            oxio_user_id = oxio_user_result.get('oxio_user_id')
-                            print(f"Created OXIO user: {oxio_user_id}")
-                            
-                            # Update user record with OXIO user ID
-                            if firebase_uid:
-                                try:
-                                    with get_db_connection() as conn:
-                                        if conn:
-                                            with conn.cursor() as cur:
-                                                cur.execute("""
-                                                    UPDATE users SET oxio_user_id = %s, oxio_group_id = %s 
-                                                    WHERE firebase_uid = %s
-                                                """, (oxio_user_id, oxio_group_id, firebase_uid))
-                                                conn.commit()
-                                                print(f"Updated user record with OXIO IDs")
-                                except Exception as db_update_error:
-                                    print(f"Error updating user with OXIO IDs: {db_update_error}")
-                        else:
-                            print(f"Failed to create OXIO user: {oxio_user_result.get('message', 'Unknown error')}")
-                            return jsonify({'status': 'error', 'message': 'Failed to create OXIO user'}), 500
-                    
-                    if oxio_user_id:
-                        print(f"Activating eSIM line for OXIO user: {oxio_user_id}")
-                        
-                        # Activate eSIM line (without plan ID for now - OXIO will use default)
-                        activation_result = oxio_service.activate_line(oxio_user_id)
-                        
-                        if activation_result.get('success'):
-                            print(f"✅ OXIO eSIM activation successful")
-                            
-                            # Extract eSIM profile information from OXIO response
-                            activation_data = activation_result.get('data', {})
-                            phone_number = activation_data.get('phoneNumber')
-                            line_id = activation_data.get('lineId')
-                            iccid = activation_data.get('iccid') or activation_data.get('sim', {}).get('iccid')
-                            
-                            print(f"eSIM Profile Details: phone={phone_number}, line={line_id}, iccid={iccid}")
-                            
-                            # Generate eSIM activation QR code
-                            esim_qr_code = None
-                            try:
-                                if iccid and phone_number:
-                                    esim_qr_code = generate_esim_activation_qr(iccid, phone_number, line_id)
-                                    print(f"Generated eSIM activation QR code")
-                            except Exception as qr_error:
-                                print(f"Could not generate eSIM QR code: {qr_error}")
-                            
-                            # Record activation details in database
-                            try:
-                                with get_db_connection() as conn:
-                                    if conn:
-                                        with conn.cursor() as cur:
-                                            # Ensure oxio_activations table exists
-                                            cur.execute("""
-                                                CREATE TABLE IF NOT EXISTS oxio_activations (
-                                                    id SERIAL PRIMARY KEY,
-                                                    user_id INTEGER,
-                                                    firebase_uid VARCHAR(128),
-                                                    purchase_id VARCHAR(200),
-                                                    product_id VARCHAR(100),
-                                                    iccid VARCHAR(50),
-                                                    line_id VARCHAR(100),
-                                                    phone_number VARCHAR(20),
-                                                    activation_status VARCHAR(50),
-                                                    plan_id VARCHAR(100),
-                                                    group_id VARCHAR(100),
-                                                    esim_qr_code TEXT,
-                                                    oxio_response TEXT,
-                                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                                )
-                                            """)
-                                            
-                                            # Get user ID if available
-                                            user_id = 0
-                                            if firebase_uid:
-                                                cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                                                user_result = cur.fetchone()
-                                                if user_result:
-                                                    user_id = user_result[0]
-                                            
-                                            # Insert activation record
-                                            cur.execute("""
-                                                INSERT INTO oxio_activations 
-                                                (user_id, firebase_uid, purchase_id, product_id, iccid, 
-                                                 line_id, phone_number, activation_status, plan_id, group_id,
-                                                 esim_qr_code, oxio_response)
-                                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                                            """, (user_id, firebase_uid, session['id'], 'esim_beta', iccid, 
-                                                  line_id, phone_number, 'activated', esim_plan_id, None,
-                                                  esim_qr_code, str(activation_result)))
-                                            
-                                            conn.commit()
-                                            print(f"Stored eSIM activation details in database")
-                            except Exception as db_e:
-                                print(f"Error recording activation details: {db_e}")
-                            
-                            # 🎯 UPDATE STRIPE RECEIPT WITH eSIM DETAILS
-                            try:
-                                print(f"📧 Updating Stripe receipt with eSIM details...")
-                                
-                                # Prepare enhanced metadata for Stripe receipt
-                                enhanced_metadata = {
-                                    **session.get('metadata', {}),  # Preserve existing metadata
-                                    'esim_phone_number': phone_number or 'Pending assignment',
-                                    'esim_iccid': iccid or 'Processing',
-                                    'esim_line_id': line_id or 'Assigned by system',
-                                    'esim_activation_status': 'completed',
-                                    'esim_activation_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                    'esim_qr_available': 'yes' if esim_qr_code else 'no',
-                                    'esim_plan': 'Default eSIM Plan',
-                                    'receipt_enhanced': 'true'
-                                }
-                                
-                                # Update Stripe checkout session metadata
-                                stripe.checkout.Session.modify(
-                                    session['id'],
-                                    metadata=enhanced_metadata
-                                )
-                                
-                                print(f"✅ Stripe receipt enhanced with eSIM details:")
-                                print(f"   📱 Phone: {phone_number}")
-                                print(f"   🏷️  ICCID: {iccid}")
-                                print(f"   📷 QR Code: {'Available' if esim_qr_code else 'Not generated'}")
-                                
-                            except Exception as stripe_update_error:
-                                print(f"⚠️ Could not update Stripe receipt: {stripe_update_error}")
-                                # Continue processing - this is not critical
-                            
-                            # Send activation email
-                            try:
-                                # Get buyer's email from session or metadata
-                                buyer_email = user_email
-                                if not buyer_email:
-                                    if session.get('customer_details', {}).get('email'):
-                                        buyer_email = session['customer_details']['email']
-                                    elif session.get('customer'):
-                                        customer = stripe.Customer.retrieve(session['customer'])
-                                        buyer_email = customer.email
-                                
-                                if buyer_email:
-                                    print(f"Sending activation email to: {buyer_email}")
-                                    send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_qr_code, esim_plan_id, buyer_email, oxio_user_id)
-                                else:
-                                    print("No email address available for activation notification")
-                            except Exception as email_error:
-                                print(f"Could not send activation email: {email_error}")
-                        else:
-                            print(f"❌ OXIO eSIM activation failed: {activation_result.get('message', 'Unknown error')}")
-                    else:
-                        print(f"❌ No OXIO user ID available for activation")
+                        print(f"❌ eSIM activation service failed: {activation_result.get('error', 'Unknown error')}")
+                        print(f"   Failed at step: {activation_result.get('step', 'unknown')}")
                         
                 except Exception as e:
-                    print(f"Error in eSIM Beta activation: {str(e)}")
+                    print(f"❌ Error in eSIM Beta activation: {str(e)}")
             
             # Handle legacy Firebase-based eSIM activation
             elif product_id == 'esim_beta' and firebase_uid:
@@ -4126,6 +3888,42 @@ def fix_user_oxio_data():
     except Exception as e:
         print(f"Error in fix user OXIO data endpoint: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/test-esim-activation', methods=['POST'])
+def test_esim_activation_service():
+    """Test the new eSIM activation service"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid', 'test_uid_123')
+        user_email = data.get('email', 'test@example.com')
+        user_name = data.get('name', 'Test User')
+        
+        # Import and test the service
+        from esim_activation_service import esim_activation_service
+        
+        result = esim_activation_service.activate_esim_after_payment(
+            firebase_uid=firebase_uid,
+            user_email=user_email,
+            user_name=user_name,
+            stripe_session_id='test_session_123',
+            purchase_amount=100
+        )
+        
+        return jsonify({
+            'status': 'test_completed',
+            'service_result': result,
+            'test_parameters': {
+                'firebase_uid': firebase_uid,
+                'email': user_email,
+                'name': user_name
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'test_failed',
+            'error': str(e)
+        }), 500
 
 @app.route('/api/create-oxio-user', methods=['POST'])
 def create_oxio_user_endpoint():
