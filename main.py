@@ -279,28 +279,22 @@ def oxio_test_sample_activation():
     """Test line activation with the provided sample payload"""
     try:
         print("=== OXIO TEST SAMPLE ACTIVATION CALLED ===")
-        sample_payload = {
-            "lineType": "LINE_TYPE_MOBILITY",
-            "sim": {
-                "simType": "EMBEDDED",
-                "iccid": os.environ.get('EUICCID1', '8910650420001501340F')
-            },
-            "endUser": {
-                "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67"
-            },
-            "phoneNumberRequirements": {
-                "preferredAreaCode": "212"
-            },
-            "countryCode": "US",
-            "activateOnAttach": False
-        }
+        # Use simple OXIO user ID string format for v2 API instead of complex payload
+        sample_user_id = "test-oxio-user-123"
+        sample_plan_id = None  # Let OXIO use default plan
 
         data = request.get_json()
         if data:
-            sample_payload.update(data)
+            # Check if user wants to test with specific plan ID
+            if 'planId' in data:
+                sample_plan_id = data['planId']
+            if 'testUserId' in data:
+                sample_user_id = data['testUserId']
 
-        result = oxio_service.activate_line(sample_payload)
-        result['payload_used'] = sample_payload
+        # Use simple string format to trigger v2 API payload structure
+        result = oxio_service.activate_line(sample_user_id, plan_id=sample_plan_id)
+        result['test_user_id'] = sample_user_id
+        result['test_plan_id'] = sample_plan_id
 
         return jsonify(result)
 
