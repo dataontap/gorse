@@ -2512,7 +2512,7 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
         print(f"Activating OXIO line for eSIM Beta user {user_id}")
         
         # Use enhanced activation with plan ID and group ID for eSIM Beta
-        esim_plan_id = "0468edb8-ea36-4f17-ba62-10fbca186ac3"  # OXIO plan UUID for $1 beta access
+        esim_plan_id = "OXIO_BASIC_MEMBERSHIP_BASEPLANID"  # OXIO base plan ID for $1 beta access
         
         # Try to get group ID from user data or beta service
         esim_group_id = None
