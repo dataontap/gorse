@@ -2104,8 +2104,20 @@ def handle_stripe_webhook():
                     
                     print(f"eSIM activation for: email={user_email}, name={user_name}, firebase_uid={firebase_uid}")
                     
-                    # Use existing OXIO user ID or create new one
+                    # Check database for existing OXIO user ID if not in metadata
                     oxio_user_id = existing_oxio_user_id
+                    if not oxio_user_id and firebase_uid:
+                        try:
+                            with get_db_connection() as conn:
+                                if conn:
+                                    with conn.cursor() as cur:
+                                        cur.execute("SELECT oxio_user_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                                        result = cur.fetchone()
+                                        if result and result[0]:
+                                            oxio_user_id = result[0]
+                                            print(f"Found existing OXIO user ID in database: {oxio_user_id}")
+                        except Exception as db_error:
+                            print(f"Error checking database for OXIO user ID: {db_error}")
                     
                     if not oxio_user_id:
                         print(f"Creating new OXIO user for eSIM activation")
