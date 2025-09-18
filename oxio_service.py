@@ -104,7 +104,7 @@ class OXIOService:
 
     def activate_line(self, oxio_user_id_or_payload, plan_id=None, group_id=None) -> Dict[str, Any]:
         """
-        Activate a line using OXIO API with plan and group support
+        Activate a line using OXIO v3 API with plan and group support
 
         Args:
             oxio_user_id_or_payload: Either a simple OXIO user ID string, or a complex payload dict
@@ -115,7 +115,7 @@ class OXIOService:
             API response as dictionary with activation details
         """
         try:
-            url = f"{self.base_url}/v2/lines"
+            url = f"{self.base_url}/v3/lines/line"
             headers = self.get_headers()
 
             # Handle both simple OXIO user ID and complex payload
@@ -129,16 +129,17 @@ class OXIOService:
                         'message': 'OXIO user ID is required for line activation'
                     }
 
-                # Get a WARM eSIM ICCID from inventory for activation
-                iccid = self._get_available_esim_iccid()
-                
-                # Create v2 payload with iccids parameter (plural)
+                # Create v3 payload with new structure
                 payload = {
                     "lineType": "LINE_TYPE_MOBILITY",
                     "countryCode": "US",
-                    "iccids": [iccid if iccid else "8910650420001501340F"],  # v2 expects array
-                    "endUserId": oxio_user_id,  # v2 uses direct endUserId, not nested
-                    "activateOnAttach": False
+                    "sim": {
+                        "simType": "EMBEDDED"
+                    },
+                    "endUser": {
+                        "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
+                        "endUserId": oxio_user_id
+                    }
                 }
                 
                 # Add plan ID if provided
@@ -159,23 +160,20 @@ class OXIOService:
                 if payload.get('endUser', {}).get('endUserId'):
                     oxio_user_id = payload['endUser']['endUserId']
                     print(f"OXIO user ID found in complex payload: {oxio_user_id}")
-                    print("Removing email and user details since endUserId is provided")
+                    print("Creating clean v3 payload with endUserId")
                     
-                    # Get a WARM eSIM ICCID for v2 API
-                    iccid = self._get_available_esim_iccid()
-                    
-                    # Create v2 clean payload with iccids array
+                    # Create v3 clean payload with new structure
                     clean_payload = {
                         "lineType": payload.get("lineType", "LINE_TYPE_MOBILITY"),
                         "countryCode": payload.get("countryCode", "US"),
-                        "iccids": [iccid if iccid else "8910650420001501340F"],  # v2 expects array
-                        "endUserId": oxio_user_id,  # v2 uses direct endUserId
-                        "activateOnAttach": False
+                        "sim": {
+                            "simType": "EMBEDDED"
+                        },
+                        "endUser": {
+                            "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
+                            "endUserId": oxio_user_id
+                        }
                     }
-                    
-                    # Add optional fields if they exist (but exclude phoneNumberRequirements)
-                    if "activateOnAttach" in payload:
-                        clean_payload["activateOnAttach"] = payload["activateOnAttach"]
                     
                     # Add plan ID and group ID from parameters or payload
                     if plan_id or payload.get("planId"):
@@ -185,11 +183,9 @@ class OXIOService:
                     if group_id or payload.get("groupId"):
                         clean_payload["groupId"] = group_id or payload.get("groupId")
                         print(f"Including group ID in complex activation: {clean_payload['groupId']}")
-                    
-                    print(f"Excluded ICCID and preferredAreaCode from payload")
                         
                     payload = clean_payload
-                    print(f"Using cleaned payload with only endUserId")
+                    print(f"Using cleaned v3 payload with structured endUser")
                 else:
                     print(f"Using complex payload for line activation (no endUserId found)")
             else:
