@@ -1942,6 +1942,7 @@ def create_checkout_session():
 @app.route('/stripe/webhook', methods=['POST'])
 def handle_stripe_webhook():
     """Handle Stripe webhook events, especially payment success"""
+    global stripe  # Use the global stripe module
     payload = request.data
     sig_header = request.headers.get('stripe-signature')
     
