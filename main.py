@@ -1781,7 +1781,7 @@ def buy_esim():
         session = stripe.checkout.Session.create(
             mode='payment',
             line_items=[{
-                'price': 'price_1RM9syJnTfh0bNQQ3yCNhHcq',  # $1 eSIM Beta (one-time payment)
+                'price': 'price_1S7Yc6JnTfh0bNQQVeLeprXe',  # $1 eSIM Beta (one-time payment)
                 'quantity': 1,
             }],
             success_url=request.url_root + 'esim/success?session_id={CHECKOUT_SESSION_ID}',
@@ -2529,7 +2529,7 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
             purchase_id = record_purchase(
                 stripe_id=checkout_session.get('id'),
                 product_id='esim_beta',
-                price_id=checkout_session.get('price_id', 'price_1RM9syJnTfh0bNQQ3yCNhHcq'),
+                price_id=checkout_session.get('price_id', 'price_1S7Yc6JnTfh0bNQQVeLeprXe'),
                 amount=1.00,
                 user_id=user_id,
                 transaction_id=checkout_session.get('payment_intent'),
