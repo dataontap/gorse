@@ -53,16 +53,16 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 33195
-externalPort = 4200
-
-[[ports]]
 localPort = 33909
 externalPort = 5173
 
 [[ports]]
 localPort = 35117
 externalPort = 3002
+
+[[ports]]
+localPort = 37715
+externalPort = 4200
 
 [[ports]]
 localPort = 41679
@@ -83,4 +83,4 @@ externalPort = 5000
 
 [agent]
 expertMode = true
-integrations = ["github:1.0.0"]
+integrations = ["flask_stripe:1.0.0"]

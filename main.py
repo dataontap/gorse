@@ -1787,7 +1787,7 @@ def buy_esim():
         session = stripe.checkout.Session.create(
             mode='payment',
             line_items=[{
-                'price': 'price_1S7Yc6JnTfh0bNQQVeLeprXe',  # $1 eSIM Beta (one-time payment)
+                'price': 'price_1RM9syJnTfh0bNQQ3yCNhHcq',  # $1 eSIM Beta (one-time payment)
                 'quantity': 1,
             }],
             success_url=request.url_root + 'esim/success?session_id={CHECKOUT_SESSION_ID}',
@@ -2512,7 +2512,7 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
         print(f"Activating OXIO line for eSIM Beta user {user_id}")
         
         # Use enhanced activation with plan ID and group ID for eSIM Beta
-        esim_plan_id = "basic_esim_plan"  # Basic eSIM plan for $1 beta access
+        esim_plan_id = "0468edb8-ea36-4f17-ba62-10fbca186ac3"  # OXIO plan UUID for $1 beta access
         
         # Try to get group ID from user data or beta service
         esim_group_id = None
@@ -2535,7 +2535,7 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
             purchase_id = record_purchase(
                 stripe_id=checkout_session.get('id'),
                 product_id='esim_beta',
-                price_id=checkout_session.get('price_id', 'price_1S7Yc6JnTfh0bNQQVeLeprXe'),
+                price_id=checkout_session.get('price_id', 'price_1RM9syJnTfh0bNQQ3yCNhHcq'),
                 amount=1.00,
                 user_id=user_id,
                 transaction_id=checkout_session.get('payment_intent'),
