@@ -2015,6 +2015,9 @@ def handle_stripe_webhook():
                     user_email = session['metadata'].get('user_email', '')
                     user_name = session['metadata'].get('user_name', '')
                     
+                    # Set OXIO plan ID for eSIM activation
+                    esim_plan_id = os.environ.get('OXIO_BASIC_MEMBERSHIP_BASEPLANID', 'OXIO_BASIC_MEMBERSHIP_BASEPLANID')
+                    
                     # Extract purchase amount for token rewards
                     total_amount = session.get('amount_total', 100)  # Default $1.00 in cents
                     print(f"💰 eSIM purchase amount: ${total_amount/100:.2f}")
