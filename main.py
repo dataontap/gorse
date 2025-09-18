@@ -2039,6 +2039,19 @@ def handle_stripe_webhook():
                     if activation_result.get('success'):
                         print(f"✅ eSIM activation service completed successfully")
                         
+                        # Record the purchase in database
+                        purchase_id = record_purchase(
+                            stripe_id=session.get('id'),
+                            product_id='esim_beta',
+                            price_id='price_1S7Yc6JnTfh0bNQQVeLeprXe',
+                            amount=total_amount,
+                            user_id=None,  # Will be looked up from Firebase UID
+                            transaction_id=session.get('payment_intent'),
+                            firebase_uid=firebase_uid,
+                            stripe_transaction_id=session.get('payment_intent')
+                        )
+                        print(f"💾 Purchase recorded with ID: {purchase_id}")
+                        
                         # Update Stripe receipt with eSIM details
                         try:
                             esim_data = activation_result.get('esim_data', {})
@@ -2052,6 +2065,7 @@ def handle_stripe_webhook():
                                 'esim_qr_available': 'yes' if esim_data.get('qr_code') else 'no',
                                 'oxio_user_id': activation_result.get('oxio_user_id', ''),
                                 'oxio_group_id': activation_result.get('oxio_group_id', ''),
+                                'purchase_id': str(purchase_id) if purchase_id else '',
                                 'receipt_enhanced': 'true'
                             }
                             
@@ -2783,6 +2797,130 @@ def get_subscription_status():
                             ORDER BY end_date DESC 
                             LIMIT 1
                         """, (user_id,))
+
+
+@app.route('/api/manual-esim-activation', methods=['POST'])
+def manual_esim_activation():
+    """Manually trigger eSIM activation for a completed payment"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        firebase_uid = data.get('firebaseUid')
+        stripe_session_id = data.get('stripeSessionId')
+        
+        if not firebase_uid:
+            return jsonify({'error': 'Firebase UID is required'}), 400
+        
+        print(f"🔧 Manual eSIM activation triggered for Firebase UID: {firebase_uid}")
+        
+        # Get user data
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            return jsonify({'error': 'User not found'}), 404
+        
+        user_email = user_data[1]
+        user_name = user_data[2] if len(user_data) > 2 else 'Anonymous'
+        
+        # Import and use the eSIM activation service
+        from esim_activation_service import esim_activation_service
+        
+        activation_result = esim_activation_service.activate_esim_after_payment(
+            firebase_uid=firebase_uid,
+            user_email=user_email,
+            user_name=user_name,
+            stripe_session_id=stripe_session_id or f"manual_{int(time.time())}",
+            purchase_amount=100  # $1.00 for eSIM Beta
+        )
+        
+        if activation_result.get('success'):
+            return jsonify({
+                'status': 'success',
+                'message': 'eSIM activation completed successfully',
+                'activation_data': activation_result
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f"eSIM activation failed: {activation_result.get('error', 'Unknown error')}",
+                'details': activation_result
+            }), 500
+            
+
+
+@app.route('/api/test-webhook-processing', methods=['POST'])
+def test_webhook_processing():
+    """Test webhook processing for a specific Stripe session"""
+    try:
+        data = request.get_json()
+        stripe_session_id = data.get('stripeSessionId')
+        
+        if not stripe_session_id:
+            return jsonify({'error': 'Stripe session ID is required'}), 400
+        
+        print(f"🧪 Testing webhook processing for session: {stripe_session_id}")
+        
+        # Get the Stripe session
+        session = stripe.checkout.Session.retrieve(stripe_session_id)
+        
+        # Simulate the webhook event
+        mock_event = {
+            'type': 'checkout.session.completed',
+            'data': {
+                'object': session
+            },
+            'id': f'evt_test_{int(time.time())}'
+        }
+        
+        # Process the mock webhook
+        from esim_activation_service import esim_activation_service
+        
+        firebase_uid = session['metadata'].get('firebase_uid', '')
+        user_email = session['metadata'].get('user_email', '')
+        user_name = session['metadata'].get('user_name', '')
+        total_amount = session.get('amount_total', 100)
+        
+        if firebase_uid and user_email:
+            activation_result = esim_activation_service.activate_esim_after_payment(
+                firebase_uid=firebase_uid,
+                user_email=user_email,
+                user_name=user_name,
+                stripe_session_id=stripe_session_id,
+                purchase_amount=total_amount
+            )
+            
+            return jsonify({
+                'status': 'success',
+                'message': 'Webhook processing test completed',
+                'session_data': {
+                    'firebase_uid': firebase_uid,
+                    'user_email': user_email,
+                    'amount': total_amount
+                },
+                'activation_result': activation_result
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Missing Firebase UID or email in session metadata',
+                'session_metadata': session.get('metadata', {})
+            }), 400
+            
+    except Exception as e:
+        print(f"❌ Error testing webhook processing: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+    except Exception as e:
+        print(f"❌ Error in manual eSIM activation: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 
                         expired_sub = cur.fetchone()
                         if expired_sub:

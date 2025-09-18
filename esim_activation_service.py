@@ -48,7 +48,7 @@ class eSIMActivationService:
             print(f"📊 User data: ID={user_id}, OXIO User={existing_oxio_user_id}, OXIO Group={existing_oxio_group_id}")
             
             # Step 2: Ensure OXIO group exists
-            oxio_group_id = await self._ensure_oxio_group(user_id, firebase_uid, existing_oxio_group_id)
+            oxio_group_id = self._ensure_oxio_group(user_id, firebase_uid, existing_oxio_group_id)
             if not oxio_group_id:
                 return {
                     'success': False,
@@ -57,7 +57,7 @@ class eSIMActivationService:
                 }
             
             # Step 3: Ensure OXIO user exists
-            oxio_user_id = await self._ensure_oxio_user(
+            oxio_user_id = self._ensure_oxio_user(
                 user_id, firebase_uid, user_email, user_name, 
                 existing_oxio_user_id, oxio_group_id
             )
@@ -69,7 +69,7 @@ class eSIMActivationService:
                 }
             
             # Step 4: Activate eSIM line with proper payload structure
-            activation_result = await self._activate_esim_line(oxio_user_id)
+            activation_result = self._activate_esim_line(oxio_user_id)
             if not activation_result.get('success'):
                 return {
                     'success': False,
@@ -166,7 +166,7 @@ class eSIMActivationService:
             print(f"❌ Error getting/creating user data: {str(e)}")
             return None
     
-    async def _ensure_oxio_group(self, user_id: int, firebase_uid: str, existing_group_id: str = None) -> Optional[str]:
+    def _ensure_oxio_group(self, user_id: int, firebase_uid: str, existing_group_id: str = None) -> Optional[str]:
         """Ensure OXIO group exists for user"""
         try:
             if existing_group_id:
@@ -199,7 +199,7 @@ class eSIMActivationService:
             print(f"❌ Error ensuring OXIO group: {str(e)}")
             return None
     
-    async def _ensure_oxio_user(self, user_id: int, firebase_uid: str, user_email: str, 
+    def _ensure_oxio_user(self, user_id: int, firebase_uid: str, user_email: str, 
                                user_name: str = None, existing_user_id: str = None, 
                                oxio_group_id: str = None) -> Optional[str]:
         """Ensure OXIO user exists"""
@@ -251,7 +251,7 @@ class eSIMActivationService:
             print(f"❌ Error ensuring OXIO user: {str(e)}")
             return None
     
-    async def _activate_esim_line(self, oxio_user_id: str) -> Dict[str, Any]:
+    def _activate_esim_line(self, oxio_user_id: str) -> Dict[str, Any]:
         """Activate eSIM line using the corrected payload structure"""
         try:
             # Create the exact payload structure from the curl command
