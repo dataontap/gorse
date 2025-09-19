@@ -325,7 +325,7 @@ class OXIOService:
             payload = {
                 "name": group_name,
                 "description": description or f"Group for {group_name}",
-                "groupType": "GROUP_TYPE_SHARED",
+                "groupType": "GROUP_TYPE_INDIVIDUAL",
                 "groupNumber": 1,
                 "userRole": "GROUP_ROLE_OWNER"
             }
