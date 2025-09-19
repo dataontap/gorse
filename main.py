@@ -133,13 +133,13 @@ try:
                     print("beta_testers table already exists")
                     # Check if status column exists and add it if missing
                     cur.execute("""
-                        SELECT column_name FROM information_schema.columns 
+                        SELECT column_name FROM information_schema.columns
                         WHERE table_name = 'beta_testers' AND column_name = 'status'
                     """)
                     status_column_exists = cur.fetchone()
 
                     if not status_column_exists:
-                        print("Adding missing status column to beta_testers table...")
+                        print("Adding status column to beta_testers table...")
                         cur.execute("ALTER TABLE beta_testers ADD COLUMN status VARCHAR(50) DEFAULT 'not_enrolled'")
                         conn.commit()
                         print("Status column added successfully")
@@ -2611,8 +2611,8 @@ def get_user_data_balance():
                     subscription_data = 0
                     if subscription:
                         subscription_type = subscription[0]
-                        if subscription_type == 'basic_membership':
-                            subscription_data = 5.0  # 5GB for basic
+                        if subscription_type == ''basic_membership':
+                            5.0  # 5GB for basic
                         elif subscription_type == 'full_membership':
                             subscription_data = 50.0  # 50GB for full
 
@@ -2986,6 +2986,9 @@ def record_global_purchase():
                                             line_id VARCHAR(100),
                                             phone_number VARCHAR(20),
                                             activation_status VARCHAR(50),
+                                            plan_id VARCHAR(100),
+                                            group_id VARCHAR(100),
+                                            esim_qr_code TEXT,
                                             oxio_response TEXT,
                                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                                         )
@@ -3000,18 +3003,19 @@ def record_global_purchase():
                                     cur.execute("""
                                         INSERT INTO oxio_activations
                                         (user_id, firebase_uid, purchase_id, product_id, iccid,
-                                         line_id, phone_number, activation_status, oxio_response)
-                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                                    """, (user_id, firebase_uid, purchase_id, product_id, iccid,
-                                          line_id, phone_number, 'activated', json.dumps(oxio_result)))
+                                         line_id, phone_number, activation_status, plan_id, group_id,
+                                         esim_qr_code, oxio_response)
+                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                    """, (
+                                        user_id, firebase_uid, purchase_id, product_id, iccid,
+                                        line_id, phone_number, 'activated', esim_plan_id, esim_group_id,
+                                        esim_qr_code, str(oxio_result)
+                                    ))
 
                                     conn.commit()
                                     print(f"Stored OXIO activation record for user {user_id}")
                     except Exception as db_err:
                         print(f"Error storing OXIO activation record: {str(db_err)}")
-                else:
-                    print(f"Failed to activate OXIO line: {oxio_result.get('message', 'Unknown error')}")
-
             except Exception as oxio_err:
                 print(f"Error during OXIO line activation: {str(oxio_err)}")
 
@@ -3041,7 +3045,7 @@ def record_global_purchase():
     else:
         print(f"Failed to record purchase for product: {product_id}")
         # For demo purposes, we'll still create a simulated purchase ID
-        # This ensures the UI updates even if the database issues
+        # This ensures the UI updates even if the database recording failed
         simulated_purchase_id = f"SIM_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
         print(f"Created simulated purchase ID: {simulated_purchase_id}")
 
@@ -4544,7 +4548,7 @@ def get_user_esim_details():
                             'iccid': activation[2],
                             'line_id': activation[3],
                             'phone_number': activation[4],
-                            'status': activation[5],
+                            'activation_status': activation[5],
                             'qr_code': activation[6],
                             'activated_date': activation[7].isoformat() if activation[7] else None,
                             'country': activation[8]
@@ -5568,7 +5572,7 @@ def replace_iccid_inventory():
                                 'archived_entries': archived_count,
                                 'deleted_entries': deleted_count,
                                 'new_entries_inserted': inserted_count,
-                                'invalid_rows_skipped': len(invalid_rows),
+                                'invalid_rows': len(invalid_rows),
                                 'filename': csv_file.filename
                             },
                             'validation_errors': invalid_rows[:5] if invalid_rows else []
@@ -5615,6 +5619,7 @@ def get_user_assigned_iccid():
                         FROM iccid_inventory
                         WHERE allocated_to_firebase_uid = %s
                           AND status IN ('assigned', 'activated')
+                        ORDER BY assigned_at DESC
                         LIMIT 1
                     """, (firebase_uid,))
 
@@ -5926,10 +5931,11 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                 .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
                 .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; }}
                 .content {{ padding: 30px 20px; }}
-                .esim-card {{ background: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #28a745; }}
+                .profile-card {{ background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #28a745; }}
                 .qr-section {{ background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }}
                 .next-steps {{ background: #fff3cd; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #ffc107; }}
                 .footer {{ background: #343a40; color: white; padding: 20px; text-align: center; font-size: 12px; }}
+                .btn {{ display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 5px; }}
                 .highlight {{ color: #28a745; font-weight: bold; }}
                 .lpa-code {{ font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 4px; word-break: break-all; margin: 10px 0; }}
             </style>
@@ -5942,13 +5948,15 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                 </div>
 
                 <div class="content">
-                    <div class="esim-card">
-                        <h3>📱 Your eSIM Details</h3>
+                    <div class="profile-card">
+                        <h3>📱 Your eSIM Profile Details</h3>
                         <ul>
-                            <li><strong>ICCID:</strong> <span class="highlight">{assigned_iccid['iccid']}</span></li>
-                            <li><strong>Country:</strong> {assigned_iccid['country']}</li>
-                            <li><strong>Status:</strong> ✅ <span class="highlight">Ready for Activation</span></li>
-                            <li><strong>Purchase Date:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</li>
+                            <li><strong>Phone Number:</strong> <span class="highlight">{phone_number or 'Assigned by carrier'}</span></li>
+                            <li><strong>Line ID:</strong> {line_id or 'System assigned'}</li>
+                            <li><strong>ICCID:</strong> {iccid or 'Available in dashboard'}</li>
+                            <li><strong>Plan:</strong> {plan_id.replace('_', ' ').title() if plan_id else 'Basic eSIM Plan'}</li>
+                            <li><strong>Status:</strong> ✅ <span class="highlight">Active</span></li>
+                            <li><strong>Activation Date:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</li>
                         </ul>
                     </div>
 
@@ -5962,11 +5970,10 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                     <div class="next-steps">
                         <h3>🚀 Next Steps</h3>
                         <ol>
-                            <li>Open your device's Settings app</li>
-                            <li>Go to Cellular/Mobile Data settings</li>
-                            <li>Tap "Add Cellular Plan" or "Add eSIM"</li>
-                            <li>Scan the QR code above or enter the LPA code manually</li>
-                            <li>Follow your device's setup instructions</li>
+                            <li>Log into your DOTM Dashboard to view complete details</li>
+                            <li>View your phone number and QR codes in your profile</li>
+                            <li>Download the eSIM activation QR code for device setup</li>
+                            <li>Follow your device's eSIM installation instructions</li>
                             <li>Start using your global connectivity!</li>
                         </ol>
                         <p><strong>Need help?</strong> Visit your <a href="https://dotmobile.app/profile">DOTM Dashboard</a> for complete setup instructions.</p>
@@ -5975,13 +5982,13 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                     <div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">
                         <h4>📞 Support</h4>
                         <p>Questions? Contact us at <a href="mailto:support@dotmobile.app">support@dotmobile.app</a></p>
-                        <p>Account ID: {firebase_uid}</p>
+                        <p>Account ID: {firebase_uid or 'N/A'}</p>
                     </div>
                 </div>
 
                 <div class="footer">
                     <p>DOTM Platform - Global Mobile Connectivity</p>
-                    <p>Thank you for your purchase!</p>
+                    <p>Data On Tap Inc. | Licensed Full MVNO | Network 302 100</p>
                 </div>
             </div>
         </body>
@@ -6020,7 +6027,7 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
             html_body=html_body
         )
 
-        print(f"✅ Sent eSIM receipt email to {user_email} with QR code attachment")
+        print(f"Sent eSIM receipt email to {user_email} with QR code attachment")
         return result
 
     except Exception as e:
