@@ -2611,7 +2611,7 @@ def get_user_data_balance():
                     subscription_data = 0
                     if subscription:
                         subscription_type = subscription[0]
-                        if subscription_type == ''basic_membership':
+                        if subscription_type == 'basic_membership':
                             5.0  # 5GB for basic
                         elif subscription_type == 'full_membership':
                             subscription_data = 50.0  # 50GB for full
