@@ -4650,24 +4650,6 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
         return False
 
 
-            """
-        else:
-            return f"""
-            <html>
-            <body style="font-family: Arial, sans-serif; padding: 20px; background: #fff5f5;">
-                <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    <h1 style="color: #f44336; text-align: center;">❌ Rejection Failed</h1>
-                    <p><strong>Request ID:</strong> {request_id}</p>
-                    <p><strong>Error:</strong> {result.get('error', 'Unknown error')}</p>
-                </div>
-            </body>
-            </html>
-            """, 400
-
-    except Exception as e:
-        print(f"Error in reject_beta_request: {str(e)}")
-        return f"<h1>Error: {str(e)}</h1>", 500
-
 @app.route('/api/beta-status')
 def get_beta_status():
     """Get beta status for current user"""
