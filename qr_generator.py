@@ -139,3 +139,56 @@ def generate_activation_qr(activation_data: Dict[str, Any]) -> str:
     except Exception as e:
         print(f"Error generating activation QR code: {str(e)}")
         return None
+
+def generate_qr_code_for_lpa(lpa_code: str) -> Dict[str, Any]:
+    """
+    Generate QR code for LPA (Local Profile Assistant) code used in eSIM activation
+    
+    Args:
+        lpa_code: LPA code string (e.g., LPA:1$consumer.e-sim.global$OX202409053801001503346)
+        
+    Returns:
+        Dictionary with success status, filename, file_size_bytes, and lpa_code
+    """
+    try:
+        import os
+        import tempfile
+        
+        # Generate QR code for LPA code
+        qr = qrcode.QRCode(
+            version=2,  # Handles longer LPA codes
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(lpa_code)
+        qr.make(fit=True)
+        
+        # Create QR code image
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Save to temporary file for email attachments
+        temp_dir = tempfile.gettempdir()
+        filename = os.path.join(temp_dir, f"esim_qr_{int(__import__('time').time())}.png")
+        img.save(filename, format="PNG")
+        
+        # Get file size
+        file_size = os.path.getsize(filename)
+        
+        return {
+            'success': True,
+            'filename': filename,
+            'file_size_bytes': file_size,
+            'lpa_code': lpa_code,
+            'message': 'QR code generated successfully'
+        }
+        
+    except Exception as e:
+        print(f"Error generating LPA QR code: {str(e)}")
+        return {
+            'success': False,
+            'filename': None,
+            'file_size_bytes': 0,
+            'lpa_code': lpa_code,
+            'message': f'Error: {str(e)}'
+        }

@@ -2171,8 +2171,9 @@ def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_
 
         # Send email
         result = send_email(
-            to=user_email,
+            to_email=user_email,
             subject=subject,
+            body="Your eSIM is ready! Check the HTML version for full details.",
             html_body=html_body
         )
 
@@ -2397,7 +2398,7 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                 </html>
                 """
 
-                send_email(user_email, subject, "eSIM activated successfully!", html_body)
+                send_email(to_email=user_email, subject=subject, body="eSIM activated successfully!", html_body=html_body)
                 print(f"Sent eSIM activation confirmation to {user_email}")
 
             except Exception as email_error:
@@ -5980,12 +5981,25 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                 'content_type': 'image/png'
             })
         
-        # Send email
+        # Generate QR code for email attachment
+        if assigned_iccid and assigned_iccid.get('lpa_code'):
+            qr_result = generate_qr_code_for_lpa(assigned_iccid['lpa_code'])
+            if qr_result and qr_result.get('success'):
+                # Embed QR code as data URL in HTML
+                qr_img_tag = f'<img src="data:image/png;base64,{open(qr_result["filename"], "rb").read() | __import__("base64").b64encode | bytes.decode}" alt="eSIM QR Code" style="max-width: 300px; margin: 20px 0;"/>'
+                
+                # Insert QR code into HTML body
+                html_body = html_body.replace(
+                    '<div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">',
+                    f'<div style="text-align: center; margin: 20px 0;">{qr_img_tag}</div><div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">'
+                )
+        
+        # Send email with embedded QR code
         result = send_email(
-            to=user_email,
+            to_email=user_email,
             subject=subject,
-            html_body=html_body,
-            attachments=attachments
+            body="eSIM receipt - please check HTML version for QR code and full details",
+            html_body=html_body
         )
         
         print(f"✅ Sent eSIM receipt email to {user_email} with QR code attachment")

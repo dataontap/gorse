@@ -525,8 +525,9 @@ class eSIMActivationService:
             """
             
             result = send_email(
-                to=user_email,
+                to_email=user_email,
                 subject=subject,
+                body="eSIM activation complete - check HTML version for details",
                 html_body=html_body
             )
             
