@@ -749,38 +749,39 @@ def register_firebase_user():
                         oxio_user_id = None
                         oxio_group_id = None
                         try:
-                            print(f"Creating OXIO group and user for Firebase UID: {firebase_uid}")
-
-                            # Create OXIO group first
-                            group_name = f"DOT_User_{firebase_uid[:8]}"
-                            group_result = oxio_service.create_oxio_group(
-                                group_name=group_name,
-                                description=f"Group for DOT user {display_name or 'Anonymous'}"
-                            )
-
-                            if group_result.get('success'):
-                                oxio_group_id = group_result.get('oxio_group_id')
-                                print(f"Successfully created OXIO group: {oxio_group_id}")
-                            else:
-                                print(f"Failed to create OXIO group: {group_result.get('message', 'Unknown error')}")
+                            print(f"Creating OXIO user and group for Firebase UID: {firebase_uid}")
 
                             # Parse display_name to get first and last name
                             name_parts = (display_name or "Anonymous Anonymous").split(' ', 1)
                             first_name = name_parts[0] if name_parts else "Anonymous"
                             last_name = name_parts[1] if len(name_parts) > 1 else "Anonymous"
 
-                            # Create OXIO user with group ID
+                            # Create OXIO user first (without group for now)
                             oxio_result = oxio_service.create_oxio_user(
                                 first_name=first_name,
                                 last_name=last_name,
                                 email=email,
                                 firebase_uid=firebase_uid,
-                                oxio_group_id=oxio_group_id
+                                oxio_group_id=None  # Will create group after user exists
                             )
 
                             if oxio_result.get('success'):
                                 oxio_user_id = oxio_result.get('oxio_user_id')
                                 print(f"Successfully created OXIO user: {oxio_user_id}")
+                                
+                                # Now create OXIO group using the user ID
+                                group_name = f"DOT_User_{firebase_uid[:8]}"
+                                group_result = oxio_service.create_oxio_group(
+                                    group_name=group_name,
+                                    oxio_user_id=oxio_user_id,
+                                    description=f"Group for DOT user {display_name or 'Anonymous'}"
+                                )
+
+                                if group_result.get('success'):
+                                    oxio_group_id = group_result.get('oxio_group_id')
+                                    print(f"Successfully created OXIO group: {oxio_group_id}")
+                                else:
+                                    print(f"Failed to create OXIO group: {group_result.get('message', 'Unknown error')}")
                             else:
                                 # Check if user already exists (error code 6805)
                                 if (oxio_result.get('status_code') == 400 and 

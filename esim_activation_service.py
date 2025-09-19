@@ -47,16 +47,10 @@ class eSIMActivationService:
             
             print(f"📊 User data: ID={user_id}, OXIO User={existing_oxio_user_id}, OXIO Group={existing_oxio_group_id}")
             
-            # Step 2: Try to ensure OXIO group exists (optional - don't fail if it doesn't work)
-            oxio_group_id = self._ensure_oxio_group(user_id, firebase_uid, existing_oxio_group_id)
-            if not oxio_group_id:
-                print(f"⚠️ OXIO group creation failed, continuing without group ID")
-                oxio_group_id = None  # Continue without group
-            
-            # Step 3: Ensure OXIO user exists (group ID is optional)
+            # Step 2: Ensure OXIO user exists first (needed for group creation)
             oxio_user_id = self._ensure_oxio_user(
                 user_id, firebase_uid, user_email, user_name, 
-                existing_oxio_user_id, oxio_group_id
+                existing_oxio_user_id, None  # No group ID yet
             )
             if not oxio_user_id:
                 return {
@@ -64,6 +58,12 @@ class eSIMActivationService:
                     'error': 'Failed to create/get OXIO user',
                     'step': 'oxio_user_creation'
                 }
+            
+            # Step 3: Try to ensure OXIO group exists (optional - don't fail if it doesn't work)
+            oxio_group_id = self._ensure_oxio_group(user_id, firebase_uid, existing_oxio_group_id, oxio_user_id)
+            if not oxio_group_id:
+                print(f"⚠️ OXIO group creation failed, continuing without group ID")
+                oxio_group_id = None  # Continue without group
             
             # Step 4: Activate eSIM line with proper payload structure
             activation_result = self._activate_esim_line(oxio_user_id)
@@ -163,7 +163,7 @@ class eSIMActivationService:
             print(f"❌ Error getting/creating user data: {str(e)}")
             return None
     
-    def _ensure_oxio_group(self, user_id: int, firebase_uid: str, existing_group_id: str = None) -> Optional[str]:
+    def _ensure_oxio_group(self, user_id: int, firebase_uid: str, existing_group_id: str = None, oxio_user_id: str = None) -> Optional[str]:
         """Ensure OXIO group exists for user"""
         try:
             if existing_group_id:
@@ -174,9 +174,14 @@ class eSIMActivationService:
             group_name = f"eSIM_User_{firebase_uid[:8]}"
             group_description = f"eSIM group for user {user_id}"
             
+            if not oxio_user_id:
+                print(f"❌ Cannot create OXIO group without OXIO user ID")
+                return None
+            
             print(f"🏗️ Creating OXIO group: {group_name}")
             group_result = self.oxio_service.create_oxio_group(
                 group_name=group_name,
+                oxio_user_id=oxio_user_id,
                 description=group_description
             )
             

@@ -307,12 +307,13 @@ class OXIOService:
                 'request_payload': payload
             }
 
-    def create_oxio_group(self, group_name, description=None) -> Dict[str, Any]:
+    def create_oxio_group(self, group_name, oxio_user_id, description=None) -> Dict[str, Any]:
         """
         Create an OXIO group for organizing users
 
         Args:
             group_name: Name of the group
+            oxio_user_id: OXIO user ID that will own this group
             description: Optional description of the group
 
         Returns:
@@ -327,7 +328,8 @@ class OXIOService:
                 "description": description or f"Group for {group_name}",
                 "groupType": "GROUP_TYPE_INDIVIDUAL",
                 "groupNumber": 1,
-                "userRole": "GROUP_ROLE_OWNER"
+                "userRole": "GROUP_ROLE_OWNER",
+                "endUserId": oxio_user_id
             }
 
             print(f"OXIO Create Group Request URL: {url}")
