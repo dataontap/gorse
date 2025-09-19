@@ -5056,6 +5056,198 @@ def generate_welcome_notification():
             'error': str(e)
         }), 500
 
+@app.route('/api/admin/upload-iccid-csv', methods=['POST'])
+@require_admin_auth
+def upload_iccid_csv():
+    """Upload CSV file with ICCIDs for bulk import (Admin only)"""
+    try:
+        # Check file size before processing (2MB limit)
+        if request.content_length and request.content_length > 2 * 1024 * 1024:
+            return jsonify({
+                'success': False,
+                'error': 'File too large',
+                'message': 'CSV file must be smaller than 2MB'
+            }), 413
+
+        if 'csv_file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No CSV file provided',
+                'message': 'Please upload a CSV file with ICCID column'
+            }), 400
+
+        csv_file = request.files['csv_file']
+        if csv_file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No file selected',
+                'message': 'Please select a CSV file to upload'
+            }), 400
+
+        if not csv_file.filename.lower().endswith('.csv'):
+            return jsonify({
+                'success': False,
+                'error': 'Invalid file format',
+                'message': 'Only CSV files are allowed'
+            }), 400
+
+        # Read and decode CSV content with error handling
+        import csv
+        import io
+        
+        try:
+            # Use utf-8-sig to handle Excel BOM (Byte Order Mark) correctly
+            csv_content = csv_file.read().decode('utf-8-sig')
+        except UnicodeDecodeError:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid file encoding',
+                'message': 'CSV file must be UTF-8 encoded'
+            }), 400
+        
+        csv_reader = csv.DictReader(io.StringIO(csv_content))
+        
+        # Extract and validate ICCIDs from CSV
+        raw_iccids = []
+        invalid_rows = []
+        
+        # Check for case-insensitive ICCID header
+        headers = [h.strip().upper() for h in csv_reader.fieldnames or []]
+        if 'ICCID' not in headers:
+            return jsonify({
+                'success': False,
+                'error': 'Missing ICCID column',
+                'message': 'CSV must have an "ICCID" column header'
+            }), 400
+        
+        for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 because line 1 is header
+            # Case-insensitive header lookup
+            iccid = None
+            for key, value in row.items():
+                if key.strip().upper() == 'ICCID':
+                    iccid = value.strip()
+                    break
+            
+            if iccid and iccid != 'ICCID':  # Skip header and empty rows
+                # Validate ICCID format (19-20 hex digits, optional F)
+                if re.match(r'^[0-9A-F]{19,20}F?$', iccid.upper()):
+                    raw_iccids.append(iccid.upper())
+                else:
+                    invalid_rows.append({'row': row_num, 'iccid': iccid, 'error': 'Invalid format'})
+
+        if not raw_iccids:
+            return jsonify({
+                'success': False,
+                'error': 'No valid ICCIDs found',
+                'message': 'CSV file contains no valid ICCID entries',
+                'details': {
+                    'invalid_rows': len(invalid_rows),
+                    'invalid_examples': invalid_rows[:5]  # Show first 5 examples
+                }
+            }), 400
+
+        # Deduplicate ICCIDs within the CSV first
+        unique_csv_iccids = sorted(set(raw_iccids))
+        duplicates_in_csv = len(raw_iccids) - len(unique_csv_iccids)
+
+        # Database operations with idempotent inserts
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Use idempotent INSERT with ON CONFLICT DO NOTHING
+                    insert_query = """
+                        INSERT INTO iccid_inventory (iccid, status) 
+                        VALUES (%s, %s) 
+                        ON CONFLICT (iccid) DO NOTHING
+                    """
+                    
+                    # Batch insert with conflict handling
+                    insert_values = [(iccid, 'available') for iccid in unique_csv_iccids]
+                    cur.executemany(insert_query, insert_values)
+                    
+                    # Get count of actually inserted rows
+                    rows_inserted = cur.rowcount
+                    conn.commit()
+                    
+                    # Calculate statistics
+                    total_in_csv = len(raw_iccids)
+                    duplicates_in_db = len(unique_csv_iccids) - rows_inserted
+
+                    return jsonify({
+                        'success': True,
+                        'message': 'CSV upload completed successfully',
+                        'stats': {
+                            'total_rows_processed': total_in_csv,
+                            'unique_iccids_in_csv': len(unique_csv_iccids),
+                            'duplicates_within_csv': duplicates_in_csv,
+                            'duplicates_already_in_db': duplicates_in_db,
+                            'new_iccids_inserted': rows_inserted,
+                            'invalid_rows': len(invalid_rows),
+                            'filename': csv_file.filename
+                        },
+                        'validation_errors': invalid_rows[:10] if invalid_rows else []  # Show first 10
+                    })
+
+        return jsonify({'success': False, 'error': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error uploading ICCID CSV: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Upload failed',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/admin/iccid-inventory-stats', methods=['GET'])
+@require_admin_auth
+def get_iccid_inventory_stats():
+    """Get ICCID inventory statistics (Admin only)"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get inventory stats by status
+                    cur.execute("""
+                        SELECT status, COUNT(*) as count
+                        FROM iccid_inventory 
+                        GROUP BY status
+                        ORDER BY status
+                    """)
+                    status_stats = cur.fetchall()
+                    
+                    # Get total count
+                    cur.execute('SELECT COUNT(*) FROM iccid_inventory')
+                    total_count = cur.fetchone()[0]
+                    
+                    # Get recent uploads
+                    cur.execute("""
+                        SELECT DATE(batch_upload_date) as upload_date, COUNT(*) as count
+                        FROM iccid_inventory 
+                        WHERE batch_upload_date >= NOW() - INTERVAL '30 days'
+                        GROUP BY DATE(batch_upload_date)
+                        ORDER BY upload_date DESC
+                        LIMIT 10
+                    """)
+                    recent_uploads = cur.fetchall()
+
+                    return jsonify({
+                        'success': True,
+                        'stats': {
+                            'total_iccids': total_count,
+                            'by_status': [{'status': row[0], 'count': row[1]} for row in status_stats],
+                            'recent_uploads': [{'date': row[0].isoformat(), 'count': row[1]} for row in recent_uploads]
+                        }
+                    })
+
+        return jsonify({'success': False, 'error': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error getting ICCID inventory stats: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
     print("\n=== Registered Flask Routes ===")
