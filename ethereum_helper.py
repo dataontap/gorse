@@ -122,21 +122,12 @@ def award_data_purchase_tokens(user_id, purchase_amount):
 
         # Sign and send transaction
         signed_tx = web3.eth.account.sign_transaction(tx, admin_key)
-        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
         return True, web3.to_hex(tx_hash)
     except Exception as e:
         print(f"Error awarding tokens: {str(e)}")
         return False, str(e)
-def reward_data_purchase(user_address, purchase_amount_cents):
-    web3 = get_web3_connection()
-    token_contract = get_token_contract()
-
-    # Get DOTM Token contract address from environment variables
-    TOKEN_CONTRACT_ADDRESS = os.environ.get('TOKEN_ADDRESS', '0x8250951Ff1AE04adB9dCa9233274710dDCb1850a')
-
-
-
 # Fetch current DOTM token price from Etherscan/Sepolia
 def get_token_price_from_etherscan():
     import requests
@@ -404,12 +395,12 @@ def reward_data_purchase(user_address, purchase_amount_cents):
 
         # Sign and send transaction
         signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
-        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
-        return web3.to_hex(tx_hash)
+        return True, web3.to_hex(tx_hash)
     except Exception as e:
         print(f"Error in reward_data_purchase: {str(e)}")
-        return None
+        return False, str(e)
 
 # Award $10.33 USD worth of DOTM tokens to new member
 def award_new_member_token(member_address):
@@ -488,7 +479,7 @@ def award_new_member_token(member_address):
 
         # Sign and send transaction
         signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
-        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
         # Record the transaction in database
         try:
@@ -578,7 +569,7 @@ def assign_founding_token(member_address):
 
         # Sign and send transaction
         signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
-        tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
         # Record the transaction in database
         try:
