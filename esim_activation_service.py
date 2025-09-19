@@ -50,7 +50,7 @@ class eSIMActivationService:
             # Step 2: Ensure OXIO user exists first (needed for group creation)
             oxio_user_id = self._ensure_oxio_user(
                 user_id, firebase_uid, user_email, user_name, 
-                existing_oxio_user_id, None  # No group ID yet
+                existing_oxio_user_id  # Groups excluded entirely
             )
             if not oxio_user_id:
                 return {
@@ -199,8 +199,7 @@ class eSIMActivationService:
             return None
     
     def _ensure_oxio_user(self, user_id: int, firebase_uid: str, user_email: str, 
-                               user_name: str = None, existing_user_id: str = None, 
-                               oxio_group_id: str = None) -> Optional[str]:
+                               user_name: str = None, existing_user_id: str = None) -> Optional[str]:
         """Ensure OXIO user exists"""
         try:
             if existing_user_id:
@@ -230,8 +229,8 @@ class eSIMActivationService:
                 first_name=first_name,
                 last_name=last_name,
                 email=user_email,
-                firebase_uid=firebase_uid,
-                oxio_group_id=oxio_group_id
+                firebase_uid=firebase_uid
+                # oxio_group_id removed - groups excluded from activation flow
             )
             
             if user_result.get('success'):
