@@ -1868,11 +1868,8 @@ def handle_stripe_webhook():
     endpoint_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
 
     try:
-        # Verify webhook signature - MANDATORY for security (allow test bypass)
-        if sig_header and sig_header == "whsec_test":
-            print("TESTING: Using test webhook bypass")
-            event = stripe.Event.construct_from(request.json, stripe.api_key)
-        elif not endpoint_secret:
+        # Verify webhook signature - MANDATORY for security (NO BYPASSES IN PRODUCTION)
+        if not endpoint_secret:
             print("ERROR: STRIPE_WEBHOOK_SECRET not configured - webhook verification required")
             return jsonify({'error': 'Webhook verification not configured'}), 500
         elif not sig_header:
@@ -1899,18 +1896,24 @@ def handle_stripe_webhook():
                     print(f"⚠️ Event {event_id} already processed - returning previous result")
                     return jsonify({'status': 'already_processed', 'event_id': event_id}), 200
 
-                # Mark event as being processed (prevents race conditions)
-                cursor.execute(
-                    "INSERT INTO processed_stripe_events (event_id, event_type) VALUES (%s, %s)",
-                    (event_id, event_type)
-                )
+                # Mark event as being processed (prevents race conditions) with UNIQUE constraint
+                cursor.execute("""
+                    INSERT INTO processed_stripe_events (event_id, event_type) 
+                    VALUES (%s, %s) 
+                    ON CONFLICT (event_id) DO NOTHING
+                """, (event_id, event_type))
+                
+                # Check if we actually inserted (vs conflict)
+                if cursor.rowcount == 0:
+                    print(f"🔄 Event {event_id} was already being processed by another request")
+                    return jsonify({'status': 'already_processed', 'event_id': event_id}), 200
                 conn.commit()
                 print(f"🔄 Processing new event: {event_id} (type: {event_type})")
 
         except Exception as db_error:
-            print(f"Database error checking event idempotency: {db_error}")
-            # Continue processing but log the issue
-            pass
+            print(f"❌ CRITICAL: Database error in idempotency check: {db_error}")
+            # FAIL CLOSED - Do not process if idempotency cannot be guaranteed
+            return jsonify({'error': 'Idempotency check failed', 'retry': True}), 500
 
         # Handle successful payment events
         if event['type'] == 'checkout.session.completed':
@@ -1928,7 +1931,7 @@ def handle_stripe_webhook():
             # Handle eSIM Beta activation using dedicated service
             if product == 'esim_beta':
                 try:
-                    print(f"💰 Processing $1 eSIM Beta activation with dedicated service")
+                    print(f"💰 Processing $1 eSIM Beta activation with ICCID assignment")
 
                     # Import the new eSIM activation service
                     from esim_activation_service import esim_activation_service
@@ -1937,6 +1940,22 @@ def handle_stripe_webhook():
                     firebase_uid = session['metadata'].get('firebase_uid', '')
                     user_email = session['metadata'].get('user_email', '')
                     user_name = session['metadata'].get('user_name', '')
+                    
+                    # Step 1: Check if user already has an assigned ICCID (idempotency)
+                    existing_iccid = get_user_assigned_iccid_data(firebase_uid)
+                    
+                    if existing_iccid:
+                        print(f"✅ User {firebase_uid} already has assigned ICCID: {existing_iccid['iccid']}")
+                        assigned_iccid = existing_iccid
+                    else:
+                        # Assign new ICCID to user with atomic locking to prevent race conditions
+                        assigned_iccid = assign_iccid_to_user_atomic(firebase_uid, user_email)
+                        
+                        if not assigned_iccid:
+                            print(f"❌ No available ICCIDs for user {firebase_uid}")
+                            return jsonify({'error': 'No available eSIMs'}), 500
+                        
+                        print(f"✅ Assigned new ICCID {assigned_iccid['iccid']} to user {firebase_uid}")
                     total_amount = session.get('amount_total', 100)  # Default $1.00 in cents
 
                     print(f"🎯 eSIM activation parameters: Firebase UID={firebase_uid}, Email={user_email}, Amount=${total_amount/100:.2f}")
@@ -1957,6 +1976,20 @@ def handle_stripe_webhook():
                     if activation_result.get('success'):
                         print(f"✅ eSIM activation service completed successfully")
 
+                        # Step 2: Send enhanced receipt email with ICCID and QR codes
+                        print(f"📧 Sending receipt email with assigned ICCID: {assigned_iccid['iccid']}")
+                        email_result = send_esim_receipt_email(
+                            firebase_uid=firebase_uid,
+                            user_email=user_email,
+                            user_name=user_name,
+                            assigned_iccid=assigned_iccid
+                        )
+                        
+                        if email_result:
+                            print(f"✅ Receipt email sent with QR codes")
+                        else:
+                            print(f"⚠️ Receipt email sending failed")
+
                         # Record the purchase in database
                         purchase_id = record_purchase(
                             stripe_id=session.get('id'),
@@ -1972,15 +2005,18 @@ def handle_stripe_webhook():
 
                         # Update Stripe receipt with eSIM details
                         try:
-                            esim_data = activation_result.get('esim_data', {})
+                            esim_data = activation_result.get('esim_data', {}) or {}  # Ensure it's always a dict
                             enhanced_metadata = {
                                 **session.get('metadata', {}),
                                 'esim_phone_number': esim_data.get('phone_number', 'Pending assignment'),
-                                'esim_iccid': esim_data.get('iccid', 'Processing'),
-                                'esim_line_id': esim_data.get('line_id', 'Assigned by system'),
+                                'esim_iccid': assigned_iccid['iccid'],  # Use our assigned ICCID
+                                'esim_lpa_code': assigned_iccid['lpa_code'],  # Include LPA code
+                                'esim_country': assigned_iccid['country'],
+                                'esim_line_id': esim_data.get('line_id', assigned_iccid.get('line_id', 'System assigned')),
                                 'esim_activation_status': 'completed',
                                 'esim_activation_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                'esim_qr_available': 'yes' if esim_data.get('qr_code') else 'no',
+                                'esim_qr_available': 'yes',  # Always yes since we generate QR codes
+                                'iccid_assigned': 'true',  # Flag that ICCID was assigned
                                 'oxio_user_id': activation_result.get('oxio_user_id', ''),
                                 'oxio_group_id': activation_result.get('oxio_group_id', ''),
                                 'purchase_id': str(purchase_id) if purchase_id else '',
@@ -1995,9 +2031,31 @@ def handle_stripe_webhook():
                     else:
                         print(f"❌ eSIM activation service failed: {activation_result.get('error', 'Unknown error')}")
                         print(f"   Failed at step: {activation_result.get('step', 'unknown')}")
+                        
+                        # ROLLBACK: If activation failed and this was a new ICCID assignment, rollback
+                        if not existing_iccid and assigned_iccid and assigned_iccid.get('iccid'):
+                            print(f"🔄 Rolling back ICCID assignment for {assigned_iccid['iccid']} due to activation failure")
+                            rollback_iccid_assignment(assigned_iccid['iccid'], firebase_uid)
+                        
+                        return jsonify({
+                            'status': 'activation_failed', 
+                            'error': activation_result.get('error', 'Activation failed'),
+                            'step': activation_result.get('step', 'unknown')
+                        }), 500
 
                 except Exception as e:
                     print(f"❌ Error in eSIM Beta activation: {str(e)}")
+                    
+                    # ROLLBACK: If there was an exception and this was a new ICCID assignment, rollback
+                    if not existing_iccid and assigned_iccid and assigned_iccid.get('iccid'):
+                        print(f"🔄 Rolling back ICCID assignment for {assigned_iccid['iccid']} due to exception")
+                        rollback_iccid_assignment(assigned_iccid['iccid'], firebase_uid)
+                    
+                    return jsonify({
+                        'status': 'error', 
+                        'error': 'eSIM activation failed',
+                        'message': str(e)
+                    }), 500
 
             # Handle legacy Firebase-based eSIM activation
             elif product_id == 'esim_beta' and firebase_uid:
@@ -5580,6 +5638,362 @@ def get_user_assigned_iccid():
             'success': False,
             'error': str(e)
         }), 500
+
+def assign_iccid_to_user_atomic(firebase_uid, user_email=None):
+    """
+    Atomically assign an available ICCID to a user with row-level locking
+    Prevents race conditions from concurrent webhook deliveries
+    
+    Args:
+        firebase_uid: User's Firebase UID
+        user_email: User's email address (optional)
+        
+    Returns:
+        Dictionary with assigned ICCID details or None if no ICCIDs available
+    """
+    try:
+        print(f"🔒 Atomically assigning ICCID to Firebase UID: {firebase_uid}")
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Use row-level locking to prevent race conditions
+                    cur.execute("""
+                        SELECT iccid, sim_type, sim_status, country, lpa_code, line_id
+                        FROM iccid_inventory 
+                        WHERE status = 'available' 
+                          AND allocated_to_firebase_uid IS NULL
+                        ORDER BY created_at ASC
+                        LIMIT 1
+                        FOR UPDATE SKIP LOCKED
+                    """)
+                    
+                    available_iccid = cur.fetchone()
+                    
+                    if not available_iccid:
+                        print(f"❌ No available ICCIDs for assignment (atomic)")
+                        return None
+                    
+                    iccid, sim_type, sim_status, country, lpa_code, line_id = available_iccid
+                    
+                    # Atomically update ICCID record with user assignment
+                    cur.execute("""
+                        UPDATE iccid_inventory 
+                        SET allocated_to_firebase_uid = %s,
+                            status = 'assigned',
+                            assigned_at = CURRENT_TIMESTAMP,
+                            assigned_to = %s
+                        WHERE iccid = %s
+                          AND status = 'available'
+                          AND allocated_to_firebase_uid IS NULL
+                    """, (firebase_uid, user_email or firebase_uid, iccid))
+                    
+                    rows_affected = cur.rowcount
+                    
+                    if rows_affected == 0:
+                        print(f"⚠️ Race condition detected - ICCID {iccid} was assigned by another process")
+                        return None
+                    
+                    conn.commit()
+                    
+                    print(f"✅ Atomically assigned ICCID {iccid} to Firebase UID {firebase_uid}")
+                    
+                    return {
+                        'success': True,
+                        'iccid': iccid,
+                        'sim_type': sim_type,
+                        'sim_status': sim_status,
+                        'country': country,
+                        'lpa_code': lpa_code,
+                        'line_id': line_id,
+                        'firebase_uid': firebase_uid,
+                        'assigned_at': datetime.now().isoformat()
+                    }
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error atomically assigning ICCID to user {firebase_uid}: {str(e)}")
+        return None
+
+def assign_iccid_to_user(firebase_uid, user_email=None):
+    """
+    Assign an available ICCID to a user after successful payment
+    
+    Args:
+        firebase_uid: User's Firebase UID
+        user_email: User's email address (optional)
+        
+    Returns:
+        Dictionary with assigned ICCID details or None if no ICCIDs available
+    """
+    try:
+        print(f"🎯 Assigning ICCID to Firebase UID: {firebase_uid}")
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Find first available ICCID
+                    cur.execute("""
+                        SELECT iccid, sim_type, sim_status, country, lpa_code, line_id
+                        FROM iccid_inventory 
+                        WHERE status = 'available' 
+                          AND allocated_to_firebase_uid IS NULL
+                        ORDER BY created_at ASC
+                        LIMIT 1
+                        FOR UPDATE
+                    """)
+                    
+                    available_iccid = cur.fetchone()
+                    
+                    if not available_iccid:
+                        print(f"❌ No available ICCIDs for assignment")
+                        return None
+                    
+                    iccid, sim_type, sim_status, country, lpa_code, line_id = available_iccid
+                    
+                    # Update ICCID record with user assignment
+                    cur.execute("""
+                        UPDATE iccid_inventory 
+                        SET allocated_to_firebase_uid = %s,
+                            status = 'assigned',
+                            assigned_at = CURRENT_TIMESTAMP,
+                            assigned_to = %s
+                        WHERE iccid = %s
+                    """, (firebase_uid, user_email or firebase_uid, iccid))
+                    
+                    conn.commit()
+                    
+                    print(f"✅ Successfully assigned ICCID {iccid} to Firebase UID {firebase_uid}")
+                    
+                    return {
+                        'success': True,
+                        'iccid': iccid,
+                        'sim_type': sim_type,
+                        'sim_status': sim_status,
+                        'country': country,
+                        'lpa_code': lpa_code,
+                        'line_id': line_id,
+                        'firebase_uid': firebase_uid,
+                        'assigned_at': datetime.now().isoformat()
+                    }
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error assigning ICCID to user {firebase_uid}: {str(e)}")
+        return None
+
+def get_user_assigned_iccid_data(firebase_uid):
+    """
+    Get user's assigned ICCID data for idempotency checks
+    
+    Args:
+        firebase_uid: User's Firebase UID
+        
+    Returns:
+        Dictionary with ICCID details or None if no assignment
+    """
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT iccid, sim_type, sim_status, country, lpa_code, line_id, allocated_to_firebase_uid, assigned_at
+                        FROM iccid_inventory 
+                        WHERE allocated_to_firebase_uid = %s 
+                          AND status = 'assigned'
+                        ORDER BY assigned_at DESC
+                        LIMIT 1
+                    """, (firebase_uid,))
+                    
+                    result = cur.fetchone()
+                    
+                    if result:
+                        iccid, sim_type, sim_status, country, lpa_code, line_id, allocated_to_firebase_uid, assigned_at = result
+                        
+                        return {
+                            'success': True,
+                            'iccid': iccid,
+                            'sim_type': sim_type,
+                            'sim_status': sim_status,
+                            'country': country,
+                            'lpa_code': lpa_code,
+                            'line_id': line_id,
+                            'firebase_uid': allocated_to_firebase_uid,
+                            'assigned_at': assigned_at.isoformat() if assigned_at else None
+                        }
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error getting user assigned ICCID data: {str(e)}")
+        return None
+
+def rollback_iccid_assignment(iccid, firebase_uid):
+    """
+    Rollback ICCID assignment if activation fails
+    
+    Args:
+        iccid: ICCID to rollback
+        firebase_uid: User's Firebase UID
+        
+    Returns:
+        True if rollback successful, False otherwise
+    """
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Reset ICCID to available status
+                    cur.execute("""
+                        UPDATE iccid_inventory 
+                        SET allocated_to_firebase_uid = NULL,
+                            status = 'available',
+                            assigned_at = NULL,
+                            assigned_to = NULL
+                        WHERE iccid = %s 
+                          AND allocated_to_firebase_uid = %s
+                    """, (iccid, firebase_uid))
+                    
+                    rows_affected = cur.rowcount
+                    conn.commit()
+                    
+                    if rows_affected > 0:
+                        print(f"✅ Rolled back ICCID {iccid} assignment for Firebase UID {firebase_uid}")
+                        return True
+                    else:
+                        print(f"⚠️ No rows affected during rollback for ICCID {iccid} and Firebase UID {firebase_uid}")
+                        return False
+        
+        return False
+        
+    except Exception as e:
+        print(f"❌ Error rolling back ICCID assignment: {str(e)}")
+        return False
+
+def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid):
+    """
+    Send eSIM purchase receipt email with QR codes
+    
+    Args:
+        firebase_uid: User's Firebase UID
+        user_email: User's email address
+        user_name: User's display name
+        assigned_iccid: Dictionary with assigned ICCID details
+    """
+    try:
+        from email_service import send_email
+        from datetime import datetime
+        import base64
+        
+        print(f"📧 Sending eSIM receipt email to {user_email}")
+        
+        # Generate QR codes for the LPA code
+        qr_svg = generate_qr_code(assigned_iccid['lpa_code'], assigned_iccid['iccid'], 'svg')
+        qr_png = generate_qr_code(assigned_iccid['lpa_code'], assigned_iccid['iccid'], 'png')
+        
+        # Create email content
+        subject = "🎉 Your eSIM is Ready - DOTM Platform"
+        
+        html_body = f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; }}
+                .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; }}
+                .content {{ padding: 30px 20px; }}
+                .esim-card {{ background: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #28a745; }}
+                .qr-section {{ background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }}
+                .next-steps {{ background: #fff3cd; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #ffc107; }}
+                .footer {{ background: #343a40; color: white; padding: 20px; text-align: center; font-size: 12px; }}
+                .highlight {{ color: #28a745; font-weight: bold; }}
+                .lpa-code {{ font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 4px; word-break: break-all; margin: 10px 0; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🎉 eSIM Purchased Successfully!</h1>
+                    <p>Your DOTM eSIM is ready for activation</p>
+                </div>
+
+                <div class="content">
+                    <div class="esim-card">
+                        <h3>📱 Your eSIM Details</h3>
+                        <ul>
+                            <li><strong>ICCID:</strong> <span class="highlight">{assigned_iccid['iccid']}</span></li>
+                            <li><strong>Country:</strong> {assigned_iccid['country']}</li>
+                            <li><strong>Status:</strong> ✅ <span class="highlight">Ready for Activation</span></li>
+                            <li><strong>Purchase Date:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</li>
+                        </ul>
+                        
+                        <h4>🔐 LPA Activation Code:</h4>
+                        <div class="lpa-code">{assigned_iccid['lpa_code']}</div>
+                    </div>
+
+                    <div class="qr-section">
+                        <h3>📲 Activation QR Code</h3>
+                        <p>Scan this QR code with your device to activate your eSIM:</p>
+                        {"<div style='margin: 20px 0;'>" + qr_svg['data'] + "</div>" if qr_svg and qr_svg.get('success') else "<p>QR code will be available in your dashboard</p>"}
+                        <p><small>You can also find this QR code in your profile dashboard</small></p>
+                    </div>
+
+                    <div class="next-steps">
+                        <h3>🚀 Next Steps</h3>
+                        <ol>
+                            <li>Open your device's Settings app</li>
+                            <li>Go to Cellular/Mobile Data settings</li>
+                            <li>Tap "Add Cellular Plan" or "Add eSIM"</li>
+                            <li>Scan the QR code above or enter the LPA code manually</li>
+                            <li>Follow your device's setup instructions</li>
+                            <li>Start using your global connectivity!</li>
+                        </ol>
+                        <p><strong>Need help?</strong> Visit your <a href="https://dotmobile.app/profile">DOTM Dashboard</a> for complete setup instructions.</p>
+                    </div>
+
+                    <div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                        <h4>📞 Support</h4>
+                        <p>Questions? Contact us at <a href="mailto:support@dotmobile.app">support@dotmobile.app</a></p>
+                        <p>Account ID: {firebase_uid}</p>
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <p>DOTM Platform - Global Mobile Connectivity</p>
+                    <p>Thank you for your purchase!</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Prepare email attachments (PNG QR code)
+        attachments = []
+        if qr_png and qr_png.get('success') and qr_png.get('data'):
+            # Extract base64 data from data URI
+            png_data = qr_png['data'].split(',')[1] if ',' in qr_png['data'] else qr_png['data']
+            attachments.append({
+                'filename': f'esim-qr-{assigned_iccid["iccid"]}.png',
+                'content': base64.b64decode(png_data),
+                'content_type': 'image/png'
+            })
+        
+        # Send email
+        result = send_email(
+            to=user_email,
+            subject=subject,
+            html_body=html_body,
+            attachments=attachments
+        )
+        
+        print(f"✅ Sent eSIM receipt email to {user_email} with QR code attachment")
+        return result
+        
+    except Exception as e:
+        print(f"Error sending eSIM receipt email: {str(e)}")
+        return False
 
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available

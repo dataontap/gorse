@@ -20,3 +20,4 @@ pillow
 qrcode
 qrcode
 qrcode[pil]
+qrcode[pil]
