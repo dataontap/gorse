@@ -308,7 +308,7 @@ def oxio_test_sample_activation():
 # Now initialize Flask-RESTX AFTER the OXIO routes are defined
 api = Api(app, version='1.0', title='IMEI API',
     description='Get android phone IMEI API with telephony permissions for eSIM activation',
-    doc='/api', 
+    doc='/api',
     prefix='/api')  # Move all API endpoints under /api path
 
 ns = api.namespace('imei', description='IMEI operations')
@@ -334,8 +334,8 @@ def register_fcm_token():
                         cur.execute("""
                             INSERT INTO fcm_tokens (firebase_uid, fcm_token, platform, updated_at)
                             VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
-                            ON CONFLICT (firebase_uid, platform) 
-                            DO UPDATE SET 
+                            ON CONFLICT (firebase_uid, platform)
+                            DO UPDATE SET
                                 fcm_token = EXCLUDED.fcm_token,
                                 updated_at = CURRENT_TIMESTAMP
                         """, (firebase_uid, token, platform))
@@ -346,8 +346,8 @@ def register_fcm_token():
                         # Check for pending notifications that haven't been delivered
                         cur.execute("""
                             SELECT id, title, body, notification_type, created_at
-                            FROM notifications 
-                            WHERE firebase_uid = %s AND delivered = FALSE 
+                            FROM notifications
+                            WHERE firebase_uid = %s AND delivered = FALSE
                             ORDER BY created_at ASC
                         """, (firebase_uid,))
 
@@ -383,7 +383,7 @@ def register_fcm_token():
 
                                         # Update notification as delivered
                                         cur.execute("""
-                                            UPDATE notifications 
+                                            UPDATE notifications
                                             SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                             WHERE id = %s
                                         """, (str(response), notification_id))
@@ -392,7 +392,7 @@ def register_fcm_token():
                                         print("Firebase Admin SDK not available - marking notification as delivered for demo")
                                         # Mark as delivered even without FCM for demo purposes
                                         cur.execute("""
-                                            UPDATE notifications 
+                                            UPDATE notifications
                                             SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                             WHERE id = %s
                                         """, ("No FCM SDK - demo mode", notification_id))
@@ -401,7 +401,7 @@ def register_fcm_token():
                                     print(f"Error sending pending notification {notification_id}: {str(msg_err)}")
                                     # Still mark as delivered to avoid repeated attempts
                                     cur.execute("""
-                                        UPDATE notifications 
+                                        UPDATE notifications
                                         SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                         WHERE id = %s
                                     """, (f"FCM Error: {str(msg_err)}", notification_id))
@@ -411,12 +411,12 @@ def register_fcm_token():
 
                             return jsonify({"status": "success", "platform": platform})
 
-        except Exception as e:
-            print(f"Error processing FCM token registration: {str(e)}")
-            return jsonify({"error": "Failed to register FCM token"}), 500
+        return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
 
-    return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
 
+    except Exception as e:
+        print(f"Error processing FCM token registration: {str(e)}")
+        return jsonify({"error": "Failed to register FCM token"}), 500
 
 # Send notifications to both web and app users
 @app.route('/api/send-notification', methods=['POST'])
@@ -452,7 +452,7 @@ def send_notification():
 
                             # Get user's FCM token
                             cur.execute("""
-                                SELECT fcm_token FROM fcm_tokens 
+                                SELECT fcm_token FROM fcm_tokens
                                 WHERE firebase_uid = %s AND platform = 'web'
                                 ORDER BY updated_at DESC LIMIT 1
                             """, (firebase_uid,))
@@ -609,7 +609,7 @@ def register_firebase_user():
                     else:
                         # Check if oxio_user_id column exists and add it if missing
                         cur.execute("""
-                            SELECT column_name FROM information_schema.columns 
+                            SELECT column_name FROM information_schema.columns
                             WHERE table_name = 'users' AND column_name = 'oxio_user_id'
                         """)
                         oxio_column_exists = cur.fetchone()
@@ -622,7 +622,7 @@ def register_firebase_user():
 
                         # Check if oxio_group_id column exists and add it if missing
                         cur.execute("""
-                            SELECT column_name FROM information_schema.columns 
+                            SELECT column_name FROM information_schema.columns
                             WHERE table_name = 'users' AND column_name = 'oxio_group_id'
                         """)
                         oxio_group_column_exists = cur.fetchone()
@@ -635,7 +635,7 @@ def register_firebase_user():
 
                         # Ensure eth_address column exists separately
                         cur.execute("""
-                            SELECT column_name FROM information_schema.columns 
+                            SELECT column_name FROM information_schema.columns
                             WHERE table_name = 'users' AND column_name = 'eth_address'
                         """)
                         eth_column_exists = cur.fetchone()
@@ -658,10 +658,10 @@ def register_firebase_user():
 
                         # Update user information if needed
                         cur.execute(
-                            """UPDATE users SET 
-                                email = %s, 
-                                display_name = %s, 
-                                photo_url = %s 
+                            """UPDATE users SET
+                                email = %s,
+                                display_name = %s,
+                                photo_url = %s
                             WHERE id = %s""",
                             (email, display_name, photo_url, user_id)
                         )
@@ -730,7 +730,7 @@ def register_firebase_user():
                                 print(f"Successfully created OXIO user: {oxio_user_id}")
                             else:
                                 # Check if user already exists (error code 6805)
-                                if (oxio_result.get('status_code') == 400 and 
+                                if (oxio_result.get('status_code') == 400 and
                                     oxio_result.get('data', {}).get('code') == 6805):
                                     print(f"OXIO user already exists for {email}, attempting to find existing user ID")
 
@@ -747,9 +747,9 @@ def register_firebase_user():
                             print(f"Error creating OXIO group/user: {str(oxio_err)}")
 
                         cur.execute(
-                            """INSERT INTO users 
-                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id, oxio_group_id) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s) 
+                            """INSERT INTO users
+                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id, oxio_group_id)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
                             RETURNING id""",
                             (email, firebase_uid, display_name, photo_url, test_account.address, oxio_user_id, oxio_group_id)
                         )
@@ -808,7 +808,7 @@ def register_firebase_user():
                                             if conn:
                                                 with conn.cursor() as cur:
                                                     cur.execute("""
-                                                        INSERT INTO welcome_messages 
+                                                        INSERT INTO welcome_messages
                                                         (user_id, firebase_uid, language, voice_id, audio_data, audio_url, created_at)
                                                         VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                                                         RETURNING id
@@ -825,8 +825,8 @@ def register_firebase_user():
                                     if conn:
                                         with conn.cursor() as cur:
                                             cur.execute("""
-                                                SELECT fcm_token FROM fcm_tokens 
-                                                WHERE firebase_uid = %s 
+                                                SELECT fcm_token FROM fcm_tokens
+                                                WHERE firebase_uid = %s
                                                 ORDER BY updated_at DESC LIMIT 1
                                             """, (firebase_uid,))
 
@@ -838,7 +838,7 @@ def register_firebase_user():
                                             welcome_body = f"Hi {display_name or 'there'}! Your account is ready. Your personalized welcome message is waiting for you!"
 
                                             cur.execute("""
-                                                INSERT INTO notifications 
+                                                INSERT INTO notifications
                                                 (user_id, firebase_uid, title, body, notification_type, delivered)
                                                 VALUES (%s, %s, %s, %s, %s, %s)
                                                 RETURNING id
@@ -873,7 +873,7 @@ def register_firebase_user():
 
                                                         # Update notification with FCM response
                                                         cur.execute("""
-                                                            UPDATE notifications 
+                                                            UPDATE notifications
                                                             SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                             WHERE id = %s
                                                         """, (str(response), notification_id))
@@ -883,7 +883,7 @@ def register_firebase_user():
                                                     else:
                                                         print("Firebase Admin SDK not available - notification stored in database")
                                                         cur.execute("""
-                                                            UPDATE notifications 
+                                                            UPDATE notifications
                                                             SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                             WHERE id = %s
                                                         """, ("No FCM SDK - demo mode", notification_id))
@@ -892,7 +892,7 @@ def register_firebase_user():
                                                 except Exception as msg_err:
                                                     print(f"Error sending welcome message via FCM: {str(msg_err)}")
                                                     cur.execute("""
-                                                        UPDATE notifications 
+                                                        UPDATE notifications
                                                         SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                         WHERE id = %s
                                                     """, (f"FCM Error: {str(msg_err)}", notification_id))
@@ -900,14 +900,14 @@ def register_firebase_user():
                                             else:
                                                 print(f"No FCM token found for {firebase_uid} - notification stored for later")
                                                 cur.execute("""
-                                                    UPDATE notifications 
+                                                    UPDATE notifications
                                                     SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                     WHERE id = %s
                                                 """, ("No FCM token available", notification_id))
                                                 conn.commit()
 
-                            except Exception as welcome_err:
-                                print(f"Error in welcome message thread: {str(welcome_err)}")
+                                except Exception as welcome_err:
+                                    print(f"Error in welcome message thread: {str(welcome_err)}")
 
                         # Start welcome message thread
                         welcome_thread = threading.Thread(target=send_welcome_message)
@@ -1048,8 +1048,8 @@ def check_imei_compatibility():
                         is_compatible = capabilities.get('fourG', False) or capabilities.get('fiveG', False)
 
                         cur.execute("""
-                            INSERT INTO compatibility_checks 
-                            (imei, device_make, device_model, device_year, four_g_support, 
+                            INSERT INTO compatibility_checks
+                            (imei, device_make, device_model, device_year, four_g_support,
                              five_g_support, volte_support, wifi_calling_support, is_compatible, search_id)
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """, (
@@ -1173,6 +1173,7 @@ def get_founder_status():
         print(f"Error getting founder status: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+
 # Update member count endpoint
 @app.route('/api/member-count', methods=['GET'])
 def get_member_count():
@@ -1184,7 +1185,7 @@ def get_member_count():
                     # Check if users table exists
                     cur.execute("""
                         SELECT EXISTS (
-                            SELECT FROM information_schema.tables 
+                            SELECT FROM information_schema.tables
                             WHERE table_name = 'users'
                         )
                     """)
@@ -1272,7 +1273,7 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                             else:
                                 # Check if new columns exist and add them if needed
                                 cur.execute("""
-                                    SELECT column_name FROM information_schema.columns 
+                                    SELECT column_name FROM information_schema.columns
                                     WHERE table_name = 'purchases'
                                 """)
                                 columns = [row[0] for row in cur.fetchall()]
@@ -1314,9 +1315,9 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
 
                             # Now insert the purchase record with all tracking information
                             cur.execute(
-                                """INSERT INTO purchases 
-                                   (StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated, StripeTransactionID, FirebaseUID) 
-                                   VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s, %s) 
+                                """INSERT INTO purchases
+                                   (StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated, StripeTransactionID, FirebaseUID)
+                                   VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s, %s)
                                    RETURNING PurchaseID""",
                                 (stripe_id, product_id, price_id, amount, user_id, stripe_transaction_id, firebase_uid)
                             )
@@ -1381,7 +1382,7 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
 
                     # First, deactivate any existing active subscriptions for this user
                     cur.execute("""
-                        UPDATE subscriptions 
+                        UPDATE subscriptions
                         SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
                         WHERE user_id = %s AND status = 'active'
                     """, (user_id,))
@@ -1424,9 +1425,9 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
 
                     # Calculate validity end date (1 year = 365.25 days exactly for leap years)
                     cur.execute("""
-                        INSERT INTO subscriptions 
-                        (user_id, subscription_type, stripe_subscription_id, start_date, end_date, status, created_at, updated_at) 
-                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
+                        INSERT INTO subscriptions
+                        (user_id, subscription_type, stripe_subscription_id, start_date, end_date, status, created_at, updated_at)
+                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                         RETURNING end_date, subscription_id
                     """, (user_id, subscription_type, actual_stripe_subscription_id))
 
@@ -1668,8 +1669,8 @@ def buy_esim():
                 if conn:
                     with conn.cursor() as cur:
                         cur.execute("""
-                            SELECT email, display_name, oxio_user_id 
-                            FROM users 
+                            SELECT email, display_name, oxio_user_id
+                            FROM users
                             WHERE firebase_uid = %s
                         """, (firebase_uid,))
                         result = cur.fetchone()
@@ -1862,7 +1863,9 @@ def handle_stripe_webhook():
     """Handle Stripe webhook events, especially payment success"""
     global stripe  # Use the global stripe module
     payload = request.data
-    sig_header = request.headers.get('stripe-signature')
+    sig_header = request.headers.get('Stripe-Signature')
+
+    print(f"🎯 Stripe webhook received: {request.headers.get('Stripe-Event')}")
 
     # Get webhook endpoint secret from environment
     endpoint_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
@@ -1876,85 +1879,102 @@ def handle_stripe_webhook():
             print("ERROR: Missing stripe-signature header")
             return jsonify({'error': 'Missing webhook signature'}), 400
         else:
-            event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+            event = stripe.Webhook.construct_event(payload, sig_header, os.environ.get('STRIPE_WEBHOOK_SECRET'))
+            print(f"✅ Stripe webhook event validated: {event['type']}")
+    except ValueError as e:
+        print(f"❌ Invalid payload: {e}")
+        return 'Invalid payload', 400
+    except stripe.error.SignatureVerificationError as e:
+        print(f"❌ Invalid signature: {e}")
+        return 'Invalid signature', 400
+    except Exception as e:
+        print(f"❌ Unexpected error during webhook validation: {str(e)}")
+        return 'Webhook processing error', 500
 
-        print(f"Stripe webhook received: {event['type']}")
+    # Idempotency check: Ensure events are processed only once
+    event_id = event['id']
+    event_type = event['type']
 
-        # IDEMPOTENCY: Check if we've already processed this event
-        event_id = event['id']
-        event_type = event['type']
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
 
+            # Check if event already processed
+            cursor.execute("SELECT id, processing_result FROM processed_stripe_events WHERE event_id = %s", (event_id,))
+            existing_event = cursor.fetchone()
+
+            if existing_event:
+                print(f"⚠️ Event {event_id} already processed - returning previous result")
+                return jsonify({'status': 'already_processed', 'event_id': event_id}), 200
+
+            # Mark event as being processed (prevents race conditions) with UNIQUE constraint
+            cursor.execute("""
+                INSERT INTO processed_stripe_events (event_id, event_type)
+                VALUES (%s, %s)
+                ON CONFLICT (event_id) DO NOTHING
+            """, (event_id, event_type))
+
+            # Check if we actually inserted (vs conflict)
+            if cursor.rowcount == 0:
+                print(f"🔄 Event {event_id} was already being processed by another request")
+                return jsonify({'status': 'already_processed', 'event_id': event_id}), 200
+            conn.commit()
+            print(f"🔄 Processing new event: {event_id} (type: {event_type})")
+
+    except Exception as db_error:
+        print(f"❌ CRITICAL: Database error in idempotency check: {db_error}")
+        # FAIL CLOSED - Do not process if idempotency cannot be guaranteed
+        return jsonify({'error': 'Idempotency check failed', 'retry': True}), 500
+
+
+    # Handle successful payment events
+    if event['type'] == 'checkout.session.completed':
+        print(f"Processing checkout session completed event: {event['id']}")
+        session = event['data']['object']
+
+        # Check database connection first
         try:
             with get_db_connection() as conn:
-                cursor = conn.cursor()
+                if not conn:
+                    print(f"❌ DATABASE ERROR: No connection available for webhook processing")
+                    return jsonify({'status': 'error', 'message': 'Database unavailable'}), 500
+                else:
+                    print(f"✅ Database connection available for webhook processing")
+        except Exception as db_err:
+            print(f"❌ DATABASE ERROR: {str(db_err)}")
+            return jsonify({'status': 'error', 'message': 'Database error'}), 500
 
-                # Check if event already processed
-                cursor.execute("SELECT id, processing_result FROM processed_stripe_events WHERE event_id = %s", (event_id,))
-                existing_event = cursor.fetchone()
+        if session.get('metadata', {}).get('product_id') == 'esim_beta':
+            print(f"🎯 Processing eSIM beta purchase for session: {session['id']}")
 
-                if existing_event:
-                    print(f"⚠️ Event {event_id} already processed - returning previous result")
-                    return jsonify({'status': 'already_processed', 'event_id': event_id}), 200
+            # Get user information from metadata
+            firebase_uid = session.get('metadata', {}).get('firebase_uid')
+            user_email = session.get('customer_details', {}).get('email')
+            user_name = session.get('customer_details', {}).get('name')
 
-                # Mark event as being processed (prevents race conditions) with UNIQUE constraint
-                cursor.execute("""
-                    INSERT INTO processed_stripe_events (event_id, event_type) 
-                    VALUES (%s, %s) 
-                    ON CONFLICT (event_id) DO NOTHING
-                """, (event_id, event_type))
-                
-                # Check if we actually inserted (vs conflict)
-                if cursor.rowcount == 0:
-                    print(f"🔄 Event {event_id} was already being processed by another request")
-                    return jsonify({'status': 'already_processed', 'event_id': event_id}), 200
-                conn.commit()
-                print(f"🔄 Processing new event: {event_id} (type: {event_type})")
+            print(f"📧 User details - Firebase UID: {firebase_uid}, Email: {user_email}, Name: {user_name}")
 
-        except Exception as db_error:
-            print(f"❌ CRITICAL: Database error in idempotency check: {db_error}")
-            # FAIL CLOSED - Do not process if idempotency cannot be guaranteed
-            return jsonify({'error': 'Idempotency check failed', 'retry': True}), 500
-
-        # Handle successful payment events
-        if event['type'] == 'checkout.session.completed':
-            session = event['data']['object']
-
-            # Extract product information from metadata
-            product_id = session['metadata'].get('product_id')  # Legacy format
-            product = session['metadata'].get('product')        # New format
-            firebase_uid = session['metadata'].get('firebase_uid')  # Legacy
-            oxio_user_id = session['metadata'].get('oxio_user_id')  # New direct OXIO format
-            customer_id = session.get('customer')
-
-            print(f"Payment successful - Product: {product or product_id}, Firebase UID: {firebase_uid}, OXIO User: {oxio_user_id}")
-
-            # Handle eSIM Beta activation using dedicated service
-            if product == 'esim_beta':
+            if firebase_uid and user_email:
                 try:
                     print(f"💰 Processing $1 eSIM Beta activation with ICCID assignment")
 
                     # Import the new eSIM activation service
                     from esim_activation_service import esim_activation_service
 
-                    # Get user details from session metadata
-                    firebase_uid = session['metadata'].get('firebase_uid', '')
-                    user_email = session['metadata'].get('user_email', '')
-                    user_name = session['metadata'].get('user_name', '')
-                    
                     # Step 1: Check if user already has an assigned ICCID (idempotency)
                     existing_iccid = get_user_assigned_iccid_data(firebase_uid)
-                    
+
                     if existing_iccid:
                         print(f"✅ User {firebase_uid} already has assigned ICCID: {existing_iccid['iccid']}")
                         assigned_iccid = existing_iccid
                     else:
                         # Assign new ICCID to user with atomic locking to prevent race conditions
                         assigned_iccid = assign_iccid_to_user_atomic(firebase_uid, user_email)
-                        
+
                         if not assigned_iccid:
                             print(f"❌ No available ICCIDs for user {firebase_uid}")
                             return jsonify({'error': 'No available eSIMs'}), 500
-                        
+
                         print(f"✅ Assigned new ICCID {assigned_iccid['iccid']} to user {firebase_uid}")
                     total_amount = session.get('amount_total', 100)  # Default $1.00 in cents
 
@@ -1984,7 +2004,7 @@ def handle_stripe_webhook():
                             user_name=user_name,
                             assigned_iccid=assigned_iccid
                         )
-                        
+
                         if email_result:
                             print(f"✅ Receipt email sent with QR codes")
                         else:
@@ -2031,28 +2051,28 @@ def handle_stripe_webhook():
                     else:
                         print(f"❌ eSIM activation service failed: {activation_result.get('error', 'Unknown error')}")
                         print(f"   Failed at step: {activation_result.get('step', 'unknown')}")
-                        
+
                         # ROLLBACK: If activation failed and this was a new ICCID assignment, rollback
                         if not existing_iccid and assigned_iccid and assigned_iccid.get('iccid'):
                             print(f"🔄 Rolling back ICCID assignment for {assigned_iccid['iccid']} due to activation failure")
                             rollback_iccid_assignment(assigned_iccid['iccid'], firebase_uid)
-                        
+
                         return jsonify({
-                            'status': 'activation_failed', 
+                            'status': 'activation_failed',
                             'error': activation_result.get('error', 'Activation failed'),
                             'step': activation_result.get('step', 'unknown')
                         }), 500
 
                 except Exception as e:
                     print(f"❌ Error in eSIM Beta activation: {str(e)}")
-                    
+
                     # ROLLBACK: If there was an exception and this was a new ICCID assignment, rollback
                     if not existing_iccid and assigned_iccid and assigned_iccid.get('iccid'):
                         print(f"🔄 Rolling back ICCID assignment for {assigned_iccid['iccid']} due to exception")
                         rollback_iccid_assignment(assigned_iccid['iccid'], firebase_uid)
-                    
+
                     return jsonify({
-                        'status': 'error', 
+                        'status': 'error',
                         'error': 'eSIM activation failed',
                         'message': str(e)
                     }), 500
@@ -2232,7 +2252,7 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
         user_data = get_user_by_firebase_uid(firebase_uid)
         if not user_data:
             return {
-                'success': False, 
+                'success': False,
                 'error': 'User not found',
                 'message': f'No user found for Firebase UID: {firebase_uid}'
             }
@@ -2351,8 +2371,8 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                                 """)
 
                                 cur.execute("""
-                                    INSERT INTO oxio_activations 
-                                    (user_id, firebase_uid, purchase_id, product_id, iccid, 
+                                    INSERT INTO oxio_activations
+                                    (user_id, firebase_uid, purchase_id, product_id, iccid,
                                      line_id, phone_number, activation_status, plan_id, group_id,
                                      esim_qr_code, oxio_response)
                                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -2461,7 +2481,7 @@ def get_user_by_firebase_uid(firebase_uid):
             if conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        """SELECT id, email, firebase_uid, stripe_customer_id, display_name, 
+                        """SELECT id, email, firebase_uid, stripe_customer_id, display_name,
                                   photo_url, imei, oxio_user_id, eth_address, oxio_group_id
                         FROM users WHERE firebase_uid = %s""",
                         (firebase_uid,)
@@ -2483,10 +2503,10 @@ def get_user_stripe_purchases(stripe_customer_id):
                 with conn.cursor() as cur:
                     # Get purchases linked to Stripe customer
                     cur.execute("""
-                        SELECT SUM(TotalAmount) 
-                        FROM purchases 
+                        SELECT SUM(TotalAmount)
+                        FROM purchases
                         WHERE StripeID IN (
-                            SELECT id FROM stripe_sessions_or_invoices 
+                            SELECT id FROM stripe_sessions_or_invoices
                             WHERE customer_id = %s
                         ) OR UserID = (
                             SELECT id FROM users WHERE stripe_customer_id = %s
@@ -2539,11 +2559,11 @@ def get_user_data_balance():
                     # Get all data-related purchases for this user - using correct column names
                     try:
                         cur.execute("""
-                            SELECT 
+                            SELECT
                                 COALESCE(SUM(CASE WHEN StripeProductID = 'global_data_10gb' THEN TotalAmount ELSE 0 END), 0) as global_data_cents,
                                 COALESCE(SUM(CASE WHEN StripeProductID LIKE '%data%' OR StripeProductID = 'beta_esim_data' THEN TotalAmount ELSE 0 END), 0) as total_data_cents,
                                 COUNT(*) as total_purchases
-                            FROM purchases 
+                            FROM purchases
                             WHERE UserID = %s OR FirebaseUID = %s
                         """, (user_id, firebase_uid))
 
@@ -2581,8 +2601,8 @@ def get_user_data_balance():
 
                     # Get subscription status for additional data allowances
                     cur.execute("""
-                        SELECT subscription_type, end_date 
-                        FROM subscriptions 
+                        SELECT subscription_type, end_date
+                        FROM subscriptions
                         WHERE user_id = %s AND status = 'active' AND end_date > CURRENT_TIMESTAMP
                         ORDER BY end_date DESC LIMIT 1
                     """, (user_id,))
@@ -2664,7 +2684,7 @@ def report_data_usage():
                 if conn:
                     with conn.cursor() as cur:
                         cur.execute("""
-                            INSERT INTO data_usage_log 
+                            INSERT INTO data_usage_log
                             (user_id, stripe_customer_id, megabytes_used, stripe_event_id, created_at)
                             VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
                         """, (user_data[0], stripe_customer_id, megabytes_used, result.get('event_id')))
@@ -2749,9 +2769,9 @@ def get_subscription_status():
                     # Get the most recent active subscription
                     cur.execute("""
                         SELECT subscription_type, start_date, end_date, status, stripe_subscription_id
-                        FROM subscriptions 
+                        FROM subscriptions
                         WHERE user_id = %s AND status = 'active' AND end_date > CURRENT_TIMESTAMP
-                        ORDER BY end_date DESC 
+                        ORDER BY end_date DESC
                         LIMIT 1
                     """, (user_id,))
 
@@ -2769,9 +2789,9 @@ def get_subscription_status():
                         # Check if user has any expired subscriptions
                         cur.execute("""
                             SELECT subscription_type, end_date
-                            FROM subscriptions 
+                            FROM subscriptions
                             WHERE user_id = %s
-                            ORDER BY end_date DESC 
+                            ORDER BY end_date DESC
                             LIMIT 1
                         """, (user_id,))
 
@@ -2978,11 +2998,11 @@ def record_global_purchase():
 
                                     # Insert activation record
                                     cur.execute("""
-                                        INSERT INTO oxio_activations 
-                                        (user_id, firebase_uid, purchase_id, product_id, iccid, 
+                                        INSERT INTO oxio_activations
+                                        (user_id, firebase_uid, purchase_id, product_id, iccid,
                                          line_id, phone_number, activation_status, oxio_response)
                                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                                    """, (user_id, firebase_uid, purchase_id, product_id, iccid, 
+                                    """, (user_id, firebase_uid, purchase_id, product_id, iccid,
                                           line_id, phone_number, 'activated', json.dumps(oxio_result)))
 
                                     conn.commit()
@@ -3119,15 +3139,15 @@ class CheckMemberships(Resource):
     def get(self):
         try:
             # Try to get user ID from session (in a real app)
-            user_id = 1  # Default for demo 
+            user_id = 1  # Default for demo
 
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
-                        # Check if user haspurchased any membership products
+                        # Check if user has purchased any membership products
                         cur.execute("""
-                            SELECT StripeProductID 
-                            FROM purchases 
+                            SELECT StripeProductID
+                            FROM purchases
                             WHERE UserID = %s AND StripeProductID IN ('basic_membership', 'full_membership')
                             LIMIT 1
                         """, (user_id,))
@@ -3476,8 +3496,8 @@ def get_user_network_features(firebase_uid):
                         """)
 
                         cur.execute("""
-                            SELECT stripe_product_id, enabled 
-                            FROM user_network_preferences 
+                            SELECT stripe_product_id, enabled
+                            FROM user_network_preferences
                             WHERE user_id = %s
                         """, (user_id,))
 
@@ -3486,8 +3506,7 @@ def get_user_network_features(firebase_uid):
         except Exception as pref_err:
             print(f"Error getting user preferences: {str(pref_err)}")
 
-        user_features = []
-        for feature in features:
+        user_features = []        for feature in features:
             # Use user preference if exists, otherwise use default
             enabled = user_prefs.get(feature['stripe_product_id'], feature.get('default_enabled', False))
 
@@ -3538,7 +3557,7 @@ def toggle_network_feature(firebase_uid, product_id):
                     INSERT INTO user_network_preferences (user_id, stripe_product_id, enabled)
                     VALUES (%s, %s, %s)
                     ON CONFLICT (user_id, stripe_product_id)
-                    DO UPDATE SET 
+                    DO UPDATE SET
                         enabled = EXCLUDED.enabled,
                         updated_at = CURRENT_TIMESTAMP
                 """, (user_id, product_id, enabled))
@@ -3573,8 +3592,8 @@ def test_ping_creation():
                     roundtrip = 150
 
                     cur.execute(
-                        """INSERT INTO token_price_pings 
-                          (token_price, request_time_ms, response_time_ms, roundtrip_ms, 
+                        """INSERT INTO token_price_pings
+                          (token_price, request_time_ms, response_time_ms, roundtrip_ms,
                            ping_destination, source, additional_data)
                           VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id""",
                         (
@@ -3675,11 +3694,11 @@ def populate_token_pings():
 
                         # Insert the record
                         cur.execute(
-                            """INSERT INTO token_price_pings 
-                              (token_price, request_time_ms, response_time_ms, roundtrip_ms, 
+                            """INSERT INTO token_price_pings
+                              (token_price, request_time_ms, response_time_ms, roundtrip_ms,
                                ping_destination, source, additional_data, created_at)
                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
-                            (token_price, request_time, response_time, roundtrip, 
+                            (token_price, request_time, response_time, roundtrip,
                              destination, source, additional_data, timestamp)
                         )
 
@@ -3747,7 +3766,7 @@ def create_token_pings_table():
                     else:
                         # Check if all required columns exist
                         cur.execute("""
-                            SELECT column_name FROM information_schema.columns 
+                            SELECT column_name FROM information_schema.columns
                             WHERE table_name = 'token_price_pings'
                         """)
                         columns = [row[0] for row in cur.fetchall()]
@@ -3824,13 +3843,13 @@ def fix_user_oxio_data():
                     if firebase_uid:
                         cur.execute("""
                             SELECT id, email, display_name, oxio_user_id, oxio_group_id
-                            FROM users 
+                            FROM users
                             WHERE firebase_uid = %s
                         """, (firebase_uid,))
                     else:
                         cur.execute("""
                             SELECT id, email, display_name, oxio_user_id, oxio_group_id
-                            FROM users 
+                            FROM users
                             WHERE email = %s
                         """, (email,))
 
@@ -3932,8 +3951,8 @@ def create_oxio_user_endpoint():
                 with conn.cursor() as cur:
                     # Get user details
                     cur.execute("""
-                        SELECT id, email, display_name, oxio_user_id 
-                        FROM users 
+                        SELECT id, email, display_name, oxio_user_id
+                        FROM users
                         WHERE firebase_uid = %s
                     """, (firebase_uid,))
                     user_result = cur.fetchone()
@@ -3983,7 +4002,7 @@ def create_oxio_user_endpoint():
                             })
                         else:
                             # Check if user already exists (error code 6805)
-                            if (oxio_result.get('status_code') == 400 and 
+                            if (oxio_result.get('status_code') == 400 and
                                 oxio_result.get('data', {}).get('code') == 6805):
                                 print(f"OXIO user already exists for {email}, attempting to find existing user ID")
 
@@ -4049,10 +4068,10 @@ def get_oxio_activation_status():
                 with conn.cursor() as cur:
                     # Get OXIO activation records for this user
                     cur.execute("""
-                        SELECT id, product_id, iccid, line_id, phone_number, 
+                        SELECT id, product_id, iccid, line_id, phone_number,
                                activation_status, oxio_response, created_at
-                        FROM oxio_activations 
-                        WHERE firebase_uid = %s 
+                        FROM oxio_activations
+                        WHERE firebase_uid = %s
                         ORDER BY created_at DESC
                     """, (firebase_uid,))
 
@@ -4105,11 +4124,11 @@ def get_user_notifications():
                 with conn.cursor() as cur:
                     # Get notifications for this user
                     cur.execute("""
-                        SELECT id, title, body, notification_type, audio_url, delivered, read_status, 
+                        SELECT id, title, body, notification_type, audio_url, delivered, read_status,
                                fcm_response, created_at, delivered_at
-                        FROM notifications 
-                        WHERE firebase_uid = %s 
-                        ORDER BY created_at DESC 
+                        FROM notifications
+                        WHERE firebase_uid = %s
+                        ORDER BY created_at DESC
                         LIMIT %s
                     """, (firebase_uid, limit))
 
@@ -4155,14 +4174,14 @@ def mark_notification_read(notification_id):
                     # Update notification as read
                     if firebase_uid:
                         cur.execute("""
-                            UPDATE notifications 
+                            UPDATE notifications
                             SET read_status = TRUE
                             WHERE id = %s AND firebase_uid = %s
                             RETURNING title
                         """, (notification_id, firebase_uid))
                     else:
                         cur.execute("""
-                            UPDATE notifications 
+                            UPDATE notifications
                             SET read_status = TRUE
                             WHERE id = %s
                             RETURNING title
@@ -4201,9 +4220,9 @@ def update_personal_message():
                 with conn.cursor() as cur:
                     # Check if an invite already exists for this Firebase UID
                     cur.execute("""
-                        SELECT id, email FROM invites 
+                        SELECT id, email FROM invites
                         WHERE invited_by_firebase_uid = %s OR email = %s
-                        ORDER BY created_at DESC 
+                        ORDER BY created_at DESC
                         LIMIT 1
                     """, (firebase_uid, email))
 
@@ -4212,8 +4231,8 @@ def update_personal_message():
                     if existing_invite:
                         # Update existing invite
                         cur.execute("""
-                            UPDATE invites 
-                            SET personal_message = %s, 
+                            UPDATE invites
+                            SET personal_message = %s,
                                 updated_at = CURRENT_TIMESTAMP
                             WHERE id = %s
                             RETURNING id
@@ -4231,8 +4250,8 @@ def update_personal_message():
                         user_id = user_result[0] if user_result else None
 
                         cur.execute("""
-                            INSERT INTO invites 
-                            (user_id, email, invitation_token, invited_by_firebase_uid, 
+                            INSERT INTO invites
+                            (user_id, email, invitation_token, invited_by_firebase_uid,
                              personal_message, invitation_status)
                             VALUES (%s, %s, %s, %s, %s, 'draft')
                             RETURNING id
@@ -4508,10 +4527,10 @@ def get_user_esim_details():
                 with conn.cursor() as cur:
                     # Get all eSIM activations for this user
                     cur.execute("""
-                        SELECT phone_number, iccid, line_id, activation_status, 
-                               esim_qr_code, created_at, product_id
-                        FROM oxio_activations 
-                        WHERE firebase_uid = %s 
+                        SELECT id, product_id, iccid, line_id, phone_number,
+                               activation_status, esim_qr_code, created_at, country
+                        FROM oxio_activations
+                        WHERE firebase_uid = %s
                         ORDER BY created_at DESC
                     """, (firebase_uid,))
 
@@ -4520,13 +4539,15 @@ def get_user_esim_details():
 
                     for activation in activations:
                         esim_details.append({
-                            'phone_number': activation[0],
-                            'iccid': activation[1], 
-                            'line_id': activation[2],
-                            'status': activation[3],
-                            'qr_code': activation[4],
-                            'activated_date': activation[5].isoformat() if activation[5] else None,
-                            'product_type': activation[6]
+                            'id': activation[0],
+                            'product_id': activation[1],
+                            'iccid': activation[2],
+                            'line_id': activation[3],
+                            'phone_number': activation[4],
+                            'status': activation[5],
+                            'qr_code': activation[6],
+                            'activated_date': activation[7].isoformat() if activation[7] else None,
+                            'country': activation[8]
                         })
 
                     return jsonify({
@@ -4535,7 +4556,7 @@ def get_user_esim_details():
                         'esims': esim_details
                     })
 
-        return jsonify({'success': False, 'error': 'Database connection failed'})
+        return jsonify({'success': False, 'error': 'Database connection error'})
 
     except Exception as e:
         print(f"Error getting eSIM details: {str(e)}")
@@ -4563,7 +4584,7 @@ def get_user_phone_numbers():
                 if conn:
                     with conn.cursor() as cur:
                         cur.execute("""
-                            SELECT phone_number FROM users 
+                            SELECT phone_number FROM users
                             WHERE firebase_uid = %s AND phone_number IS NOT NULL
                         """, (firebase_uid,))
                         result = cur.fetchone()
@@ -4585,7 +4606,7 @@ def get_user_phone_numbers():
                     with conn.cursor() as cur:
                         cur.execute("""
                             SELECT DISTINCT phone_number, line_id, activation_status, created_at
-                            FROM oxio_activations 
+                            FROM oxio_activations
                             WHERE firebase_uid = %s AND phone_number IS NOT NULL
                             ORDER BY created_at DESC
                         """, (firebase_uid,))
@@ -4620,9 +4641,9 @@ def get_user_phone_numbers():
                     # Generate QR codes for beta phone
                     try:
                         resin_qr = generate_resin_qr_code(
-                            beta_phone, 
-                            group_id, 
-                            oxio_user_id, 
+                            beta_phone,
+                            group_id,
+                            oxio_user_id,
                             beta_status.get('resin_data', {})
                         )
                         simple_qr = generate_simple_phone_qr(beta_phone)
@@ -5071,7 +5092,7 @@ def generate_welcome_notification():
 
                     # Ensure audio_url column exists for existing tables (migration)
                     cur.execute("""
-                        ALTER TABLE notifications 
+                        ALTER TABLE notifications
                         ADD COLUMN IF NOT EXISTS audio_url VARCHAR(500)
                     """)
 
@@ -5153,7 +5174,7 @@ def upload_iccid_csv():
         # Read and decode CSV content with error handling
         import csv
         import io
-        
+
         try:
             # Use utf-8-sig to handle Excel BOM (Byte Order Mark) correctly
             csv_content = csv_file.read().decode('utf-8-sig')
@@ -5163,13 +5184,13 @@ def upload_iccid_csv():
                 'error': 'Invalid file encoding',
                 'message': 'CSV file must be UTF-8 encoded'
             }), 400
-        
+
         csv_reader = csv.DictReader(io.StringIO(csv_content))
-        
+
         # Extract and validate ICCIDs from CSV
         raw_iccids = []
         invalid_rows = []
-        
+
         # Check for case-insensitive ICCID header
         headers = [h.strip().upper() for h in csv_reader.fieldnames or []]
         if 'ICCID' not in headers:
@@ -5178,7 +5199,7 @@ def upload_iccid_csv():
                 'error': 'Missing ICCID column',
                 'message': 'CSV must have an "ICCID" column header'
             }), 400
-        
+
         for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 because line 1 is header
             # Case-insensitive header lookup
             iccid = None
@@ -5186,7 +5207,7 @@ def upload_iccid_csv():
                 if key.strip().upper() == 'ICCID':
                     iccid = value.strip()
                     break
-            
+
             if iccid and iccid != 'ICCID':  # Skip header and empty rows
                 # Validate ICCID format (19-20 hex digits, optional F)
                 if re.match(r'^[0-9A-F]{19,20}F?$', iccid.upper()):
@@ -5215,19 +5236,19 @@ def upload_iccid_csv():
                 with conn.cursor() as cur:
                     # Use idempotent INSERT with ON CONFLICT DO NOTHING
                     insert_query = """
-                        INSERT INTO iccid_inventory (iccid, status) 
-                        VALUES (%s, %s) 
+                        INSERT INTO iccid_inventory (iccid, status)
+                        VALUES (%s, %s)
                         ON CONFLICT (iccid) DO NOTHING
                     """
-                    
+
                     # Batch insert with conflict handling
                     insert_values = [(iccid, 'available') for iccid in unique_csv_iccids]
                     cur.executemany(insert_query, insert_values)
-                    
+
                     # Get count of actually inserted rows
                     rows_inserted = cur.rowcount
                     conn.commit()
-                    
+
                     # Calculate statistics
                     total_in_csv = len(raw_iccids)
                     duplicates_in_db = len(unique_csv_iccids) - rows_inserted
@@ -5268,20 +5289,20 @@ def get_iccid_inventory_stats():
                     # Get inventory stats by status
                     cur.execute("""
                         SELECT status, COUNT(*) as count
-                        FROM iccid_inventory 
+                        FROM iccid_inventory
                         GROUP BY status
                         ORDER BY status
                     """)
                     status_stats = cur.fetchall()
-                    
+
                     # Get total count
                     cur.execute('SELECT COUNT(*) FROM iccid_inventory')
                     total_count = cur.fetchone()[0]
-                    
+
                     # Get recent uploads
                     cur.execute("""
                         SELECT DATE(batch_upload_date) as upload_date, COUNT(*) as count
-                        FROM iccid_inventory 
+                        FROM iccid_inventory
                         WHERE batch_upload_date >= NOW() - INTERVAL '30 days'
                         GROUP BY DATE(batch_upload_date)
                         ORDER BY upload_date DESC
@@ -5323,7 +5344,7 @@ def generate_qr_code(lpa_code, iccid, format_type='svg'):
             box_size=10,
             border=4,
         )
-        
+
         qr.add_data(lpa_code)
         qr.make(fit=True)
 
@@ -5351,7 +5372,7 @@ def generate_qr_code(lpa_code, iccid, format_type='svg'):
                 'format': 'png',
                 'inline': True
             }
-            
+
     except Exception as e:
         print(f"Error generating QR code: {str(e)}")
         return {
@@ -5397,7 +5418,7 @@ def replace_iccid_inventory():
         # Read and decode CSV content with error handling
         import csv
         import io
-        
+
         try:
             # Use utf-8-sig to handle Excel BOM (Byte Order Mark) correctly
             csv_content = csv_file.read().decode('utf-8-sig')
@@ -5407,14 +5428,14 @@ def replace_iccid_inventory():
                 'error': 'Invalid file encoding',
                 'message': 'CSV file must be UTF-8 encoded'
             }), 400
-        
+
         csv_reader = csv.DictReader(io.StringIO(csv_content))
-        
+
         # Expected headers mapping
         expected_headers = {
             'ICCID': 'iccid',
             'SIM type': 'sim_type',
-            'SIM status': 'sim_status', 
+            'SIM status': 'sim_status',
             'Assigned to': 'assigned_to',
             'SIM order': 'sim_order',
             'SIM tag': 'sim_tag',
@@ -5422,11 +5443,11 @@ def replace_iccid_inventory():
             'Line ID': 'line_id',
             'eSIM Activation Code': 'lpa_code'
         }
-        
+
         # Check for required headers
         csv_headers = [h.strip() for h in csv_reader.fieldnames or []]
         missing_headers = [h for h in expected_headers.keys() if h not in csv_headers]
-        
+
         if missing_headers:
             return jsonify({
                 'success': False,
@@ -5434,11 +5455,11 @@ def replace_iccid_inventory():
                 'message': f'CSV must have columns: {", ".join(missing_headers)}',
                 'found_headers': csv_headers
             }), 400
-        
+
         # Parse and validate CSV data
         inventory_data = []
         invalid_rows = []
-        
+
         for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 because line 1 is header
             try:
                 # Extract data from row
@@ -5446,26 +5467,26 @@ def replace_iccid_inventory():
                 for csv_header, db_field in expected_headers.items():
                     value = row.get(csv_header, '').strip()
                     row_data[db_field] = value if value else None
-                
+
                 # Validate required fields
                 if not row_data['iccid']:
                     invalid_rows.append({'row': row_num, 'error': 'Missing ICCID'})
                     continue
-                    
+
                 if not row_data['lpa_code']:
                     invalid_rows.append({'row': row_num, 'error': 'Missing LPA code'})
                     continue
-                
+
                 # Validate ICCID format
                 iccid_upper = row_data['iccid'].upper()
                 if not re.match(r'^[0-9A-F]{19,20}F?$', iccid_upper):
                     invalid_rows.append({'row': row_num, 'error': f'Invalid ICCID format: {row_data["iccid"]}'})
                     continue
-                
+
                 row_data['iccid'] = iccid_upper
                 row_data['status'] = 'available'  # Set default status
                 inventory_data.append(row_data)
-                
+
             except Exception as e:
                 invalid_rows.append({'row': row_num, 'error': f'Parse error: {str(e)}'})
 
@@ -5499,47 +5520,47 @@ def replace_iccid_inventory():
                     try:
                         # Start transaction
                         conn.autocommit = False
-                        
+
                         # Backup existing data to archive table
                         cur.execute("""
-                            INSERT INTO iccid_inventory_archive 
-                            (archived_at, id, iccid, status, sim_type, sim_status, assigned_to, sim_order, 
-                             sim_tag, country, line_id, lpa_code, allocated_to_user_id, allocated_to_firebase_uid, 
+                            INSERT INTO iccid_inventory_archive
+                            (archived_at, id, iccid, status, sim_type, sim_status, assigned_to, sim_order,
+                             sim_tag, country, line_id, lpa_code, allocated_to_user_id, allocated_to_firebase_uid,
                              activated_at, activation_id, batch_upload_date, created_at, updated_at)
-                            SELECT CURRENT_TIMESTAMP, id, iccid, status, sim_type, sim_status, assigned_to, 
-                                   sim_order, sim_tag, country, line_id, lpa_code, allocated_to_user_id, 
-                                   allocated_to_firebase_uid, activated_at, activation_id, batch_upload_date, 
+                            SELECT CURRENT_TIMESTAMP, id, iccid, status, sim_type, sim_status, assigned_to,
+                                   sim_order, sim_tag, country, line_id, lpa_code, allocated_to_user_id,
+                                   allocated_to_firebase_uid, activated_at, activation_id, batch_upload_date,
                                    created_at, updated_at
                             FROM iccid_inventory
                         """)
                         archived_count = cur.rowcount
-                        
+
                         # Clear existing inventory
                         cur.execute('DELETE FROM iccid_inventory')
                         deleted_count = cur.rowcount
-                        
+
                         # Insert new inventory data
                         insert_query = """
-                            INSERT INTO iccid_inventory 
-                            (iccid, status, sim_type, sim_status, assigned_to, sim_order, sim_tag, 
+                            INSERT INTO iccid_inventory
+                            (iccid, status, sim_type, sim_status, assigned_to, sim_order, sim_tag,
                              country, line_id, lpa_code, created_at, updated_at)
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                         """
-                        
+
                         insert_values = [
                             (item['iccid'], item['status'], item['sim_type'], item['sim_status'],
                              item['assigned_to'], item['sim_order'], item['sim_tag'], item['country'],
                              item['line_id'], item['lpa_code'])
                             for item in inventory_data
                         ]
-                        
+
                         cur.executemany(insert_query, insert_values)
                         inserted_count = cur.rowcount
-                        
+
                         # Commit transaction
                         conn.commit()
                         conn.autocommit = True
-                        
+
                         return jsonify({
                             'success': True,
                             'message': 'ICCID inventory replaced successfully',
@@ -5552,7 +5573,7 @@ def replace_iccid_inventory():
                             },
                             'validation_errors': invalid_rows[:5] if invalid_rows else []
                         })
-                        
+
                     except Exception as e:
                         # Rollback on error
                         conn.rollback()
@@ -5576,7 +5597,7 @@ def get_user_assigned_iccid():
     try:
         # Get Firebase UID from the authenticated request
         firebase_uid = request.firebase_uid  # Set by firebase_auth_required decorator
-        
+
         if not firebase_uid:
             return jsonify({
                 'success': False,
@@ -5587,31 +5608,31 @@ def get_user_assigned_iccid():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Find assigned ICCID for this specific user only
+                    # Find assigned ICCID for this user only
                     cur.execute("""
-                        SELECT iccid, sim_type, sim_status, country, lpa_code, 
+                        SELECT iccid, sim_type, sim_status, country, lpa_code,
                                activated_at, status, assigned_to
-                        FROM iccid_inventory 
-                        WHERE allocated_to_firebase_uid = %s 
-                           AND status IN ('assigned', 'activated')
+                        FROM iccid_inventory
+                        WHERE allocated_to_firebase_uid = %s
+                          AND status IN ('assigned', 'activated')
                         LIMIT 1
                     """, (firebase_uid,))
-                    
+
                     result = cur.fetchone()
-                    
+
                     if not result:
                         return jsonify({
                             'success': True,
                             'has_iccid': False,
                             'message': 'No eSIM assigned to this user'
                         })
-                    
+
                     iccid, sim_type, sim_status, country, lpa_code, activated_at, status, assigned_to = result
-                    
+
                     # Generate QR codes for the LPA code (secure inline generation)
                     qr_svg = generate_qr_code(lpa_code, iccid, 'svg')
                     qr_png_base64 = generate_qr_code(lpa_code, iccid, 'png')
-                    
+
                     return jsonify({
                         'success': True,
                         'has_iccid': True,
@@ -5644,42 +5665,42 @@ def assign_iccid_to_user_atomic(firebase_uid, user_email=None):
     """
     Atomically assign an available ICCID to a user with row-level locking
     Prevents race conditions from concurrent webhook deliveries
-    
+
     Args:
         firebase_uid: User's Firebase UID
         user_email: User's email address (optional)
-        
+
     Returns:
         Dictionary with assigned ICCID details or None if no ICCIDs available
     """
     try:
         print(f"🔒 Atomically assigning ICCID to Firebase UID: {firebase_uid}")
-        
+
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     # Use row-level locking to prevent race conditions
                     cur.execute("""
                         SELECT iccid, sim_type, sim_status, country, lpa_code, line_id
-                        FROM iccid_inventory 
-                        WHERE status = 'available' 
+                        FROM iccid_inventory
+                        WHERE status = 'available'
                           AND allocated_to_firebase_uid IS NULL
                         ORDER BY created_at ASC
                         LIMIT 1
                         FOR UPDATE SKIP LOCKED
                     """)
-                    
+
                     available_iccid = cur.fetchone()
-                    
+
                     if not available_iccid:
                         print(f"❌ No available ICCIDs for assignment (atomic)")
                         return None
-                    
+
                     iccid, sim_type, sim_status, country, lpa_code, line_id = available_iccid
-                    
+
                     # Atomically update ICCID record with user assignment
                     cur.execute("""
-                        UPDATE iccid_inventory 
+                        UPDATE iccid_inventory
                         SET allocated_to_firebase_uid = %s,
                             status = 'assigned',
                             assigned_at = CURRENT_TIMESTAMP,
@@ -5688,17 +5709,17 @@ def assign_iccid_to_user_atomic(firebase_uid, user_email=None):
                           AND status = 'available'
                           AND allocated_to_firebase_uid IS NULL
                     """, (firebase_uid, user_email or firebase_uid, iccid))
-                    
+
                     rows_affected = cur.rowcount
-                    
+
                     if rows_affected == 0:
                         print(f"⚠️ Race condition detected - ICCID {iccid} was assigned by another process")
                         return None
-                    
+
                     conn.commit()
-                    
+
                     print(f"✅ Atomically assigned ICCID {iccid} to Firebase UID {firebase_uid}")
-                    
+
                     return {
                         'success': True,
                         'iccid': iccid,
@@ -5710,9 +5731,9 @@ def assign_iccid_to_user_atomic(firebase_uid, user_email=None):
                         'firebase_uid': firebase_uid,
                         'assigned_at': datetime.now().isoformat()
                     }
-        
+
         return None
-        
+
     except Exception as e:
         print(f"Error atomically assigning ICCID to user {firebase_uid}: {str(e)}")
         return None
@@ -5720,53 +5741,53 @@ def assign_iccid_to_user_atomic(firebase_uid, user_email=None):
 def assign_iccid_to_user(firebase_uid, user_email=None):
     """
     Assign an available ICCID to a user after successful payment
-    
+
     Args:
         firebase_uid: User's Firebase UID
         user_email: User's email address (optional)
-        
+
     Returns:
         Dictionary with assigned ICCID details or None if no ICCIDs available
     """
     try:
         print(f"🎯 Assigning ICCID to Firebase UID: {firebase_uid}")
-        
+
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     # Find first available ICCID
                     cur.execute("""
                         SELECT iccid, sim_type, sim_status, country, lpa_code, line_id
-                        FROM iccid_inventory 
-                        WHERE status = 'available' 
+                        FROM iccid_inventory
+                        WHERE status = 'available'
                           AND allocated_to_firebase_uid IS NULL
                         ORDER BY created_at ASC
                         LIMIT 1
                         FOR UPDATE
                     """)
-                    
+
                     available_iccid = cur.fetchone()
-                    
+
                     if not available_iccid:
                         print(f"❌ No available ICCIDs for assignment")
                         return None
-                    
+
                     iccid, sim_type, sim_status, country, lpa_code, line_id = available_iccid
-                    
+
                     # Update ICCID record with user assignment
                     cur.execute("""
-                        UPDATE iccid_inventory 
+                        UPDATE iccid_inventory
                         SET allocated_to_firebase_uid = %s,
                             status = 'assigned',
                             assigned_at = CURRENT_TIMESTAMP,
                             assigned_to = %s
                         WHERE iccid = %s
                     """, (firebase_uid, user_email or firebase_uid, iccid))
-                    
+
                     conn.commit()
-                    
+
                     print(f"✅ Successfully assigned ICCID {iccid} to Firebase UID {firebase_uid}")
-                    
+
                     return {
                         'success': True,
                         'iccid': iccid,
@@ -5778,9 +5799,9 @@ def assign_iccid_to_user(firebase_uid, user_email=None):
                         'firebase_uid': firebase_uid,
                         'assigned_at': datetime.now().isoformat()
                     }
-        
+
         return None
-        
+
     except Exception as e:
         print(f"Error assigning ICCID to user {firebase_uid}: {str(e)}")
         return None
@@ -5788,10 +5809,10 @@ def assign_iccid_to_user(firebase_uid, user_email=None):
 def get_user_assigned_iccid_data(firebase_uid):
     """
     Get user's assigned ICCID data for idempotency checks
-    
+
     Args:
         firebase_uid: User's Firebase UID
-        
+
     Returns:
         Dictionary with ICCID details or None if no assignment
     """
@@ -5801,18 +5822,18 @@ def get_user_assigned_iccid_data(firebase_uid):
                 with conn.cursor() as cur:
                     cur.execute("""
                         SELECT iccid, sim_type, sim_status, country, lpa_code, line_id, allocated_to_firebase_uid, assigned_at
-                        FROM iccid_inventory 
-                        WHERE allocated_to_firebase_uid = %s 
+                        FROM iccid_inventory
+                        WHERE allocated_to_firebase_uid = %s
                           AND status = 'assigned'
                         ORDER BY assigned_at DESC
                         LIMIT 1
                     """, (firebase_uid,))
-                    
+
                     result = cur.fetchone()
-                    
+
                     if result:
                         iccid, sim_type, sim_status, country, lpa_code, line_id, allocated_to_firebase_uid, assigned_at = result
-                        
+
                         return {
                             'success': True,
                             'iccid': iccid,
@@ -5824,9 +5845,9 @@ def get_user_assigned_iccid_data(firebase_uid):
                             'firebase_uid': allocated_to_firebase_uid,
                             'assigned_at': assigned_at.isoformat() if assigned_at else None
                         }
-        
+
         return None
-        
+
     except Exception as e:
         print(f"Error getting user assigned ICCID data: {str(e)}")
         return None
@@ -5834,11 +5855,11 @@ def get_user_assigned_iccid_data(firebase_uid):
 def rollback_iccid_assignment(iccid, firebase_uid):
     """
     Rollback ICCID assignment if activation fails
-    
+
     Args:
         iccid: ICCID to rollback
         firebase_uid: User's Firebase UID
-        
+
     Returns:
         True if rollback successful, False otherwise
     """
@@ -5848,27 +5869,27 @@ def rollback_iccid_assignment(iccid, firebase_uid):
                 with conn.cursor() as cur:
                     # Reset ICCID to available status
                     cur.execute("""
-                        UPDATE iccid_inventory 
+                        UPDATE iccid_inventory
                         SET allocated_to_firebase_uid = NULL,
                             status = 'available',
                             assigned_at = NULL,
                             assigned_to = NULL
-                        WHERE iccid = %s 
+                        WHERE iccid = %s
                           AND allocated_to_firebase_uid = %s
                     """, (iccid, firebase_uid))
-                    
+
                     rows_affected = cur.rowcount
                     conn.commit()
-                    
+
                     if rows_affected > 0:
                         print(f"✅ Rolled back ICCID {iccid} assignment for Firebase UID {firebase_uid}")
                         return True
                     else:
                         print(f"⚠️ No rows affected during rollback for ICCID {iccid} and Firebase UID {firebase_uid}")
                         return False
-        
+
         return False
-        
+
     except Exception as e:
         print(f"❌ Error rolling back ICCID assignment: {str(e)}")
         return False
@@ -5876,7 +5897,7 @@ def rollback_iccid_assignment(iccid, firebase_uid):
 def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid):
     """
     Send eSIM purchase receipt email with QR codes
-    
+
     Args:
         firebase_uid: User's Firebase UID
         user_email: User's email address
@@ -5887,16 +5908,16 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
         from email_service import send_email
         from datetime import datetime
         import base64
-        
+
         print(f"📧 Sending eSIM receipt email to {user_email}")
-        
+
         # Generate QR codes for the LPA code
         qr_svg = generate_qr_code(assigned_iccid['lpa_code'], assigned_iccid['iccid'], 'svg')
         qr_png = generate_qr_code(assigned_iccid['lpa_code'], assigned_iccid['iccid'], 'png')
-        
+
         # Create email content
-        subject = "🎉 Your eSIM is Ready - DOTM Platform"
-        
+        subject = "🎉 eSIM Purchased Successfully - DOTM Platform"
+
         html_body = f"""
         <html>
         <head>
@@ -5917,7 +5938,7 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
             <div class="container">
                 <div class="header">
                     <h1>🎉 eSIM Purchased Successfully!</h1>
-                    <p>Your DOTM eSIM is ready for activation</p>
+                    <p>Your DOTM eSIM Beta access is now active</p>
                 </div>
 
                 <div class="content">
@@ -5929,9 +5950,6 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                             <li><strong>Status:</strong> ✅ <span class="highlight">Ready for Activation</span></li>
                             <li><strong>Purchase Date:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</li>
                         </ul>
-                        
-                        <h4>🔐 LPA Activation Code:</h4>
-                        <div class="lpa-code">{assigned_iccid['lpa_code']}</div>
                     </div>
 
                     <div class="qr-section">
@@ -5969,7 +5987,7 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
         </body>
         </html>
         """
-        
+
         # Prepare email attachments (PNG QR code)
         attachments = []
         if qr_png and qr_png.get('success') and qr_png.get('data'):
@@ -5980,20 +5998,20 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                 'content': base64.b64decode(png_data),
                 'content_type': 'image/png'
             })
-        
+
         # Generate QR code for email attachment
         if assigned_iccid and assigned_iccid.get('lpa_code'):
             qr_result = generate_qr_code_for_lpa(assigned_iccid['lpa_code'])
             if qr_result and qr_result.get('success'):
                 # Embed QR code as data URL in HTML
                 qr_img_tag = f'<img src="data:image/png;base64,{open(qr_result["filename"], "rb").read() | __import__("base64").b64encode | bytes.decode}" alt="eSIM QR Code" style="max-width: 300px; margin: 20px 0;"/>'
-                
+
                 # Insert QR code into HTML body
                 html_body = html_body.replace(
                     '<div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">',
                     f'<div style="text-align: center; margin: 20px 0;">{qr_img_tag}</div><div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">'
                 )
-        
+
         # Send email with embedded QR code
         result = send_email(
             to_email=user_email,
@@ -6001,10 +6019,10 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
             body="eSIM receipt - please check HTML version for QR code and full details",
             html_body=html_body
         )
-        
+
         print(f"✅ Sent eSIM receipt email to {user_email} with QR code attachment")
         return result
-        
+
     except Exception as e:
         print(f"Error sending eSIM receipt email: {str(e)}")
         return False
@@ -6021,7 +6039,7 @@ if __name__ == '__main__':
     print(f"Starting server on http://0.0.0.0:{port}")
     print(f"OXIO API endpoints should be available at:")
     print(f"  - GET  /api/oxio/test-connection")
-    print(f"  - GET  /api/oxio/test-plans") 
+    print(f"  - GET  /api/oxio/test-plans")
     print(f"  - POST /api/oxio/activate-line")
     print(f"  - POST /api/oxio/test-sample-activation")
 
