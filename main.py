@@ -1867,18 +1867,30 @@ def handle_stripe_webhook():
     # Get webhook endpoint secret from environment
     endpoint_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
 
+    # Debug logging for webhook signature verification
+    print(f"🔐 Webhook signature verification:")
+    print(f"   Endpoint secret configured: {'✓' if endpoint_secret else '✗'}")
+    print(f"   Stripe signature header present: {'✓' if sig_header else '✗'}")
+    print(f"   Payload length: {len(payload)} bytes")
+    if endpoint_secret:
+        print(f"   Endpoint secret starts with: whsec_{endpoint_secret[6:10]}...")
+    if sig_header:
+        print(f"   Signature header: {sig_header[:50]}...")
+
     try:
         # Verify webhook signature - MANDATORY for security (NO BYPASSES IN PRODUCTION)
         if not endpoint_secret:
-            print("ERROR: STRIPE_WEBHOOK_SECRET not configured - webhook verification required")
+            print("❌ ERROR: STRIPE_WEBHOOK_SECRET not configured - webhook verification required")
             return jsonify({'error': 'Webhook verification not configured'}), 500
         elif not sig_header:
-            print("ERROR: Missing stripe-signature header")
+            print("❌ ERROR: Missing stripe-signature header")
             return jsonify({'error': 'Missing webhook signature'}), 400
         else:
+            print("🔍 Attempting to verify webhook signature...")
             event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+            print("✅ Webhook signature verified successfully")
 
-        print(f"Stripe webhook received: {event['type']}")
+        print(f"📨 Stripe webhook received: {event['type']} (ID: {event['id']})")
 
         # IDEMPOTENCY: Check if we've already processed this event
         event_id = event['id']
@@ -2075,13 +2087,28 @@ def handle_stripe_webhook():
         return jsonify({'status': 'success'}), 200
 
     except ValueError as e:
-        print(f"Invalid payload: {str(e)}")
+        print(f"❌ Webhook ValueError: {str(e)}")
+        print(f"   Raw payload (first 200 chars): {payload[:200]}")
         return jsonify({'error': 'Invalid payload'}), 400
     except stripe.error.SignatureVerificationError as e:
-        print(f"Invalid signature: {str(e)}")
-        return jsonify({'error': 'Invalid signature'}), 400
+        print(f"❌ Webhook SignatureVerificationError: {str(e)}")
+        print(f"   This usually means:")
+        print(f"   1. Webhook endpoint secret is incorrect")
+        print(f"   2. Webhook URL in Stripe dashboard doesn't match this endpoint")
+        print(f"   3. Request body was modified before signature verification")
+        print(f"   Expected webhook URL: https://your-domain.replit.app/stripe/webhook/7f3a9b2c8d1e4f5a6b7c8d9e0f1a2b3c")
+        return jsonify({
+            'error': 'Invalid signature',
+            'troubleshooting': {
+                'endpoint_url': '/stripe/webhook/7f3a9b2c8d1e4f5a6b7c8d9e0f1a2b3c',
+                'expected_domain': 'your-domain.replit.app',
+                'message': 'Webhook endpoint secret mismatch or incorrect URL configuration'
+            }
+        }), 400
     except Exception as e:
-        print(f"Webhook error: {str(e)}")
+        print(f"❌ Webhook unexpected error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_qr_code, plan_id, user_email=None, oxio_user_id=None):
