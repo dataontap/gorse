@@ -5511,6 +5511,81 @@ def replace_iccid_inventory():
             'message': str(e)
         }), 500
 
+@app.route('/api/user-assigned-iccid', methods=['GET'])
+def get_user_assigned_iccid():
+    """Get assigned ICCID and generate QR code for the authenticated user"""
+    try:
+        # Get Firebase UID from Authorization header or request params
+        firebase_uid = None
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            firebase_uid = auth_header[7:]
+        elif request.args.get('firebaseUid'):
+            firebase_uid = request.args.get('firebaseUid')
+        
+        if not firebase_uid:
+            return jsonify({
+                'success': False,
+                'error': 'Authentication required',
+                'message': 'Firebase UID not provided'
+            }), 401
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Find assigned ICCID for this user
+                    cur.execute("""
+                        SELECT iccid, sim_type, sim_status, country, lpa_code, 
+                               activated_at, status, assigned_to
+                        FROM iccid_inventory 
+                        WHERE allocated_to_firebase_uid = %s 
+                           OR status = 'assigned'
+                        LIMIT 1
+                    """, (firebase_uid,))
+                    
+                    result = cur.fetchone()
+                    
+                    if not result:
+                        return jsonify({
+                            'success': True,
+                            'has_iccid': False,
+                            'message': 'No eSIM assigned to this user'
+                        })
+                    
+                    iccid, sim_type, sim_status, country, lpa_code, activated_at, status, assigned_to = result
+                    
+                    # Generate QR codes for the LPA code
+                    qr_svg = generate_qr_code(lpa_code, iccid, 'svg')
+                    qr_png = generate_qr_code(lpa_code, iccid, 'png')
+                    
+                    return jsonify({
+                        'success': True,
+                        'has_iccid': True,
+                        'iccid_data': {
+                            'iccid': iccid,
+                            'sim_type': sim_type,
+                            'sim_status': sim_status,
+                            'country': country,
+                            'lpa_code': lpa_code,
+                            'status': status,
+                            'assigned_to': assigned_to,
+                            'activated_at': activated_at.isoformat() if activated_at else None,
+                            'qr_codes': {
+                                'svg': qr_svg,
+                                'png': qr_png
+                            }
+                        }
+                    })
+
+        return jsonify({'success': False, 'error': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error getting user assigned ICCID: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
     print("\n=== Registered Flask Routes ===")
