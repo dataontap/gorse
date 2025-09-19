@@ -47,16 +47,13 @@ class eSIMActivationService:
             
             print(f"📊 User data: ID={user_id}, OXIO User={existing_oxio_user_id}, OXIO Group={existing_oxio_group_id}")
             
-            # Step 2: Ensure OXIO group exists
+            # Step 2: Try to ensure OXIO group exists (optional - don't fail if it doesn't work)
             oxio_group_id = self._ensure_oxio_group(user_id, firebase_uid, existing_oxio_group_id)
             if not oxio_group_id:
-                return {
-                    'success': False,
-                    'error': 'Failed to create/get OXIO group',
-                    'step': 'oxio_group_creation'
-                }
+                print(f"⚠️ OXIO group creation failed, continuing without group ID")
+                oxio_group_id = None  # Continue without group
             
-            # Step 3: Ensure OXIO user exists
+            # Step 3: Ensure OXIO user exists (group ID is optional)
             oxio_user_id = self._ensure_oxio_user(
                 user_id, firebase_uid, user_email, user_name, 
                 existing_oxio_user_id, oxio_group_id
