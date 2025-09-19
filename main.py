@@ -411,8 +411,9 @@ def register_fcm_token():
 
                             return jsonify({"status": "success", "platform": platform})
 
-        return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
+        return jsonify({"status": "success", "platform": platform})
 
+        return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
 
     except Exception as e:
         print(f"Error processing FCM token registration: {str(e)}")
