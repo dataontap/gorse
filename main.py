@@ -3917,7 +3917,7 @@ def test_esim_activation_service():
             firebase_uid=firebase_uid,
             user_email=user_email,
             user_name=user_name,
-            stripe_session_id='test_session_123',
+            stripe_session_id="test_session_123",
             purchase_amount=100
         )
 
