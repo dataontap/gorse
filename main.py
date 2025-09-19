@@ -1857,7 +1857,7 @@ def create_checkout_session():
         print(f"Error creating checkout session: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/stripe/webhook', methods=['POST'])
+@app.route('/stripe/webhook/7f3a9b2c8d1e4f5a6b7c8d9e0f1a2b3c', methods=['POST'])
 def handle_stripe_webhook():
     """Handle Stripe webhook events, especially payment success"""
     global stripe  # Use the global stripe module
