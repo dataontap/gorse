@@ -161,42 +161,12 @@ class eSIMActivationService:
             return None
     
     def _ensure_oxio_group(self, user_id: int, firebase_uid: str, existing_group_id: str = None, oxio_user_id: str = None) -> Optional[str]:
-        """Ensure OXIO group exists for user"""
-        try:
-            if existing_group_id:
-                print(f"✅ Using existing OXIO group: {existing_group_id}")
-                return existing_group_id
-            
-            # Create new OXIO group
-            group_name = f"eSIM_User_{firebase_uid[:8]}"
-            group_description = f"eSIM group for user {user_id}"
-            
-            if not oxio_user_id:
-                print(f"❌ Cannot create OXIO group without OXIO user ID")
-                return None
-            
-            print(f"🏗️ Creating OXIO group: {group_name}")
-            group_result = self.oxio_service.create_oxio_group(
-                group_name=group_name,
-                oxio_user_id=oxio_user_id,
-                description=group_description
-            )
-            
-            if group_result.get('success'):
-                oxio_group_id = group_result.get('oxio_group_id')
-                print(f"✅ Created OXIO group: {oxio_group_id}")
-                
-                # Update user record with group ID
-                self._update_user_oxio_data(firebase_uid, oxio_group_id=oxio_group_id)
-                
-                return oxio_group_id
-            else:
-                print(f"❌ Failed to create OXIO group: {group_result.get('message', 'Unknown error')}")
-                return None
-                
-        except Exception as e:
-            print(f"❌ Error ensuring OXIO group: {str(e)}")
-            return None
+        """DISABLED: OXIO group creation removed to prevent Stripe webhook failures"""
+        # OXIO groups are disabled entirely from the eSIM activation flow
+        # Groups caused webhook failures and are not required for eSIM activation
+        # The system works perfectly with just OXIO users (endUserId) for line activation
+        print(f"⚠️ OXIO groups disabled - continuing without group (webhook stability)")
+        return None
     
     def _ensure_oxio_user(self, user_id: int, firebase_uid: str, user_email: str, 
                                user_name: str = None, existing_user_id: str = None) -> Optional[str]:
