@@ -1096,9 +1096,9 @@ def get_current_user():
     firebase_uid = request.args.get('firebaseUid')
     if not firebase_uid:
         return jsonify({'error': 'Firebase UID is required'}), 400
-    
+
     # The require_auth decorator already validates the Firebase UID exists in database
-    
+
     try:
         with get_db_connection() as conn:
             if conn:
@@ -1444,88 +1444,6 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
         print(f"Error creating subscription: {str(e)}")
         return None
 
-@delivery_ns.route('')
-class DeliveryResource(Resource):
-    @delivery_ns.response(400, 'Bad Request')
-    def post(self):
-        """Submit eSIM delivery preferences"""
-        try:
-            data = request.get_json()
-            if not data:
-                return {'message': 'No data provided', 'status': 'error'}, 400
-
-            # Create or retrieve the product
-            if not stripe.api_key:
-                return {'message': 'Stripe API key not configured', 'status': 'error'}, 500
-
-            try:
-                product = stripe.Product.retrieve('esim_activation_v1')
-            except stripe.error.InvalidRequestError as e:
-                print(f"Stripe error: {str(e)}")
-                # Create a price first
-                price = stripe.Price.create(
-                    unit_amount=100,  # $1.00 USD in cents
-                    currency='usd',
-                    product_data={
-                        'id': 'esim_activation_v1',
-                        'name': 'eSIM Activation',
-                        'metadata': {
-                            'type': 'esim',
-                            'product_catalog': 'digital_services'
-                        }
-                    }
-                )
-                product = stripe.Product.retrieve('esim_activation_v1')
-
-            # Create or retrieve Stripe customer
-            try:
-                # Create customer
-                customer = stripe.Customer.create(
-                    email=data['contact'] if data['method'] == 'email' else None,
-                    phone=data['contact'] if data['method'] == 'sms' else None,
-                    description='eSIM activation customer'
-                )
-
-                # Create invoice first
-                invoice = stripe.Invoice.create(
-                    customer=customer.id,
-                    collection_method='send_invoice',
-                    days_until_due=1,  # Due in 1 day
-                    auto_advance=False,  #Don't finalize yet
-                    description='eSIM Activation Service'
-                )
-
-                # Add invoice item
-                stripe.InvoiceItem.create(
-                    customer=customer.id,
-                    amount=100,  # $1.00 in cents
-                    currency='usd',
-                    description='eSIM Activation',
-                    invoice=invoice.id
-                )
-
-                # Finalize and send invoice
-                invoice = stripe.Invoice.finalize_invoice(invoice.id, auto_advance=False)
-                invoice = stripe.Invoice.send_invoice(invoice.id)
-
-                print(f"Invoice sent successfully to customer {customer.id}")
-
-                return {
-                    'message': 'Invoice sent successfully',
-                    'status': 'success',
-                    'payment_url': invoice.hosted_invoice_url
-                }
-            except Exception as e:
-                return {'message': str(e), 'status': 'error'}, 500
-
-        except Exception as e:
-            return {'message': str(e), 'status': 'error'}, 500
-
-imei_model = api.model('IMEI', {
-    'imei1': fields.String(required=True, description='Primary IMEI number'),
-    'imei2': fields.String(required=False, description='Secondary IMEI number (dual SIM devices)')
-})
-
 @ns.route('')
 class IMEIResource(Resource):
     @ns.expect(imei_model)
@@ -1716,7 +1634,7 @@ def buy_esim():
     try:
         # Get Firebase UID from request parameters
         firebase_uid = request.args.get('firebaseUid') or request.form.get('firebaseUid')
-        
+
         if not firebase_uid:
             # If no UID provided, show error with redirect to login
             return """
@@ -1739,12 +1657,12 @@ def buy_esim():
             </body>
             </html>
             """, 401
-        
+
         # Get user data from database
         user_email = None
         user_name = None
         oxio_user_id = None
-        
+
         try:
             with get_db_connection() as conn:
                 if conn:
@@ -1776,7 +1694,7 @@ def buy_esim():
         except Exception as db_error:
             print(f"Database error getting user data: {db_error}")
             return "Database error", 500
-        
+
         # Create Stripe checkout session - OXIO user creation will happen during webhook processing
         session = stripe.checkout.Session.create(
             mode='payment',
@@ -1794,12 +1712,12 @@ def buy_esim():
                 'product': 'esim_beta'
             }
         )
-        
+
         print(f"✅ Created eSIM checkout session for user {firebase_uid}")
-        
+
         # Redirect to Stripe checkout
         return redirect(session.url)
-        
+
     except Exception as e:
         print(f"Error creating eSIM checkout session: {str(e)}")
         return f"""
@@ -1818,7 +1736,7 @@ def buy_esim():
 def esim_success():
     """eSIM purchase success confirmation page"""
     session_id = request.args.get('session_id')
-    
+
     return f"""
     <!DOCTYPE html>
     <html>
@@ -1841,14 +1759,14 @@ def esim_success():
         <div class="container">
             <div class="success">✅</div>
             <h1>eSIM Purchase Successful!</h1>
-            
+
             <div class="details">
                 <h3>Payment Confirmed</h3>
                 <p>Your $1 eSIM purchase has been processed successfully.</p>
                 <p><strong>Session ID:</strong> {session_id or 'N/A'}</p>
                 <p><strong>Status:</strong> OXIO eSIM activation in progress...</p>
             </div>
-            
+
             <div class="next-steps">
                 <h3>What's Next?</h3>
                 <p>🔄 Your eSIM is being activated automatically with OXIO</p>
@@ -1856,7 +1774,7 @@ def esim_success():
                 <p>📱 Follow the setup instructions to activate your eSIM</p>
                 <p>🌍 Enjoy global connectivity with DOT Mobile!</p>
             </div>
-            
+
             <div style="text-align: center; margin-top: 30px;">
                 <a href="/" class="btn">Return to Home</a>
                 <a href="/profile" class="btn">View Profile</a>
@@ -1945,10 +1863,10 @@ def handle_stripe_webhook():
     global stripe  # Use the global stripe module
     payload = request.data
     sig_header = request.headers.get('stripe-signature')
-    
+
     # Get webhook endpoint secret from environment
     endpoint_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
-    
+
     try:
         # Verify webhook signature - MANDATORY for security (allow test bypass)
         if sig_header and sig_header == "whsec_test":
@@ -1962,25 +1880,25 @@ def handle_stripe_webhook():
             return jsonify({'error': 'Missing webhook signature'}), 400
         else:
             event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
-        
+
         print(f"Stripe webhook received: {event['type']}")
-        
+
         # IDEMPOTENCY: Check if we've already processed this event
         event_id = event['id']
         event_type = event['type']
-        
+
         try:
             with get_db_connection() as conn:
                 cursor = conn.cursor()
-                
+
                 # Check if event already processed
                 cursor.execute("SELECT id, processing_result FROM processed_stripe_events WHERE event_id = %s", (event_id,))
                 existing_event = cursor.fetchone()
-                
+
                 if existing_event:
                     print(f"⚠️ Event {event_id} already processed - returning previous result")
                     return jsonify({'status': 'already_processed', 'event_id': event_id}), 200
-                
+
                 # Mark event as being processed (prevents race conditions)
                 cursor.execute(
                     "INSERT INTO processed_stripe_events (event_id, event_type) VALUES (%s, %s)",
@@ -1988,45 +1906,45 @@ def handle_stripe_webhook():
                 )
                 conn.commit()
                 print(f"🔄 Processing new event: {event_id} (type: {event_type})")
-                
+
         except Exception as db_error:
             print(f"Database error checking event idempotency: {db_error}")
             # Continue processing but log the issue
             pass
-        
+
         # Handle successful payment events
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']
-            
+
             # Extract product information from metadata
             product_id = session['metadata'].get('product_id')  # Legacy format
             product = session['metadata'].get('product')        # New format
             firebase_uid = session['metadata'].get('firebase_uid')  # Legacy
             oxio_user_id = session['metadata'].get('oxio_user_id')  # New direct OXIO format
             customer_id = session.get('customer')
-            
+
             print(f"Payment successful - Product: {product or product_id}, Firebase UID: {firebase_uid}, OXIO User: {oxio_user_id}")
-            
+
             # Handle eSIM Beta activation using dedicated service
             if product == 'esim_beta':
                 try:
                     print(f"💰 Processing $1 eSIM Beta activation with dedicated service")
-                    
+
                     # Import the new eSIM activation service
                     from esim_activation_service import esim_activation_service
-                    
+
                     # Get user details from session metadata
                     firebase_uid = session['metadata'].get('firebase_uid', '')
                     user_email = session['metadata'].get('user_email', '')
                     user_name = session['metadata'].get('user_name', '')
                     total_amount = session.get('amount_total', 100)  # Default $1.00 in cents
-                    
+
                     print(f"🎯 eSIM activation parameters: Firebase UID={firebase_uid}, Email={user_email}, Amount=${total_amount/100:.2f}")
-                    
+
                     if not firebase_uid or not user_email:
                         print(f"❌ Missing required parameters for eSIM activation")
                         return jsonify({'status': 'error', 'message': 'Missing Firebase UID or email'}), 400
-                    
+
                     # Call the dedicated eSIM activation service
                     activation_result = esim_activation_service.activate_esim_after_payment(
                         firebase_uid=firebase_uid,
@@ -2035,10 +1953,10 @@ def handle_stripe_webhook():
                         stripe_session_id=session['id'],
                         purchase_amount=total_amount
                     )
-                    
+
                     if activation_result.get('success'):
                         print(f"✅ eSIM activation service completed successfully")
-                        
+
                         # Record the purchase in database
                         purchase_id = record_purchase(
                             stripe_id=session.get('id'),
@@ -2051,7 +1969,7 @@ def handle_stripe_webhook():
                             stripe_transaction_id=session.get('payment_intent')
                         )
                         print(f"💾 Purchase recorded with ID: {purchase_id}")
-                        
+
                         # Update Stripe receipt with eSIM details
                         try:
                             esim_data = activation_result.get('esim_data', {})
@@ -2068,19 +1986,19 @@ def handle_stripe_webhook():
                                 'purchase_id': str(purchase_id) if purchase_id else '',
                                 'receipt_enhanced': 'true'
                             }
-                            
+
                             stripe.checkout.Session.modify(session['id'], metadata=enhanced_metadata)
                             print(f"✅ Enhanced Stripe receipt with eSIM details")
-                            
+
                         except Exception as stripe_update_error:
                             print(f"⚠️ Could not update Stripe receipt: {stripe_update_error}")
                     else:
                         print(f"❌ eSIM activation service failed: {activation_result.get('error', 'Unknown error')}")
                         print(f"   Failed at step: {activation_result.get('step', 'unknown')}")
-                        
+
                 except Exception as e:
                     print(f"❌ Error in eSIM Beta activation: {str(e)}")
-            
+
             # Handle legacy Firebase-based eSIM activation
             elif product_id == 'esim_beta' and firebase_uid:
                 try:
@@ -2091,13 +2009,13 @@ def handle_stripe_webhook():
                         print(f"eSIM activation failed")
                 except Exception as e:
                     print(f"Error activating eSIM: {str(e)}")
-            
+
             # Handle other product activations (existing logic)
             elif (product_id in ['basic_membership', 'full_membership'] or product in ['basic_membership', 'full_membership']) and firebase_uid:
                 print(f"Membership activation for {product or product_id} will be handled by existing subscription flow")
-        
+
         return jsonify({'status': 'success'}), 200
-        
+
     except ValueError as e:
         print(f"Invalid payload: {str(e)}")
         return jsonify({'error': 'Invalid payload'}), 400
@@ -2113,7 +2031,7 @@ def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_
     try:
         from email_service import send_email
         from datetime import datetime
-        
+
         # Get user email if not provided
         if not user_email and firebase_uid:
             try:
@@ -2123,12 +2041,12 @@ def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_
             except Exception as e:
                 print(f"Could not get user email: {e}")
                 user_email = "user@dotmobile.app"
-        
+
         if not user_email:
             user_email = "user@dotmobile.app"
-        
+
         subject = "🎉 Your eSIM is Ready - DOTM Platform"
-        
+
         # Create detailed HTML email body
         html_body = f"""
         <html>
@@ -2152,7 +2070,7 @@ def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_
                     <h1>🎉 eSIM Activation Successful!</h1>
                     <p>Your DOTM eSIM Beta access is now active</p>
                 </div>
-                
+
                 <div class="content">
                     <div class="profile-card">
                         <h3>📱 Your eSIM Profile Details</h3>
@@ -2165,7 +2083,7 @@ def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_
                             <li><strong>Activation Date:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</li>
                         </ul>
                     </div>
-                    
+
                     <div class="next-steps">
                         <h3>🚀 Next Steps</h3>
                         <ol>
@@ -2176,14 +2094,14 @@ def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_
                             <li>Start using your global connectivity!</li>
                         </ol>
                     </div>
-                    
+
                     <div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">
                         <h4>📞 Support</h4>
                         <p>Questions? Contact us at <a href="mailto:support@dotmobile.app">support@dotmobile.app</a></p>
                         <p>Technical ID: {oxio_user_id or firebase_uid or 'N/A'}</p>
                     </div>
                 </div>
-                
+
                 <div class="footer">
                     <p>DOTM Platform - Global Mobile Connectivity</p>
                     <p>Data On Tap Inc. | Licensed Full MVNO | Network 302 100</p>
@@ -2192,17 +2110,17 @@ def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_
         </body>
         </html>
         """
-        
+
         # Send email
         result = send_email(
             to=user_email,
             subject=subject,
             html_body=html_body
         )
-        
+
         print(f"Sent eSIM activation email to {user_email} with details: Phone {phone_number}, Plan {plan_id}")
         return result
-        
+
     except Exception as e:
         print(f"Error sending eSIM activation email: {e}")
         return False
@@ -2213,7 +2131,7 @@ def generate_esim_activation_qr(iccid, phone_number, line_id):
         import qrcode
         import base64
         from io import BytesIO
-        
+
         # Create eSIM activation data (LPA format for eSIM profiles)
         if iccid:
             # Use actual ICCID for QR code content - this would contain activation URL
@@ -2221,7 +2139,7 @@ def generate_esim_activation_qr(iccid, phone_number, line_id):
         else:
             # Fallback QR data with phone info
             qr_data = f"DOTM-eSIM:Phone:{phone_number}:Line:{line_id}:Activation-Required"
-        
+
         # Generate QR code
         qr = qrcode.QRCode(
             version=1,
@@ -2231,19 +2149,19 @@ def generate_esim_activation_qr(iccid, phone_number, line_id):
         )
         qr.add_data(qr_data)
         qr.make(fit=True)
-        
+
         # Create QR code image
         qr_image = qr.make_image(fill_color="black", back_color="white")
-        
+
         # Convert to base64 for email embedding
         buffer = BytesIO()
         qr_image.save(buffer, format='PNG')
         buffer.seek(0)
         qr_base64 = base64.b64encode(buffer.getvalue()).decode()
-        
+
         print(f"✅ Generated QR code successfully")
         return qr_base64
-        
+
     except Exception as e:
         print(f"❌ Error generating QR code: {e}")
         return None
@@ -2259,13 +2177,13 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                 'error': 'User not found',
                 'message': f'No user found for Firebase UID: {firebase_uid}'
             }
-        
+
         user_id = user_data[0]
         user_email = user_data[1] if len(user_data) > 1 else "unknown@example.com"
         oxio_user_id = user_data[7] if len(user_data) > 7 else None
-        
+
         print(f"Activating eSIM for user {user_id} ({user_email}) with OXIO user ID: {oxio_user_id}")
-        
+
         # Create OXIO user if not exists
         if not oxio_user_id:
             print("Creating new OXIO user for eSIM activation...")
@@ -2274,10 +2192,10 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                 'firstName': user_data[2] if len(user_data) > 2 else '',
                 'lastName': user_data[3] if len(user_data) > 3 else ''
             })
-            
+
             if oxio_user_result.get('success') and oxio_user_result.get('user_id'):
                 oxio_user_id = oxio_user_result['user_id']
-                
+
                 # Update user record with OXIO user ID
                 with get_db_connection() as conn:
                     if conn:
@@ -2293,13 +2211,13 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                     'error': 'OXIO user creation failed',
                     'message': oxio_user_result.get('message', 'Unknown error')
                 }
-        
+
         # Activate OXIO line with Basic Membership plan
         print(f"Activating OXIO line for eSIM Beta user {user_id}")
-        
+
         # Use enhanced activation with plan ID and group ID for eSIM Beta
         esim_plan_id = "OXIO_BASIC_MEMBERSHIP_BASEPLANID"  # OXIO base plan ID for $1 beta access
-        
+
         # Try to get group ID from user data or beta service
         esim_group_id = None
         try:
@@ -2310,13 +2228,13 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
             print(f"Retrieved group ID from beta service: {esim_group_id}")
         except Exception as e:
             print(f"Could not get group ID from beta service: {e}")
-        
+
         print(f"Activating OXIO line with Plan ID: {esim_plan_id}, Group ID: {esim_group_id}")
         oxio_result = oxio_service.activate_line(oxio_user_id, plan_id=esim_plan_id, group_id=esim_group_id)
-        
+
         if oxio_result.get('success'):
             print(f"Successfully activated OXIO base plan: {oxio_result}")
-            
+
             # Record the purchase in database
             purchase_id = record_purchase(
                 stripe_id=checkout_session.get('id'),
@@ -2328,15 +2246,15 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                 firebase_uid=firebase_uid,
                 stripe_transaction_id=checkout_session.get('payment_intent')
             )
-            
+
             # Extract comprehensive eSIM profile information
             activation_data = oxio_result.get('data', {})
             phone_number = activation_data.get('phoneNumber') or oxio_result.get('phone_number')
             line_id = activation_data.get('lineId') or oxio_result.get('line_id')
             iccid = activation_data.get('iccid') or activation_data.get('sim', {}).get('iccid')
-            
+
             print(f"eSIM Profile Details extracted successfully")
-            
+
             # Generate eSIM activation QR code
             esim_qr_code = None
             try:
@@ -2346,7 +2264,7 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                     print(f"Generated eSIM activation QR code")
             except Exception as qr_error:
                 print(f"Could not generate eSIM QR code: {qr_error}")
-            
+
             # Store comprehensive OXIO activation details
             if phone_number or line_id or iccid:
                 try:
@@ -2372,7 +2290,7 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                                     )
                                 """)
-                                
+
                                 cur.execute("""
                                     INSERT INTO oxio_activations 
                                     (user_id, firebase_uid, purchase_id, product_id, iccid, 
@@ -2388,45 +2306,45 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                                 print(f"Stored comprehensive eSIM activation details for user {user_id}")
                 except Exception as db_error:
                     print(f"Error storing activation details: {str(db_error)}")
-            
+
             # Send confirmation email
             try:
                 from email_service import send_email
-                subject = "🎉 Your eSIM is Ready!"
-                
+                subject = "🎉 eSIM is Ready!"
+
                 html_body = f"""
                 <html>
                 <body>
                     <h2>🎉 eSIM Activation Successful!</h2>
                     <p>Great news! Your $1 eSIM Beta access has been activated.</p>
-                    
+
                     <h3>📱 Your Details:</h3>
                     <ul>
                         <li><strong>Phone Number:</strong> {phone_number or 'Assigned by carrier'}</li>
                         <li><strong>Plan:</strong> OXIO Base Plan (Basic Membership)</li>
                         <li><strong>Status:</strong> ✅ Active</li>
                     </ul>
-                    
+
                     <p><strong>Next Steps:</strong></p>
                     <ol>
                         <li>Log into your <a href="{request.url_root}dashboard">DOTM Dashboard</a></li>
                         <li>View your phone number and QR code for eSIM setup</li>
                         <li>Scan the QR code with your device to activate eSIM</li>
                     </ol>
-                    
+
                     <p>Welcome to global connectivity!</p>
                     <br>
                     <p>Best regards,<br><strong>DOTM Team</strong></p>
                 </body>
                 </html>
                 """
-                
+
                 send_email(user_email, subject, "eSIM activated successfully!", html_body)
                 print(f"Sent eSIM activation confirmation to {user_email}")
-                
+
             except Exception as email_error:
                 print(f"Error sending confirmation email: {str(email_error)}")
-            
+
             return {
                 'success': True,
                 'message': 'eSIM activated successfully',
@@ -2440,7 +2358,7 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                 'error': 'OXIO activation failed',
                 'message': oxio_result.get('message', 'Unknown activation error')
             }
-            
+
     except Exception as e:
         print(f"Error in activate_esim_for_user: {str(e)}")
         return {
@@ -2797,129 +2715,6 @@ def get_subscription_status():
                             ORDER BY end_date DESC 
                             LIMIT 1
                         """, (user_id,))
-
-
-@app.route('/api/manual-esim-activation', methods=['POST'])
-def manual_esim_activation():
-    """Manually trigger eSIM activation for a completed payment"""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        firebase_uid = data.get('firebaseUid')
-        stripe_session_id = data.get('stripeSessionId')
-        
-        if not firebase_uid:
-            return jsonify({'error': 'Firebase UID is required'}), 400
-        
-        print(f"🔧 Manual eSIM activation triggered for Firebase UID: {firebase_uid}")
-        
-        # Get user data
-        user_data = get_user_by_firebase_uid(firebase_uid)
-        if not user_data:
-            return jsonify({'error': 'User not found'}), 404
-        
-        user_email = user_data[1]
-        user_name = user_data[2] if len(user_data) > 2 else 'Anonymous'
-        
-        # Import and use the eSIM activation service
-        from esim_activation_service import esim_activation_service
-        
-        activation_result = esim_activation_service.activate_esim_after_payment(
-            firebase_uid=firebase_uid,
-            user_email=user_email,
-            user_name=user_name,
-            stripe_session_id=stripe_session_id or f"manual_{int(time.time())}",
-            purchase_amount=100  # $1.00 for eSIM Beta
-        )
-        
-        if activation_result.get('success'):
-            return jsonify({
-                'status': 'success',
-                'message': 'eSIM activation completed successfully',
-                'activation_data': activation_result
-            })
-        else:
-            return jsonify({
-                'status': 'error',
-                'message': f"eSIM activation failed: {activation_result.get('error', 'Unknown error')}",
-                'details': activation_result
-            }), 500
-            
-
-
-@app.route('/api/test-webhook-processing', methods=['POST'])
-def test_webhook_processing():
-    """Test webhook processing for a specific Stripe session"""
-    try:
-        data = request.get_json()
-        stripe_session_id = data.get('stripeSessionId')
-        
-        if not stripe_session_id:
-            return jsonify({'error': 'Stripe session ID is required'}), 400
-        
-        print(f"🧪 Testing webhook processing for session: {stripe_session_id}")
-        
-        # Get the Stripe session
-        session = stripe.checkout.Session.retrieve(stripe_session_id)
-        
-        # Simulate the webhook event
-        mock_event = {
-            'type': 'checkout.session.completed',
-            'data': {
-                'object': session
-            },
-            'id': f'evt_test_{int(time.time())}'
-        }
-        
-        # Process the mock webhook
-        from esim_activation_service import esim_activation_service
-        
-        firebase_uid = session['metadata'].get('firebase_uid', '')
-        user_email = session['metadata'].get('user_email', '')
-        user_name = session['metadata'].get('user_name', '')
-        total_amount = session.get('amount_total', 100)
-        
-        if firebase_uid and user_email:
-            activation_result = esim_activation_service.activate_esim_after_payment(
-                firebase_uid=firebase_uid,
-                user_email=user_email,
-                user_name=user_name,
-                stripe_session_id=stripe_session_id,
-                purchase_amount=total_amount
-            )
-            
-            return jsonify({
-                'status': 'success',
-                'message': 'Webhook processing test completed',
-                'session_data': {
-                    'firebase_uid': firebase_uid,
-                    'user_email': user_email,
-                    'amount': total_amount
-                },
-                'activation_result': activation_result
-            })
-        else:
-            return jsonify({
-                'status': 'error',
-                'message': 'Missing Firebase UID or email in session metadata',
-                'session_metadata': session.get('metadata', {})
-            }), 400
-            
-    except Exception as e:
-        print(f"❌ Error testing webhook processing: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
-
-    except Exception as e:
-        print(f"❌ Error in manual eSIM activation: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
 
 
                         expired_sub = cur.fetchone()
@@ -4035,10 +3830,10 @@ def test_esim_activation_service():
         firebase_uid = data.get('firebaseUid', 'test_uid_123')
         user_email = data.get('email', 'test@example.com')
         user_name = data.get('name', 'Test User')
-        
+
         # Import and test the service
         from esim_activation_service import esim_activation_service
-        
+
         result = esim_activation_service.activate_esim_after_payment(
             firebase_uid=firebase_uid,
             user_email=user_email,
@@ -4046,7 +3841,7 @@ def test_esim_activation_service():
             stripe_session_id='test_session_123',
             purchase_amount=100
         )
-        
+
         return jsonify({
             'status': 'test_completed',
             'service_result': result,
@@ -4056,7 +3851,7 @@ def test_esim_activation_service():
                 'name': user_name
             }
         })
-        
+
     except Exception as e:
         return jsonify({
             'status': 'test_failed',
@@ -4198,9 +3993,9 @@ def get_oxio_activation_status():
                         SELECT id, product_id, iccid, line_id, phone_number, 
                                activation_status, oxio_response, created_at
                         FROM oxio_activations 
-                        WHERE user_id = %s 
+                        WHERE firebase_uid = %s 
                         ORDER BY created_at DESC
-                    """, (user_id,))
+                    """, (firebase_uid,))
 
                     activations = cur.fetchall()
                     activation_list = []
@@ -4415,8 +4210,6 @@ def mcp_server():
     """MCP server endpoint for service catalog and pricing"""
     if MCP_AVAILABLE:
         # Import the function here to avoid circular imports
-        from mcp_server import mcp_server as mcp_server_func
-        # Get the mcp_server route handler from the mcp_server module
         with mcp_app.app_context():
             from mcp_server import mcp_server as mcp_server_func
             return mcp_server_func()
@@ -4466,20 +4259,20 @@ def submit_beta_request():
     """Submit a beta access request"""
     try:
         from beta_approval_service import BetaApprovalService
-        
+
         data = request.get_json()
         # Support both parameter formats from frontend
         firebase_uid = data.get('firebaseUid') or data.get('firebase_uid')
         user_email = data.get('email')
         user_name = data.get('name')
-        
+
         if not firebase_uid:
             return jsonify({
                 'success': False,
                 'message': 'Firebase UID is required',
                 'error': 'Missing firebaseUid parameter'
             }), 400
-            
+
         # Get user email from database if not provided
         if not user_email:
             try:
@@ -4492,17 +4285,17 @@ def submit_beta_request():
                                 user_email = user_data[0]
             except Exception as e:
                 print(f"Error getting user email: {str(e)}")
-                
+
         if not user_email:
             return jsonify({
                 'success': False,
                 'message': 'User not found. Please sign up first.',
                 'error': 'Cannot find user email for firebaseUid'
             }), 400
-        
+
         beta_service = BetaApprovalService()
         result = beta_service.submit_beta_request(user_email, firebase_uid, user_name)
-        
+
         if result['success']:
             return jsonify(result), 200
         else:
@@ -4510,7 +4303,7 @@ def submit_beta_request():
             if 'message' not in result and 'error' in result:
                 result['message'] = result['error']
             return jsonify(result), 400
-            
+
     except Exception as e:
         print(f"Error in submit_beta_request: {str(e)}")
         return jsonify({
@@ -4524,10 +4317,10 @@ def approve_beta_request(request_id):
     """Approve a beta request (admin endpoint)"""
     try:
         from beta_approval_service import BetaApprovalService
-        
+
         beta_service = BetaApprovalService()
         result = beta_service.approve_beta_request(request_id)
-        
+
         if result['success']:
             return f"""
             <html>
@@ -4558,7 +4351,7 @@ def approve_beta_request(request_id):
             </body>
             </html>
             """, 400
-            
+
     except Exception as e:
         print(f"Error in approve_beta_request: {str(e)}")
         return f"""
@@ -4578,13 +4371,13 @@ def reject_beta_request(request_id):
     """Reject a beta request (admin endpoint)"""
     try:
         from beta_approval_service import BetaApprovalService
-        
+
         # Get optional reason from query parameter
         reason = request.args.get('reason', 'Not specified')
-        
+
         beta_service = BetaApprovalService()
         result = beta_service.reject_beta_request(request_id, reason)
-        
+
         if result['success']:
             return f"""
             <html>
@@ -4612,7 +4405,7 @@ def reject_beta_request(request_id):
             </body>
             </html>
             """, 400
-            
+
     except Exception as e:
         print(f"Error in reject_beta_request: {str(e)}")
         return f"<h1>Error: {str(e)}</h1>", 500
@@ -4622,7 +4415,7 @@ def get_beta_status():
     """Get beta status for current user"""
     try:
         from beta_approval_service import BetaApprovalService
-        
+
         # Get Firebase UID from request (you may need to implement proper auth)
         firebase_uid = request.args.get('firebase_uid')
         if not firebase_uid:
@@ -4630,12 +4423,12 @@ def get_beta_status():
                 'success': False,
                 'error': 'Firebase UID required'
             }), 400
-        
+
         beta_service = BetaApprovalService()
         result = beta_service.get_user_beta_status(firebase_uid)
-        
+
         return jsonify(result), 200
-        
+
     except Exception as e:
         print(f"Error in get_beta_status: {str(e)}")
         return jsonify({
@@ -4649,7 +4442,7 @@ def get_user_esim_details():
     firebase_uid = request.args.get('firebaseUid')
     if not firebase_uid:
         return jsonify({'error': 'Firebase UID is required'}), 400
-    
+
     try:
         with get_db_connection() as conn:
             if conn:
@@ -4662,10 +4455,10 @@ def get_user_esim_details():
                         WHERE firebase_uid = %s 
                         ORDER BY created_at DESC
                     """, (firebase_uid,))
-                    
+
                     activations = cur.fetchall()
                     esim_details = []
-                    
+
                     for activation in activations:
                         esim_details.append({
                             'phone_number': activation[0],
@@ -4676,15 +4469,15 @@ def get_user_esim_details():
                             'activated_date': activation[5].isoformat() if activation[5] else None,
                             'product_type': activation[6]
                         })
-                    
+
                     return jsonify({
                         'success': True,
                         'esim_count': len(esim_details),
                         'esims': esim_details
                     })
-        
+
         return jsonify({'success': False, 'error': 'Database connection failed'})
-        
+
     except Exception as e:
         print(f"Error getting eSIM details: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
@@ -4695,16 +4488,16 @@ def get_user_phone_numbers():
     try:
         from beta_approval_service import BetaApprovalService
         from qr_generator import generate_resin_qr_code, generate_simple_phone_qr
-        
+
         firebase_uid = request.args.get('firebase_uid')
         if not firebase_uid:
             return jsonify({
                 'success': False,
                 'error': 'Firebase UID required'
             }), 400
-        
+
         all_phone_numbers = []
-        
+
         # 1. Get user's primary phone number from users table
         try:
             with get_db_connection() as conn:
@@ -4725,7 +4518,7 @@ def get_user_phone_numbers():
                             print(f"Found primary phone number: {result[0]}")
         except Exception as e:
             print(f"Error getting user profile phone number: {e}")
-        
+
         # 2. Get phone numbers from OXIO activations
         try:
             with get_db_connection() as conn:
@@ -4738,7 +4531,7 @@ def get_user_phone_numbers():
                             ORDER BY created_at DESC
                         """, (firebase_uid,))
                         oxio_results = cur.fetchall()
-                        
+
                         for result in oxio_results:
                             phone_num, line_id, status, created_at = result
                             all_phone_numbers.append({
@@ -4753,17 +4546,17 @@ def get_user_phone_numbers():
                             print(f"Found OXIO phone number: {phone_num} (Line: {line_id})")
         except Exception as e:
             print(f"Error getting OXIO phone numbers: {e}")
-        
+
         # 3. Get beta phone number (if approved)
         try:
             beta_service = BetaApprovalService()
             beta_status = beta_service.get_user_beta_status(firebase_uid)
-            
+
             if beta_status.get('has_request') and beta_status.get('status') == 'approved':
                 beta_phone = beta_status.get('phone_number')
                 group_id = beta_status.get('group_id')
                 oxio_user_id = beta_status.get('oxio_user_id')
-                
+
                 if beta_phone:
                     # Generate QR codes for beta phone
                     try:
@@ -4774,7 +4567,7 @@ def get_user_phone_numbers():
                             beta_status.get('resin_data', {})
                         )
                         simple_qr = generate_simple_phone_qr(beta_phone)
-                        
+
                         all_phone_numbers.append({
                             'phoneNumber': beta_phone,
                             'source': 'beta_access',
@@ -4802,25 +4595,25 @@ def get_user_phone_numbers():
                         print(f"Found beta phone number: {beta_phone} (no QR codes)")
         except Exception as e:
             print(f"Error getting beta phone number: {e}")
-        
+
         # Remove duplicates based on phone number
         unique_numbers = []
         seen_numbers = set()
-        
+
         for phone_data in all_phone_numbers:
             phone_num = phone_data['phoneNumber']
             if phone_num not in seen_numbers:
                 seen_numbers.add(phone_num)
                 unique_numbers.append(phone_data)
-        
+
         print(f"Found {len(unique_numbers)} unique phone numbers for user {firebase_uid}")
-        
+
         return jsonify({
             'success': True,
             'phoneNumbers': unique_numbers,
             'total_count': len(unique_numbers)
         }), 200
-        
+
     except Exception as e:
         print(f"Error in get_user_phone_numbers: {str(e)}")
         return jsonify({
@@ -4835,30 +4628,30 @@ def configure_github_repository():
     """Configure GitHub repository for uploads (Admin only)"""
     try:
         data = request.get_json()
-        
+
         if not data:
             return jsonify({
                 'success': False,
                 'error': 'Request body is required'
             }), 400
-        
+
         repo_owner = data.get('owner')
         repo_name = data.get('repo_name')
         branch = data.get('branch', 'main')
-        
+
         if not repo_owner or not repo_name:
             return jsonify({
                 'success': False,
                 'error': 'Repository owner and name are required'
             }), 400
-        
+
         github_service_secure.set_repository(repo_owner, repo_name, branch)
-        
+
         return jsonify({
             'success': True,
             'message': f'GitHub repository configured: {repo_owner}/{repo_name} (branch: {branch})'
         }), 200
-        
+
     except Exception as e:
         print(f"Error in configure_github_repository: {str(e)}")
         return jsonify({
@@ -4872,28 +4665,28 @@ def upload_file_to_github():
     """Upload a single file to GitHub repository (Admin only)"""
     try:
         data = request.get_json()
-        
+
         if not data:
             return jsonify({
                 'success': False,
                 'error': 'Request body is required'
             }), 400
-        
+
         file_path = data.get('file_path')
         content = data.get('content', '')
         commit_message = data.get('commit_message')
         repo_owner = data.get('repo_owner')
         repo_name = data.get('repo_name')
-        
+
         if not file_path:
             return jsonify({
                 'success': False,
                 'error': 'File path is required'
             }), 400
-            
+
         if not commit_message:
             commit_message = f'Update {file_path} - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
-        
+
         result = github_service_secure.upload_file(
             file_path=file_path,
             content=content,
@@ -4901,7 +4694,7 @@ def upload_file_to_github():
             repo_owner=repo_owner,
             repo_name=repo_name
         )
-        
+
         if result['status'] == 'success':
             return jsonify({
                 'success': True,
@@ -4914,7 +4707,7 @@ def upload_file_to_github():
                 'error': result.get('error', 'Upload failed'),
                 'result': result
             }), 500
-        
+
     except Exception as e:
         print(f"Error in upload_file_to_github: {str(e)}")
         return jsonify({
@@ -4928,32 +4721,32 @@ def upload_project_to_github():
     """Upload key project files to GitHub repository (Admin only)"""
     try:
         data = request.get_json() or {}
-        
+
         repo_owner = data.get('repo_owner')
         repo_name = data.get('repo_name')
-        
+
         # Get list of files to upload securely
         files_to_upload = github_service_secure.get_project_files_for_upload()
-        
+
         if not files_to_upload:
             return jsonify({
                 'success': False,
                 'error': 'No files found to upload'
             }), 400
-        
+
         # Perform secure batch upload
         result = github_service_secure.upload_multiple_files(
             files=files_to_upload,
             repo_owner=repo_owner,
             repo_name=repo_name
         )
-        
+
         return jsonify({
             'success': True,
             'message': f'Upload completed: {result["successful"]} successful, {result["failed"]} failed',
             'result': result
         }), 200
-        
+
     except Exception as e:
         print(f"Error in upload_project_to_github: {str(e)}")
         return jsonify({
@@ -4968,7 +4761,7 @@ def get_github_status():
     try:
         # Test GitHub authentication securely
         auth_result = github_service_secure.get_authenticated_client()
-        
+
         return jsonify({
             'success': True,
             'authentication': 'connected' if auth_result else 'failed',
@@ -4978,7 +4771,7 @@ def get_github_status():
                 'default_branch': github_service_secure.default_branch
             }
         }), 200
-        
+
     except Exception as e:
         print(f"Error in get_github_status: {str(e)}")
         return jsonify({
@@ -4992,28 +4785,28 @@ def upload_documentation_to_github():
     """Upload updated documentation to GitHub repository"""
     try:
         from github_service import github_service
-        
+
         # Set repository configuration
         github_service.set_repository("dataontap", "gorse", "main")
-        
+
         # Check GitHub authentication
         if not github_service.get_authenticated_client():
             return jsonify({
                 'success': False,
                 'error': 'GitHub authentication failed'
             }), 401
-        
+
         # Read current README content
         with open('README.md', 'r', encoding='utf-8') as f:
             readme_content = f.read()
-        
+
         # Upload README.md
         result = github_service.upload_file(
             file_path='README.md',
             content=readme_content.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t'),
             commit_message='Update README with Resend email integration information'
         )
-        
+
         if result['status'] == 'success':
             return jsonify({
                 'success': True,
@@ -5025,7 +4818,7 @@ def upload_documentation_to_github():
                 'success': False,
                 'error': result['error']
             }), 500
-            
+
     except Exception as e:
         print(f"Error uploading to GitHub: {str(e)}")
         return jsonify({
@@ -5038,7 +4831,7 @@ def get_welcome_message_voices():
     """Get available voices for welcome message generation"""
     try:
         voices = elevenlabs_service.get_voices()
-        
+
         # Filter and format voices for frontend
         formatted_voices = []
         for voice in voices:
@@ -5049,12 +4842,12 @@ def get_welcome_message_voices():
                 'gender': voice.get('labels', {}).get('gender', 'unknown'),
                 'accent': voice.get('labels', {}).get('accent', 'unknown')
             })
-        
+
         return jsonify({
             'success': True,
             'voices': formatted_voices
         })
-        
+
     except Exception as e:
         print(f"Error getting voices: {str(e)}")
         return jsonify({
@@ -5070,13 +4863,13 @@ def generate_welcome_message_audio():
         firebase_uid = data.get('firebase_uid')
         language = data.get('language', 'en')
         voice_id = data.get('voice_id')
-        
+
         if not firebase_uid:
             return jsonify({
                 'success': False,
                 'error': 'Firebase UID is required'
             }), 400
-        
+
         # Get user's name from database
         user_name = None
         try:
@@ -5089,34 +4882,34 @@ def generate_welcome_message_audio():
                             user_name = result[0]
         except Exception as db_error:
             print(f"Error getting user name: {str(db_error)}")
-        
+
         # Generate the audio message using ElevenLabs service
         audio_result = elevenlabs_service.generate_welcome_message(
             user_name=user_name,
             language=language,
             voice_id=voice_id
         )
-        
+
         if audio_result['success']:
             # Save audio file and return download URL
             import uuid
             import os
-            
+
             # Create audio directory if it doesn't exist
             audio_dir = os.path.join('static', 'audio')
             os.makedirs(audio_dir, exist_ok=True)
-            
+
             # Generate unique filename
             filename = f"welcome_{firebase_uid[:8]}_{uuid.uuid4().hex[:8]}.mp3"
             file_path = os.path.join(audio_dir, filename)
-            
+
             # Save audio data to file
             with open(file_path, 'wb') as f:
                 f.write(audio_result['audio_data'])
-            
+
             # Return download URL
             download_url = f"/download/audio/{filename}"
-            
+
             return jsonify({
                 'success': True,
                 'audio_url': download_url,
@@ -5128,7 +4921,7 @@ def generate_welcome_message_audio():
                 'success': False,
                 'error': audio_result.get('error', 'Failed to generate audio')
             }), 500
-            
+
     except Exception as e:
         print(f"Error generating welcome message: {str(e)}")
         return jsonify({
@@ -5142,60 +4935,60 @@ def generate_welcome_notification():
     """Generate a welcome notification with audio for specific users (Admin only)"""
     try:
         data = request.get_json()
-        
+
         if not data:
             return jsonify({
                 'success': False,
                 'error': 'Request body is required'
             }), 400
-        
+
         target_email = data.get('target_email')  # User to generate welcome message for
         recipient_uid = data.get('recipient_uid')  # User who should receive the notification
         language = data.get('language', 'en')
         voice_id = data.get('voice_id')  # Optional custom voice
-        
+
         if not target_email:
             return jsonify({
                 'success': False,
                 'error': 'target_email is required'
             }), 400
-            
+
         if not recipient_uid:
             return jsonify({
                 'success': False,
                 'error': 'recipient_uid is required (Firebase UID of notification recipient)'
             }), 400
-        
+
         # Extract user name from email for personalization
         user_name = target_email.split('@')[0]
-        
+
         print(f"Generating welcome notification for {target_email}, recipient: {recipient_uid}")
-        
+
         # Generate the audio message using ElevenLabs service
         audio_result = elevenlabs_service.generate_welcome_message(
             user_name=user_name,
             language=language,
             voice_id=voice_id
         )
-        
+
         if not audio_result.get('success'):
             return jsonify({
                 'success': False,
                 'error': f'Failed to generate audio: {audio_result.get("error")}'
             }), 500
-        
+
         # Create unique filename for the audio file
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"welcome_{user_name}_{timestamp}.mp3"
         file_path = os.path.join('static', 'audio', filename)
-        
+
         # Save the audio file
         with open(file_path, 'wb') as f:
             f.write(audio_result['audio_data'])
-        
+
         # Create download URL (relative to app root)
         download_url = f"/static/audio/{filename}"
-        
+
         # Create notification record in database
         with get_db_connection() as conn:
             if conn:
@@ -5216,13 +5009,13 @@ def generate_welcome_notification():
                             delivered_at TIMESTAMP
                         )
                     """)
-                    
+
                     # Ensure audio_url column exists for existing tables (migration)
                     cur.execute("""
                         ALTER TABLE notifications 
                         ADD COLUMN IF NOT EXISTS audio_url VARCHAR(500)
                     """)
-                    
+
                     # Insert the notification
                     cur.execute("""
                         INSERT INTO notifications (firebase_uid, title, body, notification_type, audio_url)
@@ -5235,12 +5028,12 @@ def generate_welcome_notification():
                         'welcome_audio',
                         download_url
                     ))
-                    
+
                     notification_id = cur.fetchone()[0]
                     conn.commit()
-                    
+
                     print(f"Created notification {notification_id} for recipient {recipient_uid}")
-                    
+
                     return jsonify({
                         'success': True,
                         'message': f'Welcome notification generated successfully for {target_email}',
@@ -5255,7 +5048,7 @@ def generate_welcome_notification():
                     'success': False,
                     'error': 'Database connection error'
                 }), 500
-                
+
     except Exception as e:
         print(f"Error generating welcome notification: {str(e)}")
         return jsonify({
