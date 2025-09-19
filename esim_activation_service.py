@@ -59,11 +59,8 @@ class eSIMActivationService:
                     'step': 'oxio_user_creation'
                 }
             
-            # Step 3: Try to ensure OXIO group exists (optional - don't fail if it doesn't work)
-            oxio_group_id = self._ensure_oxio_group(user_id, firebase_uid, existing_oxio_group_id, oxio_user_id)
-            if not oxio_group_id:
-                print(f"⚠️ OXIO group creation failed, continuing without group ID")
-                oxio_group_id = None  # Continue without group
+            # Step 3: OXIO Groups disabled - continue without group ID to prevent webhook failures
+            oxio_group_id = None  # Groups excluded entirely from activation flow
             
             # Step 4: Activate eSIM line with proper payload structure
             activation_result = self._activate_esim_line(oxio_user_id)
