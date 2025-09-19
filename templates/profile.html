@@ -938,8 +938,13 @@
                                         <h5><i class="fas fa-phone me-2"></i>Line & Service Information</h5>
                                         <div class="info-grid">
                                             <p><strong>Phone Number:</strong><br>
-                                                <span class="text-break font-weight-bold text-success">${oxioData.phone_number || 'Not assigned'}</span>
+                                                <span class="text-break font-weight-bold text-success">${oxioData.phone_number ? parsePhoneNumberInfo(oxioData.phone_number).formatted : 'Not assigned'}</span>
                                                 ${createCopyButton(oxioData.phone_number, 'Phone Number')}
+                                                ${oxioData.phone_number && parsePhoneNumberInfo(oxioData.phone_number).areaCode ? `
+                                                <br><small class="text-muted">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                                    Area ${parsePhoneNumberInfo(oxioData.phone_number).areaCode}: ${parsePhoneNumberInfo(oxioData.phone_number).areaInfo}
+                                                </small>` : ''}
                                             </p>
                                             <p><strong>Line ID:</strong><br>
                                                 <span class="text-break font-monospace">${oxioData.line_id || 'Not assigned'}</span>
@@ -2143,6 +2148,108 @@
                 });
         }
         
+        // Phone number area code parsing function
+        function parsePhoneNumberInfo(phoneNumber) {
+            if (!phoneNumber || phoneNumber === 'Not assigned' || phoneNumber === 'Activating...') {
+                return {
+                    fullNumber: phoneNumber,
+                    formatted: phoneNumber,
+                    areaCode: null,
+                    areaInfo: 'Not available',
+                    countryCode: null
+                };
+            }
+            
+            // Clean the phone number
+            const cleaned = phoneNumber.replace(/[+\-\s\(\)]/g, '');
+            
+            if (cleaned.length >= 10) {
+                let countryCode, areaCode, localNumber, areaInfo, formatted;
+                
+                if (cleaned.startsWith('1') && cleaned.length === 11) {
+                    // North American number
+                    countryCode = '1';
+                    areaCode = cleaned.slice(1, 4);
+                    localNumber = cleaned.slice(4);
+                    
+                    // Area code information database
+                    const areaCodeInfo = {
+                        '416': 'Toronto, ON (Downtown)',
+                        '647': 'Toronto, ON (Overlay)', 
+                        '437': 'Toronto, ON (Overlay)',
+                        '905': 'Greater Toronto Area, ON',
+                        '289': 'Greater Toronto Area, ON (Overlay)',
+                        '365': 'Greater Toronto Area, ON (Overlay)',
+                        '514': 'Montreal, QC',
+                        '438': 'Montreal, QC (Overlay)',
+                        '604': 'Vancouver, BC (Metro)',
+                        '778': 'Vancouver, BC (Overlay)',
+                        '236': 'Vancouver, BC (Overlay)',
+                        '403': 'Calgary, AB',
+                        '587': 'Alberta (Overlay)',
+                        '780': 'Edmonton, AB',
+                        '825': 'Alberta (Overlay)',
+                        '204': 'Manitoba',
+                        '431': 'Manitoba (Overlay)',
+                        '306': 'Saskatchewan',
+                        '639': 'Saskatchewan (Overlay)',  
+                        '902': 'Nova Scotia/PEI',
+                        '782': 'Nova Scotia/PEI (Overlay)',
+                        '506': 'New Brunswick',
+                        '709': 'Newfoundland and Labrador',
+                        '879': 'Newfoundland and Labrador (Overlay)',
+                        '867': 'Yukon/NWT/Nunavut',
+                        '212': 'New York, NY (Manhattan)',
+                        '646': 'New York, NY (Manhattan Overlay)',
+                        '917': 'New York, NY (Manhattan Overlay)', 
+                        '718': 'New York, NY (Brooklyn/Queens/Bronx/Staten Island)',
+                        '347': 'New York, NY (Brooklyn/Queens/Bronx/Staten Island Overlay)',
+                        '929': 'New York, NY (Brooklyn/Queens/Bronx/Staten Island Overlay)',
+                        '310': 'Los Angeles, CA (West LA/Beverly Hills/Santa Monica)',
+                        '323': 'Los Angeles, CA (Central LA)',
+                        '213': 'Los Angeles, CA (Downtown)',
+                        '424': 'Los Angeles, CA (West LA Overlay)',
+                        '747': 'Los Angeles, CA (San Fernando Valley Overlay)',
+                        '818': 'Los Angeles, CA (San Fernando Valley)',
+                        '415': 'San Francisco, CA',
+                        '628': 'San Francisco, CA (Overlay)', 
+                        '650': 'San Francisco Bay Area, CA (Peninsula)',
+                        '408': 'San Jose, CA (Silicon Valley)',
+                        '669': 'San Jose, CA (Silicon Valley Overlay)',
+                        '510': 'Oakland/Berkeley, CA (East Bay)',
+                        '341': 'Oakland/Berkeley, CA (East Bay Overlay)'
+                    };
+                    
+                    areaInfo = areaCodeInfo[areaCode] || `Area Code ${areaCode} (North America)`;
+                    formatted = `+1 (${areaCode}) ${localNumber.slice(0,3)}-${localNumber.slice(3)}`;
+                    
+                } else if (cleaned.length >= 10) {
+                    // International number
+                    countryCode = cleaned.slice(0, 2);
+                    areaCode = cleaned.slice(2, 5);
+                    localNumber = cleaned.slice(5);
+                    areaInfo = `International (+${countryCode})`;
+                    formatted = `+${countryCode} ${areaCode} ${localNumber}`;
+                }
+                
+                return {
+                    fullNumber: phoneNumber,
+                    formatted: formatted || phoneNumber,
+                    areaCode: areaCode,
+                    areaInfo: areaInfo,
+                    countryCode: countryCode
+                };
+            }
+            
+            return {
+                fullNumber: phoneNumber,
+                formatted: phoneNumber,
+                areaCode: null,
+                areaInfo: 'Invalid format',
+                countryCode: null
+            };
+        }
+
         function displayBetaPhoneNumbers(phoneNumbers) {
             const container = document.getElementById('betaPhoneContainer');
             if (!container) return;
@@ -2152,6 +2259,7 @@
             phoneNumbers.forEach((phoneInfo, index) => {
                 const qrCodes = phoneInfo.qr_codes || {};
                 const phoneNumber = phoneInfo.number;
+                const phoneData = parsePhoneNumberInfo(phoneNumber);
                 const groupId = phoneInfo.group_id;
                 const oxioUserId = phoneInfo.oxio_user_id;
                 
@@ -2167,11 +2275,16 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <p><strong>Phone Number:</strong><br>
-                                    <span class="text-break font-monospace" style="font-size: 1.2em; color: #00FFFF;">${phoneNumber}</span>
+                                    <span class="text-break font-monospace" style="font-size: 1.2em; color: #00FFFF;">${phoneData.formatted}</span>
                                     <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyToClipboard('${phoneNumber}')" title="Copy Phone Number">
                                         <i class="fas fa-copy"></i>
                                     </button>
                                 </p>
+                                ${phoneData.areaCode ? `
+                                <p><strong>Area Code:</strong><br>
+                                    <span class="badge badge-secondary me-2">${phoneData.areaCode}</span>
+                                    <small class="text-muted">${phoneData.areaInfo}</small>
+                                </p>` : ''}
                             </div>
                             <div class="col-md-6">
                                 <p><strong>OXIO User ID:</strong><br>
@@ -2284,7 +2397,12 @@
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <h5><i class="fas fa-phone"></i> ${esim.phone_number || 'Activating...'}</h5>
+                                            <h5><i class="fas fa-phone"></i> ${esim.phone_number ? parsePhoneNumberInfo(esim.phone_number).formatted : 'Activating...'}</h5>
+                                            ${esim.phone_number && parsePhoneNumberInfo(esim.phone_number).areaCode ? `
+                                            <p class="text-muted small mb-2">
+                                                <i class="fas fa-map-marker-alt me-1"></i>
+                                                Area ${parsePhoneNumberInfo(esim.phone_number).areaCode}: ${parsePhoneNumberInfo(esim.phone_number).areaInfo}
+                                            </p>` : ''}
                                             <p><strong>ICCID:</strong> <code>${esim.iccid || 'N/A'}</code></p>
                                             <p><strong>Status:</strong> 
                                                 <span class="badge ${esim.status === 'active' ? 'badge-success' : 'badge-warning'}">
