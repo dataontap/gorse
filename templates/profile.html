@@ -1631,14 +1631,14 @@
             // Display QR code if available
             if (iccidData.qr_codes && iccidData.qr_codes.svg && iccidData.qr_codes.svg.success) {
                 const qrContainer = document.getElementById('qrCodeSVG');
-                // Load the SVG QR code directly from the file URL
-                qrContainer.innerHTML = `<img src="${iccidData.qr_codes.svg.url}" alt="eSIM Activation QR Code" style="max-width: 100%; height: auto;" />`;
+                // Display inline SVG QR code
+                qrContainer.innerHTML = iccidData.qr_codes.svg.data;
                 
                 // Show download button if PNG is available
                 if (iccidData.qr_codes.png && iccidData.qr_codes.png.success) {
                     document.getElementById('downloadQRBtn').style.display = 'inline-block';
-                    // Store PNG URL for download
-                    window.qrCodePngUrl = iccidData.qr_codes.png.url;
+                    // Store PNG base64 data for download
+                    window.qrCodePngData = iccidData.qr_codes.png.data;
                 }
             } else {
                 document.getElementById('qrCodeSVG').innerHTML = '<p class="text-muted">QR code not available</p>';
@@ -1661,9 +1661,9 @@
         }
 
         function downloadQRCode() {
-            if (window.qrCodePngUrl) {
+            if (window.qrCodePngData) {
                 const link = document.createElement('a');
-                link.href = window.qrCodePngUrl;
+                link.href = window.qrCodePngData;
                 link.download = 'esim-activation-qr.png';
                 document.body.appendChild(link);
                 link.click();

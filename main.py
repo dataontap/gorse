@@ -5248,13 +5248,14 @@ def get_iccid_inventory_stats():
             'error': str(e)
         }), 500
 
-# QR Code Generation Utility
+# Secure QR Code Generation Utilities
 def generate_qr_code(lpa_code, iccid, format_type='svg'):
-    """Generate QR code for LPA code in SVG or PNG format"""
+    """Generate QR code for LPA code - returns inline data (no file storage)"""
     try:
         import qrcode
         from qrcode.image.svg import SvgPathFillImage
-        import os
+        from io import BytesIO, StringIO
+        import base64
 
         # Create QR code instance
         qr = qrcode.QRCode(
@@ -5268,30 +5269,28 @@ def generate_qr_code(lpa_code, iccid, format_type='svg'):
         qr.make(fit=True)
 
         if format_type.lower() == 'svg':
-            # Generate SVG
+            # Generate inline SVG string
             img = qr.make_image(image_factory=SvgPathFillImage, fill_color="black", back_color="white")
-            filename = f"qr_{iccid}.svg"
-            filepath = os.path.join('static', 'qrs', filename)
-            img.save(filepath)
+            svg_buffer = StringIO()
+            img.save(svg_buffer)
+            svg_string = svg_buffer.getvalue()
             return {
                 'success': True,
-                'filename': filename,
-                'filepath': filepath,
-                'url': f"/static/qrs/{filename}",
-                'format': 'svg'
+                'data': svg_string,
+                'format': 'svg',
+                'inline': True
             }
         else:
-            # Generate PNG
+            # Generate inline base64 PNG
             img = qr.make_image(fill_color="black", back_color="white")
-            filename = f"qr_{iccid}.png"
-            filepath = os.path.join('static', 'qrs', filename)
-            img.save(filepath)
+            png_buffer = BytesIO()
+            img.save(png_buffer, format='PNG')
+            png_base64 = base64.b64encode(png_buffer.getvalue()).decode()
             return {
                 'success': True,
-                'filename': filename,
-                'filepath': filepath,
-                'url': f"/static/qrs/{filename}",
-                'format': 'png'
+                'data': f"data:image/png;base64,{png_base64}",
+                'format': 'png',
+                'inline': True
             }
             
     except Exception as e:
@@ -5512,34 +5511,30 @@ def replace_iccid_inventory():
         }), 500
 
 @app.route('/api/user-assigned-iccid', methods=['GET'])
+@firebase_auth_required
 def get_user_assigned_iccid():
     """Get assigned ICCID and generate QR code for the authenticated user"""
     try:
-        # Get Firebase UID from Authorization header or request params
-        firebase_uid = None
-        auth_header = request.headers.get('Authorization')
-        if auth_header and auth_header.startswith('Bearer '):
-            firebase_uid = auth_header[7:]
-        elif request.args.get('firebaseUid'):
-            firebase_uid = request.args.get('firebaseUid')
+        # Get Firebase UID from the authenticated request
+        firebase_uid = request.firebase_uid  # Set by firebase_auth_required decorator
         
         if not firebase_uid:
             return jsonify({
                 'success': False,
                 'error': 'Authentication required',
-                'message': 'Firebase UID not provided'
+                'message': 'Firebase authentication failed'
             }), 401
 
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Find assigned ICCID for this user
+                    # Find assigned ICCID for this specific user only
                     cur.execute("""
                         SELECT iccid, sim_type, sim_status, country, lpa_code, 
                                activated_at, status, assigned_to
                         FROM iccid_inventory 
                         WHERE allocated_to_firebase_uid = %s 
-                           OR status = 'assigned'
+                           AND status IN ('assigned', 'activated')
                         LIMIT 1
                     """, (firebase_uid,))
                     
@@ -5554,9 +5549,9 @@ def get_user_assigned_iccid():
                     
                     iccid, sim_type, sim_status, country, lpa_code, activated_at, status, assigned_to = result
                     
-                    # Generate QR codes for the LPA code
+                    # Generate QR codes for the LPA code (secure inline generation)
                     qr_svg = generate_qr_code(lpa_code, iccid, 'svg')
-                    qr_png = generate_qr_code(lpa_code, iccid, 'png')
+                    qr_png_base64 = generate_qr_code(lpa_code, iccid, 'png')
                     
                     return jsonify({
                         'success': True,
@@ -5572,7 +5567,7 @@ def get_user_assigned_iccid():
                             'activated_at': activated_at.isoformat() if activated_at else None,
                             'qr_codes': {
                                 'svg': qr_svg,
-                                'png': qr_png
+                                'png': qr_png_base64
                             }
                         }
                     })
