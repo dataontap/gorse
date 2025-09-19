@@ -4473,7 +4473,7 @@ def reject_beta_request(request_id):
 
 
 def get_user_assigned_iccid_data(firebase_uid):
-    """Get user's assigned ICCID data from database"""
+    """Get user assigned ICCID data from database"""
     try:
         with get_db_connection() as conn:
             if conn:
