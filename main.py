@@ -4470,7 +4470,13 @@ def reject_beta_request(request_id):
                 </div>
             </body>
             </html>
-
+            """
+        else:
+            return f"Error rejecting beta request: {result.get('message', 'Unknown error')}", 500
+            
+    except Exception as e:
+        print(f"Error in reject_beta_request: {str(e)}")
+        return f"Error processing request: {str(e)}", 500
 
 def get_user_assigned_iccid_data(firebase_uid):
     try:
