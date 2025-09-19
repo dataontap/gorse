@@ -19,3 +19,4 @@ python-dotenv
 pillow
 qrcode
 qrcode
+qrcode[pil]

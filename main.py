@@ -5248,6 +5248,269 @@ def get_iccid_inventory_stats():
             'error': str(e)
         }), 500
 
+# QR Code Generation Utility
+def generate_qr_code(lpa_code, iccid, format_type='svg'):
+    """Generate QR code for LPA code in SVG or PNG format"""
+    try:
+        import qrcode
+        from qrcode.image.svg import SvgPathFillImage
+        import os
+
+        # Create QR code instance
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        
+        qr.add_data(lpa_code)
+        qr.make(fit=True)
+
+        if format_type.lower() == 'svg':
+            # Generate SVG
+            img = qr.make_image(image_factory=SvgPathFillImage, fill_color="black", back_color="white")
+            filename = f"qr_{iccid}.svg"
+            filepath = os.path.join('static', 'qrs', filename)
+            img.save(filepath)
+            return {
+                'success': True,
+                'filename': filename,
+                'filepath': filepath,
+                'url': f"/static/qrs/{filename}",
+                'format': 'svg'
+            }
+        else:
+            # Generate PNG
+            img = qr.make_image(fill_color="black", back_color="white")
+            filename = f"qr_{iccid}.png"
+            filepath = os.path.join('static', 'qrs', filename)
+            img.save(filepath)
+            return {
+                'success': True,
+                'filename': filename,
+                'filepath': filepath,
+                'url': f"/static/qrs/{filename}",
+                'format': 'png'
+            }
+            
+    except Exception as e:
+        print(f"Error generating QR code: {str(e)}")
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+@app.route('/api/admin/replace-iccid-inventory', methods=['POST'])
+@require_admin_auth
+def replace_iccid_inventory():
+    """Replace all ICCID inventory with new CSV data (Admin only)"""
+    try:
+        # Check file size before processing (2MB limit)
+        if request.content_length and request.content_length > 2 * 1024 * 1024:
+            return jsonify({
+                'success': False,
+                'error': 'File too large',
+                'message': 'CSV file must be smaller than 2MB'
+            }), 413
+
+        if 'csv_file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No CSV file provided',
+                'message': 'Please upload a CSV file with ICCID inventory'
+            }), 400
+
+        csv_file = request.files['csv_file']
+        if csv_file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No file selected',
+                'message': 'Please select a CSV file to upload'
+            }), 400
+
+        if not csv_file.filename.lower().endswith('.csv'):
+            return jsonify({
+                'success': False,
+                'error': 'Invalid file format',
+                'message': 'Only CSV files are allowed'
+            }), 400
+
+        # Read and decode CSV content with error handling
+        import csv
+        import io
+        
+        try:
+            # Use utf-8-sig to handle Excel BOM (Byte Order Mark) correctly
+            csv_content = csv_file.read().decode('utf-8-sig')
+        except UnicodeDecodeError:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid file encoding',
+                'message': 'CSV file must be UTF-8 encoded'
+            }), 400
+        
+        csv_reader = csv.DictReader(io.StringIO(csv_content))
+        
+        # Expected headers mapping
+        expected_headers = {
+            'ICCID': 'iccid',
+            'SIM type': 'sim_type',
+            'SIM status': 'sim_status', 
+            'Assigned to': 'assigned_to',
+            'SIM order': 'sim_order',
+            'SIM tag': 'sim_tag',
+            'Country': 'country',
+            'Line ID': 'line_id',
+            'eSIM Activation Code': 'lpa_code'
+        }
+        
+        # Check for required headers
+        csv_headers = [h.strip() for h in csv_reader.fieldnames or []]
+        missing_headers = [h for h in expected_headers.keys() if h not in csv_headers]
+        
+        if missing_headers:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required columns',
+                'message': f'CSV must have columns: {", ".join(missing_headers)}',
+                'found_headers': csv_headers
+            }), 400
+        
+        # Parse and validate CSV data
+        inventory_data = []
+        invalid_rows = []
+        
+        for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 because line 1 is header
+            try:
+                # Extract data from row
+                row_data = {}
+                for csv_header, db_field in expected_headers.items():
+                    value = row.get(csv_header, '').strip()
+                    row_data[db_field] = value if value else None
+                
+                # Validate required fields
+                if not row_data['iccid']:
+                    invalid_rows.append({'row': row_num, 'error': 'Missing ICCID'})
+                    continue
+                    
+                if not row_data['lpa_code']:
+                    invalid_rows.append({'row': row_num, 'error': 'Missing LPA code'})
+                    continue
+                
+                # Validate ICCID format
+                iccid_upper = row_data['iccid'].upper()
+                if not re.match(r'^[0-9A-F]{19,20}F?$', iccid_upper):
+                    invalid_rows.append({'row': row_num, 'error': f'Invalid ICCID format: {row_data["iccid"]}'})
+                    continue
+                
+                row_data['iccid'] = iccid_upper
+                row_data['status'] = 'available'  # Set default status
+                inventory_data.append(row_data)
+                
+            except Exception as e:
+                invalid_rows.append({'row': row_num, 'error': f'Parse error: {str(e)}'})
+
+        # Validate we have exactly 100 valid ICCIDs
+        if len(inventory_data) != 100:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid inventory count',
+                'message': f'Expected exactly 100 valid ICCIDs, found {len(inventory_data)}',
+                'details': {
+                    'valid_rows': len(inventory_data),
+                    'invalid_rows': len(invalid_rows),
+                    'invalid_examples': invalid_rows[:5]
+                }
+            }), 400
+
+        # Check for duplicates within the CSV
+        iccids = [item['iccid'] for item in inventory_data]
+        unique_iccids = set(iccids)
+        if len(unique_iccids) != len(iccids):
+            return jsonify({
+                'success': False,
+                'error': 'Duplicate ICCIDs in CSV',
+                'message': 'All ICCIDs must be unique within the file'
+            }), 400
+
+        # Database operations - Replace all data safely
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    try:
+                        # Start transaction
+                        conn.autocommit = False
+                        
+                        # Backup existing data to archive table
+                        cur.execute("""
+                            INSERT INTO iccid_inventory_archive 
+                            (archived_at, id, iccid, status, sim_type, sim_status, assigned_to, sim_order, 
+                             sim_tag, country, line_id, lpa_code, allocated_to_user_id, allocated_to_firebase_uid, 
+                             activated_at, activation_id, batch_upload_date, created_at, updated_at)
+                            SELECT CURRENT_TIMESTAMP, id, iccid, status, sim_type, sim_status, assigned_to, 
+                                   sim_order, sim_tag, country, line_id, lpa_code, allocated_to_user_id, 
+                                   allocated_to_firebase_uid, activated_at, activation_id, batch_upload_date, 
+                                   created_at, updated_at
+                            FROM iccid_inventory
+                        """)
+                        archived_count = cur.rowcount
+                        
+                        # Clear existing inventory
+                        cur.execute('DELETE FROM iccid_inventory')
+                        deleted_count = cur.rowcount
+                        
+                        # Insert new inventory data
+                        insert_query = """
+                            INSERT INTO iccid_inventory 
+                            (iccid, status, sim_type, sim_status, assigned_to, sim_order, sim_tag, 
+                             country, line_id, lpa_code, created_at, updated_at)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        """
+                        
+                        insert_values = [
+                            (item['iccid'], item['status'], item['sim_type'], item['sim_status'],
+                             item['assigned_to'], item['sim_order'], item['sim_tag'], item['country'],
+                             item['line_id'], item['lpa_code'])
+                            for item in inventory_data
+                        ]
+                        
+                        cur.executemany(insert_query, insert_values)
+                        inserted_count = cur.rowcount
+                        
+                        # Commit transaction
+                        conn.commit()
+                        conn.autocommit = True
+                        
+                        return jsonify({
+                            'success': True,
+                            'message': 'ICCID inventory replaced successfully',
+                            'stats': {
+                                'archived_entries': archived_count,
+                                'deleted_entries': deleted_count,
+                                'new_entries_inserted': inserted_count,
+                                'invalid_rows_skipped': len(invalid_rows),
+                                'filename': csv_file.filename
+                            },
+                            'validation_errors': invalid_rows[:5] if invalid_rows else []
+                        })
+                        
+                    except Exception as e:
+                        # Rollback on error
+                        conn.rollback()
+                        conn.autocommit = True
+                        raise e
+
+        return jsonify({'success': False, 'error': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error replacing ICCID inventory: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Replace operation failed',
+            'message': str(e)
+        }), 500
+
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
     print("\n=== Registered Flask Routes ===")
