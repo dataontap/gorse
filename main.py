@@ -200,6 +200,59 @@ try:
                 else:
                     print("notifications table already exists")
 
+                # Check if iccid_inventory table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'iccid_inventory')")
+                iccid_inventory_exists = cur.fetchone()[0]
+
+                if not iccid_inventory_exists:
+                    print("Creating iccid_inventory table...")
+                    create_iccid_inventory_sql = """
+                        CREATE TABLE iccid_inventory (
+                            id SERIAL PRIMARY KEY,
+                            iccid VARCHAR(50) UNIQUE NOT NULL,
+                            lpa_code VARCHAR(200),
+                            country VARCHAR(10) DEFAULT 'US',
+                            line_id VARCHAR(100),
+                            status VARCHAR(20) DEFAULT 'available',
+                            assigned_firebase_uid VARCHAR(128),
+                            assigned_email VARCHAR(255),
+                            assigned_at TIMESTAMP,
+                            batch_upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_iccid_status ON iccid_inventory(status);
+                        CREATE INDEX IF NOT EXISTS idx_iccid_assigned_firebase_uid ON iccid_inventory(assigned_firebase_uid);
+                        CREATE INDEX IF NOT EXISTS idx_iccid_batch_upload ON iccid_inventory(batch_upload_date);
+                    """
+                    cur.execute(create_iccid_inventory_sql)
+                    conn.commit()
+                    print("iccid_inventory table created successfully")
+                else:
+                    print("iccid_inventory table already exists")
+
+                # Check if processed_stripe_events table exists (for webhook idempotency)
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'processed_stripe_events')")
+                processed_events_exists = cur.fetchone()[0]
+
+                if not processed_events_exists:
+                    print("Creating processed_stripe_events table...")
+                    create_processed_events_sql = """
+                        CREATE TABLE processed_stripe_events (
+                            id SERIAL PRIMARY KEY,
+                            event_id VARCHAR(100) UNIQUE NOT NULL,
+                            event_type VARCHAR(100) NOT NULL,
+                            processing_result TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_processed_events_event_id ON processed_stripe_events(event_id);
+                    """
+                    cur.execute(create_processed_events_sql)
+                    conn.commit()
+                    print("processed_stripe_events table created successfully")
+                else:
+                    print("processed_stripe_events table already exists")
+
                 conn.commit()
         else:
             print("No database connection available for table creation")
@@ -2589,8 +2642,6 @@ def get_user_data_balance():
                             total_purchases = 0
                     except Exception as sql_err:
                         print(f"SQL query error: {sql_err}")
-                        import traceback
-                        traceback.print_exc()
                         # Set safe defaults when query fails
                         global_data_cents = 0
                         total_data_cents = 0
@@ -3739,65 +3790,6 @@ def populate_token_pings():
             'message': str(e)
         }), 500
 
-def create_token_pings_table():
-    """Create token_price_pings table if it doesn't exist"""
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Check if table exists
-                    cur.execute(
-                        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'token_price_pings')"
-                    )
-                    table_exists = cur.fetchone()[0]
-
-                    if not table_exists:
-                        # Create the table if it doesn't exist
-                        print("Creating token_price_pings table...")
-                        create_table_sql = """
-                        CREATE TABLE token_price_pings (
-                            id SERIAL PRIMARY KEY,
-                            token_price DECIMAL(18,9) NOT NULL,
-                            request_time_ms INTEGER,
-                            response_time_ms INTEGER,
-                            roundtrip_ms INTEGER,
-                            ping_destination VARCHAR(255),
-                            source VARCHAR(100),
-                            additional_data TEXT,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        );
-                        """
-                        cur.execute(create_table_sql)
-                        conn.commit()
-                        print("token_price_pings table created successfully")
-                        return True
-                    else:
-                        # Check if all required columns exist
-                        cur.execute("""
-                            SELECT column_name FROM information_schema.columns 
-                            WHERE table_name = 'token_price_pings'
-                        """)
-                        columns = [row[0] for row in cur.fetchall()]
-                        required_columns = ['ping_destination', 'source', 'additional_data']
-
-                        for column in required_columns:
-                            if column not in columns:
-                                print(f"Adding missing column {column} to token_price_pings table...")
-                                if column == 'ping_destination':
-                                    cur.execute("ALTER TABLE token_price_pings ADD COLUMN ping_destination VARCHAR(255)")
-                                elif column == 'source':
-                                    cur.execute("ALTER TABLE token_price_pings ADD COLUMN source VARCHAR(100)")
-                                elif column == 'additional_data':
-                                    cur.execute("ALTER TABLE token_price_pings ADD COLUMN additional_data TEXT")
-                        conn.commit()
-                    return True
-    except Exception as e:
-        print(f"Error creating/updating token_price_pings table: {str(e)}")
-        return False
-
-# Call the function on startup
-create_token_pings_table()
-
 @app.route('/api/ethereum-transactions', methods=['GET'])
 def get_ethereum_transactions():
     user_id = request.args.get('userId')
@@ -4478,6 +4470,181 @@ def reject_beta_request(request_id):
                 </div>
             </body>
             </html>
+
+
+def get_user_assigned_iccid_data(firebase_uid):
+    """Get user's assigned ICCID data from database"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT iccid, lpa_code, country, line_id, status
+                        FROM iccid_inventory 
+                        WHERE assigned_firebase_uid = %s 
+                        ORDER BY assigned_at DESC LIMIT 1
+                    """, (firebase_uid,))
+                    
+                    result = cur.fetchone()
+                    if result:
+                        return {
+                            'iccid': result[0],
+                            'lpa_code': result[1],
+                            'country': result[2],
+                            'line_id': result[3],
+                            'status': result[4]
+                        }
+        return None
+    except Exception as e:
+        print(f"Error getting assigned ICCID: {str(e)}")
+        return None
+
+def assign_iccid_to_user_atomic(firebase_uid, user_email):
+    """Atomically assign an available ICCID to a user"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Atomic update to prevent race conditions
+                    cur.execute("""
+                        UPDATE iccid_inventory 
+                        SET status = 'assigned', 
+                            assigned_firebase_uid = %s,
+                            assigned_email = %s,
+                            assigned_at = CURRENT_TIMESTAMP
+                        WHERE iccid = (
+                            SELECT iccid FROM iccid_inventory 
+                            WHERE status = 'available' 
+                            ORDER BY batch_upload_date ASC, iccid ASC 
+                            LIMIT 1 FOR UPDATE SKIP LOCKED
+                        )
+                        RETURNING iccid, lpa_code, country, line_id
+                    """, (firebase_uid, user_email))
+                    
+                    result = cur.fetchone()
+                    if result:
+                        conn.commit()
+                        return {
+                            'iccid': result[0],
+                            'lpa_code': result[1] or f'LPA:1$consumer.e-sim.global${result[0]}$',
+                            'country': result[2] or 'US',
+                            'line_id': result[3] or f'line_{result[0][-8:]}'
+                        }
+                    else:
+                        print("No available ICCIDs found")
+                        return None
+        return None
+    except Exception as e:
+        print(f"Error assigning ICCID: {str(e)}")
+        return None
+
+def rollback_iccid_assignment(iccid, firebase_uid):
+    """Rollback ICCID assignment in case of activation failure"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        UPDATE iccid_inventory 
+                        SET status = 'available', 
+                            assigned_firebase_uid = NULL,
+                            assigned_email = NULL,
+                            assigned_at = NULL
+                        WHERE iccid = %s AND assigned_firebase_uid = %s
+                    """, (iccid, firebase_uid))
+                    conn.commit()
+                    print(f"Rolled back ICCID assignment: {iccid}")
+    except Exception as e:
+        print(f"Error rolling back ICCID assignment: {str(e)}")
+
+def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid):
+    """Send eSIM purchase receipt email with QR codes"""
+    try:
+        from email_service import send_email
+        import qrcode
+        import base64
+        from io import BytesIO
+        
+        # Generate QR codes
+        lpa_code = assigned_iccid['lpa_code']
+        
+        # Create eSIM activation QR code
+        qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
+        qr.add_data(lpa_code)
+        qr.make(fit=True)
+        
+        qr_image = qr.make_image(fill_color="black", back_color="white")
+        buffer = BytesIO()
+        qr_image.save(buffer, format='PNG')
+        buffer.seek(0)
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+        
+        subject = "🎉 Your eSIM is Ready - DOT Mobile"
+        html_body = f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; }}
+                .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; }}
+                .content {{ padding: 30px 20px; }}
+                .qr-code {{ text-align: center; margin: 20px 0; }}
+                .qr-code img {{ max-width: 200px; height: auto; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🎉 Your eSIM Purchase is Complete!</h1>
+                    <p>Hi {user_name or 'there'}, your eSIM is ready to activate</p>
+                </div>
+                
+                <div class="content">
+                    <h3>📱 eSIM Details</h3>
+                    <ul>
+                        <li><strong>ICCID:</strong> {assigned_iccid['iccid']}</li>
+                        <li><strong>Country:</strong> {assigned_iccid['country']}</li>
+                        <li><strong>Status:</strong> Ready for Activation</li>
+                    </ul>
+                    
+                    <div class="qr-code">
+                        <h3>🔲 Scan to Activate</h3>
+                        <img src="data:image/png;base64,{qr_base64}" alt="eSIM Activation QR Code">
+                        <p><strong>LPA Code:</strong> {lpa_code}</p>
+                    </div>
+                    
+                    <h3>📋 Activation Instructions</h3>
+                    <ol>
+                        <li>Go to Settings > Cellular/Mobile on your device</li>
+                        <li>Tap "Add Cellular Plan" or "Add eSIM"</li>
+                        <li>Scan the QR code above</li>
+                        <li>Follow the prompts to complete activation</li>
+                    </ol>
+                    
+                    <p style="margin-top: 30px; padding: 15px; background: #e3f2fd; border-radius: 5px;">
+                        <strong>Support:</strong> If you need help, contact us at support@dotmobile.app
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        result = send_email(
+            to_email=user_email,
+            subject=subject,
+            body="Your eSIM is ready! Please check the HTML version for activation instructions and QR code.",
+            html_body=html_body
+        )
+        
+        print(f"📧 Sent eSIM receipt email to {user_email}")
+        return result
+        
+    except Exception as e:
+        print(f"❌ Error sending eSIM receipt email: {str(e)}")
+        return False
+
+
             """
         else:
             return f"""
