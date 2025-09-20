@@ -62,6 +62,11 @@ def require_auth(f):
             if firebase_uid and verify_firebase_uid(firebase_uid):
                 return f(*args, **kwargs)
         
+        # Check for Firebase UID in query parameters (for frontend compatibility)
+        firebase_uid = request.args.get('firebaseUid')
+        if firebase_uid and verify_firebase_uid(firebase_uid):
+            return f(*args, **kwargs)
+        
         return jsonify({
             'success': False,
             'error': 'Authentication required',
