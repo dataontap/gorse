@@ -85,7 +85,8 @@ def create_or_find_oxio_user(oxio_service: OXIOService, email: str, display_name
                 'success': True,
                 'oxio_user_id': result.get('oxio_user_id'),
                 'method': 'created',
-                'message': 'OXIO user created successfully'
+                'message': 'OXIO user created successfully',
+                'api_response': result
             }
         else:
             # Check if user already exists (error code 6805)
@@ -101,26 +102,32 @@ def create_or_find_oxio_user(oxio_service: OXIOService, email: str, display_name
                         'success': True,
                         'oxio_user_id': find_result.get('oxio_user_id'),
                         'method': 'found',
-                        'message': 'Found existing OXIO user'
+                        'message': 'Found existing OXIO user',
+                        'api_response': find_result,
+                        'original_error': result
                     }
                 else:
                     return {
                         'success': False,
                         'error': 'User exists but could not find existing user ID',
-                        'message': find_result.get('message', 'Unknown error')
+                        'message': find_result.get('message', 'Unknown error'),
+                        'api_response': find_result,
+                        'original_error': result
                     }
             else:
                 return {
                     'success': False,
                     'error': f"OXIO API error: {result.get('status_code')}",
-                    'message': result.get('message', 'Unknown error')
+                    'message': result.get('message', 'Unknown error'),
+                    'api_response': result
                 }
                 
     except Exception as e:
         return {
             'success': False,
             'error': 'Exception during OXIO user creation',
-            'message': str(e)
+            'message': str(e),
+            'exception_details': str(e)
         }
 
 def add_oxio_user_ids(dry_run: bool = True, batch_size: int = 100) -> bool:
@@ -212,6 +219,50 @@ def add_oxio_user_ids(dry_run: bool = True, batch_size: int = 100) -> bool:
                             oxio_service, email, display_name, oxio_group_id, firebase_uid
                         )
                         
+                        # Store the API response in database for tracking
+                        try:
+                            with conn.cursor() as response_cur:
+                                # Create oxio_api_responses table if it doesn't exist
+                                response_cur.execute("""
+                                    CREATE TABLE IF NOT EXISTS oxio_api_responses (
+                                        id SERIAL PRIMARY KEY,
+                                        user_id INTEGER NOT NULL,
+                                        firebase_uid VARCHAR(128),
+                                        email VARCHAR(255),
+                                        operation_type VARCHAR(50),
+                                        success BOOLEAN,
+                                        oxio_user_id VARCHAR(100),
+                                        method VARCHAR(20),
+                                        error_code VARCHAR(50),
+                                        error_message TEXT,
+                                        api_response_json TEXT,
+                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                    )
+                                """)
+                                
+                                # Insert the response record
+                                import json
+                                response_cur.execute("""
+                                    INSERT INTO oxio_api_responses 
+                                    (user_id, firebase_uid, email, operation_type, success, 
+                                     oxio_user_id, method, error_code, error_message, api_response_json)
+                                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                """, (
+                                    user_id,
+                                    firebase_uid,
+                                    email,
+                                    'create_or_find_user',
+                                    result.get('success', False),
+                                    result.get('oxio_user_id'),
+                                    result.get('method'),
+                                    result.get('error'),
+                                    result.get('message'),
+                                    json.dumps(result, default=str)
+                                ))
+                                conn.commit()
+                        except Exception as db_err:
+                            print(f"  ⚠️ Failed to store API response for user {user_id}: {str(db_err)}")
+                        
                         if result.get('success'):
                             oxio_user_id = result.get('oxio_user_id')
                             method = result.get('method')
@@ -299,12 +350,45 @@ def add_oxio_user_ids(dry_run: bool = True, batch_size: int = 100) -> bool:
                 print(f"Users with OXIO User ID: {final_with:,}")
                 print(f"Coverage: {(final_with / final_total * 100):.1f}%")
                 
+                # Check if API responses table exists and show response statistics
+                try:
+                    cur.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables 
+                            WHERE table_name = 'oxio_api_responses'
+                        )
+                    """)
+                    if cur.fetchone()[0]:
+                        cur.execute("""
+                            SELECT 
+                                COUNT(*) as total_responses,
+                                COUNT(CASE WHEN success = true THEN 1 END) as successful_responses,
+                                COUNT(CASE WHEN method = 'created' THEN 1 END) as created_responses,
+                                COUNT(CASE WHEN method = 'found' THEN 1 END) as found_responses,
+                                COUNT(CASE WHEN success = false THEN 1 END) as failed_responses
+                            FROM oxio_api_responses
+                            WHERE operation_type = 'create_or_find_user'
+                        """)
+                        
+                        response_stats = cur.fetchone()
+                        if response_stats:
+                            total_resp, success_resp, created_resp, found_resp, failed_resp = response_stats
+                            print(f"\nAPI RESPONSE STATISTICS:")
+                            print(f"Total API responses logged: {total_resp:,}")
+                            print(f"  - Successful: {success_resp:,}")
+                            print(f"  - New users created: {created_resp:,}")
+                            print(f"  - Existing users found: {found_resp:,}")
+                            print(f"  - Failed: {failed_resp:,}")
+                except Exception as stats_err:
+                    print(f"Could not retrieve API response statistics: {str(stats_err)}")
+                
                 if final_without == 0:
                     print("🎉 SUCCESS: All users now have OXIO User IDs!")
                 elif total_errors == 0:
                     print("✅ SUCCESS: No errors occurred during processing")
                 else:
                     print(f"⚠️  {final_without} users still missing OXIO User IDs ({total_errors} had errors)")
+                    print("💡 Check oxio_api_responses table for detailed error analysis")
         
         return True
         
