@@ -4946,23 +4946,17 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
 def send_datashare_invitation():
     """Send datashare invitation via email or create demo user"""
     try:
-        # Get authenticated user's Firebase UID from Authorization header (already validated by @require_auth)
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({'success': False, 'error': 'Invalid authentication'}), 401
-        
-        firebase_uid = auth_header[7:]  # Remove 'Bearer ' prefix
-        
         data = request.get_json()
         if not data:
             return jsonify({'success': False, 'error': 'No data provided'}), 400
 
         email = data.get('email')
         personal_message = data.get('message', '')
+        firebase_uid = data.get('firebaseUid')  # Validated by @require_auth decorator
         is_demo_user = data.get('isDemoUser', False)
 
-        if not email:
-            return jsonify({'success': False, 'error': 'Email is required'}), 400
+        if not email or not firebase_uid:
+            return jsonify({'success': False, 'error': 'Email and Firebase UID are required'}), 400
 
         # Get sender user details
         sender_user_id = None
@@ -5105,13 +5099,11 @@ def send_datashare_invitation():
 def get_datashare_invitations():
     """Get user's datashare invitations"""
     try:
-        # Get authenticated user's Firebase UID from Authorization header (already validated by @require_auth)
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({'success': False, 'error': 'Invalid authentication'}), 401
-        
-        firebase_uid = auth_header[7:]  # Remove 'Bearer ' prefix
+        firebase_uid = request.args.get('firebaseUid')  # Validated by @require_auth decorator
         limit = int(request.args.get('limit', 50))
+        
+        if not firebase_uid:
+            return jsonify({'success': False, 'error': 'Firebase UID is required'}), 400
 
         # Get user ID
         user_id = None
@@ -5176,12 +5168,10 @@ def get_datashare_invitations():
 def delete_datashare_invitation(invite_id):
     """Delete a datashare invitation"""
     try:
-        # Get authenticated user's Firebase UID from Authorization header (already validated by @require_auth)
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({'success': False, 'error': 'Invalid authentication'}), 401
+        firebase_uid = request.args.get('firebaseUid')  # Validated by @require_auth decorator
         
-        firebase_uid = auth_header[7:]  # Remove 'Bearer ' prefix
+        if not firebase_uid:
+            return jsonify({'success': False, 'error': 'Firebase UID is required'}), 400
 
         # Get user ID
         user_id = None
