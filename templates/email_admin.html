@@ -124,15 +124,15 @@
                         <div class="variable-help">
                             <h6>Available Variables:</h6>
                             <p>Use these variables in your email template:</p>
-                            <span class="variable-tag">{{user_name}}</span>
-                            <span class="variable-tag">{{user_email}}</span>
-                            <span class="variable-tag">{{phone_number}}</span>
-                            <span class="variable-tag">{{line_id}}</span>
-                            <span class="variable-tag">{{iccid}}</span>
-                            <span class="variable-tag">{{activation_date}}</span>
-                            <span class="variable-tag">{{qr_code_url}}</span>
-                            <span class="variable-tag">{{activation_url}}</span>
-                            <span class="variable-tag">{{oxio_user_id}}</span>
+                            <span class="variable-tag">{{ "{{user_name}}" }}</span>
+                            <span class="variable-tag">{{ "{{user_email}}" }}</span>
+                            <span class="variable-tag">{{ "{{phone_number}}" }}</span>
+                            <span class="variable-tag">{{ "{{line_id}}" }}</span>
+                            <span class="variable-tag">{{ "{{iccid}}" }}</span>
+                            <span class="variable-tag">{{ "{{activation_date}}" }}</span>
+                            <span class="variable-tag">{{ "{{qr_code_url}}" }}</span>
+                            <span class="variable-tag">{{ "{{activation_url}}" }}</span>
+                            <span class="variable-tag">{{ "{{oxio_user_id}}" }}</span>
                         </div>
                     </div>
 
@@ -303,7 +303,7 @@
             // Replace variables with sample data
             let previewContent = content;
             Object.keys(sampleData).forEach(key => {
-                const regex = new RegExp(`{{${key}}}`, 'g');
+                const regex = new RegExp('{{' + key + '}}', 'g');
                 previewContent = previewContent.replace(regex, sampleData[key]);
             });
             
