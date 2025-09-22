@@ -1,4 +1,3 @@
-
 # eSIM Activation System Documentation
 
 ## Overview
@@ -289,22 +288,66 @@ POST /api/oxio/test-sample-activation
 def handle_stripe_webhook():
     # 1. Verify webhook signature
     sig_header = request.headers.get('Stripe-Signature')
-    
+
     # 2. Parse event
     event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
-    
+
     # 3. Process based on event type
     if event['type'] == 'checkout.session.completed':
         # Trigger eSIM activation
         activate_esim_for_checkout(session)
 ```
 
-### OXIO Webhook Integration
+### Firebase Security & Integration
 
-While OXIO webhooks are not currently implemented, the system is designed to handle:
-- Line activation confirmations
-- Status updates
-- Error notifications
+**Authentication Security**:
+```python
+from firebase_helper import firebase_auth_required
+
+@app.route('/api/secure-endpoint')
+@firebase_auth_required
+def secure_endpoint():
+    # Firebase ID token is verified automatically
+    # User UID is available in request.firebase_user
+    pass
+```
+
+**Database Integration**:
+- All users have `firebase_uid` as unique identifier
+- Firebase UID links to OXIO user accounts
+- Stripe customers associated via Firebase UID
+- FCM tokens mapped to Firebase users
+
+**User Data Security**:
+```python
+# SECURITY: Always clear localStorage on user switch
+localStorage.clear()  # Prevents user data mixing
+
+# Verify Firebase UID exists in database
+def verify_firebase_uid(firebase_uid: str) -> bool:
+    with get_db_connection() as conn:
+        cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+        return cur.fetchone() is not None
+```
+
+**Real-time State Management**:
+```javascript
+// Firebase authentication state listener
+firebase.auth().onAuthStateChanged(async function(user) {
+    if (user) {
+        // Load user data and register FCM token
+        await loadUserData(user);
+        registerFCMToken();
+
+        // Broadcast auth state change
+        broadcastAuthStateChange(user, userData);
+    } else {
+        // Clear all local storage and notify components
+        localStorage.clear();
+        broadcastAuthStateChange(null, null);
+    }
+});
+```
 
 ---
 
