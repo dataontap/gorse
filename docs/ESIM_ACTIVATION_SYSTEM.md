@@ -68,6 +68,9 @@ headers = {
     'Authorization': f'Basic {base64_credentials}',
     'Content-Type': 'application/json'
 }
+
+# Brand ID retrieved from environment variables
+brand_id = os.environ.get('OXIO_BRAND_ID')
 ```
 
 ### 3. Resend Email API
@@ -157,10 +160,9 @@ def activate_line(oxio_user_id, plan_id, group_id):
         "countryCode": "US",
         "sim": {"simType": "EMBEDDED"},
         "endUser": {
-            "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
+            "brandId": os.environ.get('OXIO_BRAND_ID'),  # Retrieved from secrets
             "endUserId": oxio_user_id
         },
-        "phoneNumberRequirements": {"preferredAreaCode": "212"},
         "activateOnAttach": False
     }
     # POST to /v3/lines/line
@@ -417,6 +419,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 # OXIO
 OXIO_API_KEY=your_api_key
 OXIO_AUTH_TOKEN=your_auth_token
+OXIO_BRAND_ID=your_brand_id
 
 # Resend
 RESEND_API_KEY=re_...
