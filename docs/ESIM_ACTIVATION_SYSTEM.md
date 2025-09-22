@@ -423,7 +423,7 @@ OXIO_BRAND_ID=your_brand_id
 
 # Resend
 RESEND_API_KEY=re_...
-FROM_EMAIL=noreply@dotmobile.app
+FROM_EMAIL=rbm@dotmobile.app
 
 # Database
 DATABASE_URL=postgresql://...
