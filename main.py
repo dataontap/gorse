@@ -463,6 +463,9 @@ def register_fcm_token():
 
                             return jsonify({"status": "success", "platform": platform})
 
+                except Exception as db_err:
+                    print(f"Error accessing database for pending notifications: {str(db_err)}")
+
         return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
 
 
