@@ -275,7 +275,7 @@ POST /api/oxio/test-sample-activation
 
 ### Stripe Webhook Handler
 
-**URL**: `/stripe/webhook/7f3a9b2c8d1e4f5a6b7c8d9e0f1a2b3c`
+**URL**: `/stripe/webhook/{STRIPE_WEBHOOK_ENDPOINT}`
 
 **Security**: Webhook signature verification
 
@@ -460,7 +460,7 @@ Access testing interface at `/oxio-test`:
 POST /api/test-esim-activation
 {
     "firebaseUid": "test_uid_123",
-    "email": "test@example.com", 
+    "email": "test@example.com",
     "name": "Test User"
 }
 ```
