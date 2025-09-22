@@ -21,3 +21,4 @@ qrcode
 qrcode
 qrcode[pil]
 qrcode[pil]
+resend
