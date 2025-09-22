@@ -2099,17 +2099,22 @@ function trackHelpInteraction(type, data) {
 let currentSubscriptionStatus = null;
 
 // Initialize card stack functionality
-function initializeCarousel() {
+function initializeCarousel(attempts = 0) {
     console.log('Card stack initialized');
 
-    // Check if offers section exists, if not wait a bit
+    // Check if offers section exists, if not wait a bit (max 10 attempts)
     const offersSection = document.querySelector('.offers-section');
     if (!offersSection) {
-        console.log('Offers section not found, waiting...');
-        setTimeout(() => {
-            initializeCarousel();
-        }, 500);
-        return;
+        if (attempts < 10) {
+            console.log('Offers section not found, waiting...');
+            setTimeout(() => {
+                initializeCarousel(attempts + 1);
+            }, 500);
+            return;
+        } else {
+            console.log('Offers section not found after maximum attempts - skipping carousel initialization');
+            return;
+        }
     }
 
     // Wait for subscription status to be loaded
