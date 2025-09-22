@@ -1,0 +1,471 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eSIM Email Admin - DOTM Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .email-editor {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .email-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 400px;
+        }
+        
+        .template-selector {
+            margin-bottom: 20px;
+        }
+        
+        .form-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+        
+        .preview-iframe {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+        
+        .variable-help {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        
+        .variable-tag {
+            background: #2196f3;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        
+        .save-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border-radius: 5px;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+    <div class="save-indicator" id="saveIndicator">
+        <i class="fas fa-check"></i> Email template saved!
+    </div>
+
+    <div class="top-bar">
+        <div class="d-flex align-items-center">
+            <a href="/dashboard" class="btn btn-outline-light me-3">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <h1 class="text-white mb-0">eSIM Email Admin</h1>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        <div class="row">
+            <!-- Email Editor Column -->
+            <div class="col-md-6">
+                <div class="email-editor">
+                    <h3><i class="fas fa-edit"></i> Email Template Editor</h3>
+                    
+                    <!-- Template Selector -->
+                    <div class="template-selector">
+                        <label for="templateType" class="form-label">Email Template Type</label>
+                        <select class="form-select" id="templateType" onchange="loadTemplate()">
+                            <option value="activation">eSIM Activation Confirmation</option>
+                            <option value="welcome">Welcome Email</option>
+                            <option value="beta_approval">Beta Approval</option>
+                        </select>
+                    </div>
+
+                    <!-- Subject Line -->
+                    <div class="form-section">
+                        <label for="emailSubject" class="form-label">Subject Line</label>
+                        <input type="text" class="form-control" id="emailSubject" 
+                               value="🎉 Your eSIM is Ready - DOTM Platform">
+                    </div>
+
+                    <!-- Email Content -->
+                    <div class="form-section">
+                        <label for="emailContent" class="form-label">Email Content (HTML)</label>
+                        <textarea class="form-control" id="emailContent" rows="15"></textarea>
+                        
+                        <div class="variable-help">
+                            <h6>Available Variables:</h6>
+                            <p>Use these variables in your email template:</p>
+                            <span class="variable-tag">{{user_name}}</span>
+                            <span class="variable-tag">{{user_email}}</span>
+                            <span class="variable-tag">{{phone_number}}</span>
+                            <span class="variable-tag">{{line_id}}</span>
+                            <span class="variable-tag">{{iccid}}</span>
+                            <span class="variable-tag">{{activation_date}}</span>
+                            <span class="variable-tag">{{qr_code_url}}</span>
+                            <span class="variable-tag">{{activation_url}}</span>
+                            <span class="variable-tag">{{oxio_user_id}}</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary" onclick="saveTemplate()">
+                            <i class="fas fa-save"></i> Save Template
+                        </button>
+                        <button class="btn btn-secondary" onclick="previewEmail()">
+                            <i class="fas fa-eye"></i> Update Preview
+                        </button>
+                        <button class="btn btn-success" onclick="sendTestEmail()">
+                            <i class="fas fa-paper-plane"></i> Send Test Email
+                        </button>
+                        <button class="btn btn-warning" onclick="resetTemplate()">
+                            <i class="fas fa-undo"></i> Reset to Default
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Preview Column -->
+            <div class="col-md-6">
+                <div class="email-editor">
+                    <h3><i class="fas fa-eye"></i> Email Preview</h3>
+                    
+                    <!-- Preview Controls -->
+                    <div class="mb-3">
+                        <label for="testData" class="form-label">Test Data</label>
+                        <select class="form-select" id="testData" onchange="updatePreviewData()">
+                            <option value="sample">Sample User Data</option>
+                            <option value="custom">Custom Test Data</option>
+                        </select>
+                    </div>
+
+                    <!-- Preview Frame -->
+                    <div class="email-preview">
+                        <iframe id="emailPreview" class="preview-iframe"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template History -->
+        <div class="email-editor">
+            <h3><i class="fas fa-history"></i> Template History</h3>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Modified Date</th>
+                            <th>Modified By</th>
+                            <th>Subject</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="templateHistory">
+                        <!-- History will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Default email template
+        const defaultTemplate = `
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; }
+        .profile-card { background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #28a745; }
+        .highlight { color: #28a745; font-weight: bold; }
+        .footer { background: #2c3e50; color: white; padding: 20px; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 eSIM Activation Successful!</h1>
+            <p>Your DOTM eSIM is now active and ready to use</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello {{user_name}},</p>
+            
+            <p>Great news! Your eSIM has been successfully activated and is ready for use.</p>
+            
+            <div class="profile-card">
+                <h3>📱 Your eSIM Profile Details</h3>
+                <ul>
+                    <li><strong>Phone Number:</strong> <span class="highlight">{{phone_number}}</span></li>
+                    <li><strong>Line ID:</strong> {{line_id}}</li>
+                    <li><strong>ICCID:</strong> {{iccid}}</li>
+                    <li><strong>Status:</strong> ✅ <span class="highlight">Active</span></li>
+                    <li><strong>Activation Date:</strong> {{activation_date}}</li>
+                </ul>
+            </div>
+            
+            <h3>📥 Next Steps</h3>
+            <ol>
+                <li>Download your eSIM profile using the QR code or activation URL</li>
+                <li>Follow your device's eSIM setup instructions</li>
+                <li>Start using your global connectivity immediately!</li>
+            </ol>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{activation_url}}" style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                    Download eSIM Profile
+                </a>
+            </div>
+            
+            <div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <h4>📞 Support</h4>
+                <p>Questions? Contact us at <a href="mailto:support@dotmobile.app">support@dotmobile.app</a></p>
+                <p>Technical ID: {{oxio_user_id}}</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>DOTM Platform - Global Mobile Connectivity</p>
+            <p>Data On Tap Inc. | Licensed Full MVNO | Network 302 100</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+        // Sample test data
+        const sampleData = {
+            user_name: "John Doe",
+            user_email: "john.doe@example.com",
+            phone_number: "+1 (212) 555-0123",
+            line_id: "LINE_12345",
+            iccid: "8910650420001501340F",
+            activation_date: new Date().toLocaleDateString(),
+            qr_code_url: "/static/sample-qr.png",
+            activation_url: "https://consumer.e-sim.global/download?id=12345",
+            oxio_user_id: "USER_67890"
+        };
+
+        function loadTemplate() {
+            const templateType = document.getElementById('templateType').value;
+            
+            // Load different templates based on type
+            if (templateType === 'activation') {
+                document.getElementById('emailContent').value = defaultTemplate;
+                document.getElementById('emailSubject').value = "🎉 Your eSIM is Ready - DOTM Platform";
+            } else if (templateType === 'welcome') {
+                document.getElementById('emailSubject').value = "Welcome to DOTM Platform!";
+                // Load welcome template
+            } else if (templateType === 'beta_approval') {
+                document.getElementById('emailSubject').value = "Beta Access Approved!";
+                // Load beta template
+            }
+            
+            previewEmail();
+        }
+
+        function previewEmail() {
+            const content = document.getElementById('emailContent').value;
+            const subject = document.getElementById('emailSubject').value;
+            
+            // Replace variables with sample data
+            let previewContent = content;
+            Object.keys(sampleData).forEach(key => {
+                const regex = new RegExp(`{{${key}}}`, 'g');
+                previewContent = previewContent.replace(regex, sampleData[key]);
+            });
+            
+            // Update preview iframe
+            const iframe = document.getElementById('emailPreview');
+            iframe.srcdoc = previewContent;
+        }
+
+        function saveTemplate() {
+            const templateType = document.getElementById('templateType').value;
+            const subject = document.getElementById('emailSubject').value;
+            const content = document.getElementById('emailContent').value;
+            
+            const templateData = {
+                type: templateType,
+                subject: subject,
+                content: content,
+                modified_date: new Date().toISOString()
+            };
+            
+            // Send to backend
+            fetch('/api/admin/save-email-template', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(templateData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSaveIndicator();
+                    loadTemplateHistory();
+                } else {
+                    alert('Error saving template: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error saving template');
+            });
+        }
+
+        function sendTestEmail() {
+            const subject = document.getElementById('emailSubject').value;
+            const content = document.getElementById('emailContent').value;
+            
+            const testEmail = prompt("Enter email address for test:", "admin@dotmobile.app");
+            if (!testEmail) return;
+            
+            fetch('/api/admin/send-test-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    to_email: testEmail,
+                    subject: subject,
+                    content: content,
+                    test_data: sampleData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Test email sent successfully!');
+                } else {
+                    alert('Error sending test email: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error sending test email');
+            });
+        }
+
+        function resetTemplate() {
+            if (confirm('Reset to default template? This will lose any unsaved changes.')) {
+                document.getElementById('emailContent').value = defaultTemplate;
+                document.getElementById('emailSubject').value = "🎉 Your eSIM is Ready - DOTM Platform";
+                previewEmail();
+            }
+        }
+
+        function showSaveIndicator() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.style.display = 'block';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 3000);
+        }
+
+        function loadTemplateHistory() {
+            fetch('/api/admin/email-template-history')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('templateHistory');
+                tbody.innerHTML = '';
+                
+                data.history.forEach((version, index) => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>v${data.history.length - index}</td>
+                        <td>${new Date(version.modified_date).toLocaleString()}</td>
+                        <td>${version.modified_by || 'Admin'}</td>
+                        <td>${version.subject}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="restoreVersion(${index})">
+                                <i class="fas fa-undo"></i> Restore
+                            </button>
+                        </td>
+                    `;
+                });
+            })
+            .catch(error => {
+                console.error('Error loading history:', error);
+            });
+        }
+
+        function restoreVersion(index) {
+            if (confirm('Restore this version? Current changes will be lost.')) {
+                fetch(`/api/admin/restore-email-template/${index}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('emailSubject').value = data.template.subject;
+                        document.getElementById('emailContent').value = data.template.content;
+                        previewEmail();
+                        alert('Template restored successfully!');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error restoring template');
+                });
+            }
+        }
+
+        function updatePreviewData() {
+            const testDataType = document.getElementById('testData').value;
+            if (testDataType === 'custom') {
+                // Allow user to input custom test data
+                const customData = prompt('Enter custom test data (JSON format):', JSON.stringify(sampleData, null, 2));
+                if (customData) {
+                    try {
+                        const parsed = JSON.parse(customData);
+                        Object.assign(sampleData, parsed);
+                        previewEmail();
+                    } catch (e) {
+                        alert('Invalid JSON format');
+                    }
+                }
+            } else {
+                previewEmail();
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTemplate();
+            loadTemplateHistory();
+        });
+    </script>
+</body>
+</html>

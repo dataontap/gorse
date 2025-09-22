@@ -187,8 +187,7 @@ try:
                             read_status BOOLEAN DEFAULT FALSE,
                             fcm_response TEXT,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            delivered_at TIMESTAMP,
-                            FOREIGN KEY (user_id) REFERENCES users(id)
+                            delivered_at TIMESTAMP
                         );
                         CREATE INDEX IF NOT EXISTS idx_notifications_firebase_uid ON notifications(firebase_uid);
                         CREATE INDEX IF NOT EXISTS idx_notifications_delivered ON notifications(delivered);
@@ -464,11 +463,7 @@ def register_fcm_token():
 
                             return jsonify({"status": "success", "platform": platform})
 
-        except Exception as e:
-            print(f"Error processing FCM token registration: {str(e)}")
-            return jsonify({"error": "Failed to register FCM token"}), 500
-
-    return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
+        return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
 
 
 # Send notifications to both web and app users
@@ -768,7 +763,7 @@ def register_firebase_user():
                             if oxio_result.get('success'):
                                 oxio_user_id = oxio_result.get('oxio_user_id')
                                 print(f"Successfully created OXIO user: {oxio_user_id}")
-                                
+
                                 # Now create OXIO group using the user ID
                                 group_name = f"DOT_User_{firebase_uid[:8]}"
                                 group_result = oxio_service.create_oxio_group(
@@ -1662,11 +1657,159 @@ def notifications():
 def bitchat():
     return render_template('bitchat.html')
 
-@app.route('/help-admin', methods=['GET'])
+@app.route('/help-admin')
 def help_admin():
+    """Admin interface for general help and support"""
     return render_template('help_admin.html')
 
-@app.route('/oxio-test', methods=['GET'])
+@app.route('/email-admin')
+def email_admin():
+    """Admin interface for editing eSIM activation emails"""
+    return render_template('email_admin.html')
+
+@app.route('/api/admin/save-email-template', methods=['POST'])
+def save_email_template():
+    """Save email template to database"""
+    try:
+        data = request.get_json()
+        template_type = data.get('type')
+        subject = data.get('subject')
+        content = data.get('content')
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Create email_templates table if not exists
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS email_templates (
+                            id SERIAL PRIMARY KEY,
+                            template_type VARCHAR(50) NOT NULL,
+                            subject TEXT NOT NULL,
+                            content TEXT NOT NULL,
+                            modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            modified_by VARCHAR(100) DEFAULT 'Admin',
+                            is_active BOOLEAN DEFAULT TRUE
+                        )
+                    """)
+
+                    # Deactivate old templates of this type
+                    cur.execute("""
+                        UPDATE email_templates 
+                        SET is_active = FALSE 
+                        WHERE template_type = %s
+                    """, (template_type,))
+
+                    # Insert new template
+                    cur.execute("""
+                        INSERT INTO email_templates 
+                        (template_type, subject, content, modified_date)
+                        VALUES (%s, %s, %s, %s)
+                    """, (template_type, subject, content, datetime.now()))
+
+                    conn.commit()
+
+        return jsonify({'success': True, 'message': 'Template saved successfully'})
+
+    except Exception as e:
+        print(f"Error saving email template: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/admin/send-test-email', methods=['POST'])
+def send_test_email():
+    """Send test email with template"""
+    try:
+        data = request.get_json()
+        to_email = data.get('to_email')
+        subject = data.get('subject')
+        content = data.get('content')
+        test_data = data.get('test_data', {})
+
+        # Replace variables in content
+        processed_content = content
+        for key, value in test_data.items():
+            processed_content = processed_content.replace(f"{{{{{key}}}}}", str(value))
+
+        # Send email using existing email service
+        from email_service import send_email
+        result = send_email(
+            to_email=to_email,
+            subject=subject,
+            body="Test email - please check HTML version",
+            html_body=processed_content
+        )
+
+        return jsonify({'success': result, 'message': 'Test email sent' if result else 'Failed to send email'})
+
+    except Exception as e:
+        print(f"Error sending test email: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/admin/email-template-history')
+def get_email_template_history():
+    """Get email template history"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT template_type, subject, content, modified_date, modified_by
+                        FROM email_templates 
+                        ORDER BY modified_date DESC 
+                        LIMIT 20
+                    """)
+
+                    history = []
+                    for row in cur.fetchall():
+                        history.append({
+                            'template_type': row[0],
+                            'subject': row[1],
+                            'content': row[2],
+                            'modified_date': row[3].isoformat() if row[3] else None,
+                            'modified_by': row[4]
+                        })
+
+                    return jsonify({'success': True, 'history': history})
+
+        return jsonify({'success': False, 'message': 'Database connection failed'})
+
+    except Exception as e:
+        print(f"Error getting template history: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/admin/restore-email-template/<int:version_index>')
+def restore_email_template(version_index):
+    """Restore a specific template version"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT template_type, subject, content
+                        FROM email_templates 
+                        ORDER BY modified_date DESC 
+                        LIMIT 20
+                    """)
+
+                    templates = cur.fetchall()
+                    if version_index < len(templates):
+                        template = templates[version_index]
+                        return jsonify({
+                            'success': True,
+                            'template': {
+                                'type': template[0],
+                                'subject': template[1],
+                                'content': template[2]
+                            }
+                        })
+
+        return jsonify({'success': False, 'message': 'Template not found'})
+
+    except Exception as e:
+        print(f"Error restoring template: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/oxio-test')
 def oxio_test():
     return render_template('oxio_test.html')
 
@@ -1968,7 +2111,7 @@ def handle_stripe_webhook():
                     VALUES (%s, %s) 
                     ON CONFLICT (event_id) DO NOTHING
                 """, (event_id, event_type))
-                
+
                 # Check if we actually inserted (vs conflict)
                 if cursor.rowcount == 0:
                     print(f"🔄 Event {event_id} was already being processed by another request")
@@ -2006,21 +2149,21 @@ def handle_stripe_webhook():
                     firebase_uid = session['metadata'].get('firebase_uid', '')
                     user_email = session['metadata'].get('user_email', '')
                     user_name = session['metadata'].get('user_name', '')
-                    
+
                     # Step 1: Check if user already has an assigned ICCID (idempotency)
                     existing_iccid = get_user_assigned_iccid_data(firebase_uid)
-                    
+
                     if existing_iccid:
                         print(f"✅ User {firebase_uid} already has assigned ICCID: {existing_iccid['iccid']}")
                         assigned_iccid = existing_iccid
                     else:
                         # Assign new ICCID to user with atomic locking to prevent race conditions
                         assigned_iccid = assign_iccid_to_user_atomic(firebase_uid, user_email)
-                        
+
                         if not assigned_iccid:
                             print(f"❌ No available ICCIDs for user {firebase_uid}")
                             return jsonify({'error': 'No available eSIMs'}), 500
-                        
+
                         print(f"✅ Assigned new ICCID {assigned_iccid['iccid']} to user {firebase_uid}")
                     total_amount = session.get('amount_total', 100)  # Default $1.00 in cents
 
@@ -2050,7 +2193,7 @@ def handle_stripe_webhook():
                             user_name=user_name,
                             assigned_iccid=assigned_iccid
                         )
-                        
+
                         if email_result:
                             print(f"✅ Receipt email sent with QR codes")
                         else:
@@ -2097,28 +2240,28 @@ def handle_stripe_webhook():
                     else:
                         print(f"❌ eSIM activation service failed: {activation_result.get('error', 'Unknown error')}")
                         print(f"   Failed at step: {activation_result.get('step', 'unknown')}")
-                        
+
                         # ROLLBACK: If activation failed and this was a new ICCID assignment, rollback
                         if not existing_iccid and assigned_iccid and assigned_iccid.get('iccid'):
                             print(f"🔄 Rolling back ICCID assignment for {assigned_iccid['iccid']} due to activation failure")
                             rollback_iccid_assignment(assigned_iccid['iccid'], firebase_uid)
-                        
+
                         return jsonify({
-                            'status': 'activation_failed', 
+                            'status': 'activation_failed',
                             'error': activation_result.get('error', 'Activation failed'),
                             'step': activation_result.get('step', 'unknown')
                         }), 500
 
                 except Exception as e:
                     print(f"❌ Error in eSIM Beta activation: {str(e)}")
-                    
+
                     # ROLLBACK: If there was an exception and this was a new ICCID assignment, rollback
                     if not existing_iccid and assigned_iccid and assigned_iccid.get('iccid'):
                         print(f"🔄 Rolling back ICCID assignment for {assigned_iccid['iccid']} due to exception")
                         rollback_iccid_assignment(assigned_iccid['iccid'], firebase_uid)
-                    
+
                     return jsonify({
-                        'status': 'error', 
+                        'status': 'error',
                         'error': 'eSIM activation failed',
                         'message': str(e)
                     }), 500
@@ -2313,7 +2456,7 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
         user_data = get_user_by_firebase_uid(firebase_uid)
         if not user_data:
             return {
-                'success': False, 
+                'success': False,
                 'error': 'User not found',
                 'message': f'No user found for Firebase UID: {firebase_uid}'
             }
@@ -2854,7 +2997,6 @@ def get_subscription_status():
                             LIMIT 1
                         """, (user_id,))
 
-
                         expired_sub = cur.fetchone()
                         if expired_sub:
                             return jsonify({
@@ -3062,7 +3204,7 @@ def record_global_purchase():
                                          line_id, phone_number, activation_status, oxio_response)
                                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                                     """, (user_id, firebase_uid, purchase_id, product_id, iccid, 
-                                          line_id, phone_number, 'activated', json.dumps(oxio_result)))
+                                          line_id, phone_number, 'activated', str(oxio_result)))
 
                                     conn.commit()
                                     print(f"Stored OXIO activation record for user {user_id}")
@@ -4474,1506 +4616,18 @@ def reject_beta_request(request_id):
             """
         else:
             return f"Error rejecting beta request: {result.get('message', 'Unknown error')}", 500
-            
+
     except Exception as e:
         print(f"Error in reject_beta_request: {str(e)}")
         return f"Error processing request: {str(e)}", 500
 
 def get_user_assigned_iccid_data(firebase_uid):
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    cur.execute("""
-                        SELECT iccid, lpa_code, country, line_id, status
-                        FROM iccid_inventory 
-                        WHERE assigned_firebase_uid = %s 
-                        ORDER BY assigned_at DESC LIMIT 1
-                    """, (firebase_uid,))
-                    
-                    result = cur.fetchone()
-                    if result:
-                        return {
-                            'iccid': result[0],
-                            'lpa_code': result[1],
-                            'country': result[2],
-                            'line_id': result[3],
-                            'status': result[4]
-                        }
-        return None
-    except Exception as e:
-        print(f"Error getting assigned ICCID: {str(e)}")
-        return None
-
-def assign_iccid_to_user_atomic(firebase_uid, user_email):
-    """Atomically assign an available ICCID to a user"""
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Atomic update to prevent race conditions
-                    cur.execute("""
-                        UPDATE iccid_inventory 
-                        SET status = 'assigned', 
-                            assigned_firebase_uid = %s,
-                            assigned_email = %s,
-                            assigned_at = CURRENT_TIMESTAMP
-                        WHERE iccid = (
-                            SELECT iccid FROM iccid_inventory 
-                            WHERE status = 'available' 
-                            ORDER BY batch_upload_date ASC, iccid ASC 
-                            LIMIT 1 FOR UPDATE SKIP LOCKED
-                        )
-                        RETURNING iccid, lpa_code, country, line_id
-                    """, (firebase_uid, user_email))
-                    
-                    result = cur.fetchone()
-                    if result:
-                        conn.commit()
-                        return {
-                            'iccid': result[0],
-                            'lpa_code': result[1] or f'LPA:1$consumer.e-sim.global${result[0]}$',
-                            'country': result[2] or 'US',
-                            'line_id': result[3] or f'line_{result[0][-8:]}'
-                        }
-                    else:
-                        print("No available ICCIDs found")
-                        return None
-        return None
-    except Exception as e:
-        print(f"Error assigning ICCID: {str(e)}")
-        return None
-
-def rollback_iccid_assignment(iccid, firebase_uid):
-    """Rollback ICCID assignment in case of activation failure"""
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    cur.execute("""
-                        UPDATE iccid_inventory 
-                        SET status = 'available', 
-                            assigned_firebase_uid = NULL,
-                            assigned_email = NULL,
-                            assigned_at = NULL
-                        WHERE iccid = %s AND assigned_firebase_uid = %s
-                    """, (iccid, firebase_uid))
-                    conn.commit()
-                    print(f"Rolled back ICCID assignment: {iccid}")
-    except Exception as e:
-        print(f"Error rolling back ICCID assignment: {str(e)}")
-
-def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid):
-    """Send eSIM purchase receipt email with QR codes"""
-    try:
-        from email_service import send_email
-        import qrcode
-        import base64
-        from io import BytesIO
-        
-        # Generate QR codes
-        lpa_code = assigned_iccid['lpa_code']
-        
-        # Create eSIM activation QR code
-        qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=4)
-        qr.add_data(lpa_code)
-        qr.make(fit=True)
-        
-        qr_image = qr.make_image(fill_color="black", back_color="white")
-        buffer = BytesIO()
-        qr_image.save(buffer, format='PNG')
-        buffer.seek(0)
-        qr_base64 = base64.b64encode(buffer.getvalue()).decode()
-        
-        subject = "🎉 Your eSIM is Ready - DOT Mobile"
-        html_body = f"""
-        <html>
-        <head>
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; }}
-                .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; }}
-                .content {{ padding: 30px 20px; }}
-                .qr-code {{ text-align: center; margin: 20px 0; }}
-                .qr-code img {{ max-width: 200px; height: auto; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>🎉 Your eSIM Purchase is Complete!</h1>
-                    <p>Hi {user_name or 'there'}, your eSIM is ready to activate</p>
-                </div>
-                
-                <div class="content">
-                    <h3>📱 eSIM Details</h3>
-                    <ul>
-                        <li><strong>ICCID:</strong> {assigned_iccid['iccid']}</li>
-                        <li><strong>Country:</strong> {assigned_iccid['country']}</li>
-                        <li><strong>Status:</strong> Ready for Activation</li>
-                    </ul>
-                    
-                    <div class="qr-code">
-                        <h3>🔲 Scan to Activate</h3>
-                        <img src="data:image/png;base64,{qr_base64}" alt="eSIM Activation QR Code">
-                        <p><strong>LPA Code:</strong> {lpa_code}</p>
-                    </div>
-                    
-                    <h3>📋 Activation Instructions</h3>
-                    <ol>
-                        <li>Go to Settings > Cellular/Mobile on your device</li>
-                        <li>Tap "Add Cellular Plan" or "Add eSIM"</li>
-                        <li>Scan the QR code above</li>
-                        <li>Follow the prompts to complete activation</li>
-                    </ol>
-                    
-                    <p style="margin-top: 30px; padding: 15px; background: #e3f2fd; border-radius: 5px;">
-                        <strong>Support:</strong> If you need help, contact us at support@dotmobile.app
-                    </p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        result = send_email(
-            to_email=user_email,
-            subject=subject,
-            body="Your eSIM is ready! Please check the HTML version for activation instructions and QR code.",
-            html_body=html_body
-        )
-        
-        print(f"📧 Sent eSIM receipt email to {user_email}")
-        return result
-        
-    except Exception as e:
-        print(f"❌ Error sending eSIM receipt email: {str(e)}")
-        return False
-
-
-@app.route('/api/beta-status')
-def get_beta_status():
-    """Get beta status for current user"""
-    try:
-        from beta_approval_service import BetaApprovalService
-
-        # Get Firebase UID from request (you may need to implement proper auth)
-        firebase_uid = request.args.get('firebase_uid')
-        if not firebase_uid:
-            return jsonify({
-                'success': False,
-                'error': 'Firebase UID required'
-            }), 400
-
-        beta_service = BetaApprovalService()
-        result = beta_service.get_user_beta_status(firebase_uid)
-
-        return jsonify(result), 200
-
-    except Exception as e:
-        print(f"Error in get_beta_status: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/user-esim-details')
-def get_user_esim_details():
-    """Get user's eSIM details including phone numbers, ICCID, and QR codes"""
-    firebase_uid = request.args.get('firebaseUid')
-    if not firebase_uid:
-        return jsonify({'error': 'Firebase UID is required'}), 400
-
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Get all eSIM activations for this user
-                    cur.execute("""
-                        SELECT phone_number, iccid, line_id, activation_status, 
-                               esim_qr_code, created_at, product_id
-                        FROM oxio_activations 
-                        WHERE firebase_uid = %s 
-                        ORDER BY created_at DESC
-                    """, (firebase_uid,))
-
-                    activations = cur.fetchall()
-                    esim_details = []
-
-                    for activation in activations:
-                        esim_details.append({
-                            'phone_number': activation[0],
-                            'iccid': activation[1], 
-                            'line_id': activation[2],
-                            'status': activation[3],
-                            'qr_code': activation[4],
-                            'activated_date': activation[5].isoformat() if activation[5] else None,
-                            'product_type': activation[6]
-                        })
-
-                    return jsonify({
-                        'success': True,
-                        'esim_count': len(esim_details),
-                        'esims': esim_details
-                    })
-
-        return jsonify({'success': False, 'error': 'Database connection failed'})
-
-    except Exception as e:
-        print(f"Error getting eSIM details: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/user-phone-numbers')
-def get_user_phone_numbers():
-    """Get ALL user's phone numbers from multiple sources"""
-    try:
-        from beta_approval_service import BetaApprovalService
-        from qr_generator import generate_resin_qr_code, generate_simple_phone_qr
-
-        firebase_uid = request.args.get('firebase_uid')
-        if not firebase_uid:
-            return jsonify({
-                'success': False,
-                'error': 'Firebase UID required'
-            }), 400
-
-        all_phone_numbers = []
-
-        # 1. Get user's primary phone number from users table
-        try:
-            with get_db_connection() as conn:
-                if conn:
-                    with conn.cursor() as cur:
-                        cur.execute("""
-                            SELECT phone_number FROM users 
-                            WHERE firebase_uid = %s AND phone_number IS NOT NULL
-                        """, (firebase_uid,))
-                        result = cur.fetchone()
-                        if result and result[0]:
-                            all_phone_numbers.append({
-                                'phoneNumber': result[0],
-                                'source': 'user_profile',
-                                'type': 'Primary',
-                                'countryCode': 'US'
-                            })
-                            print(f"Found primary phone number: {result[0]}")
-        except Exception as e:
-            print(f"Error getting user profile phone number: {e}")
-
-        # 2. Get phone numbers from OXIO activations
-        try:
-            with get_db_connection() as conn:
-                if conn:
-                    with conn.cursor() as cur:
-                        cur.execute("""
-                            SELECT DISTINCT phone_number, line_id, activation_status, created_at
-                            FROM oxio_activations 
-                            WHERE firebase_uid = %s AND phone_number IS NOT NULL
-                            ORDER BY created_at DESC
-                        """, (firebase_uid,))
-                        oxio_results = cur.fetchall()
-
-                        for result in oxio_results:
-                            phone_num, line_id, status, created_at = result
-                            all_phone_numbers.append({
-                                'phoneNumber': phone_num,
-                                'source': 'oxio_activation',
-                                'type': 'eSIM',
-                                'lineId': line_id,
-                                'status': status,
-                                'activatedAt': created_at.isoformat() if created_at else None,
-                                'countryCode': 'US'
-                            })
-                            print(f"Found OXIO phone number: {phone_num} (Line: {line_id})")
-        except Exception as e:
-            print(f"Error getting OXIO phone numbers: {e}")
-
-        # 3. Get beta phone number (if approved)
-        try:
-            beta_service = BetaApprovalService()
-            beta_status = beta_service.get_user_beta_status(firebase_uid)
-
-            if beta_status.get('has_request') and beta_status.get('status') == 'approved':
-                beta_phone = beta_status.get('phone_number')
-                group_id = beta_status.get('group_id')
-                oxio_user_id = beta_status.get('oxio_user_id')
-
-                if beta_phone:
-                    # Generate QR codes for beta phone
-                    try:
-                        resin_qr = generate_resin_qr_code(
-                            beta_phone, 
-                            group_id, 
-                            oxio_user_id, 
-                            beta_status.get('resin_data', {})
-                        )
-                        simple_qr = generate_simple_phone_qr(beta_phone)
-
-                        all_phone_numbers.append({
-                            'phoneNumber': beta_phone,
-                            'source': 'beta_access',
-                            'type': 'Beta',
-                            'groupId': group_id,
-                            'oxioUserId': oxio_user_id,
-                            'resinQr': resin_qr,
-                            'simpleQr': simple_qr,
-                            'countryCode': 'US',
-                            'approvedAt': beta_status.get('approved_at')
-                        })
-                        print(f"Found beta phone number: {beta_phone}")
-                    except Exception as qr_error:
-                        print(f"Error generating QR codes: {qr_error}")
-                        # Add phone without QR codes
-                        all_phone_numbers.append({
-                            'phoneNumber': beta_phone,
-                            'source': 'beta_access',
-                            'type': 'Beta',
-                            'groupId': group_id,
-                            'oxioUserId': oxio_user_id,
-                            'countryCode': 'US',
-                            'approvedAt': beta_status.get('approved_at')
-                        })
-                        print(f"Found beta phone number: {beta_phone} (no QR codes)")
-        except Exception as e:
-            print(f"Error getting beta phone number: {e}")
-
-        # Remove duplicates based on phone number
-        unique_numbers = []
-        seen_numbers = set()
-
-        for phone_data in all_phone_numbers:
-            phone_num = phone_data['phoneNumber']
-            if phone_num not in seen_numbers:
-                seen_numbers.add(phone_num)
-                unique_numbers.append(phone_data)
-
-        print(f"Found {len(unique_numbers)} unique phone numbers for user {firebase_uid}")
-
-        return jsonify({
-            'success': True,
-            'phoneNumbers': unique_numbers,
-            'total_count': len(unique_numbers)
-        }), 200
-
-    except Exception as e:
-        print(f"Error in get_user_phone_numbers: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-# Secure GitHub API endpoints
-@app.route('/api/github/configure', methods=['POST'])
-@require_admin_auth
-def configure_github_repository():
-    """Configure GitHub repository for uploads (Admin only)"""
-    try:
-        data = request.get_json()
-
-        if not data:
-            return jsonify({
-                'success': False,
-                'error': 'Request body is required'
-            }), 400
-
-        repo_owner = data.get('owner')
-        repo_name = data.get('repo_name')
-        branch = data.get('branch', 'main')
-
-        if not repo_owner or not repo_name:
-            return jsonify({
-                'success': False,
-                'error': 'Repository owner and name are required'
-            }), 400
-
-        github_service_secure.set_repository(repo_owner, repo_name, branch)
-
-        return jsonify({
-            'success': True,
-            'message': f'GitHub repository configured: {repo_owner}/{repo_name} (branch: {branch})'
-        }), 200
-
-    except Exception as e:
-        print(f"Error in configure_github_repository: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/github/upload-file', methods=['POST'])
-@require_admin_auth
-def upload_file_to_github():
-    """Upload a single file to GitHub repository (Admin only)"""
-    try:
-        data = request.get_json()
-
-        if not data:
-            return jsonify({
-                'success': False,
-                'error': 'Request body is required'
-            }), 400
-
-        file_path = data.get('file_path')
-        content = data.get('content', '')
-        commit_message = data.get('commit_message')
-        repo_owner = data.get('repo_owner')
-        repo_name = data.get('repo_name')
-
-        if not file_path:
-            return jsonify({
-                'success': False,
-                'error': 'File path is required'
-            }), 400
-
-        if not commit_message:
-            commit_message = f'Update {file_path} - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
-
-        result = github_service_secure.upload_file(
-            file_path=file_path,
-            content=content,
-            commit_message=commit_message,
-            repo_owner=repo_owner,
-            repo_name=repo_name
-        )
-
-        if result['status'] == 'success':
-            return jsonify({
-                'success': True,
-                'message': f'Successfully uploaded {file_path}',
-                'result': result
-            }), 200
-        else:
-            return jsonify({
-                'success': False,
-                'error': result.get('error', 'Upload failed'),
-                'result': result
-            }), 500
-
-    except Exception as e:
-        print(f"Error in upload_file_to_github: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/github/upload-project', methods=['POST'])
-@require_admin_auth
-def upload_project_to_github():
-    """Upload key project files to GitHub repository (Admin only)"""
-    try:
-        data = request.get_json() or {}
-
-        repo_owner = data.get('repo_owner')
-        repo_name = data.get('repo_name')
-
-        # Get list of files to upload securely
-        files_to_upload = github_service_secure.get_project_files_for_upload()
-
-        if not files_to_upload:
-            return jsonify({
-                'success': False,
-                'error': 'No files found to upload'
-            }), 400
-
-        # Perform secure batch upload
-        result = github_service_secure.upload_multiple_files(
-            files=files_to_upload,
-            repo_owner=repo_owner,
-            repo_name=repo_name
-        )
-
-        return jsonify({
-            'success': True,
-            'message': f'Upload completed: {result["successful"]} successful, {result["failed"]} failed',
-            'result': result
-        }), 200
-
-    except Exception as e:
-        print(f"Error in upload_project_to_github: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/github/status', methods=['GET'])
-@require_auth
-def get_github_status():
-    """Get GitHub service status and configuration (Authenticated)"""
-    try:
-        # Test GitHub authentication securely
-        auth_result = github_service_secure.get_authenticated_client()
-
-        return jsonify({
-            'success': True,
-            'authentication': 'connected' if auth_result else 'failed',
-            'configuration': {
-                'repo_owner': github_service_secure.repo_owner,
-                'repo_name': github_service_secure.repo_name,
-                'default_branch': github_service_secure.default_branch
-            }
-        }), 200
-
-    except Exception as e:
-        print(f"Error in get_github_status: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/admin/upload-to-github', methods=['POST'])
-@require_auth
-def upload_documentation_to_github():
-    """Upload updated documentation to GitHub repository"""
-    try:
-        from github_service import github_service
-
-        # Set repository configuration
-        github_service.set_repository("dataontap", "gorse", "main")
-
-        # Check GitHub authentication
-        if not github_service.get_authenticated_client():
-            return jsonify({
-                'success': False,
-                'error': 'GitHub authentication failed'
-            }), 401
-
-        # Read current README content
-        with open('README.md', 'r', encoding='utf-8') as f:
-            readme_content = f.read()
-
-        # Upload README.md
-        result = github_service.upload_file(
-            file_path='README.md',
-            content=readme_content.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t'),
-            commit_message='Update README with Resend email integration information'
-        )
-
-        if result['status'] == 'success':
-            return jsonify({
-                'success': True,
-                'message': 'Documentation uploaded successfully to GitHub',
-                'result': result
-            }), 200
-        else:
-            return jsonify({
-                'success': False,
-                'error': result['error']
-            }), 500
-
-    except Exception as e:
-        print(f"Error uploading to GitHub: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/welcome-message/voices', methods=['GET'])
-def get_welcome_message_voices():
-    """Get available voices for welcome message generation"""
-    try:
-        voices = elevenlabs_service.get_voices()
-
-        # Filter and format voices for frontend
-        formatted_voices = []
-        for voice in voices:
-            formatted_voices.append({
-                'voice_id': voice.get('voice_id'),
-                'name': voice.get('name'),
-                'description': voice.get('description', ''),
-                'gender': voice.get('labels', {}).get('gender', 'unknown'),
-                'accent': voice.get('labels', {}).get('accent', 'unknown')
-            })
-
-        return jsonify({
-            'success': True,
-            'voices': formatted_voices
-        })
-
-    except Exception as e:
-        print(f"Error getting voices: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'Failed to get voices'
-        }), 500
-
-@app.route('/api/welcome-message/generate', methods=['POST'])
-def generate_welcome_message_audio():
-    """Generate personalized welcome message audio"""
-    try:
-        data = request.get_json()
-        firebase_uid = data.get('firebase_uid')
-        language = data.get('language', 'en')
-        voice_id = data.get('voice_id')
-
-        if not firebase_uid:
-            return jsonify({
-                'success': False,
-                'error': 'Firebase UID is required'
-            }), 400
-
-        # Get user's name from database
-        user_name = None
-        try:
-            with get_db_connection() as conn:
-                if conn:
-                    with conn.cursor() as cur:
-                        cur.execute("SELECT display_name FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                        result = cur.fetchone()
-                        if result:
-                            user_name = result[0]
-        except Exception as db_error:
-            print(f"Error getting user name: {str(db_error)}")
-
-        # Generate the audio message using ElevenLabs service
-        audio_result = elevenlabs_service.generate_welcome_message(
-            user_name=user_name,
-            language=language,
-            voice_id=voice_id
-        )
-
-        if audio_result['success']:
-            # Save audio file and return download URL
-            import uuid
-            import os
-
-            # Create audio directory if it doesn't exist
-            audio_dir = os.path.join('static', 'audio')
-            os.makedirs(audio_dir, exist_ok=True)
-
-            # Generate unique filename
-            filename = f"welcome_{firebase_uid[:8]}_{uuid.uuid4().hex[:8]}.mp3"
-            file_path = os.path.join(audio_dir, filename)
-
-            # Save audio data to file
-            with open(file_path, 'wb') as f:
-                f.write(audio_result['audio_data'])
-
-            # Return download URL
-            download_url = f"/download/audio/{filename}"
-
-            return jsonify({
-                'success': True,
-                'audio_url': download_url,
-                'content_type': audio_result.get('content_type', 'audio/mpeg'),
-                'message': 'Welcome message generated successfully'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': audio_result.get('error', 'Failed to generate audio')
-            }), 500
-
-    except Exception as e:
-        print(f"Error generating welcome message: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/admin/generate-welcome-notification', methods=['POST'])
-@require_admin_auth
-def generate_welcome_notification():
-    """Generate a welcome notification with audio for specific users (Admin only)"""
-    try:
-        data = request.get_json()
-
-        if not data:
-            return jsonify({
-                'success': False,
-                'error': 'Request body is required'
-            }), 400
-
-        target_email = data.get('target_email')  # User to generate welcome message for
-        recipient_uid = data.get('recipient_uid')  # User who should receive the notification
-        language = data.get('language', 'en')
-        voice_id = data.get('voice_id')  # Optional custom voice
-
-        if not target_email:
-            return jsonify({
-                'success': False,
-                'error': 'target_email is required'
-            }), 400
-
-        if not recipient_uid:
-            return jsonify({
-                'success': False,
-                'error': 'recipient_uid is required (Firebase UID of notification recipient)'
-            }), 400
-
-        # Extract user name from email for personalization
-        user_name = target_email.split('@')[0]
-
-        print(f"Generating welcome notification for {target_email}, recipient: {recipient_uid}")
-
-        # Generate the audio message using ElevenLabs service
-        audio_result = elevenlabs_service.generate_welcome_message(
-            user_name=user_name,
-            language=language,
-            voice_id=voice_id
-        )
-
-        if not audio_result.get('success'):
-            return jsonify({
-                'success': False,
-                'error': f'Failed to generate audio: {audio_result.get("error")}'
-            }), 500
-
-        # Create unique filename for the audio file
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"welcome_{user_name}_{timestamp}.mp3"
-        file_path = os.path.join('static', 'audio', filename)
-
-        # Save the audio file
-        with open(file_path, 'wb') as f:
-            f.write(audio_result['audio_data'])
-
-        # Create download URL (relative to app root)
-        download_url = f"/static/audio/{filename}"
-
-        # Create notification record in database
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Create notifications table if it doesn't exist (with audio_url column)
-                    cur.execute("""
-                        CREATE TABLE IF NOT EXISTS notifications (
-                            id SERIAL PRIMARY KEY,
-                            firebase_uid VARCHAR(128) NOT NULL,
-                            title VARCHAR(255),
-                            body TEXT,
-                            notification_type VARCHAR(50),
-                            audio_url VARCHAR(500),
-                            delivered BOOLEAN DEFAULT FALSE,
-                            read_status BOOLEAN DEFAULT FALSE,
-                            fcm_response TEXT,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            delivered_at TIMESTAMP
-                        )
-                    """)
-
-                    # Ensure audio_url column exists for existing tables (migration)
-                    cur.execute("""
-                        ALTER TABLE notifications 
-                        ADD COLUMN IF NOT EXISTS audio_url VARCHAR(500)
-                    """)
-
-                    # Insert the notification
-                    cur.execute("""
-                        INSERT INTO notifications (firebase_uid, title, body, notification_type, audio_url)
-                        VALUES (%s, %s, %s, %s, %s)
-                        RETURNING id
-                    """, (
-                        recipient_uid,
-                        f"Welcome Message for {target_email}",
-                        f"A personalized welcome message has been generated for {target_email}. Click to download the audio file.",
-                        'welcome_audio',
-                        download_url
-                    ))
-
-                    notification_id = cur.fetchone()[0]
-                    conn.commit()
-
-                    print(f"Created notification {notification_id} for recipient {recipient_uid}")
-
-                    return jsonify({
-                        'success': True,
-                        'message': f'Welcome notification generated successfully for {target_email}',
-                        'notification_id': notification_id,
-                        'audio_file': filename,
-                        'download_url': download_url,
-                        'recipient_uid': recipient_uid,
-                        'target_email': target_email
-                    }), 200
-            else:
-                return jsonify({
-                    'success': False,
-                    'error': 'Database connection error'
-                }), 500
-
-    except Exception as e:
-        print(f"Error generating welcome notification: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/admin/upload-iccid-csv', methods=['POST'])
-@require_admin_auth
-def upload_iccid_csv():
-    """Upload CSV file with ICCIDs for bulk import (Admin only)"""
-    try:
-        # Check file size before processing (2MB limit)
-        if request.content_length and request.content_length > 2 * 1024 * 1024:
-            return jsonify({
-                'success': False,
-                'error': 'File too large',
-                'message': 'CSV file must be smaller than 2MB'
-            }), 413
-
-        if 'csv_file' not in request.files:
-            return jsonify({
-                'success': False,
-                'error': 'No CSV file provided',
-                'message': 'Please upload a CSV file with ICCID column'
-            }), 400
-
-        csv_file = request.files['csv_file']
-        if csv_file.filename == '':
-            return jsonify({
-                'success': False,
-                'error': 'No file selected',
-                'message': 'Please select a CSV file to upload'
-            }), 400
-
-        if not csv_file.filename.lower().endswith('.csv'):
-            return jsonify({
-                'success': False,
-                'error': 'Invalid file format',
-                'message': 'Only CSV files are allowed'
-            }), 400
-
-        # Read and decode CSV content with error handling
-        import csv
-        import io
-        
-        try:
-            # Use utf-8-sig to handle Excel BOM (Byte Order Mark) correctly
-            csv_content = csv_file.read().decode('utf-8-sig')
-        except UnicodeDecodeError:
-            return jsonify({
-                'success': False,
-                'error': 'Invalid file encoding',
-                'message': 'CSV file must be UTF-8 encoded'
-            }), 400
-        
-        csv_reader = csv.DictReader(io.StringIO(csv_content))
-        
-        # Extract and validate ICCIDs from CSV
-        raw_iccids = []
-        invalid_rows = []
-        
-        # Check for case-insensitive ICCID header
-        headers = [h.strip().upper() for h in csv_reader.fieldnames or []]
-        if 'ICCID' not in headers:
-            return jsonify({
-                'success': False,
-                'error': 'Missing ICCID column',
-                'message': 'CSV must have an "ICCID" column header'
-            }), 400
-        
-        for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 because line 1 is header
-            # Case-insensitive header lookup
-            iccid = None
-            for key, value in row.items():
-                if key.strip().upper() == 'ICCID':
-                    iccid = value.strip()
-                    break
-            
-            if iccid and iccid != 'ICCID':  # Skip header and empty rows
-                # Validate ICCID format (19-20 hex digits, optional F)
-                if re.match(r'^[0-9A-F]{19,20}F?$', iccid.upper()):
-                    raw_iccids.append(iccid.upper())
-                else:
-                    invalid_rows.append({'row': row_num, 'iccid': iccid, 'error': 'Invalid format'})
-
-        if not raw_iccids:
-            return jsonify({
-                'success': False,
-                'error': 'No valid ICCIDs found',
-                'message': 'CSV file contains no valid ICCID entries',
-                'details': {
-                    'invalid_rows': len(invalid_rows),
-                    'invalid_examples': invalid_rows[:5]  # Show first 5 examples
-                }
-            }), 400
-
-        # Deduplicate ICCIDs within the CSV first
-        unique_csv_iccids = sorted(set(raw_iccids))
-        duplicates_in_csv = len(raw_iccids) - len(unique_csv_iccids)
-
-        # Database operations with idempotent inserts
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Use idempotent INSERT with ON CONFLICT DO NOTHING
-                    insert_query = """
-                        INSERT INTO iccid_inventory (iccid, status) 
-                        VALUES (%s, %s) 
-                        ON CONFLICT (iccid) DO NOTHING
-                    """
-                    
-                    # Batch insert with conflict handling
-                    insert_values = [(iccid, 'available') for iccid in unique_csv_iccids]
-                    cur.executemany(insert_query, insert_values)
-                    
-                    # Get count of actually inserted rows
-                    rows_inserted = cur.rowcount
-                    conn.commit()
-                    
-                    # Calculate statistics
-                    total_in_csv = len(raw_iccids)
-                    duplicates_in_db = len(unique_csv_iccids) - rows_inserted
-
-                    return jsonify({
-                        'success': True,
-                        'message': 'CSV upload completed successfully',
-                        'stats': {
-                            'total_rows_processed': total_in_csv,
-                            'unique_iccids_in_csv': len(unique_csv_iccids),
-                            'duplicates_within_csv': duplicates_in_csv,
-                            'duplicates_already_in_db': duplicates_in_db,
-                            'new_iccids_inserted': rows_inserted,
-                            'invalid_rows': len(invalid_rows),
-                            'filename': csv_file.filename
-                        },
-                        'validation_errors': invalid_rows[:10] if invalid_rows else []  # Show first 10
-                    })
-
-        return jsonify({'success': False, 'error': 'Database connection error'}), 500
-
-    except Exception as e:
-        print(f"Error uploading ICCID CSV: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'Upload failed',
-            'message': str(e)
-        }), 500
-
-@app.route('/api/admin/iccid-inventory-stats', methods=['GET'])
-@require_admin_auth
-def get_iccid_inventory_stats():
-    """Get ICCID inventory statistics (Admin only)"""
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Get inventory stats by status
-                    cur.execute("""
-                        SELECT status, COUNT(*) as count
-                        FROM iccid_inventory 
-                        GROUP BY status
-                        ORDER BY status
-                    """)
-                    status_stats = cur.fetchall()
-                    
-                    # Get total count
-                    cur.execute('SELECT COUNT(*) FROM iccid_inventory')
-                    total_count = cur.fetchone()[0]
-                    
-                    # Get recent uploads
-                    cur.execute("""
-                        SELECT DATE(batch_upload_date) as upload_date, COUNT(*) as count
-                        FROM iccid_inventory 
-                        WHERE batch_upload_date >= NOW() - INTERVAL '30 days'
-                        GROUP BY DATE(batch_upload_date)
-                        ORDER BY upload_date DESC
-                        LIMIT 10
-                    """)
-                    recent_uploads = cur.fetchall()
-
-                    return jsonify({
-                        'success': True,
-                        'stats': {
-                            'total_iccids': total_count,
-                            'by_status': [{'status': row[0], 'count': row[1]} for row in status_stats],
-                            'recent_uploads': [{'date': row[0].isoformat(), 'count': row[1]} for row in recent_uploads]
-                        }
-                    })
-
-        return jsonify({'success': False, 'error': 'Database connection error'}), 500
-
-    except Exception as e:
-        print(f"Error getting ICCID inventory stats: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-# Secure QR Code Generation Utilities
-def generate_qr_code(lpa_code, iccid, format_type='svg'):
-    """Generate QR code for LPA code - returns inline data (no file storage)"""
-    try:
-        import qrcode
-        from qrcode.image.svg import SvgPathFillImage
-        from io import BytesIO, StringIO
-        import base64
-
-        # Create QR code instance
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        
-        qr.add_data(lpa_code)
-        qr.make(fit=True)
-
-        if format_type.lower() == 'svg':
-            # Generate inline SVG string
-            img = qr.make_image(image_factory=SvgPathFillImage, fill_color="black", back_color="white")
-            svg_buffer = StringIO()
-            img.save(svg_buffer)
-            svg_string = svg_buffer.getvalue()
-            return {
-                'success': True,
-                'data': svg_string,
-                'format': 'svg',
-                'inline': True
-            }
-        else:
-            # Generate inline base64 PNG
-            img = qr.make_image(fill_color="black", back_color="white")
-            png_buffer = BytesIO()
-            img.save(png_buffer, format='PNG')
-            png_base64 = base64.b64encode(png_buffer.getvalue()).decode()
-            return {
-                'success': True,
-                'data': f"data:image/png;base64,{png_base64}",
-                'format': 'png',
-                'inline': True
-            }
-            
-    except Exception as e:
-        print(f"Error generating QR code: {str(e)}")
-        return {
-            'success': False,
-            'error': str(e)
-        }
-
-@app.route('/api/admin/replace-iccid-inventory', methods=['POST'])
-@require_admin_auth
-def replace_iccid_inventory():
-    """Replace all ICCID inventory with new CSV data (Admin only)"""
-    try:
-        # Check file size before processing (2MB limit)
-        if request.content_length and request.content_length > 2 * 1024 * 1024:
-            return jsonify({
-                'success': False,
-                'error': 'File too large',
-                'message': 'CSV file must be smaller than 2MB'
-            }), 413
-
-        if 'csv_file' not in request.files:
-            return jsonify({
-                'success': False,
-                'error': 'No CSV file provided',
-                'message': 'Please upload a CSV file with ICCID inventory'
-            }), 400
-
-        csv_file = request.files['csv_file']
-        if csv_file.filename == '':
-            return jsonify({
-                'success': False,
-                'error': 'No file selected',
-                'message': 'Please select a CSV file to upload'
-            }), 400
-
-        if not csv_file.filename.lower().endswith('.csv'):
-            return jsonify({
-                'success': False,
-                'error': 'Invalid file format',
-                'message': 'Only CSV files are allowed'
-            }), 400
-
-        # Read and decode CSV content with error handling
-        import csv
-        import io
-        
-        try:
-            # Use utf-8-sig to handle Excel BOM (Byte Order Mark) correctly
-            csv_content = csv_file.read().decode('utf-8-sig')
-        except UnicodeDecodeError:
-            return jsonify({
-                'success': False,
-                'error': 'Invalid file encoding',
-                'message': 'CSV file must be UTF-8 encoded'
-            }), 400
-        
-        csv_reader = csv.DictReader(io.StringIO(csv_content))
-        
-        # Expected headers mapping
-        expected_headers = {
-            'ICCID': 'iccid',
-            'SIM type': 'sim_type',
-            'SIM status': 'sim_status', 
-            'Assigned to': 'assigned_to',
-            'SIM order': 'sim_order',
-            'SIM tag': 'sim_tag',
-            'Country': 'country',
-            'Line ID': 'line_id',
-            'eSIM Activation Code': 'lpa_code'
-        }
-        
-        # Check for required headers
-        csv_headers = [h.strip() for h in csv_reader.fieldnames or []]
-        missing_headers = [h for h in expected_headers.keys() if h not in csv_headers]
-        
-        if missing_headers:
-            return jsonify({
-                'success': False,
-                'error': 'Missing required columns',
-                'message': f'CSV must have columns: {", ".join(missing_headers)}',
-                'found_headers': csv_headers
-            }), 400
-        
-        # Parse and validate CSV data
-        inventory_data = []
-        invalid_rows = []
-        
-        for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 because line 1 is header
-            try:
-                # Extract data from row
-                row_data = {}
-                for csv_header, db_field in expected_headers.items():
-                    value = row.get(csv_header, '').strip()
-                    row_data[db_field] = value if value else None
-                
-                # Validate required fields
-                if not row_data['iccid']:
-                    invalid_rows.append({'row': row_num, 'error': 'Missing ICCID'})
-                    continue
-                    
-                if not row_data['lpa_code']:
-                    invalid_rows.append({'row': row_num, 'error': 'Missing LPA code'})
-                    continue
-                
-                # Validate ICCID format
-                iccid_upper = row_data['iccid'].upper()
-                if not re.match(r'^[0-9A-F]{19,20}F?$', iccid_upper):
-                    invalid_rows.append({'row': row_num, 'error': f'Invalid ICCID format: {row_data["iccid"]}'})
-                    continue
-                
-                row_data['iccid'] = iccid_upper
-                row_data['status'] = 'available'  # Set default status
-                inventory_data.append(row_data)
-                
-            except Exception as e:
-                invalid_rows.append({'row': row_num, 'error': f'Parse error: {str(e)}'})
-
-        # Validate we have exactly 100 valid ICCIDs
-        if len(inventory_data) != 100:
-            return jsonify({
-                'success': False,
-                'error': 'Invalid inventory count',
-                'message': f'Expected exactly 100 valid ICCIDs, found {len(inventory_data)}',
-                'details': {
-                    'valid_rows': len(inventory_data),
-                    'invalid_rows': len(invalid_rows),
-                    'invalid_examples': invalid_rows[:5]
-                }
-            }), 400
-
-        # Check for duplicates within the CSV
-        iccids = [item['iccid'] for item in inventory_data]
-        unique_iccids = set(iccids)
-        if len(unique_iccids) != len(iccids):
-            return jsonify({
-                'success': False,
-                'error': 'Duplicate ICCIDs in CSV',
-                'message': 'All ICCIDs must be unique within the file'
-            }), 400
-
-        # Database operations - Replace all data safely
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    try:
-                        # Start transaction
-                        conn.autocommit = False
-                        
-                        # Backup existing data to archive table
-                        cur.execute("""
-                            INSERT INTO iccid_inventory_archive 
-                            (archived_at, id, iccid, status, sim_type, sim_status, assigned_to, sim_order, 
-                             sim_tag, country, line_id, lpa_code, allocated_to_user_id, allocated_to_firebase_uid, 
-                             activated_at, activation_id, batch_upload_date, created_at, updated_at)
-                            SELECT CURRENT_TIMESTAMP, id, iccid, status, sim_type, sim_status, assigned_to, 
-                                   sim_order, sim_tag, country, line_id, lpa_code, allocated_to_user_id, 
-                                   allocated_to_firebase_uid, activated_at, activation_id, batch_upload_date, 
-                                   created_at, updated_at
-                            FROM iccid_inventory
-                        """)
-                        archived_count = cur.rowcount
-                        
-                        # Clear existing inventory
-                        cur.execute('DELETE FROM iccid_inventory')
-                        deleted_count = cur.rowcount
-                        
-                        # Insert new inventory data
-                        insert_query = """
-                            INSERT INTO iccid_inventory 
-                            (iccid, status, sim_type, sim_status, assigned_to, sim_order, sim_tag, 
-                             country, line_id, lpa_code, created_at, updated_at)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                        """
-                        
-                        insert_values = [
-                            (item['iccid'], item['status'], item['sim_type'], item['sim_status'],
-                             item['assigned_to'], item['sim_order'], item['sim_tag'], item['country'],
-                             item['line_id'], item['lpa_code'])
-                            for item in inventory_data
-                        ]
-                        
-                        cur.executemany(insert_query, insert_values)
-                        inserted_count = cur.rowcount
-                        
-                        # Commit transaction
-                        conn.commit()
-                        conn.autocommit = True
-                        
-                        return jsonify({
-                            'success': True,
-                            'message': 'ICCID inventory replaced successfully',
-                            'stats': {
-                                'archived_entries': archived_count,
-                                'deleted_entries': deleted_count,
-                                'new_entries_inserted': inserted_count,
-                                'invalid_rows_skipped': len(invalid_rows),
-                                'filename': csv_file.filename
-                            },
-                            'validation_errors': invalid_rows[:5] if invalid_rows else []
-                        })
-                        
-                    except Exception as e:
-                        # Rollback on error
-                        conn.rollback()
-                        conn.autocommit = True
-                        raise e
-
-        return jsonify({'success': False, 'error': 'Database connection error'}), 500
-
-    except Exception as e:
-        print(f"Error replacing ICCID inventory: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'Replace operation failed',
-            'message': str(e)
-        }), 500
-
-@app.route('/api/user-assigned-iccid', methods=['GET'])
-@firebase_auth_required
-def get_user_assigned_iccid():
-    """Get assigned ICCID and generate QR code for the authenticated user"""
-    try:
-        # Get Firebase UID from the authenticated request
-        firebase_uid = request.firebase_uid  # Set by firebase_auth_required decorator
-        
-        if not firebase_uid:
-            return jsonify({
-                'success': False,
-                'error': 'Authentication required',
-                'message': 'Firebase authentication failed'
-            }), 401
-
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Find assigned ICCID for this specific user only
-                    cur.execute("""
-                        SELECT iccid, sim_type, sim_status, country, lpa_code, 
-                               activated_at, status, assigned_to
-                        FROM iccid_inventory 
-                        WHERE allocated_to_firebase_uid = %s 
-                           AND status IN ('assigned', 'activated')
-                        LIMIT 1
-                    """, (firebase_uid,))
-                    
-                    result = cur.fetchone()
-                    
-                    if not result:
-                        return jsonify({
-                            'success': True,
-                            'has_iccid': False,
-                            'message': 'No eSIM assigned to this user'
-                        })
-                    
-                    iccid, sim_type, sim_status, country, lpa_code, activated_at, status, assigned_to = result
-                    
-                    # Generate QR codes for the LPA code (secure inline generation)
-                    qr_svg = generate_qr_code(lpa_code, iccid, 'svg')
-                    qr_png_base64 = generate_qr_code(lpa_code, iccid, 'png')
-                    
-                    return jsonify({
-                        'success': True,
-                        'has_iccid': True,
-                        'iccid_data': {
-                            'iccid': iccid,
-                            'sim_type': sim_type,
-                            'sim_status': sim_status,
-                            'country': country,
-                            'lpa_code': lpa_code,
-                            'status': status,
-                            'assigned_to': assigned_to,
-                            'activated_at': activated_at.isoformat() if activated_at else None,
-                            'qr_codes': {
-                                'svg': qr_svg,
-                                'png': qr_png_base64
-                            }
-                        }
-                    })
-
-        return jsonify({'success': False, 'error': 'Database connection error'}), 500
-
-    except Exception as e:
-        print(f"Error getting user assigned ICCID: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-def assign_iccid_to_user_atomic(firebase_uid, user_email=None):
-    """
-    Atomically assign an available ICCID to a user with row-level locking
-    Prevents race conditions from concurrent webhook deliveries
-    
-    Args:
-        firebase_uid: User's Firebase UID
-        user_email: User's email address (optional)
-        
-    Returns:
-        Dictionary with assigned ICCID details or None if no ICCIDs available
-    """
-    try:
-        print(f"🔒 Atomically assigning ICCID to Firebase UID: {firebase_uid}")
-        
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Use row-level locking to prevent race conditions
-                    cur.execute("""
-                        SELECT iccid, sim_type, sim_status, country, lpa_code, line_id
-                        FROM iccid_inventory 
-                        WHERE status = 'available' 
-                          AND allocated_to_firebase_uid IS NULL
-                        ORDER BY created_at ASC
-                        LIMIT 1
-                        FOR UPDATE SKIP LOCKED
-                    """)
-                    
-                    available_iccid = cur.fetchone()
-                    
-                    if not available_iccid:
-                        print(f"❌ No available ICCIDs for assignment (atomic)")
-                        return None
-                    
-                    iccid, sim_type, sim_status, country, lpa_code, line_id = available_iccid
-                    
-                    # Atomically update ICCID record with user assignment
-                    cur.execute("""
-                        UPDATE iccid_inventory 
-                        SET allocated_to_firebase_uid = %s,
-                            status = 'assigned',
-                            assigned_at = CURRENT_TIMESTAMP,
-                            assigned_to = %s
-                        WHERE iccid = %s
-                          AND status = 'available'
-                          AND allocated_to_firebase_uid IS NULL
-                    """, (firebase_uid, user_email or firebase_uid, iccid))
-                    
-                    rows_affected = cur.rowcount
-                    
-                    if rows_affected == 0:
-                        print(f"⚠️ Race condition detected - ICCID {iccid} was assigned by another process")
-                        return None
-                    
-                    conn.commit()
-                    
-                    print(f"✅ Atomically assigned ICCID {iccid} to Firebase UID {firebase_uid}")
-                    
-                    return {
-                        'success': True,
-                        'iccid': iccid,
-                        'sim_type': sim_type,
-                        'sim_status': sim_status,
-                        'country': country,
-                        'lpa_code': lpa_code,
-                        'line_id': line_id,
-                        'firebase_uid': firebase_uid,
-                        'assigned_at': datetime.now().isoformat()
-                    }
-        
-        return None
-        
-    except Exception as e:
-        print(f"Error atomically assigning ICCID to user {firebase_uid}: {str(e)}")
-        return None
-
-def assign_iccid_to_user(firebase_uid, user_email=None):
-    """
-    Assign an available ICCID to a user after successful payment
-    
-    Args:
-        firebase_uid: User's Firebase UID
-        user_email: User's email address (optional)
-        
-    Returns:
-        Dictionary with assigned ICCID details or None if no ICCIDs available
-    """
-    try:
-        print(f"🎯 Assigning ICCID to Firebase UID: {firebase_uid}")
-        
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Find first available ICCID
-                    cur.execute("""
-                        SELECT iccid, sim_type, sim_status, country, lpa_code, line_id
-                        FROM iccid_inventory 
-                        WHERE status = 'available' 
-                          AND allocated_to_firebase_uid IS NULL
-                        ORDER BY created_at ASC
-                        LIMIT 1
-                        FOR UPDATE
-                    """)
-                    
-                    available_iccid = cur.fetchone()
-                    
-                    if not available_iccid:
-                        print(f"❌ No available ICCIDs for assignment")
-                        return None
-                    
-                    iccid, sim_type, sim_status, country, lpa_code, line_id = available_iccid
-                    
-                    # Update ICCID record with user assignment
-                    cur.execute("""
-                        UPDATE iccid_inventory 
-                        SET allocated_to_firebase_uid = %s,
-                            status = 'assigned',
-                            assigned_at = CURRENT_TIMESTAMP,
-                            assigned_to = %s
-                        WHERE iccid = %s
-                    """, (firebase_uid, user_email or firebase_uid, iccid))
-                    
-                    conn.commit()
-                    
-                    print(f"✅ Successfully assigned ICCID {iccid} to Firebase UID {firebase_uid}")
-                    
-                    return {
-                        'success': True,
-                        'iccid': iccid,
-                        'sim_type': sim_type,
-                        'sim_status': sim_status,
-                        'country': country,
-                        'lpa_code': lpa_code,
-                        'line_id': line_id,
-                        'firebase_uid': firebase_uid,
-                        'assigned_at': datetime.now().isoformat()
-                    }
-        
-        return None
-        
-    except Exception as e:
-        print(f"Error assigning ICCID to user {firebase_uid}: {str(e)}")
-        return None
-
-def get_user_assigned_iccid_data(firebase_uid):
     """
     Get user's assigned ICCID data for idempotency checks
-    
+
     Args:
         firebase_uid: User's Firebase UID
-        
+
     Returns:
         Dictionary with ICCID details or None if no assignment
     """
@@ -5989,12 +4643,12 @@ def get_user_assigned_iccid_data(firebase_uid):
                         ORDER BY assigned_at DESC
                         LIMIT 1
                     """, (firebase_uid,))
-                    
+
                     result = cur.fetchone()
-                    
+
                     if result:
                         iccid, sim_type, sim_status, country, lpa_code, line_id, allocated_to_firebase_uid, assigned_at = result
-                        
+
                         return {
                             'success': True,
                             'iccid': iccid,
@@ -6006,59 +4660,162 @@ def get_user_assigned_iccid_data(firebase_uid):
                             'firebase_uid': allocated_to_firebase_uid,
                             'assigned_at': assigned_at.isoformat() if assigned_at else None
                         }
-        
+
         return None
-        
+
     except Exception as e:
         print(f"Error getting user assigned ICCID data: {str(e)}")
         return None
 
-def rollback_iccid_assignment(iccid, firebase_uid):
+def assign_iccid_to_user_atomic(firebase_uid, user_email=None):
     """
-    Rollback ICCID assignment if activation fails
-    
+    Atomically assign an available ICCID to a user with row-level locking
+    Prevents race conditions from concurrent webhook deliveries
+
     Args:
-        iccid: ICCID to rollback
         firebase_uid: User's Firebase UID
-        
+        user_email: User's email address (optional)
+
     Returns:
-        True if rollback successful, False otherwise
+        Dictionary with assigned ICCID details or None if no ICCIDs available
     """
     try:
+        print(f"🔒 Atomically assigning ICCID to Firebase UID: {firebase_uid}")
+
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Reset ICCID to available status
+                    # Use row-level locking to prevent race conditions
+                    cur.execute("""
+                        SELECT iccid, sim_type, sim_status, country, lpa_code, line_id
+                        FROM iccid_inventory 
+                        WHERE status = 'available' 
+                          AND allocated_to_firebase_uid IS NULL
+                        ORDER BY created_at ASC
+                        LIMIT 1
+                        FOR UPDATE SKIP LOCKED
+                    """)
+
+                    available_iccid = cur.fetchone()
+
+                    if not available_iccid:
+                        print(f"❌ No available ICCIDs for assignment (atomic)")
+                        return None
+
+                    iccid, sim_type, sim_status, country, lpa_code, line_id = available_iccid
+
+                    # Atomically update ICCID record with user assignment
                     cur.execute("""
                         UPDATE iccid_inventory 
-                        SET allocated_to_firebase_uid = NULL,
-                            status = 'available',
-                            assigned_at = NULL,
-                            assigned_to = NULL
-                        WHERE iccid = %s 
-                          AND allocated_to_firebase_uid = %s
-                    """, (iccid, firebase_uid))
-                    
+                        SET allocated_to_firebase_uid = %s,
+                            status = 'assigned',
+                            assigned_at = CURRENT_TIMESTAMP,
+                            assigned_to = %s
+                        WHERE iccid = %s
+                          AND status = 'available'
+                          AND allocated_to_firebase_uid IS NULL
+                    """, (firebase_uid, user_email or firebase_uid, iccid))
+
                     rows_affected = cur.rowcount
+
+                    if rows_affected == 0:
+                        print(f"⚠️ Race condition detected - ICCID {iccid} was assigned by another process")
+                        return None
+
                     conn.commit()
-                    
-                    if rows_affected > 0:
-                        print(f"✅ Rolled back ICCID {iccid} assignment for Firebase UID {firebase_uid}")
-                        return True
-                    else:
-                        print(f"⚠️ No rows affected during rollback for ICCID {iccid} and Firebase UID {firebase_uid}")
-                        return False
-        
-        return False
-        
+
+                    print(f"✅ Atomically assigned ICCID {iccid} to Firebase UID {firebase_uid}")
+
+                    return {
+                        'success': True,
+                        'iccid': iccid,
+                        'sim_type': sim_type,
+                        'sim_status': sim_status,
+                        'country': country,
+                        'lpa_code': lpa_code,
+                        'line_id': line_id,
+                        'firebase_uid': firebase_uid,
+                        'assigned_at': datetime.now().isoformat()
+                    }
+
+        return None
+
     except Exception as e:
-        print(f"❌ Error rolling back ICCID assignment: {str(e)}")
-        return False
+        print(f"Error atomically assigning ICCID to user {firebase_uid}: {str(e)}")
+        return None
+
+def assign_iccid_to_user(firebase_uid, user_email=None):
+    """
+    Assign an available ICCID to a user after successful payment
+
+    Args:
+        firebase_uid: User's Firebase UID
+        user_email: User's email address (optional)
+
+    Returns:
+        Dictionary with assigned ICCID details or None if no ICCIDs available
+    """
+    try:
+        print(f"🎯 Assigning ICCID to Firebase UID: {firebase_uid}")
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Find first available ICCID
+                    cur.execute("""
+                        SELECT iccid, sim_type, sim_status, country, lpa_code, line_id
+                        FROM iccid_inventory 
+                        WHERE status = 'available' 
+                          AND allocated_to_firebase_uid IS NULL
+                        ORDER BY created_at ASC
+                        LIMIT 1
+                        FOR UPDATE
+                    """)
+
+                    available_iccid = cur.fetchone()
+
+                    if not available_iccid:
+                        print(f"❌ No available ICCIDs for assignment")
+                        return None
+
+                    iccid, sim_type, sim_status, country, lpa_code, line_id = available_iccid
+
+                    # Update ICCID record with user assignment
+                    cur.execute("""
+                        UPDATE iccid_inventory 
+                        SET allocated_to_firebase_uid = %s,
+                            status = 'assigned',
+                            assigned_at = CURRENT_TIMESTAMP,
+                            assigned_to = %s
+                        WHERE iccid = %s
+                    """, (firebase_uid, user_email or firebase_uid, iccid))
+
+                    conn.commit()
+
+                    print(f"✅ Successfully assigned ICCID {iccid} to Firebase UID {firebase_uid}")
+
+                    return {
+                        'success': True,
+                        'iccid': iccid,
+                        'sim_type': sim_type,
+                        'sim_status': sim_status,
+                        'country': country,
+                        'lpa_code': lpa_code,
+                        'line_id': line_id,
+                        'firebase_uid': firebase_uid,
+                        'assigned_at': datetime.now().isoformat()
+                    }
+
+        return None
+
+    except Exception as e:
+        print(f"Error assigning ICCID to user {firebase_uid}: {str(e)}")
+        return None
 
 def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid):
     """
     Send eSIM purchase receipt email with QR codes
-    
+
     Args:
         firebase_uid: User's Firebase UID
         user_email: User's email address
@@ -6069,16 +4826,16 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
         from email_service import send_email
         from datetime import datetime
         import base64
-        
+
         print(f"📧 Sending eSIM receipt email to {user_email}")
-        
+
         # Generate QR codes for the LPA code
         qr_svg = generate_qr_code(assigned_iccid['lpa_code'], assigned_iccid['iccid'], 'svg')
         qr_png = generate_qr_code(assigned_iccid['lpa_code'], assigned_iccid['iccid'], 'png')
-        
+
         # Create email content
         subject = "🎉 Your eSIM is Ready - DOTM Platform"
-        
+
         html_body = f"""
         <html>
         <head>
@@ -6111,7 +4868,7 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                             <li><strong>Status:</strong> ✅ <span class="highlight">Ready for Activation</span></li>
                             <li><strong>Purchase Date:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</li>
                         </ul>
-                        
+
                         <h4>🔐 LPA Activation Code:</h4>
                         <div class="lpa-code">{assigned_iccid['lpa_code']}</div>
                     </div>
@@ -6126,11 +4883,10 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                     <div class="next-steps">
                         <h3>🚀 Next Steps</h3>
                         <ol>
-                            <li>Open your device's Settings app</li>
-                            <li>Go to Cellular/Mobile Data settings</li>
-                            <li>Tap "Add Cellular Plan" or "Add eSIM"</li>
-                            <li>Scan the QR code above or enter the LPA code manually</li>
-                            <li>Follow your device's setup instructions</li>
+                            <li>Log into your DOTM Dashboard to view complete details</li>
+                            <li>View your phone number and QR codes in your profile</li>
+                            <li>Download the eSIM activation QR code for device setup</li>
+                            <li>Follow your device's eSIM installation instructions</li>
                             <li>Start using your global connectivity!</li>
                         </ol>
                         <p><strong>Need help?</strong> Visit your <a href="https://dotmobile.app/profile">DOTM Dashboard</a> for complete setup instructions.</p>
@@ -6142,16 +4898,11 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                         <p>Account ID: {firebase_uid}</p>
                     </div>
                 </div>
-
-                <div class="footer">
-                    <p>DOTM Platform - Global Mobile Connectivity</p>
-                    <p>Thank you for your purchase!</p>
-                </div>
             </div>
         </body>
         </html>
         """
-        
+
         # Prepare email attachments (PNG QR code)
         attachments = []
         if qr_png and qr_png.get('success') and qr_png.get('data'):
@@ -6162,34 +4913,23 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                 'content': base64.b64decode(png_data),
                 'content_type': 'image/png'
             })
-        
-        # Generate QR code for email attachment
-        if assigned_iccid and assigned_iccid.get('lpa_code'):
-            qr_result = generate_qr_code_for_lpa(assigned_iccid['lpa_code'])
-            if qr_result and qr_result.get('success'):
-                # Embed QR code as data URL in HTML
-                qr_img_tag = f'<img src="data:image/png;base64,{open(qr_result["filename"], "rb").read() | __import__("base64").b64encode | bytes.decode}" alt="eSIM QR Code" style="max-width: 300px; margin: 20px 0;"/>'
-                
-                # Insert QR code into HTML body
-                html_body = html_body.replace(
-                    '<div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">',
-                    f'<div style="text-align: center; margin: 20px 0;">{qr_img_tag}</div><div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">'
-                )
-        
+
         # Send email with embedded QR code
         result = send_email(
             to_email=user_email,
             subject=subject,
             body="eSIM receipt - please check HTML version for QR code and full details",
-            html_body=html_body
+            html_body=html_body,
+            attachments=attachments
         )
-        
+
         print(f"✅ Sent eSIM receipt email to {user_email} with QR code attachment")
         return result
-        
+
     except Exception as e:
         print(f"Error sending eSIM receipt email: {str(e)}")
         return False
+
 
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
@@ -6203,7 +4943,7 @@ if __name__ == '__main__':
     print(f"Starting server on http://0.0.0.0:{port}")
     print(f"OXIO API endpoints should be available at:")
     print(f"  - GET  /api/oxio/test-connection")
-    print(f"  - GET  /api/oxio/test-plans") 
+    print(f"  - GET  /api/oxio/test-plans")
     print(f"  - POST /api/oxio/activate-line")
     print(f"  - POST /api/oxio/test-sample-activation")
 
