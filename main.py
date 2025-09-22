@@ -4937,6 +4937,281 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
         return False
 
 
+# ==========================================
+# DATASHARE API ENDPOINTS
+# ==========================================
+
+@app.route('/api/send-invitation', methods=['POST'])
+@require_auth
+def send_datashare_invitation():
+    """Send datashare invitation via email or create demo user"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        email = data.get('email')
+        personal_message = data.get('message', '')
+        firebase_uid = data.get('firebaseUid')
+        is_demo_user = data.get('isDemoUser', False)
+
+        if not email or not firebase_uid:
+            return jsonify({'success': False, 'error': 'Email and Firebase UID are required'}), 400
+
+        # Get sender user details
+        sender_user_id = None
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    result = cur.fetchone()
+                    if result:
+                        sender_user_id = result[0]
+
+        if not sender_user_id:
+            return jsonify({'success': False, 'error': 'Sender user not found'}), 404
+
+        # Generate invitation token
+        import secrets
+        invitation_token = secrets.token_urlsafe(32)
+        
+        # Generate invitation link
+        invitation_link = f"https://gorse.dotmobile.app/signup?invite={invitation_token}"
+
+        # Store invitation in database
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Create invites table if it doesn't exist (backup)
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS invites (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER,
+                            email VARCHAR(255) NOT NULL,
+                            invitation_status VARCHAR(50) NOT NULL DEFAULT 'pending',
+                            invited_by_user_id INTEGER,
+                            invited_by_firebase_uid VARCHAR(255),
+                            invitation_token VARCHAR(255),
+                            personal_message TEXT,
+                            is_demo_user BOOLEAN DEFAULT FALSE,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '7 days'),
+                            accepted_at TIMESTAMP,
+                            rejected_at TIMESTAMP,
+                            cancelled_at TIMESTAMP
+                        )
+                    """)
+
+                    # Insert invitation record
+                    cur.execute("""
+                        INSERT INTO invites 
+                        (email, invitation_status, invited_by_user_id, invited_by_firebase_uid, 
+                         invitation_token, personal_message, is_demo_user)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        RETURNING id
+                    """, (email, 'pending', sender_user_id, firebase_uid, invitation_token, 
+                          personal_message, is_demo_user))
+                    
+                    invitation_id = cur.fetchone()[0]
+                    conn.commit()
+
+        # Send email for real invitations (not demo users)
+        email_sent = False
+        if not is_demo_user:
+            try:
+                from email_service import send_email_via_resend
+                
+                subject = "You're invited to join DOTM Datashare!"
+                
+                html_body = f"""
+                <html>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; text-align: center;">
+                            <h1>🚀 You're Invited to DOTM Datashare!</h1>
+                            <p>Join the future of global connectivity</p>
+                        </div>
+                        
+                        <div style="padding: 30px 0;">
+                            <p>You've been invited to join DOTM's exclusive datashare network for global connectivity!</p>
+                            
+                            {f'<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;"><strong>Personal message:</strong><br>{personal_message}</div>' if personal_message else ''}
+                            
+                            <h3>🌍 What you'll get:</h3>
+                            <ul style="list-style: none; padding: 0;">
+                                <li style="padding: 8px 0;"><span style="color: #28a745;">✓</span> Global data connectivity in 160+ countries</li>
+                                <li style="padding: 8px 0;"><span style="color: #28a745;">✓</span> eSIM technology for instant activation</li>
+                                <li style="padding: 8px 0;"><span style="color: #28a745;">✓</span> Datashare network benefits</li>
+                                <li style="padding: 8px 0;"><span style="color: #28a745;">✓</span> DOTM token rewards</li>
+                            </ul>
+                            
+                            <div style="text-align: center; margin: 40px 0;">
+                                <a href="{invitation_link}" 
+                                   style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+                                    Accept Invitation 🚀
+                                </a>
+                            </div>
+                            
+                            <p style="font-size: 14px; color: #666;">This invitation expires in 7 days.</p>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-top: 3px solid #667eea;">
+                            <p style="margin: 0; font-size: 12px; color: #666; text-align: center;">
+                                DOTM Platform - Data On Tap Mobile<br>
+                                Global connectivity powered by community<br>
+                                <a href="https://dotmobile.app" style="color: #667eea;">dotmobile.app</a>
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                
+                email_sent = send_email_via_resend(
+                    to_email=email,
+                    subject=subject,
+                    body="Please view this email in HTML format",
+                    html_body=html_body
+                )
+                
+                print(f"{'✅' if email_sent else '❌'} Invitation email to {email}: {'sent' if email_sent else 'failed'}")
+                
+            except Exception as e:
+                print(f"Error sending invitation email: {str(e)}")
+                email_sent = False
+
+        return jsonify({
+            'success': True,
+            'message': 'Demo user created successfully!' if is_demo_user else 'Invitation sent successfully!',
+            'invitation_id': invitation_id,
+            'email_sent': email_sent,
+            'invitation_link': invitation_link if is_demo_user else None  # Only return link for demo users
+        })
+
+    except Exception as e:
+        print(f"Error sending datashare invitation: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/invites', methods=['GET'])
+@require_auth
+def get_datashare_invitations():
+    """Get user's datashare invitations"""
+    try:
+        firebase_uid = request.args.get('firebaseUid')
+        limit = int(request.args.get('limit', 50))
+        
+        if not firebase_uid:
+            return jsonify({'success': False, 'error': 'Firebase UID is required'}), 400
+
+        # Get user ID
+        user_id = None
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    result = cur.fetchone()
+                    if result:
+                        user_id = result[0]
+
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+
+        # Get invitations sent by this user
+        invitations = []
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT id, email, invitation_status, personal_message, 
+                               is_demo_user, created_at, updated_at, expires_at,
+                               accepted_at, rejected_at, cancelled_at
+                        FROM invites 
+                        WHERE invited_by_user_id = %s 
+                        ORDER BY created_at DESC 
+                        LIMIT %s
+                    """, (user_id, limit))
+                    
+                    results = cur.fetchall()
+                    for row in results:
+                        (invite_id, email, status, message, is_demo, created_at, 
+                         updated_at, expires_at, accepted_at, rejected_at, cancelled_at) = row
+                        
+                        invitations.append({
+                            'id': invite_id,
+                            'email': email,
+                            'invitation_status': status,
+                            'personal_message': message,
+                            'is_demo_user': is_demo,
+                            'created_at': created_at.isoformat() if created_at else None,
+                            'updated_at': updated_at.isoformat() if updated_at else None,
+                            'expires_at': expires_at.isoformat() if expires_at else None,
+                            'accepted_at': accepted_at.isoformat() if accepted_at else None,
+                            'rejected_at': rejected_at.isoformat() if rejected_at else None,
+                            'cancelled_at': cancelled_at.isoformat() if cancelled_at else None
+                        })
+
+        return jsonify({
+            'success': True,
+            'invites': invitations,
+            'count': len(invitations)
+        })
+
+    except Exception as e:
+        print(f"Error getting datashare invitations: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/invites/<int:invite_id>', methods=['DELETE'])
+@require_auth
+def delete_datashare_invitation(invite_id):
+    """Delete a datashare invitation"""
+    try:
+        firebase_uid = request.args.get('firebaseUid')
+        
+        if not firebase_uid:
+            return jsonify({'success': False, 'error': 'Firebase UID is required'}), 400
+
+        # Get user ID
+        user_id = None
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    result = cur.fetchone()
+                    if result:
+                        user_id = result[0]
+
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+
+        # Delete invitation (only if it belongs to this user)
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        DELETE FROM invites 
+                        WHERE id = %s AND invited_by_user_id = %s
+                        RETURNING id
+                    """, (invite_id, user_id))
+                    
+                    deleted = cur.fetchone()
+                    conn.commit()
+                    
+                    if not deleted:
+                        return jsonify({'success': False, 'error': 'Invitation not found or not authorized'}), 404
+
+        return jsonify({
+            'success': True,
+            'message': 'Invitation deleted successfully'
+        })
+
+    except Exception as e:
+        print(f"Error deleting datashare invitation: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
     print("\n=== Registered Flask Routes ===")
