@@ -469,7 +469,7 @@ def register_fcm_token():
         except Exception as general_err:
             print(f"General error in register_fcm_token: {str(general_err)}")
 
-        return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
+    return jsonify({"status": "success", "platform": platform}) # Fallback return if no firebase_uid or token
 
 
 # Send notifications to both web and app users
