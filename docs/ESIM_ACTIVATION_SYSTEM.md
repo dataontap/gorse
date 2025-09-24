@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DOTM Platform implements a complete eSIM activation system that integrates three main services:
+DOT eSIM activation and delivery system implementation architecture that integrates three main services:
 - **Stripe** for payment processing
 - **OXIO** for eSIM provisioning and activation
 - **Resend** for professional email delivery
