@@ -46,12 +46,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
 
-      // Initialize Firebase if not already initialized
+      // Check if Firebase app is already initialized (avoid duplicate app error)
+      let app;
       if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+        app = firebase.initializeApp(firebaseConfig);
         console.log("Firebase App initialized successfully");
       } else {
-        console.log("Firebase App already initialized");
+        app = firebase.apps[0]; // Use existing app
+        console.log("Firebase App already initialized, using existing instance");
       }
 
       // Test Firebase Auth availability
