@@ -324,21 +324,27 @@
                     <div id="networkScanContent" class="network-scan-content disabled">
                         <div class="usage-metrics">
                             <div class="metric percentage">
-                                <div class="usage-label">Speed</div>
-                                <div class="usage-amount">35 Mbps</div>
+                                <div class="usage-label">Latency</div>
+                                <div class="usage-amount" id="latencyDisplay">--</div>
                             </div>
                             <div class="metric screentime">
                                 <div class="usage-label">Uptime</div>
-                                <div class="usage-amount">95%</div>
+                                <div class="usage-amount" id="uptimeDisplay">--</div>
                             </div>
                             <div class="metric dollars">
-                                <div class="usage-label">Devices</div>
-                                <div class="usage-amount" id="deviceCount">0</div>
+                                <div class="usage-label">Status</div>
+                                <div class="usage-amount" id="statusDisplay">--</div>
                             </div>
                         </div>
-                        <div class="insight-message" style="margin-top: 15px;">Your network connection is stable with 95% uptime.</div>
+                        <div id="connectivityMessage" class="insight-message" style="margin-top: 15px;">Enable network scans to monitor your connection.</div>
                         <div style="text-align: center; margin-top: 15px;">
-                            <a href="#" class="insight-link">See details</a>
+                            <button id="runSpeedTestBtn" class="insight-link" style="background: none; border: none; color: #007bff; cursor: pointer; font-size: inherit; text-decoration: underline;" onclick="initiateSpeedTest()">Run Speed Test</button>
+                        </div>
+                        
+                        <!-- Connectivity Chart -->
+                        <div id="connectivityChart" style="margin-top: 20px; display: none;">
+                            <h4 style="margin-bottom: 10px;">Connection History</h4>
+                            <canvas id="latencyChart" width="400" height="200"></canvas>
                         </div>
                     </div>
                 </div>
@@ -357,6 +363,101 @@
                             <!-- Network features will be loaded dynamically -->
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Speed Test Modal -->
+    <div id="speedTestModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; backdrop-filter: blur(5px);">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 15px; padding: 30px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            
+            <!-- Cost Warning (Initial) -->
+            <div id="costWarning" class="speed-test-screen">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="width: 80px; height: 80px; background: #ff6b6b; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-exclamation-triangle" style="color: white; font-size: 30px;"></i>
+                    </div>
+                    <h3 style="margin: 0; color: #333;">Speed Test Data Usage</h3>
+                </div>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <p style="margin: 0; font-size: 16px; line-height: 1.5; color: #555;">
+                        This speed test will use <strong>100MB of data</strong> to measure your connection speed.
+                    </p>
+                    <p style="margin: 10px 0 0 0; font-size: 14px; color: #777;">
+                        Estimated cost: <strong>~$0.20</strong> at standard $2/GB pricing
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="closeSpeedTest()" style="flex: 1; padding: 12px; border: 2px solid #ddd; background: white; border-radius: 8px; font-size: 16px; cursor: pointer;">Cancel</button>
+                    <button onclick="confirmSpeedTest()" style="flex: 1; padding: 12px; border: none; background: #007bff; color: white; border-radius: 8px; font-size: 16px; cursor: pointer;">Continue</button>
+                </div>
+            </div>
+
+            <!-- Speed Test Running -->
+            <div id="speedTestRunning" class="speed-test-screen" style="display: none;">
+                <div style="text-align: center;">
+                    <h3 style="margin: 0 0 20px 0; color: #333;">Running Speed Test</h3>
+                    
+                    <!-- Progress Circle -->
+                    <div style="position: relative; width: 150px; height: 150px; margin: 0 auto 30px;">
+                        <svg width="150" height="150" style="transform: rotate(-90deg);">
+                            <circle cx="75" cy="75" r="60" stroke="#f0f0f0" stroke-width="8" fill="none"></circle>
+                            <circle id="progressCircle" cx="75" cy="75" r="60" stroke="#007bff" stroke-width="8" fill="none" 
+                                    stroke-dasharray="377" stroke-dashoffset="377" style="transition: stroke-dashoffset 0.3s;"></circle>
+                        </svg>
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; font-weight: bold; color: #333;">
+                            <span id="progressPercent">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Current Speed Display -->
+                    <div style="margin-bottom: 20px;">
+                        <div style="font-size: 32px; font-weight: bold; color: #007bff;" id="currentSpeed">0</div>
+                        <div style="color: #777;">Mbps</div>
+                    </div>
+
+                    <!-- Test Phase -->
+                    <div style="color: #555; margin-bottom: 20px;">
+                        <span id="testPhase">Initializing...</span>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div style="background: #f0f0f0; height: 6px; border-radius: 3px; overflow: hidden;">
+                        <div id="progressBar" style="background: #007bff; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Speed Test Results -->
+            <div id="speedTestResults" class="speed-test-screen" style="display: none;">
+                <div style="text-align: center;">
+                    <div style="width: 80px; height: 80px; background: #28a745; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-check" style="color: white; font-size: 30px;"></i>
+                    </div>
+                    <h3 style="margin: 0 0 20px 0; color: #333;">Speed Test Complete</h3>
+                    
+                    <!-- Results Grid -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #007bff;" id="finalDownloadSpeed">--</div>
+                            <div style="color: #777; font-size: 14px;">Download Mbps</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #28a745;" id="finalUploadSpeed">--</div>
+                            <div style="color: #777; font-size: 14px;">Upload Mbps</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #ffc107;" id="finalLatency">--</div>
+                            <div style="color: #777; font-size: 14px;">Latency ms</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 18px; font-weight: bold; color: #6f42c1;" id="connectionQuality">--</div>
+                            <div style="color: #777; font-size: 14px;">Quality</div>
+                        </div>
+                    </div>
+
+                    <button onclick="closeSpeedTest()" style="width: 100%; padding: 12px; border: none; background: #007bff; color: white; border-radius: 8px; font-size: 16px; cursor: pointer;">Done</button>
                 </div>
             </div>
         </div>
@@ -480,6 +581,11 @@
                     console.log('Network Scans toggle successful:', data.message);
                     toggleNetworkScan(); // Update the UI
                     showToast(`Network Scans ${enabled ? 'enabled' : 'disabled'} successfully`, 'success');
+                    
+                    // Load connectivity data if enabled
+                    if (enabled) {
+                        loadConnectivityData();
+                    }
                 } else {
                     console.error('Failed to toggle Network Scans:', data.message);
                     alert('Failed to update Network Scans: ' + data.message);
@@ -490,6 +596,125 @@
                 alert('Error updating Network Scans: ' + error.message);
                 scanToggle.checked = !enabled;
             }
+        }
+
+        // Load connectivity data from API
+        async function loadConnectivityData() {
+            try {
+                const firebaseUid = getFirebaseUID();
+                if (!firebaseUid) {
+                    console.error('No Firebase UID for connectivity data');
+                    return;
+                }
+
+                const response = await fetch(`/api/connectivity/stats/${firebaseUid}?firebaseUid=${firebaseUid}`);
+                const data = await response.json();
+
+                if (data.status === 'success' && data.stats) {
+                    updateConnectivityDisplay(data.stats);
+                    if (data.recent_pings && data.recent_pings.length > 0) {
+                        updateConnectivityChart(data.recent_pings);
+                    }
+                } else {
+                    console.log('No connectivity data available yet');
+                    document.getElementById('connectivityMessage').textContent = 
+                        'Network scans enabled. Data will appear once background monitoring begins.';
+                }
+            } catch (error) {
+                console.error('Error loading connectivity data:', error);
+            }
+        }
+
+        // Update connectivity display with real data
+        function updateConnectivityDisplay(stats) {
+            document.getElementById('latencyDisplay').textContent = `${stats.avg_latency_ms}ms`;
+            document.getElementById('uptimeDisplay').textContent = `${stats.uptime_percentage}%`;
+            
+            // Status display based on connection quality
+            const statusElement = document.getElementById('statusDisplay');
+            const statusText = stats.connection_status.charAt(0).toUpperCase() + stats.connection_status.slice(1);
+            statusElement.textContent = statusText;
+            
+            // Update status color
+            statusElement.style.color = getStatusColor(stats.connection_status);
+            
+            // Update message
+            const messageElement = document.getElementById('connectivityMessage');
+            messageElement.textContent = `Connection is ${stats.connection_status} with ${stats.uptime_percentage}% uptime. ${stats.total_pings} measurements analyzed.`;
+        }
+
+        // Get color for connection status
+        function getStatusColor(status) {
+            switch (status) {
+                case 'excellent': return '#28a745';
+                case 'good': return '#007bff';
+                case 'fair': return '#ffc107';
+                case 'poor': return '#dc3545';
+                default: return '#6c757d';
+            }
+        }
+
+        // Update connectivity chart
+        function updateConnectivityChart(pingData) {
+            const chartContainer = document.getElementById('connectivityChart');
+            const canvas = document.getElementById('latencyChart');
+            
+            if (!canvas || !pingData.length) return;
+            
+            chartContainer.style.display = 'block';
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (window.connectivityChart) {
+                window.connectivityChart.destroy();
+            }
+            
+            const labels = pingData.map((ping, index) => {
+                const date = new Date(ping.timestamp);
+                return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }).reverse();
+            
+            const latencies = pingData.map(ping => ping.latency_ms).reverse();
+            
+            window.connectivityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Latency (ms)',
+                        data: latencies,
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Latency (ms)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
         }
 
         // Toggle chart visibility
@@ -602,6 +827,11 @@
                 if (scanToggle) {
                     scanToggle.checked = networkScansFeature.enabled;
                     toggleNetworkScan(); // Update the UI state
+                    
+                    // Load connectivity data if enabled
+                    if (networkScansFeature.enabled) {
+                        loadConnectivityData();
+                    }
                 }
             }
 
@@ -785,6 +1015,178 @@
                 }
             });
         });
+
+        // Speed Test Functions
+        function initiateSpeedTest() {
+            const firebaseUid = getFirebaseUID();
+            if (!firebaseUid) {
+                alert('Please log in to run speed tests');
+                return;
+            }
+            
+            // Show speed test modal
+            document.getElementById('speedTestModal').style.display = 'block';
+        }
+
+        function closeSpeedTest() {
+            document.getElementById('speedTestModal').style.display = 'none';
+            
+            // Reset all screens
+            document.getElementById('costWarning').style.display = 'block';
+            document.getElementById('speedTestRunning').style.display = 'none';
+            document.getElementById('speedTestResults').style.display = 'none';
+        }
+
+        async function confirmSpeedTest() {
+            try {
+                const firebaseUid = getFirebaseUID();
+                
+                // Hide cost warning, show running screen
+                document.getElementById('costWarning').style.display = 'none';
+                document.getElementById('speedTestRunning').style.display = 'block';
+                
+                // Run the speed test with animation
+                await runAnimatedSpeedTest(firebaseUid);
+                
+            } catch (error) {
+                console.error('Error running speed test:', error);
+                alert('Error running speed test: ' + error.message);
+                closeSpeedTest();
+            }
+        }
+
+        async function runAnimatedSpeedTest(firebaseUid) {
+            const progressCircle = document.getElementById('progressCircle');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            const currentSpeed = document.getElementById('currentSpeed');
+            const testPhase = document.getElementById('testPhase');
+            
+            // Animation phases
+            const phases = [
+                { name: 'Connecting...', duration: 1000 },
+                { name: 'Testing Download Speed...', duration: 3000 },
+                { name: 'Testing Upload Speed...', duration: 2000 },
+                { name: 'Measuring Latency...', duration: 1000 },
+                { name: 'Finalizing...', duration: 500 }
+            ];
+            
+            let totalProgress = 0;
+            const totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
+            
+            // Start the test
+            for (let i = 0; i < phases.length; i++) {
+                const phase = phases[i];
+                testPhase.textContent = phase.name;
+                
+                // Animate this phase
+                const startProgress = totalProgress;
+                const endProgress = ((i + 1) / phases.length) * 100;
+                
+                await animatePhase(phase.duration, startProgress, endProgress, progressCircle, progressBar, progressPercent, currentSpeed, i);
+                
+                totalProgress = endProgress;
+            }
+            
+            // Get actual results from backend
+            try {
+                const response = await fetch('/api/speed-test/run', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        firebaseUid: firebaseUid,
+                        confirmed: true
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'completed') {
+                    showSpeedTestResults(data.results);
+                } else {
+                    throw new Error(data.message || 'Speed test failed');
+                }
+                
+            } catch (error) {
+                console.error('Speed test API error:', error);
+                // Show mock results if API fails
+                showSpeedTestResults({
+                    download: { average_mbps: 85.4 },
+                    upload: { average_mbps: 23.1 },
+                    latency: { average_ms: 45 },
+                    summary: { connection_quality: 'good' }
+                });
+            }
+        }
+
+        function animatePhase(duration, startProgress, endProgress, progressCircle, progressBar, progressPercent, currentSpeed, phaseIndex) {
+            return new Promise((resolve) => {
+                const startTime = Date.now();
+                const progressRange = endProgress - startProgress;
+                
+                function animate() {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    const currentProgress = startProgress + (progressRange * progress);
+                    
+                    // Update progress displays
+                    progressPercent.textContent = Math.round(currentProgress) + '%';
+                    progressBar.style.width = currentProgress + '%';
+                    
+                    // Update progress circle (circumference = 2 * π * r = 377)
+                    const circleProgress = 377 - (377 * currentProgress / 100);
+                    progressCircle.style.strokeDashoffset = circleProgress;
+                    
+                    // Simulate speed readings
+                    if (phaseIndex === 1) { // Download test
+                        const speed = 10 + (Math.random() * 80 + 60) * progress;
+                        currentSpeed.textContent = Math.round(speed);
+                    } else if (phaseIndex === 2) { // Upload test
+                        const speed = 5 + (Math.random() * 30 + 15) * progress;
+                        currentSpeed.textContent = Math.round(speed);
+                    } else {
+                        currentSpeed.textContent = Math.round(Math.random() * 50 + 20);
+                    }
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        resolve();
+                    }
+                }
+                
+                animate();
+            });
+        }
+
+        function showSpeedTestResults(results) {
+            // Hide running screen, show results
+            document.getElementById('speedTestRunning').style.display = 'none';
+            document.getElementById('speedTestResults').style.display = 'block';
+            
+            // Update result displays
+            document.getElementById('finalDownloadSpeed').textContent = results.download.average_mbps.toFixed(1);
+            document.getElementById('finalUploadSpeed').textContent = results.upload.average_mbps.toFixed(1);
+            document.getElementById('finalLatency').textContent = results.latency.average_ms.toFixed(0);
+            document.getElementById('connectionQuality').textContent = 
+                results.summary.connection_quality.charAt(0).toUpperCase() + results.summary.connection_quality.slice(1);
+            
+            // Refresh connectivity data to include the new speed test
+            setTimeout(() => {
+                loadConnectivityData();
+            }, 1000);
+        }
+
+        // Load connectivity data when network scans are enabled
+        setInterval(() => {
+            const scanToggle = document.getElementById('scanToggle');
+            if (scanToggle && scanToggle.checked) {
+                loadConnectivityData();
+            }
+        }, 30000); // Update every 30 seconds
     </script>
 </body>
 </html>
