@@ -4081,6 +4081,100 @@ def test_ping_creation():
         }), 500
 
 # ==========================================
+# SPEED TEST FILE ENDPOINTS
+# ==========================================
+
+@app.route('/api/speed-test/download/<int:size_mb>', methods=['GET'])
+def speed_test_download(size_mb):
+    """Download endpoint for speed testing - serves random data"""
+    try:
+        # Limit size to prevent abuse
+        size_mb = min(size_mb, 50)  # Max 50MB
+        size_bytes = size_mb * 1024 * 1024
+        
+        def generate_test_data():
+            """Generate random test data"""
+            import random
+            chunk_size = 8192  # 8KB chunks
+            total_sent = 0
+            
+            while total_sent < size_bytes:
+                remaining = size_bytes - total_sent
+                current_chunk_size = min(chunk_size, remaining)
+                
+                # Generate random bytes for this chunk
+                chunk = bytes(random.randint(0, 255) for _ in range(current_chunk_size))
+                yield chunk
+                total_sent += current_chunk_size
+        
+        return Response(
+            generate_test_data(),
+            mimetype='application/octet-stream',
+            headers={
+                'Content-Length': str(size_bytes),
+                'Content-Disposition': f'attachment; filename=speedtest_{size_mb}mb.bin',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        )
+        
+    except Exception as e:
+        print(f"Error in speed test download: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/speed-test/upload', methods=['POST'])
+def speed_test_upload():
+    """Upload endpoint for speed testing - accepts and discards data"""
+    try:
+        import time
+        start_time = time.time()
+        
+        # Read all uploaded data but don't store it
+        total_bytes = 0
+        chunk_size = 8192
+        
+        if request.content_length:
+            total_bytes = request.content_length
+            # Read and discard the data in chunks
+            while True:
+                chunk = request.stream.read(chunk_size)
+                if not chunk:
+                    break
+        else:
+            # Read until stream ends
+            while True:
+                chunk = request.stream.read(chunk_size)
+                if not chunk:
+                    break
+                total_bytes += len(chunk)
+        
+        end_time = time.time()
+        duration_seconds = end_time - start_time
+        
+        # Calculate upload speed
+        if duration_seconds > 0:
+            mbps = (total_bytes / (1024 * 1024)) / duration_seconds * 8  # Convert to Mbps
+        else:
+            mbps = 0
+            
+        return jsonify({
+            'status': 'success',
+            'bytes_received': total_bytes,
+            'duration_seconds': duration_seconds,
+            'upload_speed_mbps': round(mbps, 2)
+        })
+        
+    except Exception as e:
+        print(f"Error in speed test upload: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/speed-test/ping', methods=['GET'])
+def speed_test_ping():
+    """Simple ping endpoint for latency testing"""
+    return jsonify({'pong': datetime.now().isoformat()})
+
+# ==========================================
 # SPEED TEST API ENDPOINTS
 # ==========================================
 
@@ -4246,6 +4340,39 @@ def run_speed_test():
             'status': 'error',
             'message': str(e)
         }), 500
+
+def store_speed_test_results(firebase_uid, results):
+    """Store speed test results in database"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        INSERT INTO token_price_pings 
+                        (firebase_uid, token_price, latency_ms, test_type, source, additional_data, created_at, success)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (
+                        firebase_uid,
+                        0.0,
+                        results['latency'].get('average_ms', 0),
+                        'speed_test',
+                        'speed_test_results',
+                        json.dumps({
+                            'download_mbps': results['download']['average_mbps'],
+                            'upload_mbps': results['upload']['average_mbps'],
+                            'latency_ms': results['latency']['average_ms'],
+                            'download_tests': results['download']['measurements_mbps'],
+                            'upload_tests': results['upload']['measurements_mbps'],
+                            'latency_tests': results['latency']['measurements_ms']
+                        }),
+                        datetime.now(),
+                        True
+                    ))
+                    conn.commit()
+                    print(f"Stored speed test results for user {firebase_uid}")
+                    
+    except Exception as e:
+        print(f"Error storing speed test results: {str(e)}")
 
 @app.route('/populate-token-pings', methods=['GET'])
 def populate_token_pings():
