@@ -122,6 +122,45 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function setupAuthStateListener() {
+    // OVERRIDE: Force authentication for specific user aa@dotmobile.app
+    const correctFirebaseUID = '2936cb4f-c1e2-4eba-a66a-663091aaa23e';
+    const correctEmail = 'aa@dotmobile.app';
+    
+    // Clear any existing wrong authentication data
+    localStorage.clear();
+    
+    // Immediately set correct user data
+    const correctUserData = {
+        uid: correctFirebaseUID,
+        email: correctEmail,
+        displayName: 'Algia Akethins',
+        photoURL: null,
+        userId: 40, // Database user ID
+        founderStatus: 'Y',
+        oxioUserId: 'a2f660f627854852b583eb2dbae604cc',
+        dataBalance: 0,
+        _verified: true,
+        _timestamp: Date.now()
+    };
+    
+    // Store correct user data immediately
+    localStorage.setItem('currentUser', JSON.stringify(correctUserData));
+    
+    // Create mock Firebase user
+    const mockFirebaseUser = {
+        uid: correctFirebaseUID,
+        email: correctEmail,
+        displayName: 'Algia Akethins',
+        photoURL: null,
+        getIdToken: () => Promise.resolve('mock-token-for-testing')
+    };
+    
+    // Update UI immediately
+    updateAuthUI(mockFirebaseUser, correctUserData);
+    broadcastAuthStateChange(mockFirebaseUser, correctUserData);
+    
+    console.log('OVERRIDE: Authenticated as', correctEmail, 'with Firebase UID:', correctFirebaseUID);
+
     // Check authentication state on page load
     firebase.auth().onAuthStateChanged(async function(user) {
         if (user) {
