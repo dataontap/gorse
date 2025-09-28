@@ -4445,6 +4445,76 @@ def store_speed_test_results(firebase_uid, results):
     except Exception as e:
         print(f"Error storing speed test results: {str(e)}")
 
+@app.route('/api/speed-test/history/<firebase_uid>', methods=['GET'])
+@require_auth
+def get_speed_test_history(firebase_uid):
+    """Get the latest 5 speed test results for a user"""
+    try:
+        # Validate that the requesting user can access this data
+        if firebase_uid != request.args.get('firebaseUid'):
+            return jsonify({'error': 'Unauthorized access'}), 403
+            
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Query for speed test results stored in token_price_pings table
+                    cur.execute("""
+                        SELECT additional_data, created_at, latency_ms
+                        FROM token_price_pings 
+                        WHERE firebase_uid = %s 
+                        AND source = 'speed_test_results'
+                        ORDER BY created_at DESC 
+                        LIMIT 5
+                    """, (firebase_uid,))
+                    
+                    results = cur.fetchall()
+                    
+                    speed_tests = []
+                    for row in results:
+                        additional_data, created_at, latency_ms = row
+                        
+                        # Parse the JSON data
+                        if additional_data:
+                            try:
+                                if isinstance(additional_data, str):
+                                    test_data = json.loads(additional_data)
+                                else:
+                                    test_data = additional_data
+                                    
+                                download_mbps = test_data.get('download_mbps', 0)
+                                upload_mbps = test_data.get('upload_mbps', 0)
+                                latency_ms_val = test_data.get('latency_ms', latency_ms or 0)
+                                
+                                # Determine connection quality
+                                if download_mbps > 100:
+                                    quality = 'excellent'
+                                elif download_mbps > 50:
+                                    quality = 'good'
+                                else:
+                                    quality = 'fair'
+                                    
+                                speed_tests.append({
+                                    'download_mbps': round(download_mbps, 1),
+                                    'upload_mbps': round(upload_mbps, 1),
+                                    'latency_ms': round(latency_ms_val, 1),
+                                    'created_at': created_at.isoformat() if created_at else None,
+                                    'quality': quality
+                                })
+                            except json.JSONDecodeError as e:
+                                print(f"Error parsing speed test data: {e}")
+                                continue
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'results': speed_tests
+                    })
+            else:
+                return jsonify({'error': 'Database connection failed'}), 500
+                
+    except Exception as e:
+        print(f"Error fetching speed test history: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/populate-token-pings', methods=['GET'])
 def populate_token_pings():
     """Endpoint to generate sample token price pings for testing"""
