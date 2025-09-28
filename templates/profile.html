@@ -180,6 +180,188 @@
             color: #e2e8f0;
         }
 
+        /* Mobile Responsive Improvements */
+        @media (max-width: 768px) {
+            /* Container and spacing adjustments */
+            .container {
+                padding-left: 15px;
+                padding-right: 15px;
+                padding-top: 70px !important; /* More space for mobile header */
+            }
+
+            /* Profile header improvements */
+            .d-flex.justify-content-between {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 15px;
+            }
+
+            .d-flex.justify-content-between h2 {
+                font-size: 1.5rem;
+                margin-bottom: 10px;
+            }
+
+            .btn-close {
+                align-self: flex-end;
+                margin-top: -40px;
+            }
+
+            /* User info layout for mobile */
+            .user-info-header {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .user-name {
+                font-size: 1.2rem;
+                display: block;
+                margin-bottom: 8px;
+            }
+
+            .founding-shield {
+                display: block;
+                margin-top: 5px;
+                font-size: 0.9rem;
+            }
+
+            .user-email {
+                font-size: 1rem;
+                color: #6c757d;
+            }
+
+            /* Make copy buttons more touch-friendly */
+            .copy-btn {
+                font-size: 1rem !important;
+                padding: 8px 12px !important;
+                margin-left: 10px !important;
+                margin-top: 5px;
+                min-height: 40px;
+                min-width: 40px;
+            }
+
+            /* Card headers with buttons */
+            .card-header .d-flex {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 10px;
+            }
+
+            .card-header h4,
+            .card-header h5 {
+                font-size: 1.1rem;
+                margin-bottom: 0;
+            }
+
+            .card-header .btn {
+                align-self: flex-end;
+                font-size: 0.9rem;
+                padding: 6px 12px;
+                min-height: 36px;
+            }
+
+            /* Text improvements for mobile */
+            .text-break {
+                font-size: 0.85rem;
+                line-height: 1.4;
+                padding: 8px;
+                background: rgba(248, 249, 250, 0.8);
+                border-radius: 4px;
+                word-break: break-all;
+                display: block;
+                margin: 5px 0;
+            }
+
+            .font-monospace {
+                font-size: 0.8rem !important;
+            }
+
+            /* QR Code section mobile layout */
+            .col-md-8, .col-md-4 {
+                margin-bottom: 20px;
+            }
+
+            .qr-code-container {
+                margin-top: 15px;
+            }
+
+            #qrCodeSVG {
+                max-width: 150px !important;
+            }
+
+            /* Address card mobile improvements */
+            .address-card {
+                margin-bottom: 20px;
+                min-height: auto !important;
+                padding: 15px !important;
+            }
+
+            .card-body {
+                padding: 15px;
+            }
+
+            /* Badge and button improvements */
+            .badge {
+                font-size: 0.8rem;
+                padding: 6px 10px;
+            }
+
+            .service-status-badge {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+
+            /* eSIM section mobile layout */
+            .esim-section .card-body {
+                padding: 15px 10px;
+            }
+
+            .btn-group .btn {
+                margin: 2px;
+                font-size: 0.85rem;
+                padding: 6px 10px;
+                min-height: 36px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            /* Extra small screens */
+            .container {
+                padding-left: 10px;
+                padding-right: 10px;
+                padding-top: 75px !important;
+            }
+
+            /* Further reduce text sizes for very small screens */
+            .text-break {
+                font-size: 0.8rem;
+                padding: 6px;
+            }
+
+            .font-monospace {
+                font-size: 0.75rem !important;
+            }
+
+            /* Stack everything vertically on very small screens */
+            .row > div {
+                margin-bottom: 15px;
+            }
+
+            /* Profile header for small screens */
+            .user-name {
+                font-size: 1.1rem;
+            }
+
+            .user-email {
+                font-size: 0.95rem;
+            }
+
+            /* Make buttons full width on very small screens where needed */
+            .card-header .btn {
+                width: 100%;
+                margin-top: 10px;
+            }
+        }
+
     </style>
 </head>
 <body class="dashboard-body">
