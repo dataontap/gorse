@@ -349,9 +349,9 @@
                         
                         <!-- Speed Test History -->
                         <div id="speedTestHistory" style="margin-top: 20px; display: none;">
-                            <h4 style="margin-bottom: 15px; color: #333; font-size: 16px;">Recent Speed Tests</h4>
+                            <h4 style="margin-bottom: 15px; font-size: 16px;">Recent Speed Tests</h4>
                             <div id="speedTestHistoryContent">
-                                <div style="text-align: center; color: #666; padding: 20px;">
+                                <div class="speed-test-loading-state">
                                     <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 10px;"></i>
                                     <p>Loading speed test history...</p>
                                 </div>
@@ -1218,7 +1218,7 @@
             } catch (error) {
                 console.error('Error loading speed test history:', error);
                 document.getElementById('speedTestHistoryContent').innerHTML = `
-                    <div style="text-align: center; color: #666; padding: 20px;">
+                    <div class="speed-test-empty-state">
                         <i class="fas fa-exclamation-triangle" style="font-size: 20px; margin-bottom: 10px;"></i>
                         <p>Error loading speed test history</p>
                     </div>
@@ -1232,7 +1232,7 @@
 
             if (!tests || tests.length === 0) {
                 container.innerHTML = `
-                    <div style="text-align: center; color: #666; padding: 20px;">
+                    <div class="speed-test-empty-state">
                         <i class="fas fa-tachometer-alt" style="font-size: 24px; margin-bottom: 10px;"></i>
                         <p>No speed tests completed yet</p>
                         <p style="font-size: 14px;">Run your first speed test to see results here</p>
@@ -1250,23 +1250,23 @@
                                    test.quality === 'good' ? '#ffc107' : '#dc3545';
 
                 historyHtml += `
-                    <div class="speed-test-result" style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 10px; border-left: 4px solid ${qualityColor};">
+                    <div class="speed-test-result" style="border-left: 4px solid ${qualityColor};">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-weight: 500; color: #333;">${timeAgo}</span>
-                            <span style="font-size: 12px; color: ${qualityColor}; font-weight: 500; text-transform: uppercase;">${test.quality}</span>
+                            <span class="time-stamp">${timeAgo}</span>
+                            <span class="quality-badge" style="color: ${qualityColor};">${test.quality}</span>
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; text-align: center;">
+                        <div class="metrics-grid">
                             <div>
-                                <div style="font-size: 18px; font-weight: 600; color: #007bff;">${test.download_mbps}</div>
-                                <div style="font-size: 12px; color: #666;">↓ Mbps</div>
+                                <div class="metric-value download-speed">${test.download_mbps}</div>
+                                <div class="metric-label">↓ Mbps</div>
                             </div>
                             <div>
-                                <div style="font-size: 18px; font-weight: 600; color: #6c757d;">${test.upload_mbps}</div>
-                                <div style="font-size: 12px; color: #666;">↑ Mbps</div>
+                                <div class="metric-value upload-speed">${test.upload_mbps}</div>
+                                <div class="metric-label">↑ Mbps</div>
                             </div>
                             <div>
-                                <div style="font-size: 18px; font-weight: 600; color: #17a2b8;">${test.latency_ms}</div>
-                                <div style="font-size: 12px; color: #666;">ms</div>
+                                <div class="metric-value latency-value">${test.latency_ms}</div>
+                                <div class="metric-label">ms</div>
                             </div>
                         </div>
                     </div>
