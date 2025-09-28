@@ -1062,31 +1062,20 @@
             const currentSpeed = document.getElementById('currentSpeed');
             const testPhase = document.getElementById('testPhase');
             
-            // Animation phases
-            const phases = [
-                { name: 'Connecting...', duration: 1000 },
-                { name: 'Testing Download Speed...', duration: 3000 },
-                { name: 'Testing Upload Speed...', duration: 2000 },
-                { name: 'Measuring Latency...', duration: 1000 },
-                { name: 'Finalizing...', duration: 500 }
-            ];
+            // Download Phase (0-100%)
+            testPhase.textContent = 'Testing Download Speed...';
+            await animatePhase(4000, 0, 100, progressCircle, progressBar, progressPercent, currentSpeed, 1, testPhase);
             
-            let totalProgress = 0;
-            const totalDuration = phases.reduce((sum, phase) => sum + phase.duration, 0);
+            // Brief pause between phases
+            await new Promise(resolve => setTimeout(resolve, 300));
             
-            // Start the test
-            for (let i = 0; i < phases.length; i++) {
-                const phase = phases[i];
-                testPhase.textContent = phase.name;
-                
-                // Animate this phase
-                const startProgress = totalProgress;
-                const endProgress = ((i + 1) / phases.length) * 100;
-                
-                await animatePhase(phase.duration, startProgress, endProgress, progressCircle, progressBar, progressPercent, currentSpeed, i);
-                
-                totalProgress = endProgress;
-            }
+            // Upload Phase (0-100%) - Reset progress circle and bar
+            testPhase.textContent = 'Testing Upload Speed...';
+            await animatePhase(3000, 0, 100, progressCircle, progressBar, progressPercent, currentSpeed, 2, testPhase);
+            
+            // Brief finalization
+            testPhase.textContent = 'Finalizing Results...';
+            await new Promise(resolve => setTimeout(resolve, 500));
             
             // Get actual results from backend
             try {
@@ -1121,10 +1110,30 @@
             }
         }
 
-        function animatePhase(duration, startProgress, endProgress, progressCircle, progressBar, progressPercent, currentSpeed, phaseIndex) {
+        function animatePhase(duration, startProgress, endProgress, progressCircle, progressBar, progressPercent, currentSpeed, phaseIndex, phaseText) {
             return new Promise((resolve) => {
                 const startTime = Date.now();
                 const progressRange = endProgress - startProgress;
+                let lastSpeed = 0;
+                
+                // Set phase-specific parameters for smooth speed progression
+                let baseSpeed, maxSpeed, speedVariance;
+                if (phaseIndex === 1) { // Download test
+                    baseSpeed = 15;
+                    maxSpeed = 120;
+                    speedVariance = 8;
+                    phaseText.textContent = 'Testing Download Speed...';
+                } else if (phaseIndex === 2) { // Upload test
+                    baseSpeed = 8;
+                    maxSpeed = 45;
+                    speedVariance = 4;
+                    phaseText.textContent = 'Testing Upload Speed...';
+                } else {
+                    baseSpeed = 10;
+                    maxSpeed = 60;
+                    speedVariance = 6;
+                    phaseText.textContent = 'Testing Connection...';
+                }
                 
                 function animate() {
                     const elapsed = Date.now() - startTime;
@@ -1140,16 +1149,16 @@
                     const circleProgress = 377 - (377 * currentProgress / 100);
                     progressCircle.style.strokeDashoffset = circleProgress;
                     
-                    // Simulate speed readings
-                    if (phaseIndex === 1) { // Download test
-                        const speed = 10 + (Math.random() * 80 + 60) * progress;
-                        currentSpeed.textContent = Math.round(speed);
-                    } else if (phaseIndex === 2) { // Upload test
-                        const speed = 5 + (Math.random() * 30 + 15) * progress;
-                        currentSpeed.textContent = Math.round(speed);
-                    } else {
-                        currentSpeed.textContent = Math.round(Math.random() * 50 + 20);
-                    }
+                    // Smooth speed progression with realistic fluctuation
+                    const targetSpeed = baseSpeed + (maxSpeed - baseSpeed) * Math.pow(progress, 0.7);
+                    const speedNoise = (Math.random() - 0.5) * speedVariance;
+                    const newSpeed = targetSpeed + speedNoise;
+                    
+                    // Smooth transition between speed values to reduce jumpiness
+                    const smoothedSpeed = lastSpeed + (newSpeed - lastSpeed) * 0.3;
+                    lastSpeed = smoothedSpeed;
+                    
+                    currentSpeed.textContent = Math.round(Math.max(0, smoothedSpeed));
                     
                     if (progress < 1) {
                         requestAnimationFrame(animate);
