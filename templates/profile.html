@@ -90,6 +90,96 @@
             letter-spacing: 0.5px;
         }
 
+        /* Profile Container Light Mode Defaults */
+        .address-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .profile-info-container {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+        }
+
+        .esim-qr-content {
+            background: white;
+            color: #333;
+        }
+
+        /* Dark Mode Overrides */
+        body.dark-mode .address-card {
+            background: rgba(40, 40, 40, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .profile-info-container {
+            background: rgba(40, 40, 40, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .esim-qr-content {
+            background: rgba(40, 40, 40, 0.9);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .info-grid p {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .text-break {
+            color: #a0aec0;
+        }
+
+        body.dark-mode .font-monospace {
+            color: #cbd5e0;
+        }
+
+        body.dark-mode .copy-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #a0aec0;
+        }
+
+        body.dark-mode .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #e2e8f0;
+        }
+
+        /* Bootstrap Card Dark Mode Support */
+        body.dark-mode .card {
+            background: rgba(40, 40, 40, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .card-header {
+            background: rgba(30, 30, 30, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .card-body {
+            background: rgba(40, 40, 40, 0.8);
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .text-muted {
+            color: #a0aec0 !important;
+        }
+
+        /* Modal and Popup Dark Mode Support */
+        body.dark-mode .modal-content,
+        body.dark-mode .popup-content {
+            background: rgba(40, 40, 40, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+        }
+
     </style>
 </head>
 <body class="dashboard-body">
