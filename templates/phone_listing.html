@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sell Your Phone - DOTM Marketplace</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='marketplace.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .phone-listing-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        
+        .listing-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .listing-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .detection-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .detection-section h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #374151;
+        }
+        
+        .input-with-action {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .input-with-action input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #d1d5db;
+        }
+        
+        .divider span {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0 1rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .search-container {
+            position: relative;
+        }
+        
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            display: none;
+        }
+        
+        .search-result-item {
+            padding: 0.75rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .search-result-item:hover {
+            background: #f9fafb;
+        }
+        
+        .search-result-item img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        
+        .device-details-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .device-preview {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+        
+        .device-image-preview {
+            text-align: center;
+        }
+        
+        .device-image-preview img {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            border-radius: 12px;
+            background: white;
+            padding: 1rem;
+        }
+        
+        .image-note {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+        
+        .device-info h4 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+        
+        .device-specs {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        .condition-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .condition-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .condition-option {
+            position: relative;
+        }
+        
+        .condition-option input[type="radio"] {
+            opacity: 0;
+            position: absolute;
+        }
+        
+        .condition-option label {
+            display: block;
+            padding: 1rem;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .condition-option input[type="radio"]:checked + label {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .estimated-value {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .estimated-value h4 {
+            color: #059669;
+            margin-bottom: 0.5rem;
+        }
+        
+        .pricing-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .price-input-group {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        
+        .price-input-group .currency-symbol {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .price-input-group input {
+            width: 100%;
+            padding: 0.75rem 0.75rem 0.75rem 2rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #059669;
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body class="marketplace-body">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-text">DOTM</span>
+            </a>
+            <div class="nav-links">
+                <a href="/marketplace" class="nav-link">Marketplace</a>
+                <a href="/dashboard" class="nav-link">Dashboard</a>
+                <a href="/seller/dashboard" class="nav-link">Seller Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="marketplace-container">
+        <div class="phone-listing-container">
+            <div class="listing-header">
+                <h1>📱 Sell Your Phone</h1>
+                <p>Get the best price for your phone through our auction marketplace.<br>
+                Most people list the phone they're currently using!</p>
+            </div>
+
+            <div id="alerts"></div>
+
+            <form id="phoneListingForm">
+                <!-- IMEI Detection Section -->
+                <div class="detection-section">
+                    <h3>📱 Identify Your Phone</h3>
+                    <p>Enter your IMEI to automatically detect your phone details, or search manually.</p>
+                    
+                    <div class="form-group">
+                        <label for="imei">IMEI Number (Recommended)</label>
+                        <div class="input-with-action">
+                            <input type="text" id="imei" name="imei" placeholder="Dial *#06# to find your IMEI" maxlength="15">
+                            <button type="button" id="lookupImei" class="btn btn-secondary">Detect Phone</button>
+                        </div>
+                        <small>We'll automatically detect your phone model and show market value estimates</small>
+                    </div>
+                    
+                    <div class="divider">
+                        <span>OR</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phoneSearch">Search Your Phone Model</label>
+                        <div class="search-container">
+                            <input type="text" id="phoneSearch" placeholder="e.g., iPhone 15 Pro, Galaxy S24">
+                            <div id="searchResults" class="search-results"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Device Details (populated automatically or manually) -->
+                <div class="device-details-section" id="deviceDetailsSection" style="display: none;">
+                    <h3>📋 Device Details</h3>
+                    
+                    <div class="device-preview">
+                        <div class="device-image-preview">
+                            <img id="deviceImage" src="/static/images/default-phone.svg" alt="Device">
+                            <p class="image-note">Stock photo will be used for your listing</p>
+                        </div>
+                        <div class="device-info">
+                            <h4 id="deviceTitle">Select your phone to see details</h4>
+                            <div class="device-specs">
+                                <span id="detectedSpecs"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="brand" name="brand">
+                    <input type="hidden" id="model" name="model">
+                    <input type="hidden" id="deviceType" name="device_type" value="smartphone">
+                    <input type="hidden" id="useStockImage" name="use_stock_image" value="true">
+                    <input type="hidden" id="autoDetected" name="auto_detected_from_imei" value="false">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="storage">Storage Capacity</label>
+                            <select id="storage" name="storage_capacity" required>
+                                <option value="">Select storage</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="color">Color</label>
+                            <select id="color" name="color" required>
+                                <option value="">Select color</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Condition Assessment -->
+                <div class="condition-section" id="conditionSection" style="display: none;">
+                    <h3>🔍 Phone Condition</h3>
+                    <p>Be honest about your phone's condition to get the best offers from buyers.</p>
+                    
+                    <div class="form-group">
+                        <label>Overall Condition</label>
+                        <div class="condition-grid">
+                            <div class="condition-option">
+                                <input type="radio" id="excellent" name="condition_grade" value="excellent" required>
+                                <label for="excellent">
+                                    <div>😍</div>
+                                    <div>Excellent</div>
+                                    <small>Like new</small>
+                                </label>
+                            </div>
+                            <div class="condition-option">
+                                <input type="radio" id="good" name="condition_grade" value="good" required>
+                                <label for="good">
+                                    <div>😊</div>
+                                    <div>Good</div>
+                                    <small>Light wear</small>
+                                </label>
+                            </div>
+                            <div class="condition-option">
+                                <input type="radio" id="fair" name="condition_grade" value="fair" required>
+                                <label for="fair">
+                                    <div>😐</div>
+                                    <div>Fair</div>
+                                    <small>Visible wear</small>
+                                </label>
+                            </div>
+                            <div class="condition-option">
+                                <input type="radio" id="poor" name="condition_grade" value="poor" required>
+                                <label for="poor">
+                                    <div>😞</div>
+                                    <div>Poor</div>
+                                    <small>Heavy wear</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="estimatedValue" class="estimated-value" style="display: none;">
+                        <h4>📊 Estimated Market Value</h4>
+                        <p id="valueRange">Select condition to see estimated value</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="conditionNotes">Condition Notes (Optional)</label>
+                        <textarea id="conditionNotes" name="condition_notes" placeholder="Describe any specific issues, damage, or special features..."></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="batteryHealth">Battery Health (%)</label>
+                            <input type="number" id="batteryHealth" name="battery_health" min="0" max="100" placeholder="85">
+                        </div>
+                        <div class="form-group">
+                            <label for="carrierLock">Carrier Status</label>
+                            <select id="carrierLock" name="carrier_lock_status">
+                                <option value="unlocked">Unlocked</option>
+                                <option value="locked_to_carrier">Locked to Carrier</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pricing Section -->
+                <div class="pricing-section" id="pricingSection" style="display: none;">
+                    <h3>💰 Set Your Price</h3>
+                    <p>Set your auction starting price. Buyers will bid to compete for your phone.</p>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="askingPrice">Starting Bid Price</label>
+                            <div class="price-input-group">
+                                <span class="currency-symbol">$</span>
+                                <input type="number" id="askingPrice" name="asking_price" step="0.01" min="0" placeholder="299.99" required>
+                            </div>
+                            <small>This is your starting auction price</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="minimumPrice">Reserve Price (Optional)</label>
+                            <div class="price-input-group">
+                                <span class="currency-symbol">$</span>
+                                <input type="number" id="minimumPrice" name="minimum_price" step="0.01" min="0" placeholder="250.00">
+                            </div>
+                            <small>Minimum price you'll accept</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Additional Details (Optional)</label>
+                        <textarea id="description" name="description" placeholder="Accessories included, reason for selling, etc."></textarea>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div style="text-align: center; margin-top: 2rem; display: none;" id="submitSection">
+                    <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn" style="margin-left: 1rem;">Submit for Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='firebase-auth.js') }}"></script>
+    <script>
+        let userAuth = null;
+        let selectedDevice = null;
+        let searchTimeout = null;
+
+        // Authentication check
+        window.addEventListener('authStateChanged', function(event) {
+            userAuth = event.detail;
+            if (!userAuth || !userAuth.user) {
+                showAlert('Please log in to list your phone.', 'error');
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+            }
+        });
+
+        // Utility functions
+        function showAlert(message, type = 'info') {
+            const alertsContainer = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type === 'error' ? 'error' : 'success'}`;
+            alert.textContent = message;
+            alertsContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function showSection(sectionId) {
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        function hideSection(sectionId) {
+            document.getElementById(sectionId).style.display = 'none';
+        }
+
+        // IMEI Lookup
+        document.getElementById('lookupImei').addEventListener('click', async function() {
+            const imei = document.getElementById('imei').value.trim();
+            
+            if (!imei) {
+                showAlert('Please enter an IMEI number', 'error');
+                return;
+            }
+
+            if (imei.length !== 15) {
+                showAlert('IMEI should be 15 digits', 'error');
+                return;
+            }
+
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = 'Detecting...';
+
+            try {
+                const response = await fetch('/api/device/lookup-imei', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${userAuth.token}`
+                    },
+                    body: JSON.stringify({ imei })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    populateDeviceInfo(result);
+                    document.getElementById('autoDetected').value = 'true';
+                    showAlert('Phone detected successfully!', 'success');
+                } else {
+                    showAlert(result.error || 'Could not detect phone. Please search manually.', 'error');
+                }
+            } catch (error) {
+                console.error('IMEI lookup error:', error);
+                showAlert('Detection failed. Please try searching manually.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Detect Phone';
+            }
+        });
+
+        // Phone Search
+        document.getElementById('phoneSearch').addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            if (query.length < 2) {
+                hideSearchResults();
+                return;
+            }
+            
+            searchTimeout = setTimeout(async () => {
+                await searchPhones(query);
+            }, 300);
+        });
+
+        async function searchPhones(query) {
+            try {
+                const response = await fetch(`/api/device/search?q=${encodeURIComponent(query)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${userAuth.token}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.devices.length > 0) {
+                    showSearchResults(result.devices);
+                } else {
+                    hideSearchResults();
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                hideSearchResults();
+            }
+        }
+
+        function showSearchResults(devices) {
+            const resultsContainer = document.getElementById('searchResults');
+            resultsContainer.innerHTML = '';
+            
+            devices.forEach(device => {
+                const item = document.createElement('div');
+                item.className = 'search-result-item';
+                item.innerHTML = `
+                    <img src="${device.image_url}" alt="${device.full_name}">
+                    <div>
+                        <div style="font-weight: 500;">${device.full_name}</div>
+                        <div style="font-size: 0.8rem; color: #6b7280;">${device.colors.join(', ')}</div>
+                    </div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    selectDevice(device);
+                    hideSearchResults();
+                    document.getElementById('phoneSearch').value = device.full_name;
+                });
+                
+                resultsContainer.appendChild(item);
+            });
+            
+            resultsContainer.style.display = 'block';
+        }
+
+        function hideSearchResults() {
+            document.getElementById('searchResults').style.display = 'none';
+        }
+
+        function selectDevice(device) {
+            selectedDevice = device;
+            populateDeviceInfo({
+                brand: device.brand,
+                model: device.model,
+                image_url: device.image_url,
+                colors: device.colors,
+                storage_options: device.storage_options,
+                estimated_values: device.estimated_values || {}
+            });
+        }
+
+        function populateDeviceInfo(deviceInfo) {
+            // Set hidden fields
+            document.getElementById('brand').value = deviceInfo.brand;
+            document.getElementById('model').value = deviceInfo.model;
+            
+            // Update device preview
+            document.getElementById('deviceImage').src = deviceInfo.image_url || '/static/images/default-phone.svg';
+            document.getElementById('deviceTitle').textContent = `${deviceInfo.brand} ${deviceInfo.model}`;
+            
+            // Populate storage options
+            const storageSelect = document.getElementById('storage');
+            storageSelect.innerHTML = '<option value="">Select storage</option>';
+            (deviceInfo.storage_options || []).forEach(storage => {
+                const option = document.createElement('option');
+                option.value = storage;
+                option.textContent = storage;
+                storageSelect.appendChild(option);
+            });
+            
+            // Populate color options
+            const colorSelect = document.getElementById('color');
+            colorSelect.innerHTML = '<option value="">Select color</option>';
+            (deviceInfo.colors || []).forEach(color => {
+                const option = document.createElement('option');
+                option.value = color;
+                option.textContent = color;
+                colorSelect.appendChild(option);
+            });
+            
+            // Store estimated values for later use
+            selectedDevice = { ...deviceInfo };
+            
+            // Show device details section
+            showSection('deviceDetailsSection');
+            showSection('conditionSection');
+            showSection('pricingSection');
+            showSection('submitSection');
+        }
+
+        // Condition change handler
+        document.querySelectorAll('input[name="condition_grade"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                updateEstimatedValue();
+            });
+        });
+
+        // Storage change handler
+        document.getElementById('storage').addEventListener('change', function() {
+            updateEstimatedValue();
+        });
+
+        async function updateEstimatedValue() {
+            const condition = document.querySelector('input[name="condition_grade"]:checked')?.value;
+            const storage = document.getElementById('storage').value;
+            const brand = document.getElementById('brand').value;
+            const model = document.getElementById('model').value;
+            
+            if (!condition || !brand || !model) return;
+            
+            try {
+                const response = await fetch('/api/device/estimate-value', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${userAuth.token}`
+                    },
+                    body: JSON.stringify({ brand, model, condition, storage })
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.estimated_value_cents > 0) {
+                    const valueDisplay = document.getElementById('valueRange');
+                    valueDisplay.textContent = `Estimated value: ${result.estimated_value_display} (${condition} condition)`;
+                    
+                    // Pre-fill starting bid with estimated value
+                    const askingPriceField = document.getElementById('askingPrice');
+                    if (!askingPriceField.value) {
+                        askingPriceField.value = (result.estimated_value_cents / 100 * 0.8).toFixed(2); // 80% of estimated value
+                    }
+                    
+                    showSection('estimatedValue');
+                }
+            } catch (error) {
+                console.error('Value estimation error:', error);
+            }
+        }
+
+        // Form submission
+        document.getElementById('phoneListingForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!userAuth || !userAuth.user) {
+                showAlert('Please log in to submit your listing.', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            try {
+                // Collect form data
+                const formData = new FormData();
+                formData.append('device_type', document.getElementById('deviceType').value);
+                formData.append('brand', document.getElementById('brand').value);
+                formData.append('model', document.getElementById('model').value);
+                formData.append('storage_capacity', document.getElementById('storage').value);
+                formData.append('color', document.getElementById('color').value);
+                formData.append('condition_grade', document.querySelector('input[name="condition_grade"]:checked').value);
+                formData.append('condition_notes', document.getElementById('conditionNotes').value);
+                formData.append('battery_health', document.getElementById('batteryHealth').value || '');
+                formData.append('carrier_lock_status', document.getElementById('carrierLock').value);
+                formData.append('asking_price_cents', Math.round(parseFloat(document.getElementById('askingPrice').value) * 100));
+                formData.append('minimum_price_cents', document.getElementById('minimumPrice').value ? 
+                    Math.round(parseFloat(document.getElementById('minimumPrice').value) * 100) : '');
+                formData.append('description', document.getElementById('description').value);
+                formData.append('imei', document.getElementById('imei').value);
+                formData.append('use_stock_image', document.getElementById('useStockImage').value);
+                formData.append('auto_detected_from_imei', document.getElementById('autoDetected').value);
+                formData.append('listing_type', 'auction'); // Default to auction for phones
+
+                const response = await fetch('/api/listings/create', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${userAuth.token}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('Phone listing submitted for review! You\'ll be notified when it\'s approved.', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/seller/dashboard';
+                    }, 2000);
+                } else {
+                    showAlert(result.error || 'Failed to submit listing. Please try again.', 'error');
+                }
+            } catch (error) {
+                console.error('Form submission error:', error);
+                showAlert('Failed to submit listing. Please check your connection and try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit for Review';
+            }
+        });
+
+        // Hide search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                hideSearchResults();
+            }
+        });
+    </script>
+</body>
+</html>

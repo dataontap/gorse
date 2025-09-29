@@ -301,6 +301,8 @@ if shopify_service:
 # Register Shopify-Stripe integration endpoints
 try:
     from shopify_stripe_integration import shopify_stripe_integration
+    from device_image_service import device_image_service
+    from imei_lookup_service import imei_lookup_service
     
     @app.route('/api/marketplace/products', methods=['GET'])
     def get_marketplace_products():
@@ -365,6 +367,87 @@ try:
             
         except Exception as e:
             logger.error(f"Error placing auction bid: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/device/lookup-imei', methods=['POST'])
+    @firebase_auth_required
+    def lookup_device_by_imei():
+        """Lookup device information by IMEI"""
+        try:
+            data = request.get_json()
+            imei = data.get('imei')
+            
+            if not imei:
+                return jsonify({'error': 'IMEI is required'}), 400
+            
+            # Lookup device by IMEI
+            result = imei_lookup_service.lookup_device_by_imei(imei)
+            
+            # If successful, also get device image and estimated values
+            if result.get('success'):
+                brand = result.get('brand', '')
+                model = result.get('model', '')
+                
+                # Get device image and specs
+                device_info = device_image_service.get_device_info(brand, model)
+                result.update({
+                    'image_url': device_info.get('image_url'),
+                    'colors': device_info.get('colors', []),
+                    'storage_options': device_info.get('storage_options', []),
+                    'estimated_values': device_info.get('estimated_values', {})
+                })
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            logger.error(f"Error looking up IMEI: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/device/search', methods=['GET'])
+    @firebase_auth_required
+    def search_devices():
+        """Search for devices by name"""
+        try:
+            query = request.args.get('q', '')
+            
+            if not query or len(query) < 2:
+                return jsonify({'error': 'Search query must be at least 2 characters'}), 400
+            
+            results = device_image_service.search_devices(query)
+            return jsonify({'success': True, 'devices': results})
+            
+        except Exception as e:
+            logger.error(f"Error searching devices: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/device/estimate-value', methods=['POST'])
+    @firebase_auth_required
+    def estimate_device_value():
+        """Get estimated value for a device"""
+        try:
+            data = request.get_json()
+            brand = data.get('brand')
+            model = data.get('model')
+            condition = data.get('condition')
+            storage = data.get('storage')
+            
+            if not all([brand, model, condition]):
+                return jsonify({'error': 'brand, model, and condition are required'}), 400
+            
+            estimated_value = device_image_service.get_estimated_value(brand, model, condition, storage)
+            
+            return jsonify({
+                'success': True,
+                'estimated_value_cents': estimated_value,
+                'estimated_value_display': f"${estimated_value / 100:.2f}",
+                'brand': brand,
+                'model': model,
+                'condition': condition,
+                'storage': storage
+            })
+            
+        except Exception as e:
+            logger.error(f"Error estimating device value: {e}")
             return jsonify({'error': str(e)}), 500
     
     @app.route('/marketplace/purchase-success', methods=['GET'])
@@ -1790,6 +1873,11 @@ def seller_dashboard():
 @app.route('/seller/list-device', methods=['GET'])
 def list_device():
     return render_template('device_listing.html')
+
+@app.route('/seller/list-phone', methods=['GET'])
+def list_phone():
+    """Simplified phone listing page"""
+    return render_template('phone_listing.html')
 
 @app.route('/tokens', methods=['GET'])
 def tokens():
