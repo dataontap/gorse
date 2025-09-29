@@ -313,36 +313,58 @@ try:
     @app.route('/api/marketplace/checkout', methods=['POST'])
     @firebase_auth_required
     def create_marketplace_checkout():
-        """Create Stripe checkout session for Shopify product"""
+        """Create Stripe checkout session for marketplace listing"""
         try:
             data = request.get_json()
-            product_id = data.get('product_id')
+            listing_id = data.get('listing_id')
             user_email = request.user_email
+            user_uid = request.user_uid
             
-            if not product_id:
-                return jsonify({'error': 'product_id is required'}), 400
+            if not listing_id:
+                return jsonify({'error': 'listing_id is required'}), 400
             
-            # Get product details from Shopify
-            products_response = shopify_stripe_integration.get_marketplace_products()
-            if not products_response.get('success'):
-                return jsonify({'error': 'Failed to fetch product details'}), 500
+            # Get specific listing by ID (not limited by marketplace feed)
+            listing_response = shopify_stripe_integration.get_listing_by_id(int(listing_id))
+            if not listing_response.get('success'):
+                return jsonify({'error': listing_response.get('error', 'Listing not found')}), 404
             
-            # Find the specific product
-            product = None
-            for p in products_response.get('products', []):
-                if str(p['id']) == str(product_id):
-                    product = p
-                    break
+            product = listing_response.get('listing')
             
-            if not product:
-                return jsonify({'error': 'Product not found'}), 404
-            
-            # Create Stripe checkout session
-            result = shopify_stripe_integration.create_stripe_checkout_session(product, user_email)
+            # Create Stripe checkout session with buyer info
+            result = shopify_stripe_integration.create_stripe_checkout_session(
+                product, user_email, user_uid
+            )
             return jsonify(result)
             
         except Exception as e:
             logger.error(f"Error creating marketplace checkout: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/marketplace/bid', methods=['POST'])
+    @firebase_auth_required
+    def place_auction_bid():
+        """Place a bid on an auction listing"""
+        try:
+            data = request.get_json()
+            listing_id = data.get('listing_id')
+            bid_amount = data.get('bid_amount')
+            user_uid = request.user_uid
+            user_email = request.user_email
+            
+            if not listing_id or not bid_amount:
+                return jsonify({'error': 'listing_id and bid_amount are required'}), 400
+            
+            # Convert dollars to cents
+            bid_amount_cents = int(float(bid_amount) * 100)
+            
+            # Place the bid
+            result = shopify_stripe_integration.place_auction_bid(
+                listing_id, bid_amount_cents, user_uid, user_email
+            )
+            return jsonify(result)
+            
+        except Exception as e:
+            logger.error(f"Error placing auction bid: {e}")
             return jsonify({'error': str(e)}), 500
     
     @app.route('/marketplace/purchase-success', methods=['GET'])

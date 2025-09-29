@@ -101,10 +101,6 @@ exposeLocalhost = true
 localPort = 46081
 externalPort = 5000
 
-[[ports]]
-localPort = 46617
-externalPort = 8008
-
 [agent]
 expertMode = true
 integrations = ["flask_stripe:1.0.0"]

@@ -75,6 +75,17 @@ CREATE TABLE IF NOT EXISTS seller_listings (
     approved_at TIMESTAMP,
     shopify_product_id BIGINT,
     is_active BOOLEAN DEFAULT TRUE,
+    
+    -- Auction lifecycle fields
+    auction_start_time TIMESTAMP,
+    auction_end_time TIMESTAMP,
+    current_bid_cents INTEGER DEFAULT 0,
+    bid_increment_cents INTEGER DEFAULT 500, -- $5 default increment
+    total_bids INTEGER DEFAULT 0,
+    auction_status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'active', 'ended', 'sold', 'unsold'
+    winning_bidder_uid VARCHAR(128),
+    winner_selected_at TIMESTAMP,
+    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -193,3 +204,29 @@ CREATE TABLE IF NOT EXISTS marketplace_purchases (
 CREATE INDEX IF NOT EXISTS idx_marketplace_purchases_session ON marketplace_purchases(stripe_session_id);
 CREATE INDEX IF NOT EXISTS idx_marketplace_purchases_email ON marketplace_purchases(customer_email);
 CREATE INDEX IF NOT EXISTS idx_marketplace_purchases_created ON marketplace_purchases(created_at);
+
+-- Auction bids tracking
+CREATE TABLE IF NOT EXISTS auction_bids (
+    id SERIAL PRIMARY KEY,
+    listing_id INTEGER NOT NULL,
+    bidder_firebase_uid VARCHAR(128) NOT NULL,
+    bidder_email VARCHAR(255),
+    bid_amount_cents INTEGER NOT NULL,
+    bid_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_winning_bid BOOLEAN DEFAULT FALSE,
+    is_valid BOOLEAN DEFAULT TRUE,
+    bid_source VARCHAR(50) DEFAULT 'web', -- 'web', 'mobile', 'api'
+    user_agent TEXT,
+    ip_address INET,
+    FOREIGN KEY (listing_id) REFERENCES seller_listings(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_auction_bids_listing ON auction_bids(listing_id);
+CREATE INDEX IF NOT EXISTS idx_auction_bids_bidder ON auction_bids(bidder_firebase_uid);
+CREATE INDEX IF NOT EXISTS idx_auction_bids_time ON auction_bids(bid_time);
+CREATE INDEX IF NOT EXISTS idx_auction_bids_winning ON auction_bids(is_winning_bid);
+
+-- Additional indexes for auction functionality
+CREATE INDEX IF NOT EXISTS idx_seller_listings_auction_status ON seller_listings(auction_status);
+CREATE INDEX IF NOT EXISTS idx_seller_listings_auction_end ON seller_listings(auction_end_time);
+CREATE INDEX IF NOT EXISTS idx_seller_listings_auction_active ON seller_listings(auction_status, auction_end_time) WHERE auction_status = 'active';
