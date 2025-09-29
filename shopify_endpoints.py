@@ -114,12 +114,37 @@ def register_shopify_endpoints(app, shopify_service):
         try:
             user_uid = request.user_uid
             user_email = request.user_email
-            data = request.get_json()
+            
+            # Handle both JSON and form data
+            if request.is_json:
+                data = request.get_json()
+            else:
+                # Handle form data (for photo uploads)
+                data = request.form.to_dict()
+                # Convert price fields to integers
+                if 'asking_price_cents' in data:
+                    data['asking_price_cents'] = int(float(data['asking_price_cents']) * 100)
+                if 'minimum_price_cents' in data and data['minimum_price_cents']:
+                    data['minimum_price_cents'] = int(float(data['minimum_price_cents']) * 100)
+                
+                # Handle uploaded photos
+                photos = []
+                for key in request.files:
+                    if key.startswith('photo_'):
+                        file = request.files[key]
+                        if file and file.filename:
+                            # For now, we'll store as base64 data URLs
+                            # In production, you'd upload to cloud storage
+                            import base64
+                            file_data = file.read()
+                            file_b64 = base64.b64encode(file_data).decode('utf-8')
+                            photos.append(f"data:{file.mimetype};base64,{file_b64}")
+                data['photos'] = photos
             
             # Validate required fields
             required_fields = ['device_type', 'model', 'condition_grade', 'asking_price_cents']
             for field in required_fields:
-                if field not in data:
+                if field not in data or not data[field]:
                     return jsonify({'error': f'{field} is required'}), 400
             
             # Add seller information

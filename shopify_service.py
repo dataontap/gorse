@@ -18,6 +18,7 @@ class ShopifyService:
     def __init__(self, db_pool):
         self.db_pool = db_pool
         self.client = shopify_client
+        logger.info("ShopifyService initialized with database pool")
     
     @contextmanager
     def get_db_connection(self):

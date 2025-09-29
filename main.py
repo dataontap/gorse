@@ -279,8 +279,11 @@ except Exception as e:
 # Initialize Shopify service
 shopify_service = None
 try:
-    shopify_service = ShopifyService(pool)
-    print("Shopify service initialized successfully")
+    if pool:
+        shopify_service = ShopifyService(pool)
+        print("Shopify service initialized successfully")
+    else:
+        print("Database pool not available - Shopify service not initialized")
 except Exception as e:
     print(f"Error initializing Shopify service: {str(e)}")
 
