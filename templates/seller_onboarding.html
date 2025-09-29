@@ -320,15 +320,34 @@
         // Check authentication status
         window.addEventListener('authStateChanged', function(event) {
             userAuth = event.detail;
+            console.log('Auth state changed in seller onboarding:', userAuth);
             if (userAuth && userAuth.user) {
                 document.getElementById('auth-check').classList.add('hidden');
                 // Pre-fill email and display name if available
                 if (userAuth.userData && userAuth.userData.display_name) {
                     document.getElementById('displayName').value = userAuth.userData.display_name;
                 }
+                checkExistingSeller();
             } else {
                 document.getElementById('auth-check').classList.remove('hidden');
             }
+        });
+
+        // Also check auth state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait a bit for Firebase to load
+            setTimeout(() => {
+                if (window.authState && window.authState.user) {
+                    userAuth = window.authState;
+                    document.getElementById('auth-check').classList.add('hidden');
+                    if (userAuth.userData && userAuth.userData.display_name) {
+                        document.getElementById('displayName').value = userAuth.userData.display_name;
+                    }
+                    checkExistingSeller();
+                } else {
+                    document.getElementById('auth-check').classList.remove('hidden');
+                }
+            }, 1000);
         });
 
         function nextStep(step) {
@@ -373,7 +392,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${userAuth.idToken}`
+                        'Authorization': `Bearer ${userAuth.token}`
                     },
                     body: JSON.stringify({
                         display_name: displayName,
@@ -397,19 +416,18 @@
             }
         });
 
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if user is already a seller
-            if (userAuth && userAuth.user) {
-                checkExistingSeller();
-            }
-        });
+        // Remove duplicate DOMContentLoaded listener - moved above
 
         async function checkExistingSeller() {
+            if (!userAuth || !userAuth.token) {
+                console.log('No auth token available for seller check');
+                return;
+            }
+            
             try {
                 const response = await fetch('/api/sellers/profile', {
                     headers: {
-                        'Authorization': `Bearer ${userAuth.idToken}`
+                        'Authorization': `Bearer ${userAuth.token}`
                     }
                 });
                 
