@@ -22,3 +22,5 @@ qrcode
 qrcode[pil]
 qrcode[pil]
 resend
+requests
+shopify-python-api

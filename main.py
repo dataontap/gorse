@@ -55,6 +55,9 @@ from auth_helpers import require_auth, require_admin_auth
 # Import Firebase authentication helper
 from firebase_helper import firebase_auth_required
 
+# Import Shopify service
+from shopify_service import ShopifyService
+
 # Create products in Stripe if they don't exist
 if stripe.api_key:
     try:
@@ -252,6 +255,20 @@ try:
                 else:
                     print("processed_stripe_events table already exists")
 
+                # Check if Shopify tables exist
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'shopify_shops')")
+                shopify_tables_exist = cur.fetchone()[0]
+
+                if not shopify_tables_exist:
+                    print("Creating Shopify integration tables...")
+                    with open('create_shopify_tables.sql', 'r') as sql_file:
+                        sql_script = sql_file.read()
+                        cur.execute(sql_script)
+                    conn.commit()
+                    print("Shopify tables created successfully")
+                else:
+                    print("Shopify tables already exist")
+
                 conn.commit()
         else:
             print("No database connection available for table creation")
@@ -259,8 +276,24 @@ except Exception as e:
     print(f"Error creating tables on startup: {str(e)}")
     print("Continuing without table creation...")
 
+# Initialize Shopify service
+shopify_service = None
+try:
+    shopify_service = ShopifyService(pool)
+    print("Shopify service initialized successfully")
+except Exception as e:
+    print(f"Error initializing Shopify service: {str(e)}")
 
 app = Flask(__name__, static_url_path='/static', template_folder='templates') # Added template_folder
+
+# Register Shopify endpoints
+if shopify_service:
+    try:
+        from shopify_endpoints import register_shopify_endpoints
+        register_shopify_endpoints(app, shopify_service)
+        print("Shopify endpoints registered successfully")
+    except Exception as e:
+        print(f"Error registering Shopify endpoints: {str(e)}")
 
 # CRITICAL SECURITY: Set session secret key from environment
 app.secret_key = os.environ.get("SESSION_SECRET")

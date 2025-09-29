@@ -53,10 +53,6 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 32963
-externalPort = 8008
-
-[[ports]]
 localPort = 33909
 externalPort = 5173
 
