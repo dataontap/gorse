@@ -298,6 +298,76 @@ if shopify_service:
     except Exception as e:
         print(f"Error registering Shopify endpoints: {str(e)}")
 
+# Register Shopify-Stripe integration endpoints
+try:
+    from shopify_stripe_integration import shopify_stripe_integration
+    
+    @app.route('/api/marketplace/products', methods=['GET'])
+    def get_marketplace_products():
+        """Get marketplace products from Shopify"""
+        category = request.args.get('category')
+        limit = int(request.args.get('limit', 20))
+        result = shopify_stripe_integration.get_marketplace_products(category=category, limit=limit)
+        return jsonify(result)
+    
+    @app.route('/api/marketplace/checkout', methods=['POST'])
+    @firebase_auth_required
+    def create_marketplace_checkout():
+        """Create Stripe checkout session for Shopify product"""
+        try:
+            data = request.get_json()
+            product_id = data.get('product_id')
+            user_email = request.user_email
+            
+            if not product_id:
+                return jsonify({'error': 'product_id is required'}), 400
+            
+            # Get product details from Shopify
+            products_response = shopify_stripe_integration.get_marketplace_products()
+            if not products_response.get('success'):
+                return jsonify({'error': 'Failed to fetch product details'}), 500
+            
+            # Find the specific product
+            product = None
+            for p in products_response.get('products', []):
+                if str(p['id']) == str(product_id):
+                    product = p
+                    break
+            
+            if not product:
+                return jsonify({'error': 'Product not found'}), 404
+            
+            # Create Stripe checkout session
+            result = shopify_stripe_integration.create_stripe_checkout_session(product, user_email)
+            return jsonify(result)
+            
+        except Exception as e:
+            logger.error(f"Error creating marketplace checkout: {e}")
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/marketplace/purchase-success', methods=['GET'])
+    def marketplace_purchase_success():
+        """Handle successful marketplace purchase"""
+        session_id = request.args.get('session_id')
+        
+        if session_id:
+            # Process the completed checkout
+            result = shopify_stripe_integration.handle_stripe_checkout_completion(session_id)
+            
+            if result.get('success'):
+                return render_template('purchase_success.html', 
+                                     order_id=result.get('order_id'),
+                                     purchase_data=result.get('purchase_data'))
+            else:
+                return render_template('purchase_error.html', error=result.get('error'))
+        
+        return render_template('purchase_success.html')
+    
+    print("Shopify-Stripe integration endpoints registered successfully")
+    
+except Exception as e:
+    print(f"Error registering Shopify-Stripe integration: {str(e)}")
+
 # CRITICAL SECURITY: Set session secret key from environment
 app.secret_key = os.environ.get("SESSION_SECRET")
 if not app.secret_key:

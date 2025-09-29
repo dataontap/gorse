@@ -174,3 +174,22 @@ CREATE INDEX IF NOT EXISTS idx_webhook_events_event_type ON shopify_webhook_even
 
 CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON product_sync_queue(status);
 CREATE INDEX IF NOT EXISTS idx_sync_queue_scheduled ON product_sync_queue(scheduled_for);
+
+-- Marketplace purchases (Shopify + Stripe)
+CREATE TABLE IF NOT EXISTS marketplace_purchases (
+    id SERIAL PRIMARY KEY,
+    stripe_session_id VARCHAR(200) UNIQUE NOT NULL,
+    stripe_payment_intent_id VARCHAR(200),
+    shopify_product_id VARCHAR(100),
+    shopify_variant_id VARCHAR(100),
+    shopify_order_id VARCHAR(100),
+    amount_cents INTEGER NOT NULL,
+    customer_email VARCHAR(255),
+    purchase_status VARCHAR(50) DEFAULT 'completed',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_marketplace_purchases_session ON marketplace_purchases(stripe_session_id);
+CREATE INDEX IF NOT EXISTS idx_marketplace_purchases_email ON marketplace_purchases(customer_email);
+CREATE INDEX IF NOT EXISTS idx_marketplace_purchases_created ON marketplace_purchases(created_at);
