@@ -1684,6 +1684,18 @@ def payments():
 def marketplace():
     return render_template('marketplace.html')
 
+@app.route('/seller/onboarding', methods=['GET'])
+def seller_onboarding():
+    return render_template('seller_onboarding.html')
+
+@app.route('/seller/dashboard', methods=['GET'])
+def seller_dashboard():
+    return render_template('list_device.html')
+
+@app.route('/seller/list-device', methods=['GET'])
+def list_device():
+    return render_template('device_listing.html')
+
 @app.route('/tokens', methods=['GET'])
 def tokens():
     return render_template('tokens.html')

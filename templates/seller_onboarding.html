@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Become a Seller - GORSE Marketplace</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='marketplace.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .seller-onboarding-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .onboarding-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .onboarding-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .onboarding-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        .onboarding-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            z-index: 1;
+        }
+        
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .step.completed .step-circle {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .step-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .step-content {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .benefit-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .benefit-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #059669;
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body class="marketplace-body">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-text">GORSE</span>
+            </a>
+            <div class="nav-links">
+                <a href="/marketplace" class="nav-link">Marketplace</a>
+                <a href="/dashboard" class="nav-link">Dashboard</a>
+                <a href="/tokens" class="nav-link">Tokens</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="marketplace-container">
+        <div class="seller-onboarding-container">
+            <div class="onboarding-header">
+                <h1>Start Selling Your Devices</h1>
+                <p>Join thousands of sellers in the GORSE marketplace and turn your unused devices into earnings</p>
+            </div>
+
+            <!-- Progress Steps -->
+            <div class="onboarding-steps">
+                <div class="step" id="step1-indicator">
+                    <div class="step-circle">1</div>
+                    <div class="step-title">Get Started</div>
+                </div>
+                <div class="step" id="step2-indicator">
+                    <div class="step-circle">2</div>
+                    <div class="step-title">Seller Profile</div>
+                </div>
+                <div class="step" id="step3-indicator">
+                    <div class="step-circle">3</div>
+                    <div class="step-title">Start Selling</div>
+                </div>
+            </div>
+
+            <!-- Step 1: Welcome -->
+            <div id="step1" class="step-content">
+                <h2>Why Sell on GORSE Marketplace?</h2>
+                <div class="benefits-grid">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">💰</div>
+                        <h3>Competitive Pricing</h3>
+                        <p>Get fair market value for your devices with our AI-powered pricing suggestions</p>
+                    </div>
+                    <div class="benefit-card">
+                        <div class="benefit-icon">🔒</div>
+                        <h3>Secure Transactions</h3>
+                        <p>All payments processed securely through Stripe with buyer protection</p>
+                    </div>
+                    <div class="benefit-card">
+                        <div class="benefit-icon">📱</div>
+                        <h3>Device Verification</h3>
+                        <p>Our verification process ensures quality and builds buyer trust</p>
+                    </div>
+                    <div class="benefit-card">
+                        <div class="benefit-icon">🚀</div>
+                        <h3>Fast Payouts</h3>
+                        <p>Receive payment quickly after successful device inspection</p>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button class="btn btn-primary" onclick="nextStep(2)">Get Started</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Seller Registration -->
+            <div id="step2" class="step-content hidden">
+                <h2>Create Your Seller Profile</h2>
+                <div id="auth-check" class="alert alert-error hidden">
+                    Please log in first to create your seller profile.
+                </div>
+                <form id="seller-registration-form">
+                    <div class="form-group">
+                        <label class="form-label" for="displayName">Display Name</label>
+                        <input type="text" id="displayName" class="form-input" placeholder="How should buyers see your name?">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="phoneNumber">Phone Number (Optional)</label>
+                        <input type="tel" id="phoneNumber" class="form-input" placeholder="+1 (555) 123-4567">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="termsAgreement" required>
+                            I agree to the <a href="/terms" target="_blank">Seller Terms of Service</a> and <a href="/privacy" target="_blank">Privacy Policy</a>
+                        </label>
+                    </div>
+                    <div style="display: flex; gap: 1rem; justify-content: center;">
+                        <button type="button" class="btn btn-secondary" onclick="nextStep(1)">Back</button>
+                        <button type="submit" class="btn btn-primary" id="register-btn">Create Profile</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 3: Success -->
+            <div id="step3" class="step-content hidden">
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+                    <h2>Welcome to GORSE Marketplace!</h2>
+                    <p>Your seller profile has been created successfully. You can now start listing your devices for sale.</p>
+                    <div style="margin-top: 2rem;">
+                        <a href="/seller/dashboard" class="btn btn-primary">Go to Seller Dashboard</a>
+                        <a href="/seller/list-device" class="btn btn-secondary" style="margin-left: 1rem;">List Your First Device</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='firebase-auth.js') }}"></script>
+    <script>
+        let currentStep = 1;
+        let userAuth = null;
+
+        // Check authentication status
+        window.addEventListener('authStateChanged', function(event) {
+            userAuth = event.detail;
+            if (userAuth && userAuth.user) {
+                document.getElementById('auth-check').classList.add('hidden');
+                // Pre-fill email and display name if available
+                if (userAuth.userData && userAuth.userData.display_name) {
+                    document.getElementById('displayName').value = userAuth.userData.display_name;
+                }
+            } else {
+                document.getElementById('auth-check').classList.remove('hidden');
+            }
+        });
+
+        function nextStep(step) {
+            // Hide current step
+            document.getElementById(`step${currentStep}`).classList.add('hidden');
+            document.getElementById(`step${currentStep}-indicator`).classList.remove('completed');
+            
+            // Show new step
+            currentStep = step;
+            document.getElementById(`step${currentStep}`).classList.remove('hidden');
+            
+            // Update step indicators
+            for (let i = 1; i < currentStep; i++) {
+                document.getElementById(`step${i}-indicator`).classList.add('completed');
+            }
+        }
+
+        // Handle seller registration form
+        document.getElementById('seller-registration-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!userAuth || !userAuth.user) {
+                alert('Please log in first to create your seller profile.');
+                return;
+            }
+            
+            const displayName = document.getElementById('displayName').value;
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const termsAgreed = document.getElementById('termsAgreement').checked;
+            
+            if (!termsAgreed) {
+                alert('Please agree to the terms of service to continue.');
+                return;
+            }
+            
+            const registerBtn = document.getElementById('register-btn');
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Creating Profile...';
+            
+            try {
+                const response = await fetch('/api/sellers/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${userAuth.idToken}`
+                    },
+                    body: JSON.stringify({
+                        display_name: displayName,
+                        phone_number: phoneNumber
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    nextStep(3);
+                } else {
+                    alert('Error creating seller profile: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error registering seller:', error);
+                alert('Error creating seller profile. Please try again.');
+            } finally {
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Create Profile';
+            }
+        });
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already a seller
+            if (userAuth && userAuth.user) {
+                checkExistingSeller();
+            }
+        });
+
+        async function checkExistingSeller() {
+            try {
+                const response = await fetch('/api/sellers/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${userAuth.idToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success && result.profile) {
+                        // User is already a seller, redirect to dashboard
+                        window.location.href = '/seller/dashboard';
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking seller status:', error);
+            }
+        }
+    </script>
+</body>
+</html>

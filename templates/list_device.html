@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard - GORSE Marketplace</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='marketplace.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .dashboard-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+        
+        .action-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .action-icon {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .listings-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .listings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .listing-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .listing-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        
+        .status-pending {
+            background: rgba(251, 191, 36, 0.2);
+            color: #f59e0b;
+        }
+        
+        .status-approved {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .status-rejected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        .listing-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .listing-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .listing-price {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #10b981;
+            margin-bottom: 1rem;
+        }
+        
+        .listing-date {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="marketplace-body">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-text">GORSE</span>
+            </a>
+            <div class="nav-links">
+                <a href="/marketplace" class="nav-link">Marketplace</a>
+                <a href="/dashboard" class="nav-link">Dashboard</a>
+                <a href="/seller/dashboard" class="nav-link active">Seller Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="marketplace-container">
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <h1>Seller Dashboard</h1>
+                <p>Manage your listings and track your sales</p>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📱</div>
+                    <div class="stat-value" id="totalListings">0</div>
+                    <div class="stat-label">Total Listings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value" id="approvedListings">0</div>
+                    <div class="stat-label">Approved</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-value" id="pendingListings">0</div>
+                    <div class="stat-label">Pending Review</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-value" id="totalEarnings">$0</div>
+                    <div class="stat-label">Total Earnings</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <a href="/seller/list-device" class="action-card">
+                    <div class="action-icon">➕</div>
+                    <h3>List New Device</h3>
+                    <p>Add a new device for sale</p>
+                </a>
+                <a href="#" class="action-card" onclick="viewAnalytics()">
+                    <div class="action-icon">📊</div>
+                    <h3>View Analytics</h3>
+                    <p>Track your performance</p>
+                </a>
+                <a href="#" class="action-card" onclick="viewPayouts()">
+                    <div class="action-icon">💳</div>
+                    <h3>Payouts</h3>
+                    <p>Manage your earnings</p>
+                </a>
+                <a href="#" class="action-card" onclick="viewProfile()">
+                    <div class="action-icon">👤</div>
+                    <h3>Seller Profile</h3>
+                    <p>Update your information</p>
+                </a>
+            </div>
+
+            <!-- Listings Section -->
+            <div class="listings-section">
+                <div class="section-header">
+                    <h2>Your Listings</h2>
+                    <a href="/seller/list-device" class="btn btn-primary">+ Add New Listing</a>
+                </div>
+                <div id="listingsContainer">
+                    <!-- Listings will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='firebase-auth.js') }}"></script>
+    <script>
+        let userAuth = null;
+
+        // Authentication check
+        window.addEventListener('authStateChanged', function(event) {
+            userAuth = event.detail;
+            if (!userAuth || !userAuth.user) {
+                window.location.href = '/seller/onboarding';
+            } else {
+                loadDashboardData();
+            }
+        });
+
+        async function loadDashboardData() {
+            try {
+                // Load seller profile
+                const profileResponse = await fetch('/api/sellers/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${userAuth.idToken}`
+                    }
+                });
+
+                if (!profileResponse.ok) {
+                    window.location.href = '/seller/onboarding';
+                    return;
+                }
+
+                const profileResult = await profileResponse.json();
+                if (!profileResult.success) {
+                    window.location.href = '/seller/onboarding';
+                    return;
+                }
+
+                // Update statistics
+                const profile = profileResult.profile;
+                document.getElementById('totalEarnings').textContent = `$${(profile.total_earnings_cents / 100).toFixed(2)}`;
+
+                // Load listings
+                const listingsResponse = await fetch(`/api/sellers/${userAuth.uid}/listings`, {
+                    headers: {
+                        'Authorization': `Bearer ${userAuth.idToken}`
+                    }
+                });
+
+                if (listingsResponse.ok) {
+                    const listingsResult = await listingsResponse.json();
+                    if (listingsResult.success) {
+                        displayListings(listingsResult.listings);
+                        updateStats(listingsResult.listings);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        function updateStats(listings) {
+            const totalListings = listings.length;
+            const approvedListings = listings.filter(l => l.approval_status === 'approved').length;
+            const pendingListings = listings.filter(l => l.approval_status === 'pending').length;
+
+            document.getElementById('totalListings').textContent = totalListings;
+            document.getElementById('approvedListings').textContent = approvedListings;
+            document.getElementById('pendingListings').textContent = pendingListings;
+        }
+
+        function displayListings(listings) {
+            const container = document.getElementById('listingsContainer');
+            
+            if (listings.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📱</div>
+                        <h3>No listings yet</h3>
+                        <p>Create your first device listing to start selling</p>
+                        <a href="/seller/list-device" class="btn btn-primary" style="margin-top: 1rem;">List Your First Device</a>
+                    </div>
+                `;
+                return;
+            }
+
+            const listingsGrid = document.createElement('div');
+            listingsGrid.className = 'listings-grid';
+
+            listings.forEach(listing => {
+                const card = document.createElement('div');
+                card.className = 'listing-card';
+                
+                const statusClass = `status-${listing.approval_status}`;
+                const statusText = listing.approval_status.charAt(0).toUpperCase() + listing.approval_status.slice(1);
+                
+                const photos = listing.photos && listing.photos.length > 0 ? listing.photos : [];
+                const imageHtml = photos.length > 0 
+                    ? `<img src="${photos[0]}" alt="${listing.model}" class="listing-image">`
+                    : `<div class="listing-image" style="background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af;">No Image</div>`;
+
+                card.innerHTML = `
+                    <div class="listing-status ${statusClass}">${statusText}</div>
+                    ${imageHtml}
+                    <div class="listing-title">${listing.brand} ${listing.model}</div>
+                    <div class="listing-price">$${(listing.asking_price_cents / 100).toFixed(2)}</div>
+                    <div class="listing-date">Listed ${new Date(listing.created_at).toLocaleDateString()}</div>
+                `;
+                
+                listingsGrid.appendChild(card);
+            });
+
+            container.appendChild(listingsGrid);
+        }
+
+        function viewAnalytics() {
+            alert('Analytics feature coming soon!');
+        }
+
+        function viewPayouts() {
+            alert('Payouts feature coming soon!');
+        }
+
+        function viewProfile() {
+            alert('Profile management coming soon!');
+        }
+    </script>
+</body>
+</html>

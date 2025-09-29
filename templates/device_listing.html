@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List Your Device - GORSE Marketplace</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='marketplace.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .listing-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .listing-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .listing-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .form-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #374151;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .photo-upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+        
+        .photo-upload-area:hover {
+            border-color: #6366f1;
+        }
+        
+        .photo-upload-area.dragover {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.05);
+        }
+        
+        .photo-previews {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .photo-preview {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .photo-preview .remove-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .condition-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+        
+        .condition-option {
+            position: relative;
+        }
+        
+        .condition-option input[type="radio"] {
+            opacity: 0;
+            position: absolute;
+        }
+        
+        .condition-option label {
+            display: block;
+            padding: 1rem;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .condition-option input[type="radio"]:checked + label {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .price-input-group {
+            position: relative;
+        }
+        
+        .price-input-group .currency-symbol {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .price-input-group input {
+            padding-left: 2rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #059669;
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #dc2626;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="marketplace-body">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <span class="logo-text">GORSE</span>
+            </a>
+            <div class="nav-links">
+                <a href="/marketplace" class="nav-link">Marketplace</a>
+                <a href="/dashboard" class="nav-link">Dashboard</a>
+                <a href="/seller/dashboard" class="nav-link">Seller Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="marketplace-container">
+        <div class="listing-container">
+            <div class="listing-header">
+                <h1>List Your Device</h1>
+                <p>Fill out the details below to list your device for sale</p>
+            </div>
+
+            <form id="device-listing-form">
+                <!-- Device Information -->
+                <div class="form-section">
+                    <div class="section-title">Device Information</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="deviceType">Device Type</label>
+                            <select id="deviceType" class="form-select" required>
+                                <option value="">Select device type</option>
+                                <option value="smartphone">Smartphone</option>
+                                <option value="tablet">Tablet</option>
+                                <option value="laptop">Laptop</option>
+                                <option value="smartwatch">Smart Watch</option>
+                                <option value="headphones">Headphones</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="brand">Brand</label>
+                            <select id="brand" class="form-select" required>
+                                <option value="">Select brand</option>
+                                <option value="Apple">Apple</option>
+                                <option value="Samsung">Samsung</option>
+                                <option value="Google">Google</option>
+                                <option value="OnePlus">OnePlus</option>
+                                <option value="Xiaomi">Xiaomi</option>
+                                <option value="Sony">Sony</option>
+                                <option value="Microsoft">Microsoft</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="model">Model</label>
+                        <input type="text" id="model" class="form-input" placeholder="e.g., iPhone 14 Pro Max" required>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="storageCapacity">Storage Capacity</label>
+                            <select id="storageCapacity" class="form-select">
+                                <option value="">Select storage</option>
+                                <option value="64GB">64GB</option>
+                                <option value="128GB">128GB</option>
+                                <option value="256GB">256GB</option>
+                                <option value="512GB">512GB</option>
+                                <option value="1TB">1TB</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="color">Color</label>
+                            <input type="text" id="color" class="form-input" placeholder="e.g., Space Gray">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Condition Assessment -->
+                <div class="form-section">
+                    <div class="section-title">Condition Assessment</div>
+                    <div class="form-group">
+                        <label class="form-label">Overall Condition</label>
+                        <div class="condition-grid">
+                            <div class="condition-option">
+                                <input type="radio" id="excellent" name="condition" value="excellent" required>
+                                <label for="excellent">
+                                    <div>😍</div>
+                                    <div>Excellent</div>
+                                </label>
+                            </div>
+                            <div class="condition-option">
+                                <input type="radio" id="good" name="condition" value="good" required>
+                                <label for="good">
+                                    <div>😊</div>
+                                    <div>Good</div>
+                                </label>
+                            </div>
+                            <div class="condition-option">
+                                <input type="radio" id="fair" name="condition" value="fair" required>
+                                <label for="fair">
+                                    <div>😐</div>
+                                    <div>Fair</div>
+                                </label>
+                            </div>
+                            <div class="condition-option">
+                                <input type="radio" id="poor" name="condition" value="poor" required>
+                                <label for="poor">
+                                    <div>😞</div>
+                                    <div>Poor</div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="cosmeticCondition">Cosmetic Condition Details</label>
+                        <textarea id="cosmeticCondition" class="form-textarea" placeholder="Describe any scratches, dents, or cosmetic issues..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="functionalCondition">Functional Condition Details</label>
+                        <textarea id="functionalCondition" class="form-textarea" placeholder="Describe any functional issues (battery, screen, buttons, etc.)..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Device Details -->
+                <div class="form-section">
+                    <div class="section-title">Device Details</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="imei">IMEI (Optional)</label>
+                            <input type="text" id="imei" class="form-input" placeholder="15-digit IMEI number">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="serialNumber">Serial Number (Optional)</label>
+                            <input type="text" id="serialNumber" class="form-input" placeholder="Device serial number">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="carrierLock">Carrier Lock Status</label>
+                            <select id="carrierLock" class="form-select">
+                                <option value="unlocked">Unlocked</option>
+                                <option value="locked_to_carrier">Locked to Carrier</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="batteryHealth">Battery Health (%)</label>
+                            <input type="number" id="batteryHealth" class="form-input" min="0" max="100" placeholder="85">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Photos -->
+                <div class="form-section">
+                    <div class="section-title">Photos</div>
+                    <div class="form-group">
+                        <div class="photo-upload-area" id="photoUploadArea">
+                            <div>📸</div>
+                            <p>Drag and drop photos here or click to select</p>
+                            <p style="font-size: 0.9rem; color: #6b7280;">Upload up to 6 photos (Max 5MB each)</p>
+                            <input type="file" id="photoInput" multiple accept="image/*" style="display: none;">
+                        </div>
+                        <div class="photo-previews" id="photoPreviews"></div>
+                    </div>
+                </div>
+
+                <!-- Pricing -->
+                <div class="form-section">
+                    <div class="section-title">Pricing</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="askingPrice">Asking Price</label>
+                            <div class="price-input-group">
+                                <span class="currency-symbol">$</span>
+                                <input type="number" id="askingPrice" class="form-input" step="0.01" min="0" placeholder="299.99" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="minimumPrice">Minimum Price (Optional)</label>
+                            <div class="price-input-group">
+                                <span class="currency-symbol">$</span>
+                                <input type="number" id="minimumPrice" class="form-input" step="0.01" min="0" placeholder="250.00">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="form-section">
+                    <div class="section-title">Description</div>
+                    <div class="form-group">
+                        <label class="form-label" for="description">Additional Details</label>
+                        <textarea id="description" class="form-textarea" placeholder="Provide any additional information about your device, accessories included, etc."></textarea>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn" style="margin-left: 1rem;">Submit for Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='firebase-auth.js') }}"></script>
+    <script>
+        let userAuth = null;
+        let selectedPhotos = [];
+
+        // Authentication check
+        window.addEventListener('authStateChanged', function(event) {
+            userAuth = event.detail;
+            if (!userAuth || !userAuth.user) {
+                alert('Please log in to list your device.');
+                window.location.href = '/login';
+            }
+        });
+
+        // Photo upload handling
+        const photoUploadArea = document.getElementById('photoUploadArea');
+        const photoInput = document.getElementById('photoInput');
+        const photoPreviews = document.getElementById('photoPreviews');
+
+        photoUploadArea.addEventListener('click', () => photoInput.click());
+        photoUploadArea.addEventListener('dragover', handleDragOver);
+        photoUploadArea.addEventListener('drop', handleDrop);
+        photoInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            photoUploadArea.classList.add('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            photoUploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            addPhotos(files);
+        }
+
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            addPhotos(files);
+        }
+
+        function addPhotos(files) {
+            const imageFiles = files.filter(file => file.type.startsWith('image/'));
+            
+            for (const file of imageFiles) {
+                if (selectedPhotos.length >= 6) {
+                    alert('Maximum 6 photos allowed');
+                    break;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    alert(`File ${file.name} is too large. Maximum size is 5MB.`);
+                    continue;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedPhotos.push({
+                        file: file,
+                        dataUrl: e.target.result
+                    });
+                    updatePhotoPreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updatePhotoPreview() {
+            photoPreviews.innerHTML = '';
+            selectedPhotos.forEach((photo, index) => {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'photo-preview';
+                previewDiv.innerHTML = `
+                    <img src="${photo.dataUrl}" alt="Photo ${index + 1}">
+                    <button type="button" class="remove-btn" onclick="removePhoto(${index})">×</button>
+                `;
+                photoPreviews.appendChild(previewDiv);
+            });
+        }
+
+        function removePhoto(index) {
+            selectedPhotos.splice(index, 1);
+            updatePhotoPreview();
+        }
+
+        // Form submission
+        document.getElementById('device-listing-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!userAuth || !userAuth.user) {
+                alert('Please log in to submit your listing.');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            try {
+                // Collect form data
+                const formData = {
+                    device_type: document.getElementById('deviceType').value,
+                    brand: document.getElementById('brand').value,
+                    model: document.getElementById('model').value,
+                    storage_capacity: document.getElementById('storageCapacity').value,
+                    color: document.getElementById('color').value,
+                    condition_grade: document.querySelector('input[name="condition"]:checked').value,
+                    cosmetic_condition: document.getElementById('cosmeticCondition').value,
+                    functional_condition: document.getElementById('functionalCondition').value,
+                    imei: document.getElementById('imei').value,
+                    serial_number: document.getElementById('serialNumber').value,
+                    carrier_lock_status: document.getElementById('carrierLock').value,
+                    battery_health: parseInt(document.getElementById('batteryHealth').value) || null,
+                    asking_price_cents: Math.round(parseFloat(document.getElementById('askingPrice').value) * 100),
+                    minimum_price_cents: document.getElementById('minimumPrice').value ? 
+                        Math.round(parseFloat(document.getElementById('minimumPrice').value) * 100) : null,
+                    description: document.getElementById('description').value,
+                    photos: selectedPhotos.map(p => p.dataUrl) // For now, we'll store as data URLs
+                };
+
+                // Submit listing
+                const response = await fetch('/api/listings/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${userAuth.idToken}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Your device listing has been submitted for review!');
+                    window.location.href = '/seller/dashboard';
+                } else {
+                    alert('Error submitting listing: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error submitting listing:', error);
+                alert('Error submitting listing. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit for Review';
+            }
+        });
+    </script>
+</body>
+</html>
