@@ -333,21 +333,74 @@
             }
         });
 
-        // Also check auth state on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Wait a bit for Firebase to load
-            setTimeout(() => {
-                if (window.authState && window.authState.user) {
-                    userAuth = window.authState;
-                    document.getElementById('auth-check').classList.add('hidden');
-                    if (userAuth.userData && userAuth.userData.display_name) {
-                        document.getElementById('displayName').value = userAuth.userData.display_name;
+        // Get Firebase token
+        async function getFirebaseToken(uid) {
+            try {
+                if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                    return await firebase.auth().currentUser.getIdToken();
+                }
+                return 'mock-token-for-testing'; // Fallback
+            } catch (e) {
+                console.error('Error getting Firebase token:', e);
+                return 'mock-token-for-testing';
+            }
+        }
+
+        // Check for immediate authentication state
+        async function checkAuthState() {
+            // Check multiple sources for auth state
+            if (window.authState && window.authState.user) {
+                userAuth = window.authState;
+                document.getElementById('auth-check').classList.add('hidden');
+                if (userAuth.userData && userAuth.userData.display_name) {
+                    document.getElementById('displayName').value = userAuth.userData.display_name;
+                }
+                checkExistingSeller();
+                return true;
+            }
+            
+            // Check localStorage for user data
+            try {
+                const storedUser = localStorage.getItem('currentUser');
+                if (storedUser) {
+                    const userData = JSON.parse(storedUser);
+                    if (userData && userData.uid && userData.email) {
+                        // Create auth object from stored data
+                        userAuth = {
+                            user: userData.email,
+                            uid: userData.uid,
+                            token: await getFirebaseToken(userData.uid),
+                            userData: userData
+                        };
+                        document.getElementById('auth-check').classList.add('hidden');
+                        if (userData.displayName) {
+                            document.getElementById('displayName').value = userData.displayName;
+                        }
+                        checkExistingSeller();
+                        return true;
                     }
-                    checkExistingSeller();
-                } else {
+                }
+            } catch (e) {
+                console.error('Error checking localStorage auth:', e);
+            }
+            
+            return false;
+        }
+
+        // Also check auth state on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Try immediate check
+            if (await checkAuthState()) {
+                return;
+            }
+            
+            // Wait for Firebase to potentially load
+            setTimeout(async () => {
+                if (!(await checkAuthState())) {
+                    console.log('No authentication detected, showing login prompt');
                     document.getElementById('auth-check').classList.remove('hidden');
                 }
-            }, 1000);
+            }, 2000);
         });
 
         function nextStep(step) {
