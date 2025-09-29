@@ -441,11 +441,14 @@
             registerBtn.textContent = 'Creating Profile...';
             
             try {
+                // Get fresh Firebase token
+                const token = await getFirebaseToken(userAuth.uid);
+                
                 const response = await fetch('/api/sellers/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${userAuth.token}`
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({
                         display_name: displayName,
@@ -478,9 +481,12 @@
             }
             
             try {
+                // Get fresh Firebase token
+                const token = await getFirebaseToken(userAuth.uid);
+                
                 const response = await fetch('/api/sellers/profile', {
                     headers: {
-                        'Authorization': `Bearer ${userAuth.token}`
+                        'Authorization': `Bearer ${token}`
                     }
                 });
                 
