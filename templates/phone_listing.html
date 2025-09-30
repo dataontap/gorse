@@ -818,6 +818,9 @@
                 formData.append('use_stock_image', document.getElementById('useStockImage').value);
                 formData.append('auto_detected_from_imei', document.getElementById('autoDetected').value);
                 formData.append('listing_type', 'auction'); // Default to auction for phones
+                // Include Firebase UID and email for authentication
+                formData.append('firebase_uid', userAuth.uid);
+                formData.append('email', userAuth.user);
 
                 const response = await fetch('/api/listings/create', {
                     method: 'POST',

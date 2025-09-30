@@ -49,9 +49,10 @@ def firebase_auth_required(f):
         try:
             if not firebase_admin._apps:
                 print("WARNING: Firebase Admin not initialized, skipping token verification")
-                # Add mock user data for development
-                request.user_uid = "dev-user-uid"
-                request.user_email = "dev-user@example.com"
+                # Try to extract user info from request body or query params
+                user_uid, user_email = extract_user_from_request()
+                request.user_uid = user_uid
+                request.user_email = user_email
                 return f(*args, **kwargs)
             
             # Try to verify token
@@ -59,12 +60,11 @@ def firebase_auth_required(f):
             if error and ("Wrong number of segments" in str(error) or "mock-token-for-testing" in str(error)):
                 # Handle development/mock token case
                 print(f"WARNING: Mock token detected, proceeding in development mode: {error}")
-                # Extract user info from request or use defaults
-                auth_header = request.headers.get('Authorization', '')
-                if 'mock-token-for-testing' in auth_header:
-                    request.user_uid = "dev-user-uid" 
-                    request.user_email = "dev-user@example.com"
-                    return f(*args, **kwargs)
+                # Extract user info from request body or query params
+                user_uid, user_email = extract_user_from_request()
+                request.user_uid = user_uid
+                request.user_email = user_email
+                return f(*args, **kwargs)
             
             if error:
                 return jsonify({'error': f'Unauthorized: {error}'}), 401
@@ -78,8 +78,45 @@ def firebase_auth_required(f):
         except Exception as e:
             print(f"Firebase auth error: {e}")
             # Fallback to development mode
-            request.user_uid = "dev-user-uid"
-            request.user_email = "dev-user@example.com"
+            user_uid, user_email = extract_user_from_request()
+            request.user_uid = user_uid
+            request.user_email = user_email
             return f(*args, **kwargs)
             
     return decorated_function
+
+def extract_user_from_request():
+    """Extract Firebase UID and email from request body or query params"""
+    user_uid = None
+    user_email = None
+    
+    # Try to get from request body (JSON)
+    try:
+        if request.is_json:
+            data = request.get_json()
+            user_uid = data.get('firebase_uid') or data.get('firebaseUid')
+            user_email = data.get('email')
+    except:
+        pass
+    
+    # Try to get from form data
+    if not user_uid:
+        try:
+            user_uid = request.form.get('firebase_uid') or request.form.get('firebaseUid')
+            user_email = request.form.get('email')
+        except:
+            pass
+    
+    # Try to get from query parameters
+    if not user_uid:
+        user_uid = request.args.get('firebase_uid') or request.args.get('firebaseUid')
+        user_email = request.args.get('email')
+    
+    # Default fallback
+    if not user_uid:
+        user_uid = "dev-user-uid"
+    if not user_email:
+        user_email = "dev-user@example.com"
+    
+    print(f"Extracted user from request: UID={user_uid}, Email={user_email}")
+    return user_uid, user_email

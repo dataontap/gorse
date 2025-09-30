@@ -452,7 +452,9 @@
                     },
                     body: JSON.stringify({
                         display_name: displayName,
-                        phone_number: phoneNumber
+                        phone_number: phoneNumber,
+                        firebase_uid: userAuth.uid,
+                        email: userAuth.user
                     })
                 });
                 
