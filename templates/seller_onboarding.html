@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Become a Seller - GORSE Marketplace</title>
+    <title>Become a Seller - Marketplace</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='marketplace.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,10 +14,11 @@
             max-width: 800px;
             margin: 2rem auto;
             padding: 2rem;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(17, 24, 39, 0.7);
             backdrop-filter: blur(10px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         
         .onboarding-header {
@@ -31,6 +32,11 @@
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+        }
+        
+        .onboarding-header p {
+            color: #9ca3af;
+            font-size: 1.1rem;
         }
         
         .onboarding-steps {
@@ -80,13 +86,29 @@
             font-size: 0.9rem;
             font-weight: 500;
             text-align: center;
+            color: #d1d5db;
         }
         
         .step-content {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(31, 41, 55, 0.5);
             border-radius: 12px;
             padding: 2rem;
             margin-bottom: 2rem;
+            border: 1px solid rgba(75, 85, 99, 0.3);
+        }
+        
+        .step-content h2 {
+            color: #f3f4f6;
+            margin-bottom: 1.5rem;
+        }
+        
+        .step-content h3 {
+            color: #e5e7eb;
+            margin-bottom: 0.5rem;
+        }
+        
+        .step-content p {
+            color: #9ca3af;
         }
         
         .form-group {
@@ -97,13 +119,15 @@
             display: block;
             font-weight: 500;
             margin-bottom: 0.5rem;
-            color: #374151;
+            color: #e5e7eb;
         }
         
         .form-input {
             width: 100%;
             padding: 0.75rem;
-            border: 1px solid #d1d5db;
+            border: 1px solid rgba(75, 85, 99, 0.5);
+            background: rgba(17, 24, 39, 0.5);
+            color: #f3f4f6;
             border-radius: 8px;
             font-size: 1rem;
             transition: border-color 0.2s;
@@ -112,7 +136,11 @@
         .form-input:focus {
             outline: none;
             border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        
+        .form-input::placeholder {
+            color: #6b7280;
         }
         
         .form-textarea {
@@ -144,13 +172,13 @@
         }
         
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #374151;
-            border: 1px solid #d1d5db;
+            background: rgba(75, 85, 99, 0.3);
+            color: #e5e7eb;
+            border: 1px solid rgba(75, 85, 99, 0.5);
         }
         
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(75, 85, 99, 0.5);
         }
         
         .btn:disabled {
@@ -171,10 +199,11 @@
         }
         
         .benefit-card {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(31, 41, 55, 0.4);
             padding: 1.5rem;
             border-radius: 12px;
             text-align: center;
+            border: 1px solid rgba(75, 85, 99, 0.3);
         }
         
         .benefit-icon {
@@ -189,15 +218,36 @@
         }
         
         .alert-success {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: #059669;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
         }
         
         .alert-error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #dc2626;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
+        
+        .checkbox-label {
+            color: #d1d5db;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            cursor: pointer;
+        }
+        
+        .checkbox-label a {
+            color: #818cf8;
+            text-decoration: none;
+        }
+        
+        .checkbox-label a:hover {
+            color: #a5b4fc;
         }
     </style>
 </head>
@@ -206,10 +256,10 @@
     <nav class="navbar">
         <div class="nav-container">
             <a href="/" class="nav-logo">
-                <span class="logo-text">GORSE</span>
+                <span class="logo-text">Marketplace</span>
             </a>
             <div class="nav-links">
-                <a href="/marketplace" class="nav-link">Marketplace</a>
+                <a href="/marketplace" class="nav-link">Browse</a>
                 <a href="/dashboard" class="nav-link">Dashboard</a>
                 <a href="/tokens" class="nav-link">Tokens</a>
             </div>
@@ -220,7 +270,7 @@
         <div class="seller-onboarding-container">
             <div class="onboarding-header">
                 <h1>Start Selling Your Devices</h1>
-                <p>Join thousands of sellers in the GORSE marketplace and turn your unused devices into earnings</p>
+                <p>Join our marketplace and turn your unused devices into earnings</p>
             </div>
 
             <!-- Progress Steps -->
@@ -241,7 +291,7 @@
 
             <!-- Step 1: Welcome -->
             <div id="step1" class="step-content">
-                <h2>Why Sell on GORSE Marketplace?</h2>
+                <h2>Why Sell on Our Marketplace?</h2>
                 <div class="benefits-grid">
                     <div class="benefit-card">
                         <div class="benefit-icon">💰</div>
