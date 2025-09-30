@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seller Dashboard - GORSE Marketplace</title>
+    <title>Seller Dashboard - Marketplace</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='marketplace.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,6 +29,11 @@
             -webkit-text-fill-color: transparent;
         }
         
+        .dashboard-header p {
+            color: #9ca3af;
+            font-size: 1.1rem;
+        }
+        
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -37,11 +42,12 @@
         }
         
         .stat-card {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(17, 24, 39, 0.7);
             backdrop-filter: blur(10px);
             border-radius: 12px;
             padding: 1.5rem;
             text-align: center;
+            border: 1px solid rgba(99, 102, 241, 0.2);
         }
         
         .stat-icon {
@@ -53,10 +59,11 @@
             font-size: 2rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
+            color: #f3f4f6;
         }
         
         .stat-label {
-            color: #6b7280;
+            color: #9ca3af;
             font-size: 0.9rem;
         }
         
@@ -68,19 +75,21 @@
         }
         
         .action-card {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(31, 41, 55, 0.5);
             border-radius: 12px;
             padding: 1.5rem;
             text-align: center;
             text-decoration: none;
             transition: all 0.2s;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+            color: #e5e7eb;
         }
         
         .action-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+            background: rgba(31, 41, 55, 0.7);
+            border-color: rgba(99, 102, 241, 0.4);
         }
         
         .action-icon {
@@ -88,11 +97,22 @@
             margin-bottom: 1rem;
         }
         
+        .action-card h3 {
+            color: #f3f4f6;
+            margin-bottom: 0.5rem;
+        }
+        
+        .action-card p {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+        
         .listings-section {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(17, 24, 39, 0.7);
             backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 2rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
         }
         
         .section-header {
@@ -102,6 +122,10 @@
             margin-bottom: 2rem;
         }
         
+        .section-header h2 {
+            color: #f3f4f6;
+        }
+        
         .listings-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -109,10 +133,10 @@
         }
         
         .listing-card {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(31, 41, 55, 0.5);
             border-radius: 12px;
             padding: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(75, 85, 99, 0.3);
         }
         
         .listing-status {
@@ -126,17 +150,17 @@
         
         .status-pending {
             background: rgba(251, 191, 36, 0.2);
-            color: #f59e0b;
+            color: #fbbf24;
         }
         
         .status-approved {
             background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
+            color: #6ee7b7;
         }
         
         .status-rejected {
             background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
+            color: #fca5a5;
         }
         
         .listing-image {
@@ -145,23 +169,36 @@
             object-fit: cover;
             border-radius: 8px;
             margin-bottom: 1rem;
+            background: rgba(31, 41, 55, 0.5);
         }
         
         .listing-title {
             font-weight: 600;
             margin-bottom: 0.5rem;
+            color: #f3f4f6;
         }
         
         .listing-price {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #10b981;
+            color: #6ee7b7;
             margin-bottom: 1rem;
         }
         
         .listing-date {
-            color: #6b7280;
+            color: #9ca3af;
             font-size: 0.9rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #9ca3af;
+        }
+        
+        .empty-state h3 {
+            color: #d1d5db;
+            margin-bottom: 1rem;
         }
         
         .btn {
@@ -203,10 +240,10 @@
     <nav class="navbar">
         <div class="nav-container">
             <a href="/" class="nav-logo">
-                <span class="logo-text">GORSE</span>
+                <span class="logo-text">Marketplace</span>
             </a>
             <div class="nav-links">
-                <a href="/marketplace" class="nav-link">Marketplace</a>
+                <a href="/marketplace" class="nav-link">Browse</a>
                 <a href="/dashboard" class="nav-link">Dashboard</a>
                 <a href="/seller/dashboard" class="nav-link active">Seller Dashboard</a>
             </div>
