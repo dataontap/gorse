@@ -105,13 +105,38 @@ We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql d
 - **API Integration**: RESTful email API with automatic failover to SMTP backup
 - **Scalable Infrastructure**: Handle high-volume email campaigns and notifications
 
-### ElevenLabs.io Voice Synthesis
+### ElevenLabs.io Voice Synthesis & Language Selection
 - **Multilingual Support**: Welcome messages in English, Spanish, and French
 - **Personalized Messages**: Dynamic user-specific welcome audio content
 - **Premium Voices**: High-quality neural voice synthesis (default: Rachel voice)
 - **Custom Voice Settings**: Adjustable stability, similarity boost, and style parameters
 - **Real-time Generation**: On-demand text-to-speech conversion for user interactions
 - **Integration**: Seamless voice messages for onboarding and notifications
+
+#### Interactive Language Selection (Notifications Page)
+- **Dynamic Language Switcher**: Dropdown selector to change welcome message language on-the-fly
+- **Supported Languages**:
+  - 🇬🇧 **English (en)**: Full welcome message with account overview
+  - 🇪🇸 **Español (es)**: Spanish translation of welcome content
+  - 🇫🇷 **Français (fr)**: French translation of welcome content
+  
+- **Audio Position Tracking**: 
+  - Continuous playback position monitoring using `ontimeupdate` events
+  - Position state maintained across language switches
+  - Stores playback timestamps for seamless transitions
+
+- **Smart Language Switching**:
+  1. **Position Capture**: Records current playback position when language is changed
+  2. **Audio Generation**: Generates new audio in selected language via ElevenLabs API
+  3. **Offset Application**: Applies -2 second offset from current position for context continuity
+  4. **Auto-Resume**: Automatically resumes playback if audio was playing before switch
+  5. **Seamless Transition**: Smooth handoff between languages without interruption
+
+- **Technical Implementation**:
+  - Position tracking with `audioPositions` state object
+  - Event-driven language switching via `changeWelcomeLanguage()` function
+  - Dynamic audio source replacement with position preservation
+  - Browser auto-play policy handling with fallback to manual play controls
 
 ### Bitchat Encrypted Messaging
 - **Zero Registration**: No accounts, emails, or phone numbers required
