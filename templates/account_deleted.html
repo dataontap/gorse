@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Account Deleted - Marketplace</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        .deleted-container {
+            max-width: 600px;
+            background: rgba(30, 30, 46, 0.8);
+            border-radius: 20px;
+            padding: 50px 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .deleted-icon {
+            font-size: 80px;
+            color: #ff6b6b;
+            margin-bottom: 30px;
+        }
+        
+        .deleted-title {
+            font-size: 32px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+        
+        .deleted-message {
+            font-size: 16px;
+            color: #b0b0b0;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+        
+        .info-box {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        
+        .info-box h4 {
+            color: #ff6b6b;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .info-box ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .info-box li {
+            padding: 8px 0;
+            color: #d0d0d0;
+            font-size: 14px;
+        }
+        
+        .info-box li::before {
+            content: "• ";
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .btn-home {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            font-size: 16px;
+            border-radius: 30px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-home:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .support-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .support-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(255, 107, 107, 0.2);
+            border-radius: 20px;
+            color: #ff6b6b;
+            font-size: 14px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="deleted-container">
+        <div class="deleted-icon">🚫</div>
+        
+        <div class="status-badge">Account Deleted</div>
+        
+        <h1 class="deleted-title">Your Account Has Been Deleted</h1>
+        
+        <p class="deleted-message">
+            Your account has been successfully removed from our platform. We're sorry to see you go.
+        </p>
+        
+        <div class="info-box">
+            <h4>What Happens Next?</h4>
+            <ul>
+                <li>Your account is now inactive and inaccessible</li>
+                <li>Personal data will be retained for 30 days for recovery purposes</li>
+                <li>After 30 days, all data will be permanently deleted</li>
+                <li>Any active subscriptions have been cancelled</li>
+            </ul>
+        </div>
+        
+        <div class="info-box">
+            <h4>Need to Recover Your Account?</h4>
+            <ul>
+                <li>You have 30 days to request account recovery</li>
+                <li>Contact our support team to initiate recovery</li>
+                <li>All data and settings will be restored</li>
+            </ul>
+        </div>
+        
+        <p class="deleted-message" style="margin-top: 30px;">
+            Questions or need help? <a href="mailto:hq@dotmobile.app" class="support-link">Contact Support</a>
+        </p>
+        
+        <a href="/" class="btn-home">Return to Home</a>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

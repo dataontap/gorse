@@ -3,7 +3,8 @@ import os
 import firebase_admin
 from firebase_admin import credentials, auth
 from functools import wraps
-from flask import request, jsonify
+from flask import request, jsonify, redirect, url_for
+import psycopg2
 
 # Initialize Firebase Admin SDK
 try:
@@ -53,6 +54,18 @@ def firebase_auth_required(f):
                 user_uid, user_email = extract_user_from_request()
                 request.user_uid = user_uid
                 request.user_email = user_email
+                
+                # Check account status
+                account_status = check_account_status(user_uid)
+                if account_status in ['deleted', 'pending_deletion']:
+                    if request.path.startswith('/api/'):
+                        return jsonify({
+                            'error': 'Account has been deleted or is pending deletion',
+                            'account_status': account_status,
+                            'redirect': '/account-deleted'
+                        }), 403
+                    return redirect('/account-deleted')
+                
                 return f(*args, **kwargs)
             
             # Try to verify token
@@ -64,6 +77,18 @@ def firebase_auth_required(f):
                 user_uid, user_email = extract_user_from_request()
                 request.user_uid = user_uid
                 request.user_email = user_email
+                
+                # Check account status even in dev mode
+                account_status = check_account_status(user_uid)
+                if account_status in ['deleted', 'pending_deletion']:
+                    if request.path.startswith('/api/'):
+                        return jsonify({
+                            'error': 'Account has been deleted or is pending deletion',
+                            'account_status': account_status,
+                            'redirect': '/account-deleted'
+                        }), 403
+                    return redirect('/account-deleted')
+                
                 return f(*args, **kwargs)
             
             if error:
@@ -73,6 +98,20 @@ def firebase_auth_required(f):
             request.firebase_user = decoded_token
             request.user_uid = decoded_token.get('uid')
             request.user_email = decoded_token.get('email')
+            
+            # Check account status
+            account_status = check_account_status(request.user_uid)
+            if account_status in ['deleted', 'pending_deletion']:
+                # For API requests, return JSON error
+                if request.path.startswith('/api/'):
+                    return jsonify({
+                        'error': 'Account has been deleted or is pending deletion',
+                        'account_status': account_status,
+                        'redirect': '/account-deleted'
+                    }), 403
+                # For page requests, redirect to landing page
+                return redirect('/account-deleted')
+            
             return f(*args, **kwargs)
             
         except Exception as e:
@@ -120,3 +159,24 @@ def extract_user_from_request():
     
     print(f"Extracted user from request: UID={user_uid}, Email={user_email}")
     return user_uid, user_email
+
+def check_account_status(firebase_uid):
+    """Check if user account is deleted or pending deletion"""
+    try:
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            "SELECT account_status FROM users WHERE firebase_uid = %s",
+            (firebase_uid,)
+        )
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if result:
+            return result[0]
+        return 'active'
+    except Exception as e:
+        print(f"Error checking account status: {e}")
+        return 'active'  # Fail open to not block legitimate users

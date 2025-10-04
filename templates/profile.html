@@ -661,6 +661,53 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Account Deletion Section -->
+                <div class="address-section mb-4" id="deleteAccountSection">
+                    <h3 class="mb-3" style="color: #ff6b6b;"><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+                    <div class="address-card p-4" style="background: rgba(255, 107, 107, 0.1); border: 1px solid rgba(255, 107, 107, 0.3); border-radius: 12px;">
+                        <h5 style="color: #ff6b6b; margin-bottom: 15px;">Delete Account</h5>
+                        <p style="color: #d0d0d0; margin-bottom: 20px;">
+                            Permanently delete your account and all associated data. This action cannot be undone.
+                        </p>
+                        
+                        <div id="deletionStatus" style="display: none; padding: 15px; border-radius: 8px; margin-bottom: 20px;"></div>
+                        
+                        <div id="deletionConfirmation" style="display: none;">
+                            <div class="alert alert-danger" style="background: rgba(255, 107, 107, 0.2); border: 1px solid rgba(255, 107, 107, 0.4); color: #ffcccc;">
+                                <h6><i class="fas fa-exclamation-triangle"></i> Triple Confirmation Required</h6>
+                                <p style="margin-bottom: 15px; font-size: 14px;">
+                                    You must confirm this action 3 times. This ensures you understand the consequences.
+                                </p>
+                                <ul style="font-size: 13px; margin-bottom: 15px;">
+                                    <li>All your data will be deleted after 30 days</li>
+                                    <li>Active subscriptions will be cancelled</li>
+                                    <li>You can recover your account within 30 days by contacting support</li>
+                                    <li>After 30 days, deletion is permanent and irreversible</li>
+                                </ul>
+                                
+                                <div class="confirmation-steps" id="confirmationSteps">
+                                    <div class="mb-3">
+                                        <label style="display: block; margin-bottom: 10px; color: #ffcccc;">
+                                            <strong>Step <span id="confirmationStep">1</span> of 3:</strong> 
+                                            <span id="confirmationQuestion">Do you understand that this will delete your account?</span>
+                                        </label>
+                                        <button class="btn btn-danger me-2" onclick="confirmDeletionStep()" id="confirmYesBtn">
+                                            <i class="fas fa-check"></i> Yes, I Understand
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="cancelDeletion()">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-danger" id="deleteAccountBtn" onclick="initiateDeletion()">
+                            <i class="fas fa-trash-alt"></i> Delete My Account
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2748,6 +2795,118 @@
                 popup.style.display = 'none';
             }
         });
+
+        // Account Deletion Functions
+        let deletionConfirmationCount = 0;
+        const confirmationQuestions = [
+            "Do you understand that this will delete your account?",
+            "Are you absolutely sure you want to proceed with account deletion?",
+            "This is your final confirmation. Delete your account permanently?"
+        ];
+
+        function initiateDeletion() {
+            const confirmationDiv = document.getElementById('deletionConfirmation');
+            const deleteBtn = document.getElementById('deleteAccountBtn');
+            
+            confirmationDiv.style.display = 'block';
+            deleteBtn.style.display = 'none';
+            deletionConfirmationCount = 0;
+            
+            updateConfirmationStep();
+        }
+
+        function updateConfirmationStep() {
+            const stepNum = deletionConfirmationCount + 1;
+            document.getElementById('confirmationStep').textContent = stepNum;
+            document.getElementById('confirmationQuestion').textContent = confirmationQuestions[deletionConfirmationCount];
+        }
+
+        async function confirmDeletionStep() {
+            deletionConfirmationCount++;
+            
+            if (deletionConfirmationCount < 3) {
+                updateConfirmationStep();
+            } else {
+                // All 3 confirmations complete, proceed with deletion
+                await finalizeAccountDeletion();
+            }
+        }
+
+        async function finalizeAccountDeletion() {
+            const user = auth.currentUser;
+            if (!user) {
+                showDeletionStatus('error', 'Not authenticated. Please log in again.');
+                return;
+            }
+
+            const confirmYesBtn = document.getElementById('confirmYesBtn');
+            confirmYesBtn.disabled = true;
+            confirmYesBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            try {
+                const response = await fetch('/api/account/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${await user.getIdToken()}`
+                    },
+                    body: JSON.stringify({
+                        confirmation_count: 3
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showDeletionStatus('success', 'Account deletion initiated. You will be logged out in 3 seconds...');
+                    
+                    setTimeout(() => {
+                        auth.signOut().then(() => {
+                            window.location.href = '/account-deleted';
+                        });
+                    }, 3000);
+                } else {
+                    showDeletionStatus('error', data.error || 'Failed to delete account. Please try again.');
+                    confirmYesBtn.disabled = false;
+                    confirmYesBtn.innerHTML = '<i class="fas fa-check"></i> Yes, I Understand';
+                }
+            } catch (error) {
+                console.error('Account deletion error:', error);
+                showDeletionStatus('error', 'An error occurred. Please try again later.');
+                confirmYesBtn.disabled = false;
+                confirmYesBtn.innerHTML = '<i class="fas fa-check"></i> Yes, I Understand';
+            }
+        }
+
+        function cancelDeletion() {
+            const confirmationDiv = document.getElementById('deletionConfirmation');
+            const deleteBtn = document.getElementById('deleteAccountBtn');
+            
+            confirmationDiv.style.display = 'none';
+            deleteBtn.style.display = 'inline-block';
+            deletionConfirmationCount = 0;
+            
+            showDeletionStatus('info', 'Account deletion cancelled.');
+            setTimeout(() => {
+                document.getElementById('deletionStatus').style.display = 'none';
+            }, 3000);
+        }
+
+        function showDeletionStatus(type, message) {
+            const statusDiv = document.getElementById('deletionStatus');
+            const colors = {
+                success: { bg: 'rgba(52, 211, 153, 0.2)', border: 'rgba(52, 211, 153, 0.4)', text: '#a7f3d0' },
+                error: { bg: 'rgba(255, 107, 107, 0.2)', border: 'rgba(255, 107, 107, 0.4)', text: '#ffcccc' },
+                info: { bg: 'rgba(59, 130, 246, 0.2)', border: 'rgba(59, 130, 246, 0.4)', text: '#bfdbfe' }
+            };
+            
+            const color = colors[type] || colors.info;
+            statusDiv.style.background = color.bg;
+            statusDiv.style.border = `1px solid ${color.border}`;
+            statusDiv.style.color = color.text;
+            statusDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+            statusDiv.style.display = 'block';
+        }
     </script>
 </body>
 </html>

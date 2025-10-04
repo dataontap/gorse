@@ -1472,13 +1472,95 @@ def get_member_count():
                         'status': 'success'
                     })
 
-            # If no database connection, return default count of 1
-            return jsonify({'count': 1, 'error': 'No database connection'})
+        # If no database connection, return default count of 1
+        return jsonify({'count': 1, 'error': 'No database connection'})
     except Exception as e:
         print(f"Error getting member count: {str(e)}")
         # Return default count if there's an error
         return jsonify({'count': 1, 'error': str(e)})
 
+@app.route('/api/account/delete', methods=['POST'])
+@firebase_auth_required
+def delete_account():
+    """Initiate account deletion with triple confirmation"""
+    try:
+        data = request.get_json()
+        # SECURITY: Only use authenticated user's UID and email from verified Firebase token
+        # Never trust client-supplied identifiers to prevent horizontal privilege escalation
+        firebase_uid = request.user_uid
+        email = request.user_email
+        confirmation_count = data.get('confirmation_count', 0)
+        
+        if confirmation_count < 3:
+            return jsonify({'error': 'Triple confirmation required'}), 400
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get current user data for audit
+                    cur.execute("""
+                        SELECT id, email, stripe_customer_id, oxio_user_id 
+                        FROM users WHERE firebase_uid = %s
+                    """, (firebase_uid,))
+                    user = cur.fetchone()
+                    
+                    if not user:
+                        return jsonify({'error': 'User not found'}), 404
+                    
+                    user_id, user_email, stripe_id, oxio_id = user
+                    
+                    # Store prior status data
+                    prior_status = {
+                        'user_id': user_id,
+                        'stripe_customer_id': stripe_id,
+                        'oxio_user_id': oxio_id,
+                        'deletion_initiated': datetime.now().isoformat()
+                    }
+                    
+                    # Update user account status
+                    cur.execute("""
+                        UPDATE users 
+                        SET account_status = 'deleted',
+                            deletion_requested_at = CURRENT_TIMESTAMP,
+                            deletion_confirmed_at = CURRENT_TIMESTAMP,
+                            deletion_confirmation_count = %s,
+                            prior_status_data = %s
+                        WHERE firebase_uid = %s
+                    """, (confirmation_count, json.dumps(prior_status), firebase_uid))
+                    
+                    # Create audit record
+                    cur.execute("""
+                        INSERT INTO deletion_audit 
+                        (firebase_uid, user_email, deletion_reason, confirmed_count, 
+                         ip_address, final_action, final_action_at, performed_by)
+                        VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s)
+                    """, (
+                        firebase_uid,
+                        user_email,
+                        'User-initiated account deletion',
+                        confirmation_count,
+                        request.remote_addr,
+                        'deleted',
+                        firebase_uid
+                    ))
+                    
+                    conn.commit()
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': 'Account deletion initiated. You have 30 days to recover your account.',
+                        'deletion_date': (datetime.now() + timedelta(days=30)).isoformat()
+                    })
+        
+        return jsonify({'error': 'Database connection error'}), 500
+    except Exception as e:
+        print(f"Error deleting account: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/account-deleted')
+def account_deleted():
+    """Landing page for deleted accounts"""
+    return render_template('account_deleted.html')
 
 customer_model = api.model('Customer', {
     'email': fields.String(required=True, description='Customer email address')
