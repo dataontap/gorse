@@ -126,22 +126,125 @@ We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql d
 
 ## 🔒 Account Security & Deletion
 
-### Account Deletion System
-- **Triple-Confirmation Flow**: Enhanced security requiring three explicit confirmations before account deletion
-- **Soft Delete with Recovery**: 30-day grace period for account recovery before permanent deletion
-- **Account Status Management**: Automatic status updates (active → pending_deletion → deleted)
-- **Access Blocking**: Deleted accounts are immediately blocked from authentication
-- **Audit Trail**: Complete deletion history with timestamps and user attribution
-- **Dedicated Landing Page**: Special notice page for users attempting to access deleted accounts
-- **Recovery Option**: Users can contact support within 30 days to recover their account
+### Comprehensive Account Deletion System
 
-#### Deletion Process
-1. User initiates deletion from profile page
-2. First confirmation: "Are you sure?" warning
-3. Second confirmation: Acknowledge data loss and 30-day recovery period
-4. Final confirmation: Type confirmation and click final delete button
-5. Account marked as pending_deletion with 30-day timestamp
-6. User is locked out immediately and shown recovery information
+The platform implements a secure, user-friendly account deletion system with multiple safeguards, complete audit trails, and a recovery period to protect users from accidental data loss.
+
+#### 🛡️ Security Features
+
+- **Verified Authentication Only**: System uses only verified Firebase credentials (`request.user_uid`/`email`) from authenticated tokens
+  - Prevents horizontal privilege escalation (users cannot delete other accounts)
+  - No trust placed in client-supplied identifiers
+  - Security-first implementation blocking potential account takeover attempts
+
+- **Triple-Confirmation Flow**: Enhanced security requiring three explicit confirmations before account deletion
+  - First confirmation: "Are you sure?" warning with account impact details
+  - Second confirmation: Acknowledge permanent data loss and 30-day recovery terms
+  - Final confirmation: Type "DELETE" to confirm intent and click final delete button
+
+- **Immediate Access Blocking**: Deleted accounts are instantly blocked from authentication
+  - Authentication middleware checks account status on every request
+  - Automatic redirect to dedicated landing page for deleted accounts
+  - No access to any platform features during pending deletion period
+
+- **Complete Audit Trail**: Full deletion history tracked in `deletion_audit` table
+  - Records: `firebase_uid`, `user_email`, `account_status`, `deletion_requested_at`, `scheduled_deletion_at`
+  - Timestamps for compliance and recovery purposes
+  - User attribution for all deletion actions
+
+#### 📋 Implementation Details
+
+**Database Schema Updates:**
+```sql
+-- Account status tracking
+ALTER TABLE users ADD COLUMN account_status VARCHAR(50) DEFAULT 'active';
+ALTER TABLE users ADD COLUMN deletion_requested_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN scheduled_deletion_at TIMESTAMP;
+
+-- Audit trail table
+CREATE TABLE deletion_audit (
+    id SERIAL PRIMARY KEY,
+    firebase_uid VARCHAR(255) NOT NULL,
+    user_email VARCHAR(255),
+    account_status VARCHAR(50),
+    deletion_requested_at TIMESTAMP,
+    scheduled_deletion_at TIMESTAMP,
+    performed_by VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Account Status Flow:**
+- `active` → Normal account with full access
+- `pending_deletion` → 30-day grace period, access blocked, recoverable
+- `deleted` → Permanent deletion after 30 days (future implementation)
+
+**Authentication Updates:**
+- Firebase authentication decorator checks `account_status` field
+- Automatic redirect to `/account-deleted` landing page for non-active accounts
+- Landing page displays recovery information and support contact details
+
+**User Interface (Profile Page):**
+- "Delete Account" section with danger styling and warning icons
+- Three-step modal confirmation system with escalating warnings
+- Clear messaging about consequences and 30-day recovery period
+- Visual confirmation requirements (typing "DELETE")
+- Disabled state during processing with loading indicators
+
+**API Endpoints:**
+- `POST /api/account/delete` - Secure deletion endpoint
+  - Requires Firebase authentication token
+  - Uses only verified `request.user_uid` and `request.user_email`
+  - Validates triple confirmation (UI-enforced)
+  - Updates account status and creates audit record
+- `GET /account-deleted` - Landing page for deleted accounts
+  - Displays account status and recovery information
+  - Provides support contact details
+
+#### 🔄 Recovery Process
+
+**30-Day Grace Period:**
+1. Account marked as `pending_deletion` immediately upon confirmation
+2. User is locked out and shown recovery landing page
+3. 30-day countdown begins from `deletion_requested_at` timestamp
+4. Users can contact support within 30 days for account recovery
+5. Support team can restore account by updating `account_status` to `active`
+6. After 30 days, permanent deletion occurs (scheduled cleanup job)
+
+**Recovery Information Displayed:**
+- Account deletion confirmation message
+- 30-day recovery period details
+- Support email contact: [support contact details]
+- Instructions for account recovery request
+
+#### ⚠️ Known Limitations
+
+**Client-Controlled Confirmation Count**: The confirmation count is currently enforced through the UI flow. While the security vulnerability of account takeover has been eliminated (through verified authentication), the confirmation steps can technically be bypassed by sending `confirmation_count=3` directly in the API request.
+
+**Recommended Enhancement for Production:**
+- Implement server-side confirmation state tracking
+- Store confirmation progress in database or session tied to authenticated user
+- Require sequential confirmation steps validated server-side
+- Add rate limiting to prevent automation attacks
+
+**Current Security Posture:**
+- ✅ No horizontal privilege escalation (verified auth only)
+- ✅ Audit trail with correct user attribution
+- ✅ Immediate access blocking
+- ⚠️ UI-enforced confirmation flow (business logic protection)
+
+#### 🎯 User Deletion Flow
+
+1. **Initiate**: User navigates to Profile page and clicks "Delete Account" button
+2. **First Warning**: Modal appears with "Are you sure?" and account impact details
+3. **Second Warning**: User acknowledges data loss and 30-day recovery terms
+4. **Final Confirmation**: User types "DELETE" and clicks final confirmation button
+5. **Processing**: Server updates `account_status` to `pending_deletion`
+6. **Audit Log**: System creates record in `deletion_audit` table
+7. **Logout**: User is immediately logged out and redirected
+8. **Landing Page**: User sees deletion confirmation and recovery instructions
+9. **Grace Period**: 30-day window for support-assisted recovery
+10. **Permanent Deletion**: After 30 days, account data is permanently removed (future scheduled job)
 
 ### Audio Position Tracking & Smart Language Switching
 - **Position Capture**: Records current playback position when language is changed
