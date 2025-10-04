@@ -56,6 +56,8 @@ Preferred communication style: Simple, everyday language.
 
 **Environment-Based Configuration**: All sensitive credentials and API keys are managed through environment variables with fallback mechanisms for development environments.
 
+**Account Deletion System**: Comprehensive soft-delete implementation with triple-confirmation flow, 30-day recovery period, and complete audit trail. Deleted accounts are immediately blocked from authentication and redirected to a dedicated landing page. The system tracks account status (active, pending_deletion, deleted) with timestamps and maintains a deletion_audit table for compliance and recovery purposes.
+
 ## External Dependencies
 
 ### Core Infrastructure Services

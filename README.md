@@ -123,10 +123,28 @@ We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql d
 - **Audio Position Tracking**: 
   - Continuous playback position monitoring using `ontimeupdate` events
   - Position state maintained across language switches
-  - Stores playback timestamps for seamless transitions
 
-- **Smart Language Switching**:
-  1. **Position Capture**: Records current playback position when language is changed
+## 🔒 Account Security & Deletion
+
+### Account Deletion System
+- **Triple-Confirmation Flow**: Enhanced security requiring three explicit confirmations before account deletion
+- **Soft Delete with Recovery**: 30-day grace period for account recovery before permanent deletion
+- **Account Status Management**: Automatic status updates (active → pending_deletion → deleted)
+- **Access Blocking**: Deleted accounts are immediately blocked from authentication
+- **Audit Trail**: Complete deletion history with timestamps and user attribution
+- **Dedicated Landing Page**: Special notice page for users attempting to access deleted accounts
+- **Recovery Option**: Users can contact support within 30 days to recover their account
+
+#### Deletion Process
+1. User initiates deletion from profile page
+2. First confirmation: "Are you sure?" warning
+3. Second confirmation: Acknowledge data loss and 30-day recovery period
+4. Final confirmation: Type confirmation and click final delete button
+5. Account marked as pending_deletion with 30-day timestamp
+6. User is locked out immediately and shown recovery information
+
+### Audio Position Tracking & Smart Language Switching
+- **Position Capture**: Records current playback position when language is changed
   2. **Audio Generation**: Generates new audio in selected language via ElevenLabs API
   3. **Offset Application**: Applies -2 second offset from current position for context continuity
   4. **Auto-Resume**: Automatically resumes playback if audio was playing before switch
