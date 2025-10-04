@@ -25,8 +25,7 @@ def get_recent_users():
                     stripe_customer_id,
                     oxio_user_id,
                     eth_address,
-                    created_at,
-                    firebase_created_at
+                    created_at
                 FROM users 
                 ORDER BY created_at DESC 
                 LIMIT 5
@@ -41,7 +40,7 @@ def get_recent_users():
             
             for i, user in enumerate(users, 1):
                 user_id, email, firebase_uid, display_name, stripe_customer_id, \
-                oxio_user_id, eth_address, created_at, firebase_created_at = user
+                oxio_user_id, eth_address, created_at = user
                 
                 print(f"User #{i}:")
                 print(f"  ID: {user_id}")
@@ -52,7 +51,6 @@ def get_recent_users():
                 print(f"  OXIO User ID: {oxio_user_id or 'N/A'}")
                 print(f"  ETH Address: {eth_address or 'N/A'}")
                 print(f"  Database Created: {created_at}")
-                print(f"  Firebase Created: {firebase_created_at or 'N/A'}")
                 print()
             
             # Get additional stats
