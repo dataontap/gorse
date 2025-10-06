@@ -142,7 +142,7 @@ try:
                     status_column_exists = cur.fetchone()
 
                     if not status_column_exists:
-                        print("Adding missing status column to beta_testers table...")
+                        print("Adding status column to beta_testers table...")
                         cur.execute("ALTER TABLE beta_testers ADD COLUMN status VARCHAR(50) DEFAULT 'not_enrolled'")
                         conn.commit()
                         print("Status column added successfully")
@@ -303,7 +303,7 @@ try:
     from shopify_stripe_integration import shopify_stripe_integration
     from device_image_service import device_image_service
     from imei_lookup_service import imei_lookup_service
-    
+
     @app.route('/api/marketplace/products', methods=['GET'])
     def get_marketplace_products():
         """Get marketplace products from Shopify"""
@@ -311,7 +311,7 @@ try:
         limit = int(request.args.get('limit', 20))
         result = shopify_stripe_integration.get_marketplace_products(category=category, limit=limit)
         return jsonify(result)
-    
+
     @app.route('/api/marketplace/checkout', methods=['POST'])
     @firebase_auth_required
     def create_marketplace_checkout():
@@ -321,27 +321,27 @@ try:
             listing_id = data.get('listing_id')
             user_email = request.user_email
             user_uid = request.user_uid
-            
+
             if not listing_id:
                 return jsonify({'error': 'listing_id is required'}), 400
-            
+
             # Get specific listing by ID (not limited by marketplace feed)
             listing_response = shopify_stripe_integration.get_listing_by_id(int(listing_id))
             if not listing_response.get('success'):
                 return jsonify({'error': listing_response.get('error', 'Listing not found')}), 404
-            
+
             product = listing_response.get('listing')
-            
+
             # Create Stripe checkout session with buyer info
             result = shopify_stripe_integration.create_stripe_checkout_session(
                 product, user_email, user_uid
             )
             return jsonify(result)
-            
+
         except Exception as e:
             logger.error(f"Error creating marketplace checkout: {e}")
             return jsonify({'error': str(e)}), 500
-    
+
     @app.route('/api/marketplace/bid', methods=['POST'])
     @firebase_auth_required
     def place_auction_bid():
@@ -352,23 +352,23 @@ try:
             bid_amount = data.get('bid_amount')
             user_uid = request.user_uid
             user_email = request.user_email
-            
+
             if not listing_id or not bid_amount:
                 return jsonify({'error': 'listing_id and bid_amount are required'}), 400
-            
+
             # Convert dollars to cents
             bid_amount_cents = int(float(bid_amount) * 100)
-            
+
             # Place the bid
             result = shopify_stripe_integration.place_auction_bid(
                 listing_id, bid_amount_cents, user_uid, user_email
             )
             return jsonify(result)
-            
+
         except Exception as e:
             logger.error(f"Error placing auction bid: {e}")
             return jsonify({'error': str(e)}), 500
-    
+
     @app.route('/api/device/lookup-imei', methods=['POST'])
     @firebase_auth_required
     def lookup_device_by_imei():
@@ -376,18 +376,18 @@ try:
         try:
             data = request.get_json()
             imei = data.get('imei')
-            
+
             if not imei:
                 return jsonify({'error': 'IMEI is required'}), 400
-            
+
             # Lookup device by IMEI
             result = imei_lookup_service.lookup_device_by_imei(imei)
-            
+
             # If successful, also get device image and estimated values
             if result.get('success'):
                 brand = result.get('brand', '')
                 model = result.get('model', '')
-                
+
                 # Get device image and specs
                 device_info = device_image_service.get_device_info(brand, model)
                 result.update({
@@ -396,30 +396,30 @@ try:
                     'storage_options': device_info.get('storage_options', []),
                     'estimated_values': device_info.get('estimated_values', {})
                 })
-            
+
             return jsonify(result)
-            
+
         except Exception as e:
             logger.error(f"Error looking up IMEI: {e}")
             return jsonify({'error': str(e)}), 500
-    
+
     @app.route('/api/device/search', methods=['GET'])
     @firebase_auth_required
     def search_devices():
         """Search for devices by name"""
         try:
             query = request.args.get('q', '')
-            
+
             if not query or len(query) < 2:
                 return jsonify({'error': 'Search query must be at least 2 characters'}), 400
-            
+
             results = device_image_service.search_devices(query)
             return jsonify({'success': True, 'devices': results})
-            
+
         except Exception as e:
             logger.error(f"Error searching devices: {e}")
             return jsonify({'error': str(e)}), 500
-    
+
     @app.route('/api/device/estimate-value', methods=['POST'])
     @firebase_auth_required
     def estimate_device_value():
@@ -430,12 +430,12 @@ try:
             model = data.get('model')
             condition = data.get('condition')
             storage = data.get('storage')
-            
+
             if not all([brand, model, condition]):
                 return jsonify({'error': 'brand, model, and condition are required'}), 400
-            
+
             estimated_value = device_image_service.get_estimated_value(brand, model, condition, storage)
-            
+
             return jsonify({
                 'success': True,
                 'estimated_value_cents': estimated_value,
@@ -445,31 +445,31 @@ try:
                 'condition': condition,
                 'storage': storage
             })
-            
+
         except Exception as e:
             logger.error(f"Error estimating device value: {e}")
             return jsonify({'error': str(e)}), 500
-    
+
     @app.route('/marketplace/purchase-success', methods=['GET'])
     def marketplace_purchase_success():
         """Handle successful marketplace purchase"""
         session_id = request.args.get('session_id')
-        
+
         if session_id:
             # Process the completed checkout
             result = shopify_stripe_integration.handle_stripe_checkout_completion(session_id)
-            
+
             if result.get('success'):
                 return render_template('purchase_success.html', 
                                      order_id=result.get('order_id'),
                                      purchase_data=result.get('purchase_data'))
             else:
                 return render_template('purchase_error.html', error=result.get('error'))
-        
+
         return render_template('purchase_success.html')
-    
+
     print("Shopify-Stripe integration endpoints registered successfully")
-    
+
 except Exception as e:
     print(f"Error registering Shopify-Stripe integration: {str(e)}")
 
@@ -1490,10 +1490,10 @@ def delete_account():
         firebase_uid = request.user_uid
         email = request.user_email
         confirmation_count = data.get('confirmation_count', 0)
-        
+
         if confirmation_count < 3:
             return jsonify({'error': 'Triple confirmation required'}), 400
-        
+
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
@@ -1503,12 +1503,12 @@ def delete_account():
                         FROM users WHERE firebase_uid = %s
                     """, (firebase_uid,))
                     user = cur.fetchone()
-                    
+
                     if not user:
                         return jsonify({'error': 'User not found'}), 404
-                    
+
                     user_id, user_email, stripe_id, oxio_id = user
-                    
+
                     # Store prior status data
                     prior_status = {
                         'user_id': user_id,
@@ -1516,7 +1516,7 @@ def delete_account():
                         'oxio_user_id': oxio_id,
                         'deletion_initiated': datetime.now().isoformat()
                     }
-                    
+
                     # Update user account status
                     cur.execute("""
                         UPDATE users 
@@ -1527,7 +1527,7 @@ def delete_account():
                             prior_status_data = %s
                         WHERE firebase_uid = %s
                     """, (confirmation_count, json.dumps(prior_status), firebase_uid))
-                    
+
                     # Create audit record
                     cur.execute("""
                         INSERT INTO deletion_audit 
@@ -1543,15 +1543,15 @@ def delete_account():
                         'deleted',
                         firebase_uid
                     ))
-                    
+
                     conn.commit()
-                    
+
                     return jsonify({
                         'success': True,
                         'message': 'Account deletion initiated. You have 30 days to recover your account.',
                         'deletion_date': (datetime.now() + timedelta(days=30)).isoformat()
                     })
-        
+
         return jsonify({'error': 'Database connection error'}), 500
     except Exception as e:
         print(f"Error deleting account: {str(e)}")
@@ -2327,6 +2327,9 @@ def create_checkout_session():
 
         price_id = prices.data[0].id
 
+        # Get amount from price object, default to 0 if not found
+        amount = prices.data[0].unit_amount if prices.data[0].unit_amount else 0
+
         # Create a checkout session
         success_url = request.url_root + 'dashboard?session_id={CHECKOUT_SESSION_ID}'
         cancel_url = request.url_root + 'dashboard'
@@ -2478,7 +2481,8 @@ def handle_stripe_webhook():
 
                         if not assigned_iccid:
                             print(f"❌ No available ICCIDs for user {firebase_uid}")
-                            return jsonify({'error': 'No available eSIMs'}), 500
+                            # Rollback any potential partial updates if assignment failed atomically
+                            return jsonify({'error': 'No available eSIMs', 'retry': True}), 500
 
                         print(f"✅ Assigned new ICCID {assigned_iccid['iccid']} to user {firebase_uid}")
                     total_amount = session.get('amount_total', 100)  # Default $1.00 in cents
@@ -2624,6 +2628,25 @@ def handle_stripe_webhook():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+def rollback_iccid_assignment(iccid, firebase_uid):
+    """Rollback ICCID assignment if activation fails"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        UPDATE iccid_inventory 
+                        SET allocated_to_firebase_uid = NULL,
+                            status = 'available',
+                            assigned_at = NULL,
+                            assigned_to = NULL
+                        WHERE iccid = %s AND allocated_to_firebase_uid = %s
+                    """, (iccid, firebase_uid))
+                    conn.commit()
+                    print(f"✅ Rolled back ICCID assignment for {iccid} (User: {firebase_uid})")
+    except Exception as e:
+        print(f"❌ Failed to rollback ICCID assignment for {iccid}: {str(e)}")
+
 def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_qr_code, plan_id, user_email=None, oxio_user_id=None):
     """Send comprehensive eSIM activation email with profile details and QR code"""
     try:
@@ -2724,22 +2747,37 @@ def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_
         print(f"Error sending eSIM activation email: {e}")
         return False
 
-def generate_esim_activation_qr(iccid, phone_number, line_id):
-    """Generate QR code for eSIM activation with real implementation"""
+def generate_qr_code(lpa_code, iccid, output_format='svg'):
+    """
+    Generate QR code for eSIM activation
+
+    Args:
+        lpa_code: The LPA (Local Profile Assistant) code for eSIM activation.
+        iccid: The ICCID of the eSIM.
+        output_format: 'svg' or 'png' (for base64 embedding).
+
+    Returns:
+        Dictionary with 'success': True/False, 'data': QR code content (SVG string or base64 PNG).
+    """
     try:
         import qrcode
         import base64
         from io import BytesIO
 
-        # Create eSIM activation data (LPA format for eSIM profiles)
-        if iccid:
-            # Use actual ICCID for QR code content - this would contain activation URL
-            qr_data = f"LPA:1$api-staging.brandvno.com${iccid}$"
+        # Construct QR code data string (SMDP QR format)
+        # Reference: https://www.gsma.com/newsroom/press-release/esim-standard-qr-code-format-now-available-industry-wide
+        if lpa_code and iccid:
+            # SM-DP+ QR Code format: LPA:1$eid=<eid>&smdp=<smdp_address>&pins=<pins>&url=<smsp_url>
+            # For now, we'll use LPA code directly as it's the primary activation detail
+            # A more robust implementation would fetch SMDP address etc.
+            qr_data = f"LPA:{lpa_code}"
+        elif iccid:
+            qr_data = f"LPA:{iccid}" # Fallback using ICCID
         else:
-            # Fallback QR data with phone info
-            qr_data = f"DOTM-eSIM:Phone:{phone_number}:Line:{line_id}:Activation-Required"
+            return {'success': False, 'error': 'LPA code or ICCID is required for QR generation'}
 
-        # Generate QR code
+        print(f"Generating QR code with data: {qr_data[:50]}...") # Log partial data for privacy
+
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -2749,21 +2787,26 @@ def generate_esim_activation_qr(iccid, phone_number, line_id):
         qr.add_data(qr_data)
         qr.make(fit=True)
 
-        # Create QR code image
-        qr_image = qr.make_image(fill_color="black", back_color="white")
+        if output_format.lower() == 'svg':
+            # Generate SVG string
+            qr_svg_string = qr.make_image(image_factory=qrcode.image.svg.SvgPathImage).to_string()
+            return {'success': True, 'data': qr_svg_string.decode('utf-8')}
 
-        # Convert to base64 for email embedding
-        buffer = BytesIO()
-        qr_image.save(buffer, format='PNG')
-        buffer.seek(0)
-        qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+        elif output_format.lower() == 'png':
+            # Generate PNG image and convert to base64
+            qr_image = qr.make_image(fill_color="black", back_color="white")
+            buffer = BytesIO()
+            qr_image.save(buffer, format='PNG')
+            buffer.seek(0)
+            qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+            return {'success': True, 'data': f"data:image/png;base64,{qr_base64}"}
 
-        print(f"✅ Generated QR code successfully")
-        return qr_base64
+        else:
+            return {'success': False, 'error': 'Unsupported output format'}
 
     except Exception as e:
         print(f"❌ Error generating QR code: {e}")
-        return None
+        return {'success': False, 'error': str(e)}
 
 def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
     """Activate eSIM and OXIO base plan for user after successful payment"""
@@ -2792,7 +2835,7 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                 'lastName': user_data[3] if len(user_data) > 3 else ''
             })
 
-            if oxio_user_result.get('success') and oxio_user_result.get('user_id'):
+            if oxio_user_result.get('success') and oxio_user_id in oxio_user_result:
                 oxio_user_id = oxio_user_result['user_id']
 
                 # Update user record with OXIO user ID
@@ -2857,10 +2900,15 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
             # Generate eSIM activation QR code
             esim_qr_code = None
             try:
-                from qr_generator import generate_esim_activation_qr
                 if iccid and phone_number:
-                    esim_qr_code = generate_esim_activation_qr(iccid, phone_number, line_id)
-                    print(f"Generated eSIM activation QR code")
+                    qr_generation_result = generate_qr_code(
+                        lpa_code=None, # LPA code not directly available in this path
+                        iccid=iccid,
+                        output_format='png' # PNG for email attachment
+                    )
+                    if qr_generation_result['success']:
+                        esim_qr_code = qr_generation_result['data']
+                        print(f"Generated eSIM activation QR code")
             except Exception as qr_error:
                 print(f"Could not generate eSIM QR code: {qr_error}")
 
@@ -2989,698 +3037,6 @@ def favicon():
 def firebase_service_worker():
     return send_from_directory('.', 'firebase-messaging-sw.js')
 
-# New API endpoint to record global data purchases
-purchase_model = api.model('Purchase', {
-    'productId': fields.String(required=True, description='Product ID')
-})
-
-def get_user_by_firebase_uid(firebase_uid):
-    """Helper function to get user data by Firebase UID"""
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        """SELECT id, email, firebase_uid, stripe_customer_id, display_name, 
-                                  photo_url, imei, oxio_user_id, eth_address, oxio_group_id
-                        FROM users WHERE firebase_uid = %s""",
-                        (firebase_uid,)
-                    )
-                    user_data = cur.fetchone()
-                    if user_data:
-                        print(f"get_user_by_firebase_uid debug: Found user {user_data[0]} with oxio_user_id: {user_data[7]}, eth_address: {user_data[8]}")
-                    return user_data
-        return None
-    except Exception as e:
-        print(f"Error getting user by Firebase UID: {str(e)}")
-        return None
-
-def get_user_stripe_purchases(stripe_customer_id):
-    """Helper function to get user purchases by Stripe customer ID"""
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Get purchases linked to Stripe customer
-                    cur.execute("""
-                        SELECT SUM(TotalAmount) 
-                        FROM purchases 
-                        WHERE StripeID IN (
-                            SELECT id FROM stripe_sessions_or_invoices 
-                            WHERE customer_id = %s
-                        ) OR UserID = (
-                            SELECT id FROM users WHERE stripe_customer_id = %s
-                        )
-                    """, (stripe_customer_id, stripe_customer_id))
-                    return cur.fetchone()
-        return None
-    except Exception as e:
-        print(f"Error getting Stripe purchases: {str(e)}")
-        return None
-
-@app.route('/api/user/data-balance', methods=['GET'])
-def get_user_data_balance():
-    """Get the current data balance for a member"""
-    firebase_uid = request.args.get('firebaseUid')
-    user_id_param = request.args.get('userId')
-
-    try:
-        user_id = None
-
-        # If Firebase UID is provided, look up the internal user ID
-        if firebase_uid:
-            user_data = get_user_by_firebase_uid(firebase_uid)
-            if user_data:
-                user_id = user_data[0]  # Get the actual internal user ID (integer)
-                stripe_customer_id = user_data[3]  # Get Stripe customer ID
-                print(f"Found user {user_id} for Firebase UID {firebase_uid} with Stripe customer {stripe_customer_id}")
-            else:
-                return jsonify({
-                    'error': 'User not found for Firebase UID',
-                    'firebaseUid': firebase_uid,
-                    'dataBalance': 0,
-                    'unit': 'GB'
-                }), 404
-        elif user_id_param and user_id_param.isdigit():
-            # If a numeric user ID is provided, use it
-            user_id = int(user_id_param)
-            print(f"Using provided numeric user_id: {user_id}")
-        else:
-            return jsonify({
-                'error': 'Firebase UID or user ID required',
-                'dataBalance': 0,
-                'unit': 'GB'
-            }), 400
-
-        # Get comprehensive purchase data for this user
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Get all data-related purchases for this user - using correct column names
-                    try:
-                        cur.execute("""
-                            SELECT 
-                                COALESCE(SUM(CASE WHEN StripeProductID = 'global_data_10gb' THEN TotalAmount ELSE 0 END), 0) as global_data_cents,
-                                COALESCE(SUM(CASE WHEN StripeProductID LIKE '%data%' OR StripeProductID = 'beta_esim_data' THEN TotalAmount ELSE 0 END), 0) as total_data_cents,
-                                COUNT(*) as total_purchases
-                            FROM purchases 
-                            WHERE UserID = %s OR FirebaseUID = %s
-                        """, (user_id, firebase_uid))
-
-                        result = cur.fetchone()
-                        print(f"Debug: SQL result = {result}")
-
-                        # Safely extract values with proper validation and handle None results
-                        if result and len(result) >= 3:
-                            global_data_cents = int(result[0]) if result[0] is not None else 0
-                            total_data_cents = int(result[1]) if result[1] is not None else 0
-                            total_purchases = int(result[2]) if result[2] is not None else 0
-                        else:
-                            print(f"Invalid SQL result structure: {result}")
-                            global_data_cents = 0
-                            total_data_cents = 0
-                            total_purchases = 0
-                    except Exception as sql_err:
-                        print(f"SQL query error: {sql_err}")
-                        # Set safe defaults when query fails
-                        global_data_cents = 0
-                        total_data_cents = 0
-                        total_purchases = 0
-
-                    # Calculate data balance based on purchases
-                    # 10GB per $10 for global data = 1GB per $1 = 1GB per 100 cents
-                    global_data_gb = global_data_cents / 100.0
-
-                    # For other data products, assume similar rate
-                    other_data_gb = (total_data_cents - global_data_cents) / 100.0
-
-                    # Total data balance
-                    total_data_balance = global_data_gb + other_data_gb
-
-                    # Get subscription status for additional data allowances
-                    cur.execute("""
-                        SELECT subscription_type, end_date 
-                        FROM subscriptions 
-                        WHERE user_id = %s AND status = 'active' AND end_date > CURRENT_TIMESTAMP
-                        ORDER BY end_date DESC LIMIT 1
-                    """, (user_id,))
-
-                    subscription = cur.fetchone()
-                    subscription_data = 0
-                    if subscription:
-                        subscription_type = subscription[0]
-                        if subscription_type == 'basic_membership':
-                            subscription_data = 5.0  # 5GB for basic
-                        elif subscription_type == 'full_membership':
-                            subscription_data = 50.0  # 50GB for full
-
-                    final_balance = total_data_balance + subscription_data
-
-                    print(f"Data balance calculation: user_id={user_id}, purchases={total_purchases}, "
-                          f"global_data={global_data_gb}GB, other_data={other_data_gb}GB, "
-                          f"subscription={subscription_data}GB, total={final_balance}GB")
-
-                    return jsonify({
-                        'status': 'success',
-                        'userId': user_id,
-                        'firebaseUid': firebase_uid,
-                        'dataBalance': round(final_balance, 2),
-                        'breakdown': {
-                            'purchased_data': round(total_data_balance, 2),
-                            'subscription_data': round(subscription_data, 2),
-                            'total_purchases': total_purchases
-                        },
-                        'unit': 'GB',
-                        'billing_type': 'purchase_and_subscription_based'
-                    })
-
-        return jsonify({
-            'error': 'Database connection failed',
-            'userId': user_id,
-            'firebaseUid': firebase_uid,
-            'dataBalance': 0,
-            'unit': 'GB'
-        }), 500
-
-    except Exception as e:
-        print(f"Error getting user data balance: {str(e)}")
-        return jsonify({
-            'error': str(e),
-            'userId': user_id if 'user_id' in locals() else None,
-            'firebaseUid': firebase_uid,
-            'dataBalance': 0,
-            'unit': 'GB'
-        }), 500
-
-@app.route('/api/report-data-usage', methods=['POST'])
-def report_data_usage():
-    """Report actual data usage to Stripe for metering"""
-    try:
-        data = request.get_json()
-        firebase_uid = data.get('firebaseUid')
-        megabytes_used = data.get('megabytesUsed', 0)
-
-        if not firebase_uid or megabytes_used <= 0:
-            return jsonify({'error': 'Firebase UID and megabytes used are required'}), 400
-
-        # Get user's Stripe customer ID
-        user_data = get_user_by_firebase_uid(firebase_uid)
-        if not user_data or not user_data[3]:  # user_data[3] is stripe_customer_id
-            return jsonify({'error': 'No Stripe customer found for user'}), 404
-
-        stripe_customer_id = user_data[3]
-
-        # Import and use metering function
-        from stripe_metering import report_data_usage as stripe_report_usage
-
-        # Report usage to Stripe
-        result = stripe_report_usage(stripe_customer_id, megabytes_used)
-
-        if result['success']:
-            # Also log in local database for redundancy
-            with get_db_connection() as conn:
-                if conn:
-                    with conn.cursor() as cur:
-                        cur.execute("""
-                            INSERT INTO data_usage_log 
-                            (user_id, stripe_customer_id, megabytes_used, stripe_event_id, created_at)
-                            VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
-                        """, (user_data[0], stripe_customer_id, megabytes_used, result.get('event_id')))
-                        conn.commit()
-
-            return jsonify({
-                'status': 'success',
-                'message': 'Data usage reported to Stripe',
-                'megabytes_used': megabytes_used,
-                'stripe_event_id': result.get('event_id')
-            })
-        else:
-            return jsonify({'error': result.get('error')}), 500
-
-    except Exception as e:
-        print(f"Error reporting data usage: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/usage-summary', methods=['GET'])
-def get_usage_summary():
-    """Get usage summary for a user from Stripe metering"""
-    try:
-        firebase_uid = request.args.get('firebaseUid')
-        if not firebase_uid:
-            return jsonify({'error': 'Firebase UID is required'}), 400
-
-        # Get user's Stripe customer ID
-        user_data = get_user_by_firebase_uid(firebase_uid)
-        if not user_data or not user_data[3]:
-            return jsonify({'error': 'No Stripe customer found for user'}), 404
-
-        stripe_customer_id = user_data[3]
-
-        # Import and use metering function
-        from stripe_metering import get_customer_usage_summary
-
-        # Get usage from Stripe
-        result = get_customer_usage_summary(stripe_customer_id)
-
-        if result['success']:
-            return jsonify({
-                'status': 'success',
-                'usage_summary': result,
-                'billing_note': 'Usage-based billing will be charged monthly'
-            })
-        else:
-            return jsonify({'error': result.get('error')}), 500
-
-    except Exception as e:
-        print(f"Error getting usage summary: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/subscription-status', methods=['GET'])
-def get_subscription_status():
-    """Get current subscription status for a user"""
-    firebase_uid = request.args.get('firebaseUid')
-    user_id_param = request.args.get('userId')
-
-    # Default user_id for fallback
-    user_id = 1
-
-    try:
-        # If Firebase UID is provided, look up the internal user ID
-        if firebase_uid:
-            user_data = get_user_by_firebase_uid(firebase_uid)
-            if user_data:
-                user_id = user_data[0]  # Get the actual internal user ID (integer)
-                print(f"Found user {user_id} for Firebase UID {firebase_uid}")
-            else:
-                print(f"No user found for Firebase UID {firebase_uid}, using default user_id=1")
-        elif user_id_param and user_id_param.isdigit():
-            # If a numeric user ID is provided, use it
-            user_id = int(user_id_param)
-            print(f"Using provided numeric user_id: {user_id}")
-        else:
-            print(f"Invalid or no user identifier provided, using default user_id=1")
-
-        # Get active subscriptions for this user
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Get the most recent active subscription
-                    cur.execute("""
-                        SELECT subscription_type, start_date, end_date, status, stripe_subscription_id
-                        FROM subscriptions 
-                        WHERE user_id = %s AND status = 'active' AND end_date > CURRENT_TIMESTAMP
-                        ORDER BY end_date DESC 
-                        LIMIT 1
-                    """, (user_id,))
-
-                    subscription = cur.fetchone()
-                    if subscription:
-                        return jsonify({
-                            'status': 'active',
-                            'subscription_type': subscription[0],
-                            'start_date': subscription[1].isoformat() if subscription[1] else None,
-                            'end_date': subscription[2].isoformat() if subscription[2] else None,
-                            'stripe_subscription_id': subscription[4],
-                            'user_id': user_id
-                        })
-                    else:
-                        # Check if user has any expired subscriptions
-                        cur.execute("""
-                            SELECT subscription_type, end_date
-                            FROM subscriptions 
-                            WHERE user_id = %s
-                            ORDER BY end_date DESC 
-                            LIMIT 1
-                        """, (user_id,))
-
-                        expired_sub = cur.fetchone()
-                        if expired_sub:
-                            return jsonify({
-                                'status': 'expired',
-                                'last_subscription_type': expired_sub[0],
-                                'expired_date': expired_sub[1].isoformat() if expired_sub[1] else None,
-                                'user_id': user_id
-                            })
-                        else:
-                            return jsonify({
-                                'status': 'none',
-                                'message': 'No subscriptions found',
-                                'user_id': user_id
-                            })
-
-        return jsonify({
-            'status': 'error',
-            'message': 'Database connection error',
-            'user_id': user_id
-        })
-
-    except Exception as e:
-        print(f"Error getting subscription status: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': str(e),
-            'user_id': user_id
-        })
-
-@app.route('/api/record-global-purchase', methods=['POST'])
-def record_global_purchase():
-    data = request.get_json()
-    product_id = data.get('productId')
-    firebase_uid = data.get('firebaseUid')  # Get Firebase UID from request
-    print(f"===== RECORDING PURCHASE FOR PRODUCT: {product_id} with Firebase UID: {firebase_uid} =====")
-
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Simple test query
-                    cur.execute("SELECT 1")
-                    test_result = cur.fetchone()
-                    print(f"Database connection test result: {test_result}")
-            else:
-                print("WARNING: Could not get database connection for test")
-    except Exception as test_err:
-        print(f"WARNING: Database connection test failed: {str(test_err)}")
-
-    # Default values in case product info isn't available
-    default_prices = {
-        'global_data_10gb': 1000,  # $10.00
-        'basic_membership': 2400,  # $24.00
-        'full_membership': 6600,   # $66.00
-    }
-    default_price_ids = {
-        'global_data_10gb': 'price_global_10gb',
-        'basic_membership': 'price_basic_membership',
-        'full_membership': 'price_full_membership',
-    }
-
-    # Try to get price from Stripe if available
-    price_id = None
-    amount = None
-
-    try:
-        if stripe.api_key:
-            prices = stripe.Price.list(product=product_id, active=True)
-            if prices and prices.data:
-                price_id = prices.data[0].id
-                amount = prices.data[0].unit_amount
-                print(f"Found Stripe price: {price_id}, amount: {amount}")
-            else:
-                print("No active prices found for this product in Stripe")
-        else:
-            print("Stripe API key not configured, using default prices")
-    except Exception as stripe_err:
-        print(f"Stripe price lookup failed, using defaults: {str(stripe_err)}")
-
-    # Use defaults if Stripe lookup failed
-    if not price_id:
-        price_id = default_price_ids.get(product_id, 'unknown_price_id')
-        print(f"Using default price ID: {price_id}")
-    if not amount:
-        amount = default_prices.get(product_id, 1000)  # Default $10.00
-        print(f"Using default amount: {amount}")
-
-    # Generate a unique transaction ID
-    transaction_id = f"API_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-    print(f"Generated transaction ID: {transaction_id}")
-
-    # Get user ID and user data from Firebase UID before recording purchase
-    user_id = None
-    user_data = None
-    if firebase_uid:
-        try:
-            user_data = get_user_by_firebase_uid(firebase_uid)
-            if user_data:
-                user_id = user_data[0]
-                print(f"Found user_id {user_id} for Firebase UID {firebase_uid}")
-        except Exception as lookup_err:
-            print(f"Error looking up user by Firebase UID: {str(lookup_err)}")
-
-    # Record the purchase with Firebase UID and user_id
-    purchase_id = record_purchase(
-        stripe_id=None,  # No stripe id in this case
-        product_id=product_id,
-        price_id=price_id,
-        amount=amount,
-        user_id=user_id,  # Use looked up user_id
-        transaction_id=transaction_id,
-        firebase_uid=firebase_uid,
-        stripe_transaction_id=None  # No Stripe transaction for API purchases
-    )
-
-    # Create subscription for membership products
-    if purchase_id and product_id in ['basic_membership', 'full_membership']:
-        subscription_end_date = create_subscription(
-            user_id=None,  # Will be looked up from Firebase UID
-            subscription_type=product_id,
-            stripe_subscription_id=None,
-            firebase_uid=firebase_uid
-        )
-        print(f"Created subscription for Firebase UID {firebase_uid}, product {product_id}, valid until {subscription_end_date}")
-
-        # Activate OXIO line for Basic Membership purchases
-        if product_id == 'basic_membership' and user_data:
-            try:
-                print(f"Activating OXIO line for Basic Membership purchase by user {user_id}")
-
-                # Get user details for OXIO activation
-                user_email = user_data[1] if len(user_data) > 1 else "unknown@example.com"
-                # Make sure we get the OXIO user ID (column 7) not the Ethereum address (column 8)
-                oxio_user_id = user_data[7] if len(user_data) > 7 else None
-                eth_address = user_data[8] if len(user_data) > 8 else None
-                print(f"Debug: Retrieved user data - email: {user_email}, oxio_user_id: {oxio_user_id}, eth_address: {eth_address}")
-
-                # Use environment variable for ICCID or generate a demo one
-                iccid = os.environ.get('EUICCID1', f'8910650420001{user_id % 1000000:06d}F')
-
-                # Create OXIO line activation payload
-                oxio_activation_payload = {
-                    "lineType": "LINE_TYPE_MOBILITY",
-                    "sim": {
-                        "simType": "EMBEDDED",
-                        "iccid": iccid
-                    },
-                    "endUser": {
-                        "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
-                        "email": user_email
-                    },
-                    "phoneNumberRequirements": {
-                        "preferredAreaCode": "212"
-                    },
-                    "countryCode": "US",
-                    "activateOnAttach": True
-                }
-
-                # Only add endUserId if we have a valid OXIO user ID (UUID format, not an Ethereum address)
-                if oxio_user_id and oxio_user_id != eth_address and len(oxio_user_id) > 10 and '-' in oxio_user_id:
-                    oxio_activation_payload["endUser"]["endUserId"] = oxio_user_id
-                    print(f"Using valid OXIO user ID: {oxio_user_id}")
-                else:
-                    print(f"No valid OXIO user ID found (oxio_user_id: {oxio_user_id}, eth_address: {eth_address}), using email-based identification")
-
-                print(f"OXIO activation payload: {oxio_activation_payload}")
-
-                # Call OXIO line activation
-                oxio_result = oxio_service.activate_line(oxio_activation_payload)
-
-                if oxio_result.get('success'):
-                    print(f"Successfully activated OXIO line for Basic Membership purchase: {oxio_result}")
-
-                    # Store OXIO activation details in database
-                    try:
-                        with get_db_connection() as conn:
-                            if conn:
-                                with conn.cursor() as cur:
-                                    # Create OXIO activations table if it doesn't exist
-                                    cur.execute("""
-                                        CREATE TABLE IF NOT EXISTS oxio_activations (
-                                            id SERIAL PRIMARY KEY,
-                                            user_id INTEGER NOT NULL,
-                                            firebase_uid VARCHAR(128),
-                                            purchase_id INTEGER,
-                                            product_id VARCHAR(100),
-                                            iccid VARCHAR(50),
-                                            line_id VARCHAR(100),
-                                            phone_number VARCHAR(20),
-                                            activation_status VARCHAR(50),
-                                            oxio_response TEXT,
-                                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                        )
-                                    """)
-
-                                    # Extract details from OXIO response
-                                    oxio_data = oxio_result.get('data', {})
-                                    line_id = oxio_data.get('lineId')
-                                    phone_number = oxio_data.get('phoneNumber')
-
-                                    # Insert activation record
-                                    cur.execute("""
-                                        INSERT INTO oxio_activations 
-                                        (user_id, firebase_uid, purchase_id, product_id, iccid, 
-                                         line_id, phone_number, activation_status, oxio_response)
-                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                                    """, (user_id, firebase_uid, purchase_id, product_id, iccid, 
-                                          line_id, phone_number, 'activated', str(oxio_result)))
-
-                                    conn.commit()
-                                    print(f"Stored OXIO activation record for user {user_id}")
-                    except Exception as db_err:
-                        print(f"Error storing OXIO activation record: {str(db_err)}")
-                else:
-                    print(f"Failed to activate OXIO line: {oxio_result.get('message', 'Unknown error')}")
-
-            except Exception as oxio_err:
-                print(f"Error during OXIO line activation: {str(oxio_err)}")
-
-    if purchase_id:
-        print(f"Successfully recorded purchase: {purchase_id} for product: {product_id} with Firebase UID: {firebase_uid}")
-
-        # Award 10.33 DOTM tokens for all marketplace purchases
-        try:
-            if firebase_uid:
-                with get_db_connection() as conn:
-                    if conn:
-                        with conn.cursor() as cur:
-                            cur.execute("SELECT eth_address FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                            user_result = cur.fetchone()
-                            if user_result and user_result[0]:
-                                user_eth_address = user_result[0]
-                                # Award 10.33% of purchase amount in DOTM tokens
-                                success, tx_hash = ethereum_helper.reward_data_purchase(user_eth_address, amount)
-                                if success:
-                                    print(f"Awarded 10.33% DOTM tokens to {user_eth_address} for marketplace purchase. TX: {tx_hash}")
-                                else:
-                                    print(f"Failed to award marketplace purchase tokens: {tx_hash}")
-        except Exception as token_err:
-            print(f"Error awarding marketplace tokens: {str(token_err)}")
-
-        return {'status': 'success', 'purchaseId': purchase_id}
-    else:
-        print(f"Failed to record purchase for product: {product_id}")
-        # For demo purposes, we'll still create a simulated purchase ID
-        # This ensures the UI updates even if the database issues
-        simulated_purchase_id = f"SIM_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        print(f"Created simulated purchase ID: {simulated_purchase_id}")
-
-        # Try to award 10.33 DOTM tokens even if database recording failed# This time, as the database recording actually failed
-        try:
-            if firebase_uid:
-                with get_db_connection() as conn:
-                    if conn:
-                        with conn.cursor() as cur:
-                            cur.execute("SELECT eth_address FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                            user_result = cur.fetchone()
-                            if user_result and user_result[0]:
-                                user_eth_address = user_result[0]
-                                # Award 10.33% of purchase amount in DOTM tokens
-                                success, tx_hash = ethereum_helper.reward_data_purchase(user_eth_address, amount)
-                                if success:
-                                    print(f"Awarded 10.33% DOTM tokens to {user_eth_address} for simulated marketplace purchase. TX: {tx_hash}")
-        except Exception as sim_token_err:
-            print(f"Error awarding tokens for simulated purchase: {str(sim_token_err)}")
-
-        return {'status': 'success', 'purchaseId': simulated_purchase_id, 'simulated': True}
-
-
-@app.route('/create-tables', methods=['GET'])
-def create_tables_route():
-    """Endpoint to manually create database tables"""
-    results = {
-        'status': 'error',
-        'message': 'Failed to create tables'
-    }
-
-    try:
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Create the purchases table
-                    create_purchases_sql = """
-                    CREATE TABLE IF NOT EXISTS purchases (
-                        PurchaseID SERIAL PRIMARY KEY,
-                        StripeID VARCHAR(100),
-                        StripeProductID VARCHAR(100) NOT NULL,
-                        PriceID VARCHAR(100) NOT NULL,
-                        TotalAmount INTEGER NOT NULL,
-                        DateCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        UserID INTEGER
-                    );
-
-                    CREATE INDEX IF NOT EXISTS idx_purchases_stripe ON purchases(StripeID);
-                    CREATE INDEX IF NOT EXISTS idx_purchases_product ON purchases(StripeProductID);
-                    """
-                    cur.execute(create_purchases_sql)
-
-                    # Create the users table
-                    create_users_sql = """
-                    CREATE TABLE IF NOT EXISTS users (
-                        UserID SERIAL PRIMARY KEY,
-                        email VARCHAR(255) UNIQUE NOT NULL,
-                        stripe_customer_id VARCHAR(100),
-                        imei VARCHAR(100),
-                        DateCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    );
-                    """
-                    cur.execute(create_users_sql)
-
-                    # Create the subscriptions table
-                    create_subscriptions_sql = """
-                    CREATE TABLE IF NOT EXISTS subscriptions (
-                        subscription_id SERIAL PRIMARY KEY,
-                        user_id INTEGER NOT NULL,
-                        subscription_type VARCHAR(100) NOT NULL,
-                        stripe_subscription_id VARCHAR(100),
-                        start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        end_date TIMESTAMP NOT NULL,
-                        FOREIGN KEY (user_id) REFERENCES users(UserID)
-                    );
-                    """
-                    cur.execute(create_subscriptions_sql)
-
-
-                    conn.commit()
-                    results = {
-                        'status': 'success',
-                        'message': 'Tables created successfully'
-                    }
-            else:
-                results['message'] = 'Could not get database connection'
-    except Exception as e:
-        results['message'] = f'Error creating tables: {str(e)}'
-
-    return jsonify(results)
-
-
-@api.route('/check-memberships')
-class CheckMemberships(Resource):
-    def get(self):
-        try:
-            # Try to get user ID from session (in a real app)
-            user_id = 1  # Default for demo 
-
-            with get_db_connection() as conn:
-                if conn:
-                    with conn.cursor() as cur:
-                        # Check if user haspurchased any membership products
-                        cur.execute("""
-                            SELECT StripeProductID 
-                            FROM purchases 
-                            WHERE UserID = %s AND StripeProductID IN ('basic_membership', 'full_membership')
-                            LIMIT 1
-                        """, (user_id,))
-
-                        membership = cur.fetchone()
-                        if membership:
-                            return {
-                                'has_membership': True,
-                                'membership_type': membership[0]
-                            }
-
-                return {'has_membership': False}
-        except Exception as e:
-            print(f"Error checking memberships: {str(e)}")
-            return {'has_membership': False, 'error': str(e)}
-
 # Token related endpoints
 token_ns = api.namespace('token', description='DOTM Token operations')
 @token_ns.route('/price')
@@ -3786,7 +3142,7 @@ class CreateTestWallet(Resource):
                                     UserID SERIAL PRIMARY KEY,
                                     email VARCHAR(255),
                                     stripe_customer_id VARCHAR(100),
-                                    eth_address VARCHAR(42),
+                                    imei VARCHAR(100),
                                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                                 )
                             """)
@@ -4121,14 +3477,14 @@ def record_connectivity_ping(user_id, firebase_uid, ping_type='connectivity', de
         import time
         import socket
         import random
-        
+
         # Measure actual connectivity if latency not provided
         if latency_ms is None:
             try:
                 start_time = time.time() * 1000
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.settimeout(2)
-                
+
                 # Test connectivity to various endpoints
                 if destination == 'google':
                     s.connect(("8.8.8.8", 53))
@@ -4136,15 +3492,15 @@ def record_connectivity_ping(user_id, firebase_uid, ping_type='connectivity', de
                     s.connect(("1.1.1.1", 53))
                 else:
                     s.connect(("google.com", 443))
-                    
+
                 end_time = time.time() * 1000
                 s.close()
                 latency_ms = int(end_time - start_time)
-                
+
             except Exception as ping_err:
                 print(f"Ping failed to {destination}: {str(ping_err)}")
                 latency_ms = random.randint(200, 500)  # Simulate poor connectivity
-        
+
         # Store ping in database
         with get_db_connection() as conn:
             if conn:
@@ -4157,7 +3513,7 @@ def record_connectivity_ping(user_id, firebase_uid, ping_type='connectivity', de
                         'timestamp': datetime.now().isoformat(),
                         'hostname': socket.gethostname()
                     })
-                    
+
                     cur.execute(
                         """INSERT INTO token_price_pings 
                            (token_price, request_time_ms, response_time_ms, roundtrip_ms, 
@@ -4175,7 +3531,7 @@ def record_connectivity_ping(user_id, firebase_uid, ping_type='connectivity', de
                     )
                     conn.commit()
                     print(f"Recorded connectivity ping for user {firebase_uid}: {latency_ms}ms to {destination}")
-                    
+
         return True
     except Exception as e:
         print(f"Error recording connectivity ping: {str(e)}")
@@ -4187,41 +3543,41 @@ def run_background_connectivity_scans():
     try:
         opted_in_users = get_opted_in_users_for_network_scans()
         results = []
-        
+
         if not opted_in_users:
             return jsonify({
                 'status': 'success',
                 'message': 'No users opted into network scans',
                 'scans_completed': 0
             })
-        
+
         # Run pings for each opted-in user
         for user_id, firebase_uid, email, enabled in opted_in_users:
             # Test multiple endpoints for comprehensive monitoring
             endpoints = ['google', 'cloudflare', 'general']
             user_results = []
-            
+
             for endpoint in endpoints:
                 success = record_connectivity_ping(user_id, firebase_uid, 'background_scan', endpoint)
                 user_results.append({
                     'endpoint': endpoint,
                     'success': success
                 })
-            
+
             results.append({
                 'firebase_uid': firebase_uid,
                 'email': email,
                 'endpoints_tested': len(endpoints),
                 'results': user_results
             })
-        
+
         return jsonify({
             'status': 'success',
             'message': f'Background scans completed for {len(opted_in_users)} users',
             'scans_completed': len(results),
             'results': results
         })
-        
+
     except Exception as e:
         print(f"Error in run_background_connectivity_scans: {str(e)}")
         return jsonify({
@@ -4238,9 +3594,9 @@ def get_user_connectivity_stats(firebase_uid):
         user_data = get_user_by_firebase_uid(firebase_uid)
         if not user_data:
             return jsonify({'error': 'User not found'}), 404
-        
+
         user_id = user_data[0]
-        
+
         # Check if user has network_scans enabled
         with get_db_connection() as conn:
             if conn:
@@ -4249,14 +3605,14 @@ def get_user_connectivity_stats(firebase_uid):
                         SELECT enabled FROM user_network_preferences 
                         WHERE user_id = %s AND stripe_product_id = 'network_scans'
                     """, (user_id,))
-                    
+
                     result = cur.fetchone()
                     if not result or not result[0]:
                         return jsonify({
                             'status': 'error',
                             'message': 'Network scans not enabled for this user'
                         }), 403
-                    
+
                     # Get recent connectivity data
                     hours_back = int(request.args.get('hours', 24))
                     cur.execute("""
@@ -4268,9 +3624,9 @@ def get_user_connectivity_stats(firebase_uid):
                         ORDER BY created_at DESC
                         LIMIT 100
                     """, (hours_back, firebase_uid))
-                    
+
                     ping_data = cur.fetchall()
-                    
+
                     if not ping_data:
                         return jsonify({
                             'status': 'success',
@@ -4285,17 +3641,17 @@ def get_user_connectivity_stats(firebase_uid):
                             },
                             'recent_pings': []
                         })
-                    
+
                     # Calculate statistics
                     latencies = [row[0] for row in ping_data if row[0] is not None]
                     total_pings = len(ping_data)
                     successful_pings = len([l for l in latencies if l < 1000])  # Under 1 second
-                    
+
                     avg_latency = sum(latencies) / len(latencies) if latencies else 0
                     max_latency = max(latencies) if latencies else 0
                     min_latency = min(latencies) if latencies else 0
                     uptime_percentage = (successful_pings / total_pings * 100) if total_pings > 0 else 0
-                    
+
                     # Determine connection status
                     if avg_latency < 100:
                         status = 'excellent'
@@ -4305,7 +3661,7 @@ def get_user_connectivity_stats(firebase_uid):
                         status = 'fair'
                     else:
                         status = 'poor'
-                    
+
                     # Format recent pings for frontend
                     recent_pings = []
                     for latency, destination, timestamp, additional in ping_data[:20]:
@@ -4315,7 +3671,7 @@ def get_user_connectivity_stats(firebase_uid):
                             'timestamp': timestamp.isoformat() if timestamp else None,
                             'status': 'good' if latency and latency < 300 else 'poor'
                         })
-                    
+
                     return jsonify({
                         'status': 'success',
                         'stats': {
@@ -4330,9 +3686,9 @@ def get_user_connectivity_stats(firebase_uid):
                         },
                         'recent_pings': recent_pings
                     })
-        
+
         return jsonify({'error': 'Database connection failed'}), 500
-        
+
     except Exception as e:
         print(f"Error in get_user_connectivity_stats: {str(e)}")
         return jsonify({
@@ -4344,7 +3700,7 @@ def get_user_connectivity_stats(firebase_uid):
 def test_ping_creation():
     """Test endpoint to create a single ping record"""
     try:
-        # Ensure table exists
+        # Ensure table exists first
         create_token_pings_table()
 
         # Create a test ping directly
@@ -4401,22 +3757,22 @@ def speed_test_download(size_mb):
         # Limit size to prevent abuse
         size_mb = min(size_mb, 50)  # Max 50MB
         size_bytes = size_mb * 1024 * 1024
-        
+
         def generate_test_data():
             """Generate random test data"""
             import random
             chunk_size = 8192  # 8KB chunks
             total_sent = 0
-            
+
             while total_sent < size_bytes:
                 remaining = size_bytes - total_sent
                 current_chunk_size = min(chunk_size, remaining)
-                
+
                 # Generate random bytes for this chunk
                 chunk = bytes(random.randint(0, 255) for _ in range(current_chunk_size))
                 yield chunk
                 total_sent += current_chunk_size
-        
+
         return Response(
             generate_test_data(),
             mimetype='application/octet-stream',
@@ -4428,7 +3784,7 @@ def speed_test_download(size_mb):
                 'Expires': '0'
             }
         )
-        
+
     except Exception as e:
         print(f"Error in speed test download: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -4439,11 +3795,11 @@ def speed_test_upload():
     try:
         import time
         start_time = time.time()
-        
+
         # Read all uploaded data but don't store it
         total_bytes = 0
         chunk_size = 8192
-        
+
         if request.content_length:
             total_bytes = request.content_length
             # Read and discard the data in chunks
@@ -4458,23 +3814,23 @@ def speed_test_upload():
                 if not chunk:
                     break
                 total_bytes += len(chunk)
-        
+
         end_time = time.time()
         duration_seconds = end_time - start_time
-        
+
         # Calculate upload speed
         if duration_seconds > 0:
             mbps = (total_bytes / (1024 * 1024)) / duration_seconds * 8  # Convert to Mbps
         else:
             mbps = 0
-            
+
         return jsonify({
             'status': 'success',
             'bytes_received': total_bytes,
             'duration_seconds': duration_seconds,
             'upload_speed_mbps': round(mbps, 2)
         })
-        
+
     except Exception as e:
         print(f"Error in speed test upload: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -4495,18 +3851,16 @@ def initiate_speed_test():
     try:
         data = request.get_json()
         firebase_uid = data.get('firebaseUid')
-        
+
         if not firebase_uid:
             return jsonify({'error': 'Firebase UID required'}), 400
-            
-        # Verify user exists and is opted into network scans
+
+        # Perform basic checks to ensure user is logged in and has network scan feature enabled
         user_data = get_user_by_firebase_uid(firebase_uid)
         if not user_data:
             return jsonify({'error': 'User not found'}), 404
-        
+
         user_id = user_data[0]
-        
-        # Check if user has network_scans enabled
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
@@ -4514,14 +3868,13 @@ def initiate_speed_test():
                         SELECT enabled FROM user_network_preferences 
                         WHERE user_id = %s AND stripe_product_id = 'network_scans'
                     """, (user_id,))
-                    
-                    result = cur.fetchone()
-                    if not result or not result[0]:
+                    pref_result = cur.fetchone()
+                    if not pref_result or not pref_result[0]:
                         return jsonify({
                             'status': 'error',
                             'message': 'Network scans must be enabled to run speed tests'
                         }), 403
-        
+
         # Return cost information and test parameters
         return jsonify({
             'status': 'ready',
@@ -4540,7 +3893,7 @@ def initiate_speed_test():
             'firebase_uid': firebase_uid,
             'user_id': user_id
         })
-        
+
     except Exception as e:
         print(f"Error initiating speed test: {str(e)}")
         return jsonify({
@@ -4556,27 +3909,27 @@ def run_speed_test():
         data = request.get_json()
         firebase_uid = data.get('firebaseUid')
         test_confirmed = data.get('confirmed', False)
-        
+
         if not firebase_uid:
             return jsonify({'error': 'Firebase UID required'}), 400
-            
+
         if not test_confirmed:
             return jsonify({'error': 'Test must be confirmed by user'}), 400
-        
+
         # Perform real speed tests using actual file transfers
         import requests
         import time
-        
+
         print(f"Starting real speed test for user: {firebase_uid}")
-        
+
         # Get server's base URL for internal requests
         base_url = request.host_url.rstrip('/')
-        
+
         # Initialize results
         download_speeds = []
         upload_speeds = []
         latencies = []
-        
+
         # Real download speed tests (multiple sizes for accuracy)
         download_test_sizes = [1, 3, 5]  # MB
         for size_mb in download_test_sizes:
@@ -4585,24 +3938,24 @@ def run_speed_test():
                 start_time = time.time()
                 response = requests.get(f"{base_url}/api/speed-test/download/{size_mb}", 
                                       timeout=30, stream=True)
-                
+
                 total_bytes = 0
                 for chunk in response.iter_content(chunk_size=8192):
                     total_bytes += len(chunk)
-                
+
                 end_time = time.time()
                 duration = end_time - start_time
-                
+
                 if duration > 0 and total_bytes > 0:
                     mbps = (total_bytes / (1024 * 1024)) / duration * 8
                     download_speeds.append(round(mbps, 2))
                     print(f"Download {size_mb}MB: {mbps:.2f} Mbps")
-                    
+
             except Exception as e:
                 print(f"Download test {size_mb}MB failed: {e}")
                 # Add fallback value to prevent empty list
                 download_speeds.append(50.0)
-        
+
         # Real upload speed tests  
         upload_test_sizes = [1, 2]  # MB (smaller for upload)
         for size_mb in upload_test_sizes:
@@ -4610,40 +3963,40 @@ def run_speed_test():
                 print(f"Testing upload speed with {size_mb}MB data...")
                 # Create test data
                 test_data = b'X' * (size_mb * 1024 * 1024)
-                
+
                 start_time = time.time()
                 response = requests.post(f"{base_url}/api/speed-test/upload",
                                        data=test_data, timeout=30)
                 end_time = time.time()
-                
+
                 if response.status_code == 200:
                     duration = end_time - start_time
                     if duration > 0:
                         mbps = (len(test_data) / (1024 * 1024)) / duration * 8
                         upload_speeds.append(round(mbps, 2))
                         print(f"Upload {size_mb}MB: {mbps:.2f} Mbps")
-                        
+
             except Exception as e:
                 print(f"Upload test {size_mb}MB failed: {e}")
                 # Add fallback value to prevent empty list
                 upload_speeds.append(25.0)
-        
+
         # Real latency tests
         for i in range(5):
             try:
                 start_time = time.time()
                 response = requests.get(f"{base_url}/api/speed-test/ping", timeout=5)
                 end_time = time.time()
-                
+
                 if response.status_code == 200:
                     latency_ms = (end_time - start_time) * 1000
                     latencies.append(round(latency_ms, 1))
-                    
+
             except Exception as e:
                 print(f"Latency test {i+1} failed: {e}")
                 # Add fallback value
                 latencies.append(50.0)
-        
+
         # Ensure we have data (fallback to reasonable values if all tests fail)
         if not download_speeds:
             download_speeds = [45.0, 48.0, 52.0]
@@ -4651,19 +4004,19 @@ def run_speed_test():
             upload_speeds = [22.0, 25.0]
         if not latencies:
             latencies = [45.0, 48.0, 52.0, 49.0, 46.0]
-        
+
         # Calculate averages
         avg_download = round(sum(download_speeds) / len(download_speeds), 2)
         avg_upload = round(sum(upload_speeds) / len(upload_speeds), 2)
         avg_latency = round(sum(latencies) / len(latencies), 2)
-        
+
         # Store comprehensive speed test results
         store_speed_test_results(firebase_uid, {
             'download': {'average_mbps': avg_download, 'measurements_mbps': download_speeds},
             'upload': {'average_mbps': avg_upload, 'measurements_mbps': upload_speeds},
             'latency': {'average_ms': avg_latency, 'measurements_ms': latencies}
         })
-        
+
         # Record the speed test in database
         try:
             user_data = get_user_by_firebase_uid(firebase_uid)
@@ -4678,7 +4031,7 @@ def run_speed_test():
                 )
         except Exception as ping_err:
             print(f"Error recording speed test ping: {str(ping_err)}")
-        
+
         return jsonify({
             'status': 'completed',
             'results': {
@@ -4714,7 +4067,7 @@ def run_speed_test():
                 'test_type': 'Standard'
             }
         })
-        
+
     except Exception as e:
         print(f"Error running speed test: {str(e)}")
         return jsonify({
@@ -4751,7 +4104,7 @@ def store_speed_test_results(firebase_uid, results):
                     ))
                     conn.commit()
                     print(f"Stored speed test results for user {firebase_uid}")
-                    
+
     except Exception as e:
         print(f"Error storing speed test results: {str(e)}")
 
@@ -4763,7 +4116,7 @@ def get_speed_test_history(firebase_uid):
         # Validate that the requesting user can access this data
         if firebase_uid != request.args.get('firebaseUid'):
             return jsonify({'error': 'Unauthorized access'}), 403
-            
+
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
@@ -4776,13 +4129,13 @@ def get_speed_test_history(firebase_uid):
                         ORDER BY created_at DESC 
                         LIMIT 5
                     """, (firebase_uid,))
-                    
+
                     results = cur.fetchall()
-                    
+
                     speed_tests = []
                     for row in results:
                         additional_data, created_at, latency_ms = row
-                        
+
                         # Parse the JSON data
                         if additional_data:
                             try:
@@ -4790,11 +4143,11 @@ def get_speed_test_history(firebase_uid):
                                     test_data = json.loads(additional_data)
                                 else:
                                     test_data = additional_data
-                                    
+
                                 download_mbps = test_data.get('download_mbps', 0)
                                 upload_mbps = test_data.get('upload_mbps', 0)
                                 latency_ms_val = test_data.get('latency_ms', latency_ms or 0)
-                                
+
                                 # Determine connection quality
                                 if download_mbps > 100:
                                     quality = 'excellent'
@@ -4802,7 +4155,7 @@ def get_speed_test_history(firebase_uid):
                                     quality = 'good'
                                 else:
                                     quality = 'fair'
-                                    
+
                                 speed_tests.append({
                                     'download_mbps': round(download_mbps, 1),
                                     'upload_mbps': round(upload_mbps, 1),
@@ -4813,17 +4166,41 @@ def get_speed_test_history(firebase_uid):
                             except json.JSONDecodeError as e:
                                 print(f"Error parsing speed test data: {e}")
                                 continue
-                    
+
                     return jsonify({
                         'status': 'success',
                         'results': speed_tests
                     })
             else:
                 return jsonify({'error': 'Database connection failed'}), 500
-                
+
     except Exception as e:
         print(f"Error fetching speed test history: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+def create_token_pings_table():
+    """Helper function to create token_price_pings table if it doesn't exist"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS token_price_pings (
+                            id SERIAL PRIMARY KEY,
+                            token_price DECIMAL(18,9),
+                            request_time_ms INTEGER,
+                            response_time_ms INTEGER,
+                            roundtrip_ms INTEGER,
+                            ping_destination VARCHAR(255),
+                            source VARCHAR(100),
+                            additional_data TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    """)
+                    conn.commit()
+                    print("Ensured token_price_pings table exists.")
+    except Exception as e:
+        print(f"Error ensuring token_price_pings table exists: {str(e)}")
 
 @app.route('/populate-token-pings', methods=['GET'])
 def populate_token_pings():
@@ -4835,44 +4212,17 @@ def populate_token_pings():
         # Generate 10 sample pings
         results = []
 
-        # Create the token_price_pings table if it doesn't exist yet
+        # Insert 20 sample records spanning the last 24 hours
+        import json
+        import random
+        import time
+        from datetime import datetime, timedelta
+
+        print("Inserting sample ping data...")
+
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Check if table exists
-                    cur.execute(
-                        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'token_price_pings')"
-                    )
-                    table_exists = cur.fetchone()[0]
-
-                    if not table_exists:
-                        print("Creating token_price_pings table...")
-                        create_table_sql = """
-                        CREATE TABLE token_price_pings (
-                            id SERIAL PRIMARY KEY,
-                            token_price DECIMAL(18,9) NOT NULL,
-                            request_time_ms INTEGER,
-                            response_time_ms INTEGER,
-                            roundtrip_ms INTEGER,
-                            ping_destination VARCHAR(255),
-                            source VARCHAR(100),
-                            additional_data TEXT,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        );
-                        """
-                        cur.execute(create_table_sql)
-                        conn.commit()
-                        print("token_price_pings table created successfully")
-
-                    # Generate sample ping data directly
-                    import json
-                    import random
-                    import time
-                    from datetime import datetime, timedelta
-
-                    print("Inserting sample ping data...")
-
-                    # Insert 20 sample records spanning the last 24 hours
                     for i in range(20):
                         # Create varying timestamps over the last 24 hours
                         hours_ago = random.uniform(0, 24)
@@ -5037,7 +4387,7 @@ def fix_user_oxio_data():
                             'email': user_email,
                             'firebase_uid': firebase_uid,
                             'oxio_response': existing_user_result
-                        }), 404
+                        }), 500
 
         return jsonify({'success': False, 'message': 'Database connection error'}), 500
 
@@ -5595,10 +4945,9 @@ def reject_beta_request(request_id):
     try:
         from beta_approval_service import BetaApprovalService
 
-        # Get optional reason from query parameter
+        beta_service = BetaApprovalService()
         reason = request.args.get('reason', 'Not specified')
 
-        beta_service = BetaApprovalService()
         result = beta_service.reject_beta_request(request_id, reason)
 
         if result['success']:
@@ -5846,10 +5195,11 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                 .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
                 .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; }}
                 .content {{ padding: 30px 20px; }}
-                .esim-card {{ background: #e8f5e8; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #28a745; }}
+                .profile-card {{ background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #28a745; }}
                 .qr-section {{ background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }}
                 .next-steps {{ background: #fff3cd; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #ffc107; }}
                 .footer {{ background: #343a40; color: white; padding: 20px; text-align: center; font-size: 12px; }}
+                .btn {{ display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 5px; }}
                 .highlight {{ color: #28a745; font-weight: bold; }}
                 .lpa-code {{ font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 4px; word-break: break-all; margin: 10px 0; }}
             </style>
@@ -5857,22 +5207,21 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>🎉 eSIM Purchased Successfully!</h1>
-                    <p>Your DOTM eSIM is ready for activation</p>
+                    <h1>🎉 eSIM Activation Successful!</h1>
+                    <p>Your DOTM eSIM Beta access is now active</p>
                 </div>
 
                 <div class="content">
-                    <div class="esim-card">
-                        <h3>📱 Your eSIM Details</h3>
+                    <div class="profile-card">
+                        <h3>📱 Your eSIM Profile Details</h3>
                         <ul>
-                            <li><strong>ICCID:</strong> <span class="highlight">{assigned_iccid['iccid']}</span></li>
-                            <li><strong>Country:</strong> {assigned_iccid['country']}</li>
-                            <li><strong>Status:</strong> ✅ <span class="highlight">Ready for Activation</span></li>
-                            <li><strong>Purchase Date:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</li>
+                            <li><strong>Phone Number:</strong> <span class="highlight">{phone_number or 'Assigned by carrier'}</span></li>
+                            <li><strong>Line ID:</strong> {line_id or 'System assigned'}</li>
+                            <li><strong>ICCID:</strong> {iccid or 'Available in dashboard'}</li>
+                            <li><strong>Plan:</strong> {plan_id.replace('_', ' ').title() if plan_id else 'Basic eSIM Plan'}</li>
+                            <li><strong>Status:</strong> ✅ <span class="highlight">Active</span></li>
+                            <li><strong>Activation Date:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}</li>
                         </ul>
-
-                        <h4>🔐 LPA Activation Code:</h4>
-                        <div class="lpa-code">{assigned_iccid['lpa_code']}</div>
                     </div>
 
                     <div class="qr-section">
@@ -5891,14 +5240,19 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
                             <li>Follow your device's eSIM installation instructions</li>
                             <li>Start using your global connectivity!</li>
                         </ol>
-                        <p><strong>Need help?</strong> Visit your <a href="https://dotmobile.app/profile">DOTM Dashboard</a> for complete setup instructions.</p>
+                        <p>Need help? Visit your <a href="https://dotmobile.app/profile">DOTM Dashboard</a> for complete setup instructions.</p>
                     </div>
 
                     <div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">
                         <h4>📞 Support</h4>
                         <p>Questions? Contact us at <a href="mailto:support@dotmobile.app">support@dotmobile.app</a></p>
-                        <p>Account ID: {firebase_uid}</p>
+                        <p>Technical ID: {oxio_user_id or firebase_uid or 'N/A'}</p>
                     </div>
+                </div>
+
+                <div class="footer">
+                    <p>DOTM Platform - Global Mobile Connectivity</p>
+                    <p>Data On Tap Inc. | Licensed Full MVNO | Network 302 100</p>
                 </div>
             </div>
         </body>
@@ -5920,21 +5274,140 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
         result = send_email(
             to_email=user_email,
             subject=subject,
-            body="eSIM receipt - please check HTML version for QR code and full details",
+            body="Your eSIM is ready! Check the HTML version for QR code and full details.",
             html_body=html_body,
             attachments=attachments
         )
 
-        print(f"✅ Sent eSIM receipt email to {user_email} with QR code attachment")
+        print(f"Sent eSIM receipt email to {user_email} with QR code attachment")
         return result
 
     except Exception as e:
         print(f"Error sending eSIM receipt email: {str(e)}")
         return False
 
+# ==========================================
+# HOTSPOT CONFIGURATION API ENDPOINT
+# ==========================================
+@app.route('/api/hotspot/config', methods=['POST', 'GET'])
+def hotspot_config():
+    """Get or update hotspot configuration"""
+    try:
+        if request.method == 'POST':
+            data = request.get_json()
+            firebase_uid = data.get('firebaseUid')
+
+            if not firebase_uid:
+                return jsonify({'error': 'Firebase UID required'}), 400
+
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Create hotspot_config table if it doesn't exist
+                        cur.execute("""
+                            CREATE TABLE IF NOT EXISTS hotspot_config (
+                                id SERIAL PRIMARY KEY,
+                                firebase_uid VARCHAR(128) NOT NULL,
+                                enabled BOOLEAN DEFAULT TRUE,
+                                policy VARCHAR(50) DEFAULT 'plan',
+                                roaming_gb INTEGER,
+                                device_limit BOOLEAN DEFAULT FALSE,
+                                max_devices INTEGER,
+                                applies_home_countries BOOLEAN DEFAULT FALSE,
+                                applies_roam_countries BOOLEAN DEFAULT FALSE,
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                UNIQUE(firebase_uid)
+                            )
+                        """)
+
+                        # Insert or update hotspot configuration
+                        cur.execute("""
+                            INSERT INTO hotspot_config 
+                            (firebase_uid, enabled, policy, roaming_gb, device_limit, 
+                             max_devices, applies_home_countries, applies_roam_countries, updated_at)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                            ON CONFLICT (firebase_uid) 
+                            DO UPDATE SET 
+                                enabled = EXCLUDED.enabled,
+                                policy = EXCLUDED.policy,
+                                roaming_gb = EXCLUDED.roaming_gb,
+                                device_limit = EXCLUDED.device_limit,
+                                max_devices = EXCLUDED.max_devices,
+                                applies_home_countries = EXCLUDED.applies_home_countries,
+                                applies_roam_countries = EXCLUDED.applies_roam_countries,
+                                updated_at = CURRENT_TIMESTAMP
+                        """, (
+                            firebase_uid,
+                            data.get('enabled', True),
+                            data.get('policy', 'plan'),
+                            data.get('roamingGB'),
+                            data.get('deviceLimit', False),
+                            data.get('maxDevices'),
+                            data.get('homeCountries', False),
+                            data.get('roamCountries', False)
+                        ))
+
+                        conn.commit()
+
+                        return jsonify({
+                            'success': True,
+                            'message': 'Hotspot configuration saved successfully'
+                        })
+
+        else:  # GET request
+            firebase_uid = request.args.get('firebaseUid')
+
+            if not firebase_uid:
+                return jsonify({'error': 'Firebase UID required'}), 400
+
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            SELECT enabled, policy, roaming_gb, device_limit, max_devices,
+                                   applies_home_countries, applies_roam_countries
+                            FROM hotspot_config
+                            WHERE firebase_uid = %s
+                        """, (firebase_uid,))
+
+                        result = cur.fetchone()
+
+                        if result:
+                            return jsonify({
+                                'success': True,
+                                'config': {
+                                    'enabled': result[0],
+                                    'policy': result[1],
+                                    'roamingGB': result[2],
+                                    'deviceLimit': result[3],
+                                    'maxDevices': result[4],
+                                    'homeCountries': result[5],
+                                    'roamCountries': result[6]
+                                }
+                            })
+                        else:
+                            # Return default configuration
+                            return jsonify({
+                                'success': True,
+                                'config': {
+                                    'enabled': True,
+                                    'policy': 'plan',
+                                    'roamingGB': None,
+                                    'deviceLimit': False,
+                                    'maxDevices': None,
+                                    'homeCountries': False,
+                                    'roamCountries': False
+                                }
+                            })
+
+        return jsonify({'error': 'Database connection error'}), 500
+    except Exception as e:
+        print(f"Error handling hotspot configuration: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 # ==========================================
-# DATASHARE API ENDPOINTS
+# DATA SHARE API ENDPOINTS
 # ==========================================
 
 @app.route('/api/send-invitation', methods=['POST'])
@@ -5970,7 +5443,7 @@ def send_datashare_invitation():
         # Generate invitation token
         import secrets
         invitation_token = secrets.token_urlsafe(32)
-        
+
         # Generate invitation link
         invitation_link = f"https://gorse.dotmobile.app/signup?invite={invitation_token}"
 
@@ -6008,7 +5481,7 @@ def send_datashare_invitation():
                         RETURNING id
                     """, (email, 'pending', sender_user_id, firebase_uid, invitation_token, 
                           personal_message, is_demo_user))
-                    
+
                     invitation_id = cur.fetchone()[0]
                     conn.commit()
 
@@ -6017,9 +5490,9 @@ def send_datashare_invitation():
         if not is_demo_user:
             try:
                 from email_service import send_email_via_resend
-                
+
                 subject = "You're invited to join DOTM Datashare!"
-                
+
                 html_body = f"""
                 <html>
                 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -6028,12 +5501,12 @@ def send_datashare_invitation():
                             <h1>🚀 You're Invited to DOTM Datashare!</h1>
                             <p>Join the future of global connectivity</p>
                         </div>
-                        
+
                         <div style="padding: 30px 0;">
                             <p>You've been invited to join DOTM's exclusive datashare network for global connectivity!</p>
-                            
+
                             {f'<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;"><strong>Personal message:</strong><br>{personal_message}</div>' if personal_message else ''}
-                            
+
                             <h3>🌍 What you'll get:</h3>
                             <ul style="list-style: none; padding: 0;">
                                 <li style="padding: 8px 0;"><span style="color: #28a745;">✓</span> Global data connectivity in 160+ countries</li>
@@ -6041,17 +5514,17 @@ def send_datashare_invitation():
                                 <li style="padding: 8px 0;"><span style="color: #28a745;">✓</span> Datashare network benefits</li>
                                 <li style="padding: 8px 0;"><span style="color: #28a745;">✓</span> DOTM token rewards</li>
                             </ul>
-                            
+
                             <div style="text-align: center; margin: 40px 0;">
                                 <a href="{invitation_link}" 
                                    style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
                                     Accept Invitation 🚀
                                 </a>
                             </div>
-                            
+
                             <p style="font-size: 14px; color: #666;">This invitation expires in 7 days.</p>
                         </div>
-                        
+
                         <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-top: 3px solid #667eea;">
                             <p style="margin: 0; font-size: 12px; color: #666; text-align: center;">
                                 DOTM Platform - Data On Tap Mobile<br>
@@ -6063,16 +5536,16 @@ def send_datashare_invitation():
                 </body>
                 </html>
                 """
-                
+
                 email_sent = send_email_via_resend(
                     to_email=email,
                     subject=subject,
                     body="Please view this email in HTML format",
                     html_body=html_body
                 )
-                
+
                 print(f"{'✅' if email_sent else '❌'} Invitation email to {email}: {'sent' if email_sent else 'failed'}")
-                
+
             except Exception as e:
                 print(f"Error sending invitation email: {str(e)}")
                 email_sent = False
@@ -6097,7 +5570,7 @@ def get_datashare_invitations():
     try:
         firebase_uid = request.args.get('firebaseUid')  # Validated by @require_auth decorator
         limit = int(request.args.get('limit', 50))
-        
+
         if not firebase_uid:
             return jsonify({'success': False, 'error': 'Firebase UID is required'}), 400
 
@@ -6128,12 +5601,12 @@ def get_datashare_invitations():
                         ORDER BY created_at DESC 
                         LIMIT %s
                     """, (user_id, limit))
-                    
+
                     results = cur.fetchall()
                     for row in results:
                         (invite_id, email, status, message, is_demo, created_at, 
                          updated_at, expires_at, accepted_at, rejected_at, cancelled_at) = row
-                        
+
                         invitations.append({
                             'id': invite_id,
                             'email': email,
@@ -6165,7 +5638,7 @@ def delete_datashare_invitation(invite_id):
     """Delete a datashare invitation"""
     try:
         firebase_uid = request.args.get('firebaseUid')  # Validated by @require_auth decorator
-        
+
         if not firebase_uid:
             return jsonify({'success': False, 'error': 'Firebase UID is required'}), 400
 
@@ -6191,10 +5664,10 @@ def delete_datashare_invitation(invite_id):
                         WHERE id = %s AND invited_by_user_id = %s
                         RETURNING id
                     """, (invite_id, user_id))
-                    
+
                     deleted = cur.fetchone()
                     conn.commit()
-                    
+
                     if not deleted:
                         return jsonify({'success': False, 'error': 'Invitation not found or not authorized'}), 404
 
@@ -6225,8 +5698,9 @@ if __name__ == '__main__':
     print(f"  - POST /api/oxio/test-sample-activation")
 
     try:
+        # Use the correct SocketIO run call if SocketIO is initialized
         socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
     except Exception as e:
-        print(f"Error starting server: {str(e)}")
-        # Fallback to standard Flask run
+        print(f"Error starting server with SocketIO: {str(e)}")
+        # Fallback to standard Flask run if SocketIO fails
         app.run(host='0.0.0.0', port=port, debug=True)
