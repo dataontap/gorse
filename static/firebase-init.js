@@ -10,15 +10,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     measurementId: "G-WHW3XT925P"
   };
 
-  // Initialize Firebase (only if not already initialized)
+  // Initialize Firebase
   if (typeof firebase !== 'undefined') {
     try {
-      if (!firebase.apps.length) {
-        const app = firebase.initializeApp(firebaseConfig);
-        console.log("Firebase App initialized successfully");
-      } else {
-        console.log("Firebase App already initialized, skipping duplicate initialization");
-      }
+      const app = firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      console.log("Firebase initialized successfully");
     } catch (error) {
       console.error("Firebase initialization error:", error);
     }
@@ -33,13 +30,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
       const { getMessaging, getToken, onMessage } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js');
 
-      // Use existing Firebase app or initialize new one
-      let app;
-      if (firebase.apps && firebase.apps.length > 0) {
-        app = firebase.apps[0]; // Use existing Firebase v8 app
-      } else {
-        app = initializeApp(firebaseConfig); // Initialize new v9 app for messaging
-      }
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
 
       // Register service worker and wait for it to be ready

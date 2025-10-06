@@ -481,33 +481,21 @@
                         <div class="notification-message">${notification.message}</div>
                         <div class="notification-time">${formatTime(notification.time)}</div>
                         ${notification.isWelcome ? `
-                            <div class="welcome-message-controls" style="margin-top: 15px;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                    <label style="font-weight: 500; color: var(--text-primary);">
-                                        <i class="fas fa-language"></i> Language:
-                                    </label>
-                                    <select id="language-selector-${notification.id}" 
-                                            onchange="changeWelcomeLanguage('${notification.id}', this.value)"
-                                            style="padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-primary); cursor: pointer;">
-                                        <option value="en">English</option>
-                                        <option value="es">Español</option>
-                                        <option value="fr">Français</option>
-                                    </select>
-                                </div>
+                            <div class="welcome-message-controls">
                                 ${notification.audioUrl ? `
                                     <a href="/download/audio/${notification.audioUrl.split('/').pop()}" class="play-welcome-btn" style="text-decoration: none; display: inline-block;">
                                         <i class="fas fa-download"></i> Download Audio Message
                                     </a>
-                                    <audio id="welcome-audio-player-${notification.id}" controls style="width: 100%; margin-top: 10px;" ontimeupdate="trackAudioPosition('${notification.id}')">
+                                    <audio controls style="width: 100%; margin-top: 10px;">
                                         <source src="${notification.audioUrl}" type="audio/mpeg">
                                         Your browser does not support the audio element.
                                     </audio>
                                 ` : `
-                                    <button class="play-welcome-btn" onclick="generateWelcomeAudio('${notification.id}', 'en', this)">
+                                    <button class="play-welcome-btn" onclick="generateWelcomeAudio(null, this)">
                                         <i class="fas fa-play"></i> Play Welcome Message
                                     </button>
-                                    <div id="welcome-audio-container-${notification.id}" style="display: none; margin-top: 10px;">
-                                        <audio id="welcome-audio-player-${notification.id}" controls style="width: 100%;" ontimeupdate="trackAudioPosition('${notification.id}')">
+                                    <div id="welcome-audio-${notification.id}" style="display: none; margin-top: 10px;">
+                                        <audio controls style="width: 100%;">
                                             <source type="audio/mpeg">
                                             Your browser does not support the audio element.
                                         </audio>
@@ -730,135 +718,6 @@
                 buttonElement.disabled = false;
             });
         }
-        // Track audio positions for each welcome message
-        const audioPositions = {};
-
-        function trackAudioPosition(notificationId) {
-            const audioPlayer = document.getElementById(`welcome-audio-player-${notificationId}`);
-            if (audioPlayer && !audioPlayer.paused) {
-                audioPositions[notificationId] = audioPlayer.currentTime;
-            }
-        }
-
-        async function changeWelcomeLanguage(notificationId, language) {
-            const audioPlayer = document.getElementById(`welcome-audio-player-${notificationId}`);
-            const currentPosition = audioPositions[notificationId] || audioPlayer?.currentTime || 0;
-            const wasPlaying = audioPlayer && !audioPlayer.paused;
-
-            // Get Firebase UID
-            const firebaseUid = getFirebaseUID();
-            if (!firebaseUid) {
-                alert('Please log in to change language');
-                return;
-            }
-
-            try {
-                // Generate new audio in selected language
-                const response = await fetch('/api/welcome-message/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        firebase_uid: firebaseUid,
-                        language: language,
-                        voice_id: '21m00Tcm4TlvDq8ikWAM'
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (data.success && data.audioUrl) {
-                    // Update audio source
-                    const sourceElement = audioPlayer.querySelector('source');
-                    sourceElement.src = data.audioUrl;
-                    audioPlayer.load();
-
-                    // Calculate new position with -2 second offset
-                    const newPosition = Math.max(0, currentPosition - 2);
-                    
-                    // Wait for audio to be ready
-                    audioPlayer.addEventListener('loadedmetadata', function onLoaded() {
-                        audioPlayer.currentTime = newPosition;
-                        
-                        // Resume playing if it was playing before
-                        if (wasPlaying) {
-                            audioPlayer.play().catch(e => {
-                                console.log('Auto-play blocked, user needs to click play');
-                            });
-                        }
-                        
-                        // Remove event listener
-                        audioPlayer.removeEventListener('loadedmetadata', onLoaded);
-                    });
-                } else {
-                    alert('Error loading audio in ' + language + ': ' + (data.error || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error('Error changing language:', error);
-                alert('Error changing language. Please try again.');
-            }
-        }
-
-        function generateWelcomeAudio(notificationId, language, buttonElement) {
-            // Get Firebase UID from current user
-            const firebaseUid = getFirebaseUID();
-
-            if (!firebaseUid) {
-                alert('Please log in to play welcome message');
-                return;
-            }
-
-            // Disable button and show loading state
-            buttonElement.disabled = true;
-            buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-
-            // Find the audio container for this notification
-            const audioContainer = document.getElementById(`welcome-audio-container-${notificationId}`);
-
-            fetch('/api/welcome-message/generate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    firebase_uid: firebaseUid,
-                    language: language,
-                    voice_id: '21m00Tcm4TlvDq8ikWAM'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.audioUrl) {
-                    // Show the audio player and set the source
-                    const audioElement = audioContainer.querySelector('audio');
-                    const sourceElement = audioElement.querySelector('source');
-                    sourceElement.src = data.audioUrl;
-                    audioElement.load();
-                    audioContainer.style.display = 'block';
-                    
-                    // Update button
-                    buttonElement.innerHTML = '<i class="fas fa-check"></i> Generated!';
-                    buttonElement.disabled = false;
-                    
-                    // Auto-play the audio
-                    audioElement.play().catch(e => {
-                        console.log('Auto-play blocked by browser, user needs to click play');
-                    });
-                } else {
-                    alert('Error generating welcome message: ' + (data.error || 'Unknown error'));
-                    buttonElement.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
-                    buttonElement.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error generating welcome message:', error);
-                alert('Error generating welcome message. Please try again.');
-                buttonElement.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
-                buttonElement.disabled = false;
-            });
-        }
-
         function playNotificationWelcomeMessage() {
             const firebaseUid = getFirebaseUID();
             const language = document.getElementById('notificationLanguage').value;

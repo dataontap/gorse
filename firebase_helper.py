@@ -3,8 +3,7 @@ import os
 import firebase_admin
 from firebase_admin import credentials, auth
 from functools import wraps
-from flask import request, jsonify, redirect, url_for
-import psycopg2
+from flask import request, jsonify
 
 # Initialize Firebase Admin SDK
 try:
@@ -46,137 +45,16 @@ def firebase_auth_required(f):
     """Decorator for Firebase Authentication on API routes"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Check if Firebase Admin is properly initialized
-        try:
-            if not firebase_admin._apps:
-                print("WARNING: Firebase Admin not initialized, skipping token verification")
-                # Try to extract user info from request body or query params
-                user_uid, user_email = extract_user_from_request()
-                request.user_uid = user_uid
-                request.user_email = user_email
-                
-                # Check account status
-                account_status = check_account_status(user_uid)
-                if account_status in ['deleted', 'pending_deletion']:
-                    if request.path.startswith('/api/'):
-                        return jsonify({
-                            'error': 'Account has been deleted or is pending deletion',
-                            'account_status': account_status,
-                            'redirect': '/account-deleted'
-                        }), 403
-                    return redirect('/account-deleted')
-                
-                return f(*args, **kwargs)
-            
-            # Try to verify token
-            decoded_token, error = verify_firebase_token(request)
-            if error and ("Wrong number of segments" in str(error) or "mock-token-for-testing" in str(error)):
-                # Handle development/mock token case
-                print(f"WARNING: Mock token detected, proceeding in development mode: {error}")
-                # Extract user info from request body or query params
-                user_uid, user_email = extract_user_from_request()
-                request.user_uid = user_uid
-                request.user_email = user_email
-                
-                # Check account status even in dev mode
-                account_status = check_account_status(user_uid)
-                if account_status in ['deleted', 'pending_deletion']:
-                    if request.path.startswith('/api/'):
-                        return jsonify({
-                            'error': 'Account has been deleted or is pending deletion',
-                            'account_status': account_status,
-                            'redirect': '/account-deleted'
-                        }), 403
-                    return redirect('/account-deleted')
-                
-                return f(*args, **kwargs)
-            
-            if error:
-                return jsonify({'error': f'Unauthorized: {error}'}), 401
-                
-            # Add the decoded token to request object
-            request.firebase_user = decoded_token
-            request.user_uid = decoded_token.get('uid')
-            request.user_email = decoded_token.get('email')
-            
-            # Check account status
-            account_status = check_account_status(request.user_uid)
-            if account_status in ['deleted', 'pending_deletion']:
-                # For API requests, return JSON error
-                if request.path.startswith('/api/'):
-                    return jsonify({
-                        'error': 'Account has been deleted or is pending deletion',
-                        'account_status': account_status,
-                        'redirect': '/account-deleted'
-                    }), 403
-                # For page requests, redirect to landing page
-                return redirect('/account-deleted')
-            
+        if not firebase_admin._apps:
+            # Firebase Admin not initialized, proceed without verification (for development)
+            print("WARNING: Firebase Admin not initialized, skipping token verification")
             return f(*args, **kwargs)
             
-        except Exception as e:
-            print(f"Firebase auth error: {e}")
-            # Fallback to development mode
-            user_uid, user_email = extract_user_from_request()
-            request.user_uid = user_uid
-            request.user_email = user_email
-            return f(*args, **kwargs)
+        decoded_token, error = verify_firebase_token(request)
+        if error:
+            return jsonify({'error': f'Unauthorized: {error}'}), 401
             
+        # Add the decoded token to request object
+        request.firebase_user = decoded_token
+        return f(*args, **kwargs)
     return decorated_function
-
-def extract_user_from_request():
-    """Extract Firebase UID and email from request body or query params"""
-    user_uid = None
-    user_email = None
-    
-    # Try to get from request body (JSON)
-    try:
-        if request.is_json:
-            data = request.get_json()
-            user_uid = data.get('firebase_uid') or data.get('firebaseUid')
-            user_email = data.get('email')
-    except:
-        pass
-    
-    # Try to get from form data
-    if not user_uid:
-        try:
-            user_uid = request.form.get('firebase_uid') or request.form.get('firebaseUid')
-            user_email = request.form.get('email')
-        except:
-            pass
-    
-    # Try to get from query parameters
-    if not user_uid:
-        user_uid = request.args.get('firebase_uid') or request.args.get('firebaseUid')
-        user_email = request.args.get('email')
-    
-    # Default fallback
-    if not user_uid:
-        user_uid = "dev-user-uid"
-    if not user_email:
-        user_email = "dev-user@example.com"
-    
-    print(f"Extracted user from request: UID={user_uid}, Email={user_email}")
-    return user_uid, user_email
-
-def check_account_status(firebase_uid):
-    """Check if user account is deleted or pending deletion"""
-    try:
-        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            "SELECT account_status FROM users WHERE firebase_uid = %s",
-            (firebase_uid,)
-        )
-        result = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        
-        if result:
-            return result[0]
-        return 'active'
-    except Exception as e:
-        print(f"Error checking account status: {e}")
-        return 'active'  # Fail open to not block legitimate users

@@ -2298,18 +2298,18 @@ body.light-mode {
 
 .usage-metrics {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     justify-content: space-between;
     align-items: center;
     text-align: center;
     margin: 0 auto;
     width: 100%;
-    padding: 0 5px;
+    padding: 0 10px;
 }
 .metric {
     flex: 1;
     background: rgba(200, 200, 200, 0.2);
-    padding: 6px 4px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2317,52 +2317,8 @@ body.light-mode {
     border-radius: 6px;
     transition: all 0.3s ease;
     text-align: center;
-    min-width: 0;
-    overflow: hidden;
-}
-
-/* Mobile responsive adjustments */
-@media (max-width: 768px) {
-    .usage-metrics {
-        gap: 4px;
-        padding: 0 2px;
-    }
-    
-    .metric {
-        padding: 4px 2px;
-        min-height: 60px;
-    }
-    
-    .usage-label {
-        font-size: 11px;
-        margin-bottom: 2px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
-    .usage-amount {
-        font-size: 16px;
-        font-weight: bold;
-        line-height: 1;
-    }
-    
-    .dashboard-content {
-        padding: 16px;
-        margin: 10px auto;
-    }
-    
-    .user-name {
-        font-size: 18px;
-    }
-    
-    .user-email {
-        font-size: 14px;
-    }
-    
-    .timestamp {
-        font-size: 11px;
-    }
+    min-width: 80px;
+    max-width: 90px;
 }
 
 .metric .usage-amount {
@@ -2379,18 +2335,15 @@ body.light-mode {
 }
 
 .usage-label {
-    font-size: 12px;
+    font-size: 14px;
     color: #666;
     margin-bottom: 4px;
-    line-height: 1.2;
-    text-align: center;
 }
 
 .usage-amount {
     font-size: 18px;
     color: #333;
     font-weight: bold;
-    line-height: 1;
 }
 
 .usage-label i {
@@ -4125,102 +4078,4 @@ input:checked + .toggle-slider:before {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
 }
-
-/* Speed Test History Cards - Global Dark Mode Support */
-.speed-test-result {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 10px;
-    transition: all 0.3s ease;
-}
-
-.speed-test-result .time-stamp {
-    font-weight: 500;
-    color: #333;
-}
-
-.speed-test-result .quality-badge {
-    font-size: 12px;
-    font-weight: 500;
-    text-transform: uppercase;
-}
-
-.speed-test-result .metrics-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 15px;
-    text-align: center;
-}
-
-.speed-test-result .metric-value {
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.speed-test-result .metric-label {
-    font-size: 12px;
-    color: #666;
-}
-
-.speed-test-result .download-speed {
-    color: #007bff;
-}
-
-.speed-test-result .upload-speed {
-    color: #6c757d;
-}
-
-.speed-test-result .latency-value {
-    color: #17a2b8;
-}
-
-/* Dark Mode Overrides for Speed Test Cards */
-body.dark-mode .speed-test-result {
-    background: rgba(40, 40, 40, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-body.dark-mode .speed-test-result .time-stamp {
-    color: #e2e8f0;
-}
-
-body.dark-mode .speed-test-result .metric-label {
-    color: #a0aec0;
-}
-
-body.dark-mode .speed-test-result .download-speed {
-    color: #63b3ed;
-}
-
-body.dark-mode .speed-test-result .upload-speed {
-    color: #a0aec0;
-}
-
-body.dark-mode .speed-test-result .latency-value {
-    color: #4fd1c7;
-}
-
-/* Speed Test History Container */
-#speedTestHistory h4 {
-    color: #333;
-}
-
-body.dark-mode #speedTestHistory h4 {
-    color: #e2e8f0;
-}
-
-/* Empty State and Loading Styles */
-.speed-test-empty-state,
-.speed-test-loading-state {
-    text-align: center;
-    color: #666;
-    padding: 20px;
-}
-
-body.dark-mode .speed-test-empty-state,
-body.dark-mode .speed-test-loading-state {
-    color: #a0aec0;
-}
-
 /* Replaced offer cards with a new grid-based section with centered text and improved styling. */
