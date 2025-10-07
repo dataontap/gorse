@@ -310,6 +310,49 @@ def start_help_session_endpoint():
             'message': str(e)
         }), 500
 
+@app.route('/api/help/update-context', methods=['POST'])
+def update_help_context_endpoint():
+    """Update JIRA ticket with additional context"""
+    try:
+        from help_desk_service import help_desk
+        
+        data = request.get_json() or {}
+        session_id = data.get('sessionId')
+        category = data.get('category')
+        description = data.get('description')
+        
+        if not session_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'Session ID is required'
+            }), 400
+        
+        if not category or not description:
+            return jsonify({
+                'status': 'error',
+                'message': 'Category and description are required'
+            }), 400
+        
+        result = help_desk.update_ticket_context(session_id, category, description)
+        
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'message': 'Context submitted successfully'
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': result.get('error', 'Failed to update context')
+            }), 500
+            
+    except Exception as e:
+        print(f"Error updating help context: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 # Define OXIO endpoints FIRST, before any Flask-RESTX setup
 @app.route('/api/oxio/test-connection', methods=['GET'])
 def oxio_test_connection():
