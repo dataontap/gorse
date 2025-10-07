@@ -217,7 +217,8 @@ class HelpDeskService:
                                 'jira_ticket': {
                                     'key': session[2],
                                     'status': session[3],
-                                    'url': f"{self.jira_url}/browse/{session[2]}" if session[2] else None
+                                    'url': f"{self.jira_url}/browse/{session[2]}" if session[2] else None,
+                                    'started_at': session[4].isoformat() if session[4] else None
                                 },
                                 'started_at': session[4].isoformat() if session[4] else None
                             }

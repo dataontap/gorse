@@ -50,17 +50,17 @@ HelpDeskClient.prototype.startHelpSession = function() {
 
             // Set session start time from existing session or use current time
             if (result.existing && result.jira_ticket) {
-                // For existing sessions, don't reset the timer
-                var existingStartTime = new Date(result.jira_ticket.started_at || Date.now());
+                // For existing sessions, use the original ticket start time
+                var existingStartTime = new Date(result.jira_ticket.started_at || result.started_at || Date.now());
                 self.sessionStartTime = existingStartTime;
-                console.log('Reopened existing help ticket:', result.jira_ticket.key);
+                console.log('Reopened existing help ticket:', result.jira_ticket.key, 'Started at:', existingStartTime);
             } else {
                 self.sessionStartTime = new Date();
                 console.log('Created new help session:', self.currentSession);
             }
 
             if (result.jira_ticket) {
-                self.showJiraTicketInfo(result.jira_ticket);
+                self.showJiraTicketInfo(result.jira_ticket, result.existing);
             }
 
             return self.currentSession;
@@ -475,9 +475,23 @@ HelpDeskClient.prototype.getCurrentUserData = function() {
     };
 };
 
-HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket) {
+HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket, isExisting) {
     var self = this;
     var status = jiraTicket.status || 'Need Help';
+    
+    // Format the original submission time
+    var submissionTime = 'Unknown';
+    if (jiraTicket.started_at) {
+        var startDate = new Date(jiraTicket.started_at);
+        submissionTime = startDate.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
 
     var ticketPopup = document.createElement('div');
     ticketPopup.className = 'ticket-popup-overlay';
@@ -488,7 +502,7 @@ HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket) {
             <div class="ticket-popup-header">
                 <div class="ticket-header-info">
                     <i class="fas fa-ticket-alt"></i>
-                    <h3>Support Ticket</h3>
+                    <h3>Support Ticket${isExisting ? ' (Existing)' : ''}</h3>
                 </div>
                 <button class="ticket-close-btn" onclick="helpDesk.closeTicketPopup()">
                     <i class="fas fa-times"></i>
@@ -507,6 +521,11 @@ HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket) {
                         <span class="status-badge status-${self.getStatusClass(status)}" id="ticketStatusBadge">
                             ${status}
                         </span>
+                    </div>
+
+                    <div class="ticket-submission-time">
+                        <label>Submitted:</label>
+                        <span class="submission-time">${submissionTime}</span>
                     </div>
 
                     <div class="ticket-timer">
