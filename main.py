@@ -270,6 +270,46 @@ if not app.secret_key:
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+# Help Desk API endpoint (defined directly to avoid circular import)
+@app.route('/api/help/start', methods=['POST'])
+def start_help_session_endpoint():
+    """Start a new help session with JIRA ticket creation"""
+    try:
+        from help_desk_service import help_desk
+        
+        data = request.get_json() or {}
+        
+        user_data = {
+            'user_id': data.get('userId'),
+            'firebase_uid': data.get('firebaseUid'),
+            'user_agent': request.headers.get('User-Agent'),
+            'ip_address': request.remote_addr,
+            'page_url': data.get('pageUrl', request.referrer)
+        }
+        
+        result = help_desk.start_help_session(user_data)
+        
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'session_id': result['session_id'],
+                'help_session_id': result['help_session_id'],
+                'jira_ticket': result.get('jira_ticket'),
+                'message': 'Help session started successfully'
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': result.get('error', 'Failed to start help session')
+            }), 500
+            
+    except Exception as e:
+        print(f"Error starting help session: {str(e)}")
+        return jsonify({
+            'status': 'error', 
+            'message': str(e)
+        }), 500
+
 # Define OXIO endpoints FIRST, before any Flask-RESTX setup
 @app.route('/api/oxio/test-connection', methods=['GET'])
 def oxio_test_connection():
@@ -5210,94 +5250,6 @@ def delete_datashare_invitation(invite_id):
     except Exception as e:
         print(f"Error deleting datashare invitation: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
-
-
-# Help Desk API Endpoints
-@app.route('/api/help/update-context', methods=['POST'])
-def update_ticket_context():
-    """Update ticket context with category and description"""
-    try:
-        from help_desk_service import help_desk
-        
-        data = request.get_json() or {}
-        session_id = data.get('sessionId')
-        category = data.get('category')
-        description = data.get('description')
-        
-        if not session_id:
-            return jsonify({
-                'status': 'error', 
-                'message': 'Session ID required'
-            }), 400
-        
-        if not category or not description:
-            return jsonify({
-                'status': 'error',
-                'message': 'Category and description required'
-            }), 400
-        
-        result = help_desk.update_ticket_context(session_id, category, description)
-        
-        if result['success']:
-            return jsonify({
-                'status': 'success',
-                'message': result.get('message', 'Context updated successfully'),
-                'jira_ticket_updated': result.get('jira_ticket_updated', False)
-            })
-        else:
-            return jsonify({
-                'status': 'error',
-                'message': result.get('error', 'Failed to update context')
-            }), 500
-            
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
-
-@app.route('/api/help/update-status', methods=['POST'])
-def update_ticket_status():
-    """Update ticket status"""
-    try:
-        from help_desk_service import help_desk
-        
-        data = request.get_json() or {}
-        session_id = data.get('sessionId')
-        status = data.get('status')
-        
-        if not session_id:
-            return jsonify({
-                'status': 'error',
-                'message': 'Session ID required'
-            }), 400
-        
-        if not status:
-            return jsonify({
-                'status': 'error',
-                'message': 'Status required'
-            }), 400
-        
-        result = help_desk.update_help_ticket_status(session_id, status)
-        
-        if result['success']:
-            return jsonify({
-                'status': 'success',
-                'message': result.get('message', 'Status updated successfully'),
-                'ticket_status': result.get('ticket_status'),
-                'jira_ticket_key': result.get('jira_ticket_key')
-            })
-        else:
-            return jsonify({
-                'status': 'error',
-                'message': result.get('error', 'Failed to update status')
-            }), 500
-            
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
 
 
 if __name__ == '__main__':

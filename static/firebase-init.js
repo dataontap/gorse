@@ -13,9 +13,13 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Initialize Firebase
   if (typeof firebase !== 'undefined') {
     try {
-      const app = firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
-      console.log("Firebase initialized successfully");
+      if (!firebase.apps.length) {
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        console.log("Firebase initialized successfully");
+      } else {
+        console.log("Firebase already initialized");
+      }
     } catch (error) {
       console.error("Firebase initialization error:", error);
     }
@@ -27,11 +31,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Initialize Firebase Cloud Messaging only if supported
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       // Dynamically import Firebase modules
-      const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
+      const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
       const { getMessaging, getToken, onMessage } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js');
 
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
+      // Initialize Firebase only if not already initialized
+      const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
 
       // Register service worker and wait for it to be ready

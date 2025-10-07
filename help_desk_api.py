@@ -1,8 +1,14 @@
 
-from flask import request, jsonify
+from flask import request, jsonify, current_app
 from help_desk_service import help_desk
-from main import app
 import uuid
+
+# Get app instance from current_app to avoid circular import
+def get_app():
+    from main import app
+    return app
+
+app = get_app()
 
 @app.route('/api/help/start', methods=['POST'])
 def start_help_session():
