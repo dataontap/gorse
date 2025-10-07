@@ -11,10 +11,21 @@ import openai
 class HelpDeskService:
     def __init__(self):
         # Jira configuration
-        self.jira_url = os.environ.get('JIRA_URL', 'https://your-company.atlassian.net')
-        self.jira_username = os.environ.get('JIRA_USERNAME')
+        self.jira_url = os.environ.get('JIRA_URL', 'https://dotmobile.atlassian.net')
+        self.jira_username = os.environ.get('JIRA_EMAIL')
         self.jira_api_token = os.environ.get('JIRA_API_TOKEN')
         self.jira_project_key = os.environ.get('JIRA_PROJECT_KEY', 'HELP')
+        
+        # Supported ticket statuses
+        self.supported_statuses = [
+            "Need Help", 
+            "User_Closed", 
+            "In Progress", 
+            "Resolved", 
+            "Escalated_L1", 
+            "Escalated_L2", 
+            "Escalated_L3"
+        ]
         
         # OpenAI configuration
         openai.api_key = os.environ.get('OPENAI_API_KEY')
@@ -80,6 +91,27 @@ class HelpDeskService:
                             CREATE INDEX IF NOT EXISTS idx_help_session_id ON need_for_help(session_id);
                             CREATE INDEX IF NOT EXISTS idx_help_jira_ticket ON need_for_help(jira_ticket_key);
                             CREATE INDEX IF NOT EXISTS idx_help_interactions_session ON help_interactions(help_session_id);
+                        """)
+                        
+                        # Add context fields if they don't exist (for backward compatibility)
+                        cur.execute("""
+                            DO $$ 
+                            BEGIN
+                                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                             WHERE table_name='need_for_help' AND column_name='context_provided_at') THEN
+                                    ALTER TABLE need_for_help ADD COLUMN context_provided_at TIMESTAMP;
+                                END IF;
+                                
+                                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                             WHERE table_name='need_for_help' AND column_name='context_category') THEN
+                                    ALTER TABLE need_for_help ADD COLUMN context_category VARCHAR(100);
+                                END IF;
+                                
+                                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                             WHERE table_name='need_for_help' AND column_name='context_description') THEN
+                                    ALTER TABLE need_for_help ADD COLUMN context_description TEXT;
+                                END IF;
+                            END $$;
                         """)
                         
                         conn.commit()
@@ -308,7 +340,7 @@ User requested help through the application.
                 return {
                     'key': ticket['key'],
                     'id': ticket['id'],
-                    'status': 'Open',
+                    'status': 'Need Help',
                     'url': f"{self.jira_url}/browse/{ticket['key']}"
                 }
             else:
@@ -323,6 +355,11 @@ User requested help through the application.
         """Update Jira ticket status"""
         try:
             if not ticket_key:
+                return False
+            
+            # Validate status
+            if status not in self.supported_statuses:
+                print(f"Invalid status: {status}. Must be one of: {', '.join(self.supported_statuses)}")
                 return False
             
             auth = (self.jira_username, self.jira_api_token)
@@ -362,6 +399,102 @@ User requested help through the application.
         except Exception as e:
             print(f"Error updating Jira ticket: {str(e)}")
             return False
+    
+    def update_ticket_context(self, session_id, category, description):
+        """Update ticket context with user-provided information"""
+        try:
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Get the current session and JIRA ticket
+                        cur.execute("""
+                            SELECT id, jira_ticket_key, user_id, firebase_uid
+                            FROM need_for_help 
+                            WHERE session_id = %s AND help_ended_at IS NULL
+                        """, (session_id,))
+                        
+                        session = cur.fetchone()
+                        if not session:
+                            return {'success': False, 'error': 'Session not found'}
+                        
+                        help_id, jira_ticket_key, user_id, firebase_uid = session
+                        now = datetime.now()
+                        
+                        # Update database with context information
+                        cur.execute("""
+                            UPDATE need_for_help 
+                            SET context_category = %s, 
+                                context_description = %s, 
+                                context_provided_at = %s,
+                                updated_at = %s
+                            WHERE id = %s
+                        """, (category, description, now, now, help_id))
+                        
+                        # Log the interaction
+                        cur.execute("""
+                            INSERT INTO help_interactions 
+                            (help_session_id, interaction_type, additional_data)
+                            VALUES (%s, %s, %s)
+                        """, (help_id, 'context_provided', json.dumps({
+                            'category': category,
+                            'description': description
+                        })))
+                        
+                        conn.commit()
+                        
+                        # Update JIRA ticket if it exists
+                        if jira_ticket_key and all([self.jira_url, self.jira_username, self.jira_api_token]):
+                            context_comment = f"""
+*User Context Provided:*
+- Category: {category}
+- Description: {description}
+- Timestamp: {now.isoformat()}
+
+This additional context has been provided by the user to help resolve their issue.
+                            """
+                            
+                            auth = (self.jira_username, self.jira_api_token)
+                            headers = {"Content-Type": "application/json"}
+                            
+                            comment_data = {
+                                "body": {
+                                    "type": "doc",
+                                    "version": 1,
+                                    "content": [
+                                        {
+                                            "type": "paragraph",
+                                            "content": [
+                                                {
+                                                    "type": "text",
+                                                    "text": context_comment
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                            
+                            response = requests.post(
+                                f"{self.jira_url}/rest/api/3/issue/{jira_ticket_key}/comment",
+                                auth=auth,
+                                headers=headers,
+                                json=comment_data
+                            )
+                            
+                            if response.status_code == 201:
+                                print(f"Context added to JIRA ticket {jira_ticket_key}")
+                            else:
+                                print(f"Failed to update JIRA ticket with context: {response.status_code}")
+                        
+                        return {
+                            'success': True,
+                            'message': 'Context updated successfully',
+                            'jira_ticket_updated': jira_ticket_key is not None
+                        }
+                        
+        except Exception as e:
+            print(f"Error updating ticket context: {str(e)}")
+            return {'success': False, 'error': str(e)}
     
     def get_ai_assistance(self, user_query, user_context):
         """Get AI assistance for user query"""
