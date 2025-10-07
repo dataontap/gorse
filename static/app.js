@@ -2787,8 +2787,33 @@ function updateBetaStatus(status, message) {
     }
 }
 
-// Function to show the help modal
+// Function to show the help modal - Now triggers JIRA integration
 function showHelpModal() {
+    // Check if HelpDeskClient is available
+    if (typeof HelpDeskClient !== 'undefined') {
+        // Initialize help desk client if not already done
+        if (typeof window.helpDesk === 'undefined') {
+            window.helpDesk = new HelpDeskClient();
+        }
+        
+        // Start help session which will create JIRA ticket and show popup
+        window.helpDesk.startHelpSession().then(function(session) {
+            if (!session) {
+                // Fallback to old modal if JIRA integration fails
+                showLegacyHelpModal();
+            }
+        }).catch(function(error) {
+            console.error('Error starting help session:', error);
+            showLegacyHelpModal();
+        });
+    } else {
+        // Fallback to old modal if help desk script not loaded
+        showLegacyHelpModal();
+    }
+}
+
+// Legacy help modal (fallback)
+function showLegacyHelpModal() {
     // Create the modal overlay
     const modalOverlay = document.createElement('div');
     modalOverlay.id = 'helpModalOverlay';
