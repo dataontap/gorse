@@ -273,7 +273,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Help Desk API endpoint (defined directly to avoid circular import)
 @app.route('/api/help/start', methods=['POST'])
 def start_help_session_endpoint():
-    """Start a new help session with JIRA ticket creation"""
+    """Start a new help session or return existing unresolved ticket"""
     try:
         from help_desk_service import help_desk
         
@@ -284,9 +284,27 @@ def start_help_session_endpoint():
             'firebase_uid': data.get('firebaseUid'),
             'user_agent': request.headers.get('User-Agent'),
             'ip_address': request.remote_addr,
-            'page_url': data.get('pageUrl', request.referrer)
+            'page_url': data.get('pageUrl', request.referrer),
+            'browser_timestamp': data.get('browserTimestamp')
         }
         
+        # Check if user already has an active/unresolved ticket
+        firebase_uid = user_data.get('firebase_uid')
+        if firebase_uid:
+            active_session = help_desk.get_active_session(firebase_uid=firebase_uid)
+            
+            if active_session.get('success'):
+                print(f"User {firebase_uid} already has an open ticket: {active_session.get('jira_ticket', {}).get('key')}")
+                return jsonify({
+                    'status': 'success',
+                    'session_id': active_session['session_id'],
+                    'help_session_id': active_session['help_session_id'],
+                    'jira_ticket': active_session.get('jira_ticket'),
+                    'message': 'Existing open ticket found',
+                    'existing': True
+                })
+        
+        # No existing ticket, create a new one
         result = help_desk.start_help_session(user_data)
         
         if result['success']:
@@ -295,7 +313,8 @@ def start_help_session_endpoint():
                 'session_id': result['session_id'],
                 'help_session_id': result['help_session_id'],
                 'jira_ticket': result.get('jira_ticket'),
-                'message': 'Help session started successfully'
+                'message': 'Help session started successfully',
+                'existing': False
             })
         else:
             return jsonify({
