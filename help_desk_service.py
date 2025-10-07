@@ -294,29 +294,93 @@ class HelpDeskService:
             
             # Prepare ticket data
             summary = f"Help Request - User {user_data.get('user_id', 'Unknown')} - Session {help_session_id}"
-            description = f"""
-User requested help through the application.
-
-*Session Details:*
-- Help Session ID: {help_session_id}
-- User ID: {user_data.get('user_id', 'Unknown')}
-- Firebase UID: {user_data.get('firebase_uid', 'Unknown')}
-- Page URL: {user_data.get('page_url', 'Unknown')}
-- User Agent: {user_data.get('user_agent', 'Unknown')}
-- IP Address: {user_data.get('ip_address', 'Unknown')}
-- Timestamp: {datetime.now().isoformat()}
-
-*Next Steps:*
-- Monitor session duration and interaction patterns
-- Provide appropriate assistance based on user behavior
-- Track resolution time for service metrics
-            """
+            
+            # JIRA API v3 requires Atlassian Document Format (ADF) for description
+            description_adf = {
+                "type": "doc",
+                "version": 1,
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "User requested help through the application."
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Session Details:",
+                                "marks": [{"type": "strong"}]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [{
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": f"Help Session ID: {help_session_id}"}]
+                                }]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [{
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": f"User ID: {user_data.get('user_id', 'Unknown')}"}]
+                                }]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [{
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": f"Firebase UID: {user_data.get('firebase_uid', 'Unknown')}"}]
+                                }]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [{
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": f"Page URL: {user_data.get('page_url', 'Unknown')}"}]
+                                }]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [{
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": f"User Agent: {user_data.get('user_agent', 'Unknown')}"}]
+                                }]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [{
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": f"IP Address: {user_data.get('ip_address', 'Unknown')}"}]
+                                }]
+                            },
+                            {
+                                "type": "listItem",
+                                "content": [{
+                                    "type": "paragraph",
+                                    "content": [{"type": "text", "text": f"Timestamp: {datetime.now().isoformat()}"}]
+                                }]
+                            }
+                        ]
+                    }
+                ]
+            }
             
             ticket_data = {
                 "fields": {
                     "project": {"key": self.jira_project_key},
                     "summary": summary,
-                    "description": description,
+                    "description": description_adf,
                     "issuetype": {"name": "Task"},
                     "priority": {"name": "Medium"},
                     "labels": ["help-request", "automated", f"session-{help_session_id}"]
