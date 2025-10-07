@@ -1,4 +1,3 @@
-
 import os
 import firebase_admin
 from firebase_admin import credentials, auth
@@ -33,7 +32,7 @@ def verify_firebase_token(request):
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith('Bearer '):
         return None, "No valid authorization header found"
-    
+
     id_token = auth_header.split('Bearer ')[1]
     try:
         decoded_token = auth.verify_id_token(id_token)
@@ -49,19 +48,26 @@ def get_user_by_firebase_uid(firebase_uid):
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                        SELECT id, email, first_name, last_name, firebase_uid
+                        SELECT id, email, display_name, firebase_uid
                         FROM users 
                         WHERE firebase_uid = %s
                     """, (firebase_uid,))
-                    
+
                     user = cur.fetchone()
                     if user:
+                        # Parse display_name into first_name and last_name
+                        display_name = user[2] or ''
+                        name_parts = display_name.split(' ', 1) if display_name else []
+                        first_name = name_parts[0] if name_parts else ''
+                        last_name = name_parts[1] if len(name_parts) > 1 else ''
+
                         return {
                             'id': user[0],
                             'email': user[1],
-                            'first_name': user[2],
-                            'last_name': user[3],
-                            'firebase_uid': user[4]
+                            'first_name': first_name,
+                            'last_name': last_name,
+                            'display_name': display_name,
+                            'firebase_uid': user[3]
                         }
         return None
     except Exception as e:
@@ -76,11 +82,11 @@ def firebase_auth_required(f):
             # Firebase Admin not initialized, proceed without verification (for development)
             print("WARNING: Firebase Admin not initialized, skipping token verification")
             return f(*args, **kwargs)
-            
+
         decoded_token, error = verify_firebase_token(request)
         if error:
             return jsonify({'error': f'Unauthorized: {error}'}), 401
-            
+
         # Add the decoded token to request object
         request.firebase_user = decoded_token
         return f(*args, **kwargs)
