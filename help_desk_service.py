@@ -338,8 +338,20 @@ class HelpDeskService:
                 print("Jira credentials not configured")
                 return None
             
+            # Get user email for better identification
+            user_identifier = user_data.get('user_id', 'Unknown')
+            firebase_uid = user_data.get('firebase_uid')
+            if firebase_uid:
+                try:
+                    from firebase_helper import get_user_by_firebase_uid
+                    user_info = get_user_by_firebase_uid(firebase_uid)
+                    if user_info and user_info.get('email'):
+                        user_identifier = f"{user_info['email']} (ID: {user_data.get('user_id', 'Unknown')})"
+                except Exception as e:
+                    print(f"Could not retrieve user email: {str(e)}")
+            
             # Prepare ticket data
-            summary = f"Help Request - User {user_data.get('user_id', 'Unknown')} - Session {help_session_id}"
+            summary = f"Help Request - {user_identifier} - Session {help_session_id}"
             
             # JIRA API v3 requires Atlassian Document Format (ADF) for description
             description_adf = {
@@ -422,6 +434,18 @@ class HelpDeskService:
                 ]
             }
             
+            # Get user email from Firebase UID if available
+            user_email = None
+            firebase_uid = user_data.get('firebase_uid')
+            if firebase_uid:
+                try:
+                    from firebase_helper import get_user_by_firebase_uid
+                    user_info = get_user_by_firebase_uid(firebase_uid)
+                    if user_info and user_info.get('email'):
+                        user_email = user_info['email']
+                except Exception as e:
+                    print(f"Could not retrieve user email: {str(e)}")
+            
             ticket_data = {
                 "fields": {
                     "project": {"key": self.jira_project_key},
@@ -432,6 +456,10 @@ class HelpDeskService:
                     "labels": ["help-request", "automated", f"session-{help_session_id}"]
                 }
             }
+            
+            # Set reporter if we have user email
+            if user_email:
+                ticket_data["fields"]["reporter"] = {"id": user_email}
             
             # Create ticket via Jira API
             auth = (self.jira_username, self.jira_api_token)
