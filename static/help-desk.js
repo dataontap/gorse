@@ -495,6 +495,9 @@ HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket) {
                         <a href="${jiraTicket.url}" target="_blank" class="btn-view-jira">
                             <i class="fas fa-external-link-alt"></i> View in JIRA
                         </a>
+                        <button class="btn-close-ticket" onclick="helpDesk.closeTicket()">
+                            <i class="fas fa-times-circle"></i> Close Ticket
+                        </button>
                     </div>
                 </div>
                 
@@ -869,6 +872,11 @@ HelpDeskClient.prototype.submitTicketContext = function() {
 };
 
 HelpDeskClient.prototype.closeTicketPopup = function() {
+    // Just hide the popup without closing the ticket
+    this.removeTicketPopup();
+};
+
+HelpDeskClient.prototype.closeTicket = function() {
     var self = this;
     
     if (!this.currentSession) {
@@ -876,7 +884,7 @@ HelpDeskClient.prototype.closeTicketPopup = function() {
         return;
     }
     
-    var confirmed = confirm('Closing this popup will mark your support ticket as "User_Closed". Are you sure?');
+    var confirmed = confirm('This will mark your support ticket as "User_Closed". Are you sure?');
     
     if (confirmed) {
         fetch('/api/help/update-status', {
@@ -898,11 +906,13 @@ HelpDeskClient.prototype.closeTicketPopup = function() {
             }
             self.stopPolling();
             self.removeTicketPopup();
+            self.currentSession = null;
         })
         .catch(function(error) {
             console.error('Error updating ticket status:', error);
             self.stopPolling();
             self.removeTicketPopup();
+            self.currentSession = null;
         });
     }
 };

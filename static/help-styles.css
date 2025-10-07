@@ -335,6 +335,7 @@
     border-radius: 8px;
     font-weight: 600;
     transition: background 0.3s ease;
+    margin-right: 8px;
 }
 
 .btn-view-jira:hover {
@@ -342,6 +343,26 @@
 }
 
 .btn-view-jira i {
+    margin-right: 8px;
+}
+
+.btn-close-ticket {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn-close-ticket:hover {
+    background: #c82333;
+}
+
+.btn-close-ticket i {
     margin-right: 8px;
 }
 
