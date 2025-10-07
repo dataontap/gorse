@@ -2787,33 +2787,19 @@ function updateBetaStatus(status, message) {
     }
 }
 
-// Function to show the help modal - Now triggers JIRA integration
+// Function to show the help modal
 function showHelpModal() {
-    // Check if HelpDeskClient is available
-    if (typeof HelpDeskClient !== 'undefined') {
-        // Initialize help desk client if not already done
-        if (typeof window.helpDesk === 'undefined') {
-            window.helpDesk = new HelpDeskClient();
-        }
-        
-        // Start help session which will create JIRA ticket and show popup
-        window.helpDesk.startHelpSession().then(function(session) {
-            if (!session) {
-                // Fallback to old modal if JIRA integration fails
-                showLegacyHelpModal();
-            }
-        }).catch(function(error) {
-            console.error('Error starting help session:', error);
-            showLegacyHelpModal();
-        });
-    } else {
-        // Fallback to old modal if help desk script not loaded
-        showLegacyHelpModal();
+    // Initialize help desk client if available
+    if (typeof HelpDeskClient !== 'undefined' && typeof window.helpDesk === 'undefined') {
+        window.helpDesk = new HelpDeskClient();
     }
+    
+    // Show the help modal directly without auto-creating ticket
+    showHelpModalWithTicketOption();
 }
 
-// Legacy help modal (fallback)
-function showLegacyHelpModal() {
+// Help modal with ticket option
+function showHelpModalWithTicketOption() {
     // Create the modal overlay
     const modalOverlay = document.createElement('div');
     modalOverlay.id = 'helpModalOverlay';
@@ -2874,6 +2860,9 @@ function showLegacyHelpModal() {
                 </div>
                 <button id="orderCallbackBtn" class="callback-btn" data-translate="orderCallback">Order Callback</button>
                 <button id="chatWithAgentBtn" class="chat-btn" data-translate="chatWithAgent">Open Chat Now</button>
+                <button id="openTicketBtn" class="ticket-btn">
+                    <i class="fas fa-ticket-alt"></i> Open Ticket
+                </button>
             </div>
         </div>
 
@@ -2910,7 +2899,7 @@ function showLegacyHelpModal() {
     // Append the modal to the body
     document.body.appendChild(modalOverlay);
 
-    // Add event listener for the order callback button (event delegation)
+    // Add event listener for all buttons (event delegation)
     modalOverlay.addEventListener('click', function(e) {
         if (e.target.id === 'orderCallbackBtn') {
             orderCallback();
@@ -2918,7 +2907,15 @@ function showLegacyHelpModal() {
         if (e.target.id === 'chatWithAgentBtn') {
             startChat();
         }
+        if (e.target.id === 'openTicketBtn' || e.target.closest('#openTicketBtn')) {
+            openJiraTicket();
+        }
     });
+}
+
+// Legacy help modal (fallback)
+function showLegacyHelpModal() {
+    showHelpModalWithTicketOption();
 }
 
 // Function to hide the help modal
@@ -2932,6 +2929,35 @@ function hideHelpModal() {
 
 function startChat() {
     alert('Starting chat with agent...');
+}
+
+// Function to open a JIRA ticket
+function openJiraTicket() {
+    // Check if HelpDeskClient is available
+    if (typeof window.helpDesk === 'undefined') {
+        alert('Help desk system is not available. Please refresh the page and try again.');
+        return;
+    }
+
+    // Get Firebase UID
+    const firebaseUid = getFirebaseUID();
+    if (!firebaseUid) {
+        alert('Please sign in to open a support ticket.');
+        return;
+    }
+
+    // Close the help modal
+    hideHelpModal();
+
+    // Start help session which creates JIRA ticket
+    window.helpDesk.startHelpSession().then(function(session) {
+        if (!session) {
+            alert('Failed to create support ticket. Please try again.');
+        }
+    }).catch(function(error) {
+        console.error('Error creating ticket:', error);
+        alert('Error creating support ticket. Please try again.');
+    });
 }
 
 // Function to resend the eSIM ready email

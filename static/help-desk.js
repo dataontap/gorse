@@ -435,9 +435,20 @@ HelpDeskClient.prototype.requestCallback = function(phoneNumber, preferredTime) 
 };
 
 HelpDeskClient.prototype.getCurrentUserData = function() {
+    // Get Firebase UID from localStorage
+    var firebaseUid = null;
+    try {
+        var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        if (currentUserData && currentUserData.uid) {
+            firebaseUid = currentUserData.uid;
+        }
+    } catch (e) {
+        console.error('Error getting current user data:', e);
+    }
+    
     return {
         userId: window.currentUser && window.currentUser.userId || '1',
-        firebaseUid: window.currentUser && window.currentUser.uid || null
+        firebaseUid: firebaseUid
     };
 };
 
