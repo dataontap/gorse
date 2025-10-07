@@ -339,112 +339,153 @@ class HelpDeskService:
                 return None
             
             # Get user email for better identification
+            user_email = None
+            user_name = None
             user_identifier = user_data.get('user_id', 'Unknown')
             firebase_uid = user_data.get('firebase_uid')
             if firebase_uid:
                 try:
                     from firebase_helper import get_user_by_firebase_uid
                     user_info = get_user_by_firebase_uid(firebase_uid)
-                    if user_info and user_info.get('email'):
-                        user_identifier = f"{user_info['email']} (ID: {user_data.get('user_id', 'Unknown')})"
+                    if user_info:
+                        user_email = user_info.get('email')
+                        first_name = user_info.get('first_name', '')
+                        last_name = user_info.get('last_name', '')
+                        if first_name or last_name:
+                            user_name = f"{first_name} {last_name}".strip()
+                        if user_email:
+                            user_identifier = user_email
+                            if user_name:
+                                user_identifier = f"{user_name} ({user_email})"
                 except Exception as e:
                     print(f"Could not retrieve user email: {str(e)}")
             
-            # Prepare ticket data
+            # Prepare ticket data with user's email prominently displayed
             summary = f"Help Request - {user_identifier} - Session {help_session_id}"
             
             # JIRA API v3 requires Atlassian Document Format (ADF) for description
+            description_content = [
+                {
+                    "type": "paragraph",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "User requested help through the application."
+                        }
+                    ]
+                },
+                {
+                    "type": "paragraph",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "User Information:",
+                            "marks": [{"type": "strong"}]
+                        }
+                    ]
+                }
+            ]
+            
+            # Add user details
+            user_details = []
+            if user_email:
+                user_details.append({
+                    "type": "listItem",
+                    "content": [{
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": f"Email: {user_email}"}]
+                    }]
+                })
+            if user_name:
+                user_details.append({
+                    "type": "listItem",
+                    "content": [{
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": f"Name: {user_name}"}]
+                    }]
+                })
+            
+            user_details.extend([
+                {
+                    "type": "listItem",
+                    "content": [{
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": f"User ID: {user_data.get('user_id', 'Unknown')}"}]
+                    }]
+                },
+                {
+                    "type": "listItem",
+                    "content": [{
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": f"Firebase UID: {user_data.get('firebase_uid', 'Unknown')}"}]
+                    }]
+                }
+            ])
+            
+            description_content.append({
+                "type": "bulletList",
+                "content": user_details
+            })
+            
+            # Add session details
+            description_content.extend([
+                {
+                    "type": "paragraph",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Session Details:",
+                            "marks": [{"type": "strong"}]
+                        }
+                    ]
+                },
+                {
+                    "type": "bulletList",
+                    "content": [
+                        {
+                            "type": "listItem",
+                            "content": [{
+                                "type": "paragraph",
+                                "content": [{"type": "text", "text": f"Help Session ID: {help_session_id}"}]
+                            }]
+                        },
+                        {
+                            "type": "listItem",
+                            "content": [{
+                                "type": "paragraph",
+                                "content": [{"type": "text", "text": f"Page URL: {user_data.get('page_url', 'Unknown')}"}]
+                            }]
+                        },
+                        {
+                            "type": "listItem",
+                            "content": [{
+                                "type": "paragraph",
+                                "content": [{"type": "text", "text": f"User Agent: {user_data.get('user_agent', 'Unknown')}"}]
+                            }]
+                        },
+                        {
+                            "type": "listItem",
+                            "content": [{
+                                "type": "paragraph",
+                                "content": [{"type": "text", "text": f"IP Address: {user_data.get('ip_address', 'Unknown')}"}]
+                            }]
+                        },
+                        {
+                            "type": "listItem",
+                            "content": [{
+                                "type": "paragraph",
+                                "content": [{"type": "text", "text": f"Timestamp: {datetime.now().isoformat()}"}]
+                            }]
+                        }
+                    ]
+                }
+            ])
+            
             description_adf = {
                 "type": "doc",
                 "version": 1,
-                "content": [
-                    {
-                        "type": "paragraph",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": "User requested help through the application."
-                            }
-                        ]
-                    },
-                    {
-                        "type": "paragraph",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": "Session Details:",
-                                "marks": [{"type": "strong"}]
-                            }
-                        ]
-                    },
-                    {
-                        "type": "bulletList",
-                        "content": [
-                            {
-                                "type": "listItem",
-                                "content": [{
-                                    "type": "paragraph",
-                                    "content": [{"type": "text", "text": f"Help Session ID: {help_session_id}"}]
-                                }]
-                            },
-                            {
-                                "type": "listItem",
-                                "content": [{
-                                    "type": "paragraph",
-                                    "content": [{"type": "text", "text": f"User ID: {user_data.get('user_id', 'Unknown')}"}]
-                                }]
-                            },
-                            {
-                                "type": "listItem",
-                                "content": [{
-                                    "type": "paragraph",
-                                    "content": [{"type": "text", "text": f"Firebase UID: {user_data.get('firebase_uid', 'Unknown')}"}]
-                                }]
-                            },
-                            {
-                                "type": "listItem",
-                                "content": [{
-                                    "type": "paragraph",
-                                    "content": [{"type": "text", "text": f"Page URL: {user_data.get('page_url', 'Unknown')}"}]
-                                }]
-                            },
-                            {
-                                "type": "listItem",
-                                "content": [{
-                                    "type": "paragraph",
-                                    "content": [{"type": "text", "text": f"User Agent: {user_data.get('user_agent', 'Unknown')}"}]
-                                }]
-                            },
-                            {
-                                "type": "listItem",
-                                "content": [{
-                                    "type": "paragraph",
-                                    "content": [{"type": "text", "text": f"IP Address: {user_data.get('ip_address', 'Unknown')}"}]
-                                }]
-                            },
-                            {
-                                "type": "listItem",
-                                "content": [{
-                                    "type": "paragraph",
-                                    "content": [{"type": "text", "text": f"Timestamp: {datetime.now().isoformat()}"}]
-                                }]
-                            }
-                        ]
-                    }
-                ]
+                "content": description_content
             }
-            
-            # Get user email from Firebase UID if available
-            user_email = None
-            firebase_uid = user_data.get('firebase_uid')
-            if firebase_uid:
-                try:
-                    from firebase_helper import get_user_by_firebase_uid
-                    user_info = get_user_by_firebase_uid(firebase_uid)
-                    if user_info and user_info.get('email'):
-                        user_email = user_info['email']
-                except Exception as e:
-                    print(f"Could not retrieve user email: {str(e)}")
             
             ticket_data = {
                 "fields": {
@@ -456,10 +497,6 @@ class HelpDeskService:
                     "labels": ["help-request", "automated", f"session-{help_session_id}"]
                 }
             }
-            
-            # Set reporter if we have user email
-            if user_email:
-                ticket_data["fields"]["reporter"] = {"id": user_email}
             
             # Create ticket via Jira API
             auth = (self.jira_username, self.jira_api_token)

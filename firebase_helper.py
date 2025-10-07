@@ -41,6 +41,33 @@ def verify_firebase_token(request):
     except Exception as e:
         return None, str(e)
 
+def get_user_by_firebase_uid(firebase_uid):
+    """Get user information from database by Firebase UID"""
+    try:
+        from main import get_db_connection
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT id, email, first_name, last_name, firebase_uid
+                        FROM users 
+                        WHERE firebase_uid = %s
+                    """, (firebase_uid,))
+                    
+                    user = cur.fetchone()
+                    if user:
+                        return {
+                            'id': user[0],
+                            'email': user[1],
+                            'first_name': user[2],
+                            'last_name': user[3],
+                            'firebase_uid': user[4]
+                        }
+        return None
+    except Exception as e:
+        print(f"Error getting user by Firebase UID: {str(e)}")
+        return None
+
 def firebase_auth_required(f):
     """Decorator for Firebase Authentication on API routes"""
     @wraps(f)
