@@ -411,22 +411,13 @@ class HelpDeskService:
                     }]
                 })
             
-            user_details.extend([
-                {
-                    "type": "listItem",
-                    "content": [{
-                        "type": "paragraph",
-                        "content": [{"type": "text", "text": f"User ID: {user_data.get('user_id', 'Unknown')}"}]
-                    }]
-                },
-                {
-                    "type": "listItem",
-                    "content": [{
-                        "type": "paragraph",
-                        "content": [{"type": "text", "text": f"Firebase UID: {user_data.get('firebase_uid', 'Unknown')}"}]
-                    }]
-                }
-            ])
+            user_details.append({
+                "type": "listItem",
+                "content": [{
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": f"Firebase UID: {user_data.get('firebase_uid', 'Unknown')}"}]
+                }]
+            })
             
             description_content.append({
                 "type": "bulletList",
