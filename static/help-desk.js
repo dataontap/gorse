@@ -777,26 +777,36 @@ HelpDeskClient.prototype.startStatusPolling = function() {
 
 HelpDeskClient.prototype.checkTicketStatus = function() {
     var self = this;
-    if (!this.currentSession) return;
+    var userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    var firebaseUid = userData.uid;
     
-    fetch('/api/help/sessions')
+    if (!firebaseUid) return;
+    
+    fetch('/api/help/user-open-ticket?firebaseUid=' + firebaseUid)
     .then(function(response) {
         return response.json();
     })
     .then(function(result) {
-        if (result.status === 'success' && result.sessions && result.sessions.length > 0) {
-            var currentSessionData = result.sessions.find(function(s) {
-                return s.session_id === self.currentSession.sessionId;
-            });
+        if (result.status === 'success' && result.has_open_ticket) {
+            // Update current session with open ticket data
+            self.currentSession = {
+                sessionId: result.ticket.session_id,
+                helpSessionId: result.ticket.help_session_id,
+                jiraTicket: result.ticket.jira_ticket
+            };
             
-            if (currentSessionData && currentSessionData.jira_ticket_status) {
-                self.updateStatusBadge(currentSessionData.jira_ticket_status);
+            if (result.ticket.jira_ticket_status) {
+                self.updateStatusBadge(result.ticket.jira_ticket_status);
                 
-                if (currentSessionData.jira_ticket_status === 'Resolved' || 
-                    currentSessionData.jira_ticket_status === 'User_Closed') {
+                if (result.ticket.jira_ticket_status === 'Resolved' || 
+                    result.ticket.jira_ticket_status === 'User_Closed') {
                     self.stopPolling();
                 }
             }
+        } else if (result.status === 'success' && !result.has_open_ticket) {
+            // No open ticket, stop polling
+            self.stopPolling();
+            self.currentSession = null;
         }
     })
     .catch(function(error) {

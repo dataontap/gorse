@@ -484,3 +484,68 @@ def update_ticket_status():
             'status': 'error',
             'message': str(e)
         }), 500
+
+@app.route('/api/help/user-open-ticket', methods=['GET'])
+def get_user_open_ticket():
+    """Get user's currently open ticket (if any)"""
+    try:
+        firebase_uid = request.args.get('firebaseUid')
+        
+        if not firebase_uid:
+            return jsonify({
+                'status': 'error',
+                'message': 'Firebase UID required'
+            }), 400
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get most recent open ticket for this user
+                    cur.execute("""
+                        SELECT id, session_id, jira_ticket_key, jira_ticket_status, 
+                               help_started_at, last_activity_at
+                        FROM need_for_help 
+                        WHERE firebase_uid = %s 
+                          AND help_ended_at IS NULL
+                          AND (jira_ticket_status IS NULL 
+                               OR jira_ticket_status NOT IN ('Resolved', 'User_Closed'))
+                        ORDER BY help_started_at DESC
+                        LIMIT 1
+                    """, (firebase_uid,))
+                    
+                    ticket = cur.fetchone()
+                    
+                    if ticket:
+                        return jsonify({
+                            'status': 'success',
+                            'has_open_ticket': True,
+                            'ticket': {
+                                'help_session_id': ticket[0],
+                                'session_id': ticket[1],
+                                'jira_ticket': {
+                                    'key': ticket[2],
+                                    'status': ticket[3],
+                                    'url': f"{help_desk.jira_url}/browse/{ticket[2]}" if ticket[2] else None
+                                },
+                                'jira_ticket_status': ticket[3],
+                                'started_at': ticket[4].isoformat() if ticket[4] else None,
+                                'last_activity': ticket[5].isoformat() if ticket[5] else None
+                            }
+                        })
+                    else:
+                        return jsonify({
+                            'status': 'success',
+                            'has_open_ticket': False,
+                            'message': 'No open tickets found'
+                        })
+        
+        return jsonify({
+            'status': 'error',
+            'message': 'Database connection error'
+        }), 500
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
