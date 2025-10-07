@@ -44,7 +44,7 @@ def get_active_help_session():
 
 @app.route('/api/help/start', methods=['POST'])
 def start_help_session():
-    """Start a new help session"""
+    """Start a new help session or return existing ticket by Firebase UID"""
     try:
         data = request.get_json() or {}
         
@@ -56,21 +56,20 @@ def start_help_session():
             'page_url': data.get('pageUrl', request.referrer)
         }
         
-        # Check if user already has an active session
-        active_session = help_desk.get_active_session(
-            user_id=user_data.get('user_id'),
-            firebase_uid=user_data.get('firebase_uid')
-        )
-        
-        if active_session['success']:
-            return jsonify({
-                'status': 'success',
-                'session_id': active_session['session_id'],
-                'help_session_id': active_session['help_session_id'],
-                'jira_ticket': active_session.get('jira_ticket'),
-                'message': 'Existing active session found',
-                'existing': True
-            })
+        # Check if user already has an active ticket by Firebase UID
+        firebase_uid = user_data.get('firebase_uid')
+        if firebase_uid:
+            active_session = help_desk.get_active_session(firebase_uid=firebase_uid)
+            
+            if active_session.get('success'):
+                return jsonify({
+                    'status': 'success',
+                    'session_id': active_session['session_id'],
+                    'help_session_id': active_session['help_session_id'],
+                    'jira_ticket': active_session.get('jira_ticket'),
+                    'message': 'Existing open ticket found',
+                    'existing': True
+                })
         
         result = help_desk.start_help_session(user_data)
         
@@ -487,7 +486,7 @@ def update_ticket_status():
 
 @app.route('/api/help/user-open-ticket', methods=['GET'])
 def get_user_open_ticket():
-    """Get user's currently open ticket (if any)"""
+    """Get user's currently open ticket (if any) by Firebase UID"""
     try:
         firebase_uid = request.args.get('firebaseUid')
         
@@ -500,7 +499,7 @@ def get_user_open_ticket():
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    # Get most recent open ticket for this user
+                    # Get most recent open ticket for this user by Firebase UID
                     cur.execute("""
                         SELECT id, session_id, jira_ticket_key, jira_ticket_status, 
                                help_started_at, last_activity_at

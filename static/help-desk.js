@@ -33,7 +33,7 @@ HelpDeskClient.prototype.startHelpSession = function() {
                 helpSessionId: result.help_session_id,
                 jiraTicket: result.jira_ticket
             };
-            
+
             // Set session start time from existing session or use current time
             if (result.existing && result.jira_ticket) {
                 // For existing sessions, don't reset the timer
@@ -42,7 +42,7 @@ HelpDeskClient.prototype.startHelpSession = function() {
             } else {
                 self.sessionStartTime = new Date();
             }
-            
+
             console.log(result.existing ? 'Existing help session opened:' : 'Help session started:', self.currentSession);
 
             if (result.jira_ticket) {
@@ -298,14 +298,14 @@ HelpDeskClient.prototype.showGeminiLiveInterface = function() {
                     <h4><i class="fas fa-microphone"></i> Gemini Live Conversation</h4>
                     <span id="geminiStatus" class="status-indicator">Connecting...</span>
                 </div>
-                
+
                 <div class="conversation-display" id="conversationDisplay">
                     <div class="welcome-message">
                         <i class="fas fa-robot"></i>
                         <p>Hello! I'm your Gemini AI assistant. How can I help you today?</p>
                     </div>
                 </div>
-                
+
                 <div class="message-input-section">
                     <div class="input-group">
                         <input type="text" id="geminiMessageInput" placeholder="Type your message..." />
@@ -454,7 +454,7 @@ HelpDeskClient.prototype.getCurrentUserData = function() {
     } catch (e) {
         console.error('Error getting current user data:', e);
     }
-    
+
     return {
         userId: window.currentUser && window.currentUser.userId || '1',
         firebaseUid: firebaseUid
@@ -464,11 +464,11 @@ HelpDeskClient.prototype.getCurrentUserData = function() {
 HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket) {
     var self = this;
     var status = jiraTicket.status || 'Need Help';
-    
+
     var ticketPopup = document.createElement('div');
     ticketPopup.className = 'ticket-popup-overlay';
     ticketPopup.id = 'ticketPopup';
-    
+
     ticketPopup.innerHTML = `
         <div class="ticket-popup-content">
             <div class="ticket-popup-header">
@@ -480,26 +480,26 @@ HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket) {
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
+
             <div class="ticket-popup-body">
                 <div class="ticket-main-info">
                     <div class="ticket-number">
-                        <label>Ticket Number:</label>
+                        <label>Ticket:</label>
                         <span class="ticket-key">${jiraTicket.key}</span>
                     </div>
-                    
+
                     <div class="ticket-status-container">
                         <label>Status:</label>
                         <span class="status-badge status-${self.getStatusClass(status)}" id="ticketStatusBadge">
                             ${status}
                         </span>
                     </div>
-                    
+
                     <div class="ticket-timer">
                         <label>Elapsed Time:</label>
                         <span class="timer-display" id="ticketTimer">00:00</span>
                     </div>
-                    
+
                     <div class="ticket-actions">
                         <a href="${jiraTicket.url}" target="_blank" class="btn-view-jira">
                             <i class="fas fa-external-link-alt"></i> View in JIRA
@@ -509,10 +509,10 @@ HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket) {
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="context-submission-form">
                     <h4>Provide Additional Context</h4>
-                    
+
                     <div class="form-group">
                         <label for="contextCategory">Category:</label>
                         <select id="contextCategory" class="form-control">
@@ -524,30 +524,30 @@ HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket) {
                             <option value="Other">Other</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="contextDescription">Description:</label>
                         <textarea id="contextDescription" class="form-control" rows="4" 
                                   placeholder="Please describe your issue in detail..."></textarea>
                     </div>
-                    
+
                     <button class="btn-submit-context" onclick="helpDesk.submitTicketContext()">
                         <i class="fas fa-paper-plane"></i> Submit Context
                     </button>
-                    
+
                     <div id="contextMessage" class="context-message"></div>
                 </div>
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(ticketPopup);
     this.ticketPopupElement = ticketPopup;
-    
+
     setTimeout(function() {
         ticketPopup.classList.add('show');
     }, 10);
-    
+
     this.startTicketTimer();
     this.startStatusPolling();
 };
@@ -585,7 +585,7 @@ HelpDeskClient.prototype.showGenuineHelpOptions = function() {
         options.innerHTML = `
             <div class="help-options-container">
                 <h4>How can we help you?</h4>
-                
+
                 <div class="ai-chat-section">
                     <label>Ask our AI assistant:</label>
                     <div class="ai-input-group">
@@ -594,7 +594,7 @@ HelpDeskClient.prototype.showGenuineHelpOptions = function() {
                     </div>
                     <div id="aiResponse" class="ai-response"></div>
                 </div>
-                
+
                 <div class="callback-section">
                     <label>Request a callback:</label>
                     <div class="callback-input-group">
@@ -603,14 +603,14 @@ HelpDeskClient.prototype.showGenuineHelpOptions = function() {
                         <button onclick="helpDesk.handleCallbackRequest()" class="btn-callback">Request Callback</button>
                     </div>
                 </div>
-                
+
                 <div class="live-ai-section">
                     <button onclick="helpDesk.startGeminiLive()" class="btn-gemini-live">
                         <i class="fas fa-comments"></i> Start Live AI Conversation
                     </button>
                     <p class="gemini-note">Real-time conversation with Gemini AI using secure ephemeral tokens</p>
                 </div>
-                
+
                 <div class="quick-actions">
                     <button onclick="helpDesk.handleQuickAction('account')" class="quick-btn">Account Issues</button>
                     <button onclick="helpDesk.handleQuickAction('data')" class="quick-btn">Data Problems</button>
@@ -737,17 +737,17 @@ HelpDeskClient.prototype.startTicketTimer = function() {
     if (this.timerInterval) {
         clearInterval(this.timerInterval);
     }
-    
+
     this.timerInterval = setInterval(function() {
         if (!self.sessionStartTime) return;
-        
+
         var now = new Date();
         var elapsed = Math.floor((now - self.sessionStartTime) / 1000);
-        
+
         var hours = Math.floor(elapsed / 3600);
         var minutes = Math.floor((elapsed % 3600) / 60);
         var seconds = elapsed % 60;
-        
+
         var timerDisplay = document.getElementById('ticketTimer');
         if (timerDisplay) {
             if (hours > 0) {
@@ -769,7 +769,7 @@ HelpDeskClient.prototype.startStatusPolling = function() {
     if (this.statusPollInterval) {
         clearInterval(this.statusPollInterval);
     }
-    
+
     this.statusPollInterval = setInterval(function() {
         self.checkTicketStatus();
     }, 30000);
@@ -779,9 +779,9 @@ HelpDeskClient.prototype.checkTicketStatus = function() {
     var self = this;
     var userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
     var firebaseUid = userData.uid;
-    
+
     if (!firebaseUid) return;
-    
+
     fetch('/api/help/user-open-ticket?firebaseUid=' + firebaseUid)
     .then(function(response) {
         return response.json();
@@ -794,10 +794,10 @@ HelpDeskClient.prototype.checkTicketStatus = function() {
                 helpSessionId: result.ticket.help_session_id,
                 jiraTicket: result.ticket.jira_ticket
             };
-            
+
             if (result.ticket.jira_ticket_status) {
                 self.updateStatusBadge(result.ticket.jira_ticket_status);
-                
+
                 if (result.ticket.jira_ticket_status === 'Resolved' || 
                     result.ticket.jira_ticket_status === 'User_Closed') {
                     self.stopPolling();
@@ -827,7 +827,7 @@ HelpDeskClient.prototype.stopPolling = function() {
         clearInterval(this.statusPollInterval);
         this.statusPollInterval = null;
     }
-    
+
     if (this.timerInterval) {
         clearInterval(this.timerInterval);
         this.timerInterval = null;
@@ -839,24 +839,24 @@ HelpDeskClient.prototype.submitTicketContext = function() {
     var category = document.getElementById('contextCategory');
     var description = document.getElementById('contextDescription');
     var messageDiv = document.getElementById('contextMessage');
-    
+
     if (!category || !category.value) {
         messageDiv.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Please select a category</div>';
         return;
     }
-    
+
     if (!description || !description.value.trim()) {
         messageDiv.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Please provide a description</div>';
         return;
     }
-    
+
     if (!this.currentSession) {
         messageDiv.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> No active session</div>';
         return;
     }
-    
+
     messageDiv.innerHTML = '<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Submitting...</div>';
-    
+
     fetch('/api/help/update-context', {
         method: 'POST',
         headers: {
@@ -876,7 +876,7 @@ HelpDeskClient.prototype.submitTicketContext = function() {
             messageDiv.innerHTML = '<div class="success-message"><i class="fas fa-check-circle"></i> Context submitted successfully!</div>';
             category.value = '';
             description.value = '';
-            
+
             setTimeout(function() {
                 messageDiv.innerHTML = '';
             }, 3000);
@@ -897,14 +897,14 @@ HelpDeskClient.prototype.closeTicketPopup = function() {
 
 HelpDeskClient.prototype.closeTicket = function() {
     var self = this;
-    
+
     if (!this.currentSession) {
         this.removeTicketPopup();
         return;
     }
-    
+
     var confirmed = confirm('This will mark your support ticket as "User_Closed". Are you sure?');
-    
+
     if (confirmed) {
         fetch('/api/help/update-status', {
             method: 'POST',
@@ -947,7 +947,7 @@ HelpDeskClient.prototype.removeTicketPopup = function() {
         }, 300);
         this.ticketPopupElement = null;
     }
-    
+
     this.stopPolling();
 };
 

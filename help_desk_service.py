@@ -176,7 +176,7 @@ class HelpDeskService:
             return {'success': False, 'error': str(e)}
     
     def get_active_session(self, user_id=None, firebase_uid=None):
-        """Get active session for a user"""
+        """Get active session for a user by Firebase UID"""
         try:
             with get_db_connection() as conn:
                 if conn:
@@ -186,7 +186,10 @@ class HelpDeskService:
                                 SELECT id, session_id, jira_ticket_key, jira_ticket_status, 
                                        help_started_at
                                 FROM need_for_help 
-                                WHERE firebase_uid = %s AND help_ended_at IS NULL
+                                WHERE firebase_uid = %s 
+                                  AND help_ended_at IS NULL
+                                  AND (jira_ticket_status IS NULL 
+                                       OR jira_ticket_status NOT IN ('Resolved', 'User_Closed'))
                                 ORDER BY help_started_at DESC
                                 LIMIT 1
                             """, (firebase_uid,))
@@ -195,7 +198,10 @@ class HelpDeskService:
                                 SELECT id, session_id, jira_ticket_key, jira_ticket_status,
                                        help_started_at
                                 FROM need_for_help 
-                                WHERE user_id = %s AND help_ended_at IS NULL
+                                WHERE user_id = %s 
+                                  AND help_ended_at IS NULL
+                                  AND (jira_ticket_status IS NULL 
+                                       OR jira_ticket_status NOT IN ('Resolved', 'User_Closed'))
                                 ORDER BY help_started_at DESC
                                 LIMIT 1
                             """, (user_id,))
@@ -361,7 +367,7 @@ class HelpDeskService:
                     print(f"Could not retrieve user email: {str(e)}")
             
             # Prepare ticket data with user's email prominently displayed
-            summary = f"Help Request - {user_identifier} - Session {help_session_id}"
+            summary = f"Help Request - {user_identifier}"
             
             # JIRA API v3 requires Atlassian Document Format (ADF) for description
             description_content = [
