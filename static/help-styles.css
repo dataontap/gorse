@@ -168,6 +168,352 @@
     background: #e0e0e0;
 }
 
+/* Ticket Popup Styles */
+.ticket-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.ticket-popup-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.ticket-popup-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    transform: translateY(50px);
+    transition: transform 0.3s ease;
+}
+
+.ticket-popup-overlay.show .ticket-popup-content {
+    transform: translateY(0);
+}
+
+.ticket-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px 16px 0 0;
+}
+
+.ticket-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ticket-header-info h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.ticket-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.3s ease;
+}
+
+.ticket-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.ticket-popup-body {
+    padding: 24px;
+}
+
+.ticket-main-info {
+    margin-bottom: 24px;
+}
+
+.ticket-number,
+.ticket-status-container,
+.ticket-timer {
+    margin-bottom: 16px;
+}
+
+.ticket-number label,
+.ticket-status-container label,
+.ticket-timer label {
+    display: block;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.ticket-key {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    font-family: 'Courier New', monospace;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.status-need-help {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.status-in-progress {
+    background: #cfe2ff;
+    color: #084298;
+}
+
+.status-badge.status-user-closed {
+    background: #e2e3e5;
+    color: #41464b;
+}
+
+.status-badge.status-resolved {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.status-badge.status-escalated {
+    background: #f8d7da;
+    color: #842029;
+}
+
+.timer-display {
+    font-size: 24px;
+    font-weight: 700;
+    color: #667eea;
+    font-family: 'Courier New', monospace;
+}
+
+.ticket-actions {
+    margin-top: 20px;
+}
+
+.btn-view-jira {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: background 0.3s ease;
+}
+
+.btn-view-jira:hover {
+    background: #5568d3;
+}
+
+.btn-view-jira i {
+    margin-right: 8px;
+}
+
+.context-submission-form {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 24px;
+}
+
+.context-submission-form h4 {
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.form-control textarea {
+    resize: vertical;
+}
+
+.btn-submit-context {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s ease;
+}
+
+.btn-submit-context:hover {
+    background: #218838;
+}
+
+.context-message {
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.success-message {
+    background: #d1e7dd;
+    color: #0f5132;
+    padding: 10px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #842029;
+    padding: 10px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.loading-message {
+    background: #cfe2ff;
+    color: #084298;
+    padding: 10px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Dark Mode Styles for Ticket Popup */
+body.dark-mode .ticket-popup-overlay {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+body.dark-mode .ticket-popup-content {
+    background: rgba(30, 30, 40, 0.95);
+    color: #e0e0e0;
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+}
+
+body.dark-mode .ticket-popup-header {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
+}
+
+body.dark-mode .ticket-number label,
+body.dark-mode .ticket-status-container label,
+body.dark-mode .ticket-timer label {
+    color: #b0b0b0;
+}
+
+body.dark-mode .ticket-key {
+    color: #e0e0e0;
+}
+
+body.dark-mode .timer-display {
+    color: #8b9cef;
+}
+
+body.dark-mode .context-submission-form {
+    background: rgba(40, 40, 50, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+body.dark-mode .context-submission-form h4 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .form-group label {
+    color: #b0b0b0;
+}
+
+body.dark-mode .form-control {
+    background: rgba(50, 50, 60, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+body.dark-mode .form-control:focus {
+    border-color: #8b9cef;
+}
+
+body.dark-mode .success-message {
+    background: rgba(25, 135, 84, 0.3);
+    color: #4ade80;
+}
+
+body.dark-mode .error-message {
+    background: rgba(220, 53, 69, 0.3);
+    color: #f87171;
+}
+
+body.dark-mode .loading-message {
+    background: rgba(13, 110, 253, 0.3);
+    color: #60a5fa;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
     .ai-input-group, .callback-input-group {
@@ -180,6 +526,31 @@
 
     .response-actions {
         flex-direction: column;
+    }
+
+    .ticket-popup-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .ticket-popup-header {
+        padding: 16px 20px;
+    }
+
+    .ticket-header-info h3 {
+        font-size: 18px;
+    }
+
+    .ticket-popup-body {
+        padding: 20px;
+    }
+
+    .timer-display {
+        font-size: 20px;
+    }
+
+    .context-submission-form {
+        padding: 16px;
     }
 }
 

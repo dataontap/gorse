@@ -3,6 +3,9 @@ function HelpDeskClient() {
     this.currentSession = null;
     this.isAIEnabled = true;
     this.sessionStartTime = null;
+    this.statusPollInterval = null;
+    this.timerInterval = null;
+    this.ticketPopupElement = null;
 }
 
 HelpDeskClient.prototype.startHelpSession = function() {
@@ -439,21 +442,91 @@ HelpDeskClient.prototype.getCurrentUserData = function() {
 };
 
 HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket) {
-    var helpSection = document.querySelector('.help-section');
-    if (helpSection) {
-        var ticketInfo = document.createElement('div');
-        ticketInfo.className = 'jira-ticket-info';
-        ticketInfo.innerHTML = `
-            <div class="ticket-badge">
-                <i class="fas fa-ticket-alt"></i>
-                <span>Ticket: ${jiraTicket.key}</span>
-                <a href="${jiraTicket.url}" target="_blank" class="ticket-link">
-                    <i class="fas fa-external-link-alt"></i>
-                </a>
+    var self = this;
+    var status = jiraTicket.status || 'Need Help';
+    
+    var ticketPopup = document.createElement('div');
+    ticketPopup.className = 'ticket-popup-overlay';
+    ticketPopup.id = 'ticketPopup';
+    
+    ticketPopup.innerHTML = `
+        <div class="ticket-popup-content">
+            <div class="ticket-popup-header">
+                <div class="ticket-header-info">
+                    <i class="fas fa-ticket-alt"></i>
+                    <h3>Support Ticket</h3>
+                </div>
+                <button class="ticket-close-btn" onclick="helpDesk.closeTicketPopup()">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-        `;
-        helpSection.appendChild(ticketInfo);
-    }
+            
+            <div class="ticket-popup-body">
+                <div class="ticket-main-info">
+                    <div class="ticket-number">
+                        <label>Ticket Number:</label>
+                        <span class="ticket-key">${jiraTicket.key}</span>
+                    </div>
+                    
+                    <div class="ticket-status-container">
+                        <label>Status:</label>
+                        <span class="status-badge status-${self.getStatusClass(status)}" id="ticketStatusBadge">
+                            ${status}
+                        </span>
+                    </div>
+                    
+                    <div class="ticket-timer">
+                        <label>Elapsed Time:</label>
+                        <span class="timer-display" id="ticketTimer">00:00</span>
+                    </div>
+                    
+                    <div class="ticket-actions">
+                        <a href="${jiraTicket.url}" target="_blank" class="btn-view-jira">
+                            <i class="fas fa-external-link-alt"></i> View in JIRA
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="context-submission-form">
+                    <h4>Provide Additional Context</h4>
+                    
+                    <div class="form-group">
+                        <label for="contextCategory">Category:</label>
+                        <select id="contextCategory" class="form-control">
+                            <option value="">Select a category...</option>
+                            <option value="Technical Issue">Technical Issue</option>
+                            <option value="Billing Question">Billing Question</option>
+                            <option value="Account Problem">Account Problem</option>
+                            <option value="Feature Request">Feature Request</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="contextDescription">Description:</label>
+                        <textarea id="contextDescription" class="form-control" rows="4" 
+                                  placeholder="Please describe your issue in detail..."></textarea>
+                    </div>
+                    
+                    <button class="btn-submit-context" onclick="helpDesk.submitTicketContext()">
+                        <i class="fas fa-paper-plane"></i> Submit Context
+                    </button>
+                    
+                    <div id="contextMessage" class="context-message"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(ticketPopup);
+    this.ticketPopupElement = ticketPopup;
+    
+    setTimeout(function() {
+        ticketPopup.classList.add('show');
+    }, 10);
+    
+    this.startTicketTimer();
+    this.startStatusPolling();
 };
 
 HelpDeskClient.prototype.showToggleWarning = function(clickCount) {
@@ -620,6 +693,222 @@ Help session completed:
 Thank you for using our help service!
     `;
     alert(message);
+};
+
+HelpDeskClient.prototype.getStatusClass = function(status) {
+    var statusMap = {
+        'Need Help': 'need-help',
+        'In Progress': 'in-progress',
+        'User_Closed': 'user-closed',
+        'Resolved': 'resolved',
+        'Escalated': 'escalated',
+        'Escalated_L1': 'escalated',
+        'Escalated_L2': 'escalated',
+        'Escalated_L3': 'escalated'
+    };
+    return statusMap[status] || 'need-help';
+};
+
+HelpDeskClient.prototype.startTicketTimer = function() {
+    var self = this;
+    if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+    }
+    
+    this.timerInterval = setInterval(function() {
+        if (!self.sessionStartTime) return;
+        
+        var now = new Date();
+        var elapsed = Math.floor((now - self.sessionStartTime) / 1000);
+        
+        var hours = Math.floor(elapsed / 3600);
+        var minutes = Math.floor((elapsed % 3600) / 60);
+        var seconds = elapsed % 60;
+        
+        var timerDisplay = document.getElementById('ticketTimer');
+        if (timerDisplay) {
+            if (hours > 0) {
+                timerDisplay.textContent = 
+                    String(hours).padStart(2, '0') + ':' + 
+                    String(minutes).padStart(2, '0') + ':' + 
+                    String(seconds).padStart(2, '0');
+            } else {
+                timerDisplay.textContent = 
+                    String(minutes).padStart(2, '0') + ':' + 
+                    String(seconds).padStart(2, '0');
+            }
+        }
+    }, 1000);
+};
+
+HelpDeskClient.prototype.startStatusPolling = function() {
+    var self = this;
+    if (this.statusPollInterval) {
+        clearInterval(this.statusPollInterval);
+    }
+    
+    this.statusPollInterval = setInterval(function() {
+        self.checkTicketStatus();
+    }, 30000);
+};
+
+HelpDeskClient.prototype.checkTicketStatus = function() {
+    var self = this;
+    if (!this.currentSession) return;
+    
+    fetch('/api/help/sessions')
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(result) {
+        if (result.status === 'success' && result.sessions && result.sessions.length > 0) {
+            var currentSessionData = result.sessions.find(function(s) {
+                return s.session_id === self.currentSession.sessionId;
+            });
+            
+            if (currentSessionData && currentSessionData.jira_ticket_status) {
+                self.updateStatusBadge(currentSessionData.jira_ticket_status);
+                
+                if (currentSessionData.jira_ticket_status === 'Resolved' || 
+                    currentSessionData.jira_ticket_status === 'User_Closed') {
+                    self.stopPolling();
+                }
+            }
+        }
+    })
+    .catch(function(error) {
+        console.error('Error checking ticket status:', error);
+    });
+};
+
+HelpDeskClient.prototype.updateStatusBadge = function(newStatus) {
+    var statusBadge = document.getElementById('ticketStatusBadge');
+    if (statusBadge && statusBadge.textContent !== newStatus) {
+        statusBadge.textContent = newStatus;
+        statusBadge.className = 'status-badge status-' + this.getStatusClass(newStatus);
+    }
+};
+
+HelpDeskClient.prototype.stopPolling = function() {
+    if (this.statusPollInterval) {
+        clearInterval(this.statusPollInterval);
+        this.statusPollInterval = null;
+    }
+    
+    if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+    }
+};
+
+HelpDeskClient.prototype.submitTicketContext = function() {
+    var self = this;
+    var category = document.getElementById('contextCategory');
+    var description = document.getElementById('contextDescription');
+    var messageDiv = document.getElementById('contextMessage');
+    
+    if (!category || !category.value) {
+        messageDiv.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Please select a category</div>';
+        return;
+    }
+    
+    if (!description || !description.value.trim()) {
+        messageDiv.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Please provide a description</div>';
+        return;
+    }
+    
+    if (!this.currentSession) {
+        messageDiv.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> No active session</div>';
+        return;
+    }
+    
+    messageDiv.innerHTML = '<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Submitting...</div>';
+    
+    fetch('/api/help/update-context', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            sessionId: this.currentSession.sessionId,
+            category: category.value,
+            description: description.value.trim()
+        })
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(result) {
+        if (result.status === 'success') {
+            messageDiv.innerHTML = '<div class="success-message"><i class="fas fa-check-circle"></i> Context submitted successfully!</div>';
+            category.value = '';
+            description.value = '';
+            
+            setTimeout(function() {
+                messageDiv.innerHTML = '';
+            }, 3000);
+        } else {
+            messageDiv.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> ' + (result.message || 'Failed to submit context') + '</div>';
+        }
+    })
+    .catch(function(error) {
+        console.error('Error submitting context:', error);
+        messageDiv.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Error submitting context</div>';
+    });
+};
+
+HelpDeskClient.prototype.closeTicketPopup = function() {
+    var self = this;
+    
+    if (!this.currentSession) {
+        this.removeTicketPopup();
+        return;
+    }
+    
+    var confirmed = confirm('Closing this popup will mark your support ticket as "User_Closed". Are you sure?');
+    
+    if (confirmed) {
+        fetch('/api/help/update-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                sessionId: this.currentSession.sessionId,
+                status: 'User_Closed'
+            })
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(result) {
+            if (result.status === 'success') {
+                console.log('Ticket marked as User_Closed');
+            }
+            self.stopPolling();
+            self.removeTicketPopup();
+        })
+        .catch(function(error) {
+            console.error('Error updating ticket status:', error);
+            self.stopPolling();
+            self.removeTicketPopup();
+        });
+    }
+};
+
+HelpDeskClient.prototype.removeTicketPopup = function() {
+    if (this.ticketPopupElement) {
+        this.ticketPopupElement.classList.remove('show');
+        var element = this.ticketPopupElement;
+        setTimeout(function() {
+            if (element && element.parentNode) {
+                element.parentNode.removeChild(element);
+            }
+        }, 300);
+        this.ticketPopupElement = null;
+    }
+    
+    this.stopPolling();
 };
 
 // Initialize help desk client
