@@ -473,7 +473,7 @@ class HelpDeskService:
                             "type": "listItem",
                             "content": [{
                                 "type": "paragraph",
-                                "content": [{"type": "text", "text": f"User Local Time: {browser_timestamp or datetime.now().isoformat()}"}]
+                                "content": [{"type": "text", "text": f"{'User Local Time' if browser_timestamp else 'System Time (UTC)'}: {browser_timestamp or datetime.now().isoformat()}"}]
                             }]
                         }
                     ]

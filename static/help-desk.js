@@ -12,15 +12,17 @@ HelpDeskClient.prototype.startHelpSession = function() {
     var self = this;
     var userData = this.getCurrentUserData();
     
-    // Get browser's local timestamp
-    var browserTimestamp = new Date().toLocaleString('en-US', {
+    // Get browser's local timestamp with timezone
+    var now = new Date();
+    var browserTimestamp = now.toLocaleString('en-US', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
-        hour12: false
+        hour12: false,
+        timeZoneName: 'short'
     });
 
     return fetch('/api/help/start', {
