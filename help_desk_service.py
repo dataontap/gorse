@@ -603,6 +603,75 @@ subscriptions, and general account management.
             print(f"Error requesting callback: {str(e)}")
             return {'success': False, 'error': str(e)}
     
+    def update_help_ticket_status(self, session_id, status):
+        """Update help ticket status in database and JIRA"""
+        try:
+            # Validate status
+            if status not in self.supported_statuses:
+                return {
+                    'success': False,
+                    'error': f"Invalid status: {status}. Must be one of: {', '.join(self.supported_statuses)}"
+                }
+            
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Get the current session and JIRA ticket
+                        cur.execute("""
+                            SELECT id, jira_ticket_key, jira_ticket_status
+                            FROM need_for_help 
+                            WHERE session_id = %s AND help_ended_at IS NULL
+                        """, (session_id,))
+                        
+                        session = cur.fetchone()
+                        if not session:
+                            return {'success': False, 'error': 'Session not found'}
+                        
+                        help_id, jira_ticket_key, current_status = session
+                        now = datetime.now()
+                        
+                        # Update database with new status
+                        cur.execute("""
+                            UPDATE need_for_help 
+                            SET jira_ticket_status = %s, 
+                                updated_at = %s
+                            WHERE id = %s
+                        """, (status, now, help_id))
+                        
+                        # Log the interaction
+                        cur.execute("""
+                            INSERT INTO help_interactions 
+                            (help_session_id, interaction_type, additional_data)
+                            VALUES (%s, %s, %s)
+                        """, (help_id, 'status_update', json.dumps({
+                            'previous_status': current_status,
+                            'new_status': status,
+                            'timestamp': now.isoformat()
+                        })))
+                        
+                        conn.commit()
+                        
+                        # Update JIRA ticket if it exists
+                        jira_updated = False
+                        if jira_ticket_key:
+                            jira_updated = self.update_jira_ticket_status(
+                                jira_ticket_key, 
+                                status,
+                                f"Status updated to {status} at {now.isoformat()}"
+                            )
+                        
+                        return {
+                            'success': True,
+                            'message': 'Status updated successfully',
+                            'ticket_status': status,
+                            'jira_ticket_key': jira_ticket_key,
+                            'jira_updated': jira_updated
+                        }
+                        
+        except Exception as e:
+            print(f"Error updating help ticket status: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
     def get_help_analytics(self, days=30):
         """Get help desk analytics"""
         try:
