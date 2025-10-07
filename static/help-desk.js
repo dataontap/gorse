@@ -33,8 +33,17 @@ HelpDeskClient.prototype.startHelpSession = function() {
                 helpSessionId: result.help_session_id,
                 jiraTicket: result.jira_ticket
             };
-            self.sessionStartTime = new Date();
-            console.log('Help session started:', self.currentSession);
+            
+            // Set session start time from existing session or use current time
+            if (result.existing && result.jira_ticket) {
+                // For existing sessions, don't reset the timer
+                var existingStartTime = new Date(result.jira_ticket.started_at || Date.now());
+                self.sessionStartTime = existingStartTime;
+            } else {
+                self.sessionStartTime = new Date();
+            }
+            
+            console.log(result.existing ? 'Existing help session opened:' : 'Help session started:', self.currentSession);
 
             if (result.jira_ticket) {
                 self.showJiraTicketInfo(result.jira_ticket);

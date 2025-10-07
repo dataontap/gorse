@@ -10,6 +10,38 @@ def get_app():
 
 app = get_app()
 
+@app.route('/api/help/active-session', methods=['GET'])
+def get_active_help_session():
+    """Get active help session for user"""
+    try:
+        firebase_uid = request.args.get('firebaseUid')
+        user_id = request.args.get('userId')
+        
+        if not firebase_uid and not user_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'Firebase UID or User ID required'
+            }), 400
+        
+        result = help_desk.get_active_session(user_id=user_id, firebase_uid=firebase_uid)
+        
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'session': result
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': result.get('error', 'No active session found')
+            }), 404
+            
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 @app.route('/api/help/start', methods=['POST'])
 def start_help_session():
     """Start a new help session"""
@@ -23,6 +55,22 @@ def start_help_session():
             'ip_address': request.remote_addr,
             'page_url': data.get('pageUrl', request.referrer)
         }
+        
+        # Check if user already has an active session
+        active_session = help_desk.get_active_session(
+            user_id=user_data.get('user_id'),
+            firebase_uid=user_data.get('firebase_uid')
+        )
+        
+        if active_session['success']:
+            return jsonify({
+                'status': 'success',
+                'session_id': active_session['session_id'],
+                'help_session_id': active_session['help_session_id'],
+                'jira_ticket': active_session.get('jira_ticket'),
+                'message': 'Existing active session found',
+                'existing': True
+            })
         
         result = help_desk.start_help_session(user_data)
         

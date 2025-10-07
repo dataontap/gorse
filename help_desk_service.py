@@ -175,6 +175,52 @@ class HelpDeskService:
             print(f"Error starting help session: {str(e)}")
             return {'success': False, 'error': str(e)}
     
+    def get_active_session(self, user_id=None, firebase_uid=None):
+        """Get active session for a user"""
+        try:
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        if firebase_uid:
+                            cur.execute("""
+                                SELECT id, session_id, jira_ticket_key, jira_ticket_status, 
+                                       help_started_at
+                                FROM need_for_help 
+                                WHERE firebase_uid = %s AND help_ended_at IS NULL
+                                ORDER BY help_started_at DESC
+                                LIMIT 1
+                            """, (firebase_uid,))
+                        elif user_id:
+                            cur.execute("""
+                                SELECT id, session_id, jira_ticket_key, jira_ticket_status,
+                                       help_started_at
+                                FROM need_for_help 
+                                WHERE user_id = %s AND help_ended_at IS NULL
+                                ORDER BY help_started_at DESC
+                                LIMIT 1
+                            """, (user_id,))
+                        else:
+                            return {'success': False, 'error': 'User ID or Firebase UID required'}
+                        
+                        session = cur.fetchone()
+                        if session:
+                            return {
+                                'success': True,
+                                'help_session_id': session[0],
+                                'session_id': session[1],
+                                'jira_ticket': {
+                                    'key': session[2],
+                                    'status': session[3],
+                                    'url': f"{self.jira_url}/browse/{session[2]}" if session[2] else None
+                                },
+                                'started_at': session[4].isoformat() if session[4] else None
+                            }
+                        else:
+                            return {'success': False, 'error': 'No active session found'}
+        except Exception as e:
+            print(f"Error getting active session: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
     def end_help_session(self, session_id, user_data=None):
         """End a help session"""
         try:
@@ -575,6 +621,7 @@ class HelpDeskService:
                                 }
                             }
                             
+                            # Add comment
                             response = requests.post(
                                 f"{self.jira_url}/rest/api/3/issue/{jira_ticket_key}/comment",
                                 auth=auth,
@@ -584,6 +631,28 @@ class HelpDeskService:
                             
                             if response.status_code == 201:
                                 print(f"Context added to JIRA ticket {jira_ticket_key}")
+                                
+                                # Update issue to trigger timestamp update
+                                # Add label to force an update
+                                update_data = {
+                                    "update": {
+                                        "labels": [
+                                            {"add": f"context-{category.lower().replace(' ', '-')}"}
+                                        ]
+                                    }
+                                }
+                                
+                                update_response = requests.put(
+                                    f"{self.jira_url}/rest/api/3/issue/{jira_ticket_key}",
+                                    auth=auth,
+                                    headers=headers,
+                                    json=update_data
+                                )
+                                
+                                if update_response.status_code in [200, 204]:
+                                    print(f"JIRA ticket {jira_ticket_key} timestamp updated")
+                                else:
+                                    print(f"Failed to update JIRA ticket timestamp: {update_response.status_code} - {update_response.text}")
                             else:
                                 print(f"Failed to update JIRA ticket with context: {response.status_code} - {response.text}")
                         
