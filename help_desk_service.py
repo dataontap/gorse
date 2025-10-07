@@ -508,29 +508,66 @@ class HelpDeskService:
                         
                         # Update JIRA ticket if it exists
                         if jira_ticket_key and all([self.jira_url, self.jira_username, self.jira_api_token]):
-                            context_comment = f"""
-*User Context Provided:*
-- Category: {category}
-- Description: {description}
-- Timestamp: {now.isoformat()}
-
-This additional context has been provided by the user to help resolve their issue.
-                            """
-                            
                             auth = (self.jira_username, self.jira_api_token)
                             headers = {"Content-Type": "application/json"}
                             
+                            # Create structured ADF comment with headings
                             comment_data = {
                                 "body": {
                                     "type": "doc",
                                     "version": 1,
                                     "content": [
                                         {
+                                            "type": "heading",
+                                            "attrs": {"level": 3},
+                                            "content": [
+                                                {
+                                                    "type": "text",
+                                                    "text": "📝 Additional Context from User",
+                                                    "marks": [{"type": "strong"}]
+                                                }
+                                            ]
+                                        },
+                                        {
                                             "type": "paragraph",
                                             "content": [
                                                 {
                                                     "type": "text",
-                                                    "text": context_comment
+                                                    "text": "Category: ",
+                                                    "marks": [{"type": "strong"}]
+                                                },
+                                                {
+                                                    "type": "text",
+                                                    "text": category
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "paragraph",
+                                            "content": [
+                                                {
+                                                    "type": "text",
+                                                    "text": "Description:",
+                                                    "marks": [{"type": "strong"}]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "paragraph",
+                                            "content": [
+                                                {
+                                                    "type": "text",
+                                                    "text": description
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "paragraph",
+                                            "content": [
+                                                {
+                                                    "type": "text",
+                                                    "text": f"Submitted at: {now.strftime('%Y-%m-%d %H:%M:%S UTC')}",
+                                                    "marks": [{"type": "em"}]
                                                 }
                                             ]
                                         }
@@ -548,7 +585,7 @@ This additional context has been provided by the user to help resolve their issu
                             if response.status_code == 201:
                                 print(f"Context added to JIRA ticket {jira_ticket_key}")
                             else:
-                                print(f"Failed to update JIRA ticket with context: {response.status_code}")
+                                print(f"Failed to update JIRA ticket with context: {response.status_code} - {response.text}")
                         
                         return {
                             'success': True,
