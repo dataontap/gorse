@@ -210,17 +210,20 @@ class HelpDeskService:
                         
                         session = cur.fetchone()
                         if session:
+                            jira_status = session[3] or 'Need Help'
                             return {
                                 'success': True,
                                 'help_session_id': session[0],
                                 'session_id': session[1],
                                 'jira_ticket': {
                                     'key': session[2],
-                                    'status': session[3],
+                                    'status': jira_status,
+                                    'jira_ticket_status': jira_status,  # Duplicate for compatibility
                                     'url': f"{self.jira_url}/browse/{session[2]}" if session[2] else None,
                                     'started_at': session[4].isoformat() if session[4] else None
                                 },
-                                'started_at': session[4].isoformat() if session[4] else None
+                                'started_at': session[4].isoformat() if session[4] else None,
+                                'jira_ticket_status': jira_status  # Add at root level too
                             }
                         else:
                             return {'success': False, 'error': 'No active session found'}

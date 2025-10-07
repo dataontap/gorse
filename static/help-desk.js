@@ -477,7 +477,9 @@ HelpDeskClient.prototype.getCurrentUserData = function() {
 
 HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket, isExisting) {
     var self = this;
-    var status = jiraTicket.status || 'Need Help';
+    
+    // Use the actual JIRA status from the ticket object
+    var status = jiraTicket.status || jiraTicket.jira_ticket_status || 'Need Help';
     
     // Format the original submission time
     var submissionTime = 'Unknown';

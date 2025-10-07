@@ -372,6 +372,41 @@ def update_help_context_endpoint():
             'message': str(e)
         }), 500
 
+@app.route('/api/help/user-open-ticket', methods=['GET'])
+def get_user_open_ticket():
+    """Get user's open ticket with current JIRA status"""
+    try:
+        from help_desk_service import help_desk
+        
+        firebase_uid = request.args.get('firebaseUid')
+        if not firebase_uid:
+            return jsonify({
+                'status': 'error',
+                'message': 'Firebase UID is required'
+            }), 400
+        
+        result = help_desk.get_active_session(firebase_uid=firebase_uid)
+        
+        if result.get('success'):
+            return jsonify({
+                'status': 'success',
+                'has_open_ticket': True,
+                'ticket': result
+            })
+        else:
+            return jsonify({
+                'status': 'success',
+                'has_open_ticket': False,
+                'message': 'No open ticket found'
+            })
+            
+    except Exception as e:
+        print(f"Error getting user open ticket: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 # Define OXIO endpoints FIRST, before any Flask-RESTX setup
 @app.route('/api/oxio/test-connection', methods=['GET'])
 def oxio_test_connection():
