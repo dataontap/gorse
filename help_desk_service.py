@@ -349,6 +349,8 @@ class HelpDeskService:
             user_name = None
             user_identifier = user_data.get('user_id', 'Unknown')
             firebase_uid = user_data.get('firebase_uid')
+            browser_timestamp = user_data.get('browser_timestamp')  # Get browser's local timestamp
+            
             if firebase_uid:
                 try:
                     from firebase_helper import get_user_by_firebase_uid
@@ -471,7 +473,7 @@ class HelpDeskService:
                             "type": "listItem",
                             "content": [{
                                 "type": "paragraph",
-                                "content": [{"type": "text", "text": f"Timestamp: {datetime.now().isoformat()}"}]
+                                "content": [{"type": "text", "text": f"User Local Time: {browser_timestamp or datetime.now().isoformat()}"}]
                             }]
                         }
                     ]

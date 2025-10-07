@@ -11,6 +11,17 @@ function HelpDeskClient() {
 HelpDeskClient.prototype.startHelpSession = function() {
     var self = this;
     var userData = this.getCurrentUserData();
+    
+    // Get browser's local timestamp
+    var browserTimestamp = new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
 
     return fetch('/api/help/start', {
         method: 'POST',
@@ -20,7 +31,8 @@ HelpDeskClient.prototype.startHelpSession = function() {
         body: JSON.stringify({
             userId: userData.userId,
             firebaseUid: userData.firebaseUid,
-            pageUrl: window.location.href
+            pageUrl: window.location.href,
+            browserTimestamp: browserTimestamp
         })
     })
     .then(function(response) {
