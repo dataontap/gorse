@@ -756,11 +756,14 @@ Thank you for using our help service!
 HelpDeskClient.prototype.getStatusClass = function(status) {
     var statusMap = {
         'TO DO': 'to-do',
+        'To Do': 'to-do',
         'IN PROGRESS': 'in-progress',
-        'PENDING': 'pending',
-        'DONE': 'done',
-        'Need Help': 'to-do',
         'In Progress': 'in-progress',
+        'PENDING': 'pending',
+        'Pending': 'pending',
+        'DONE': 'done',
+        'Done': 'done',
+        'Need Help': 'to-do',
         'User_Closed': 'done',
         'Resolved': 'done',
         'Escalated': 'escalated',
@@ -837,7 +840,10 @@ HelpDeskClient.prototype.checkTicketStatus = function() {
             if (result.ticket.jira_ticket_status) {
                 self.updateStatusBadge(result.ticket.jira_ticket_status);
 
-                if (result.ticket.jira_ticket_status === 'Resolved' || 
+                // Stop polling for completed statuses
+                if (result.ticket.jira_ticket_status === 'DONE' ||
+                    result.ticket.jira_ticket_status === 'Done' ||
+                    result.ticket.jira_ticket_status === 'Resolved' || 
                     result.ticket.jira_ticket_status === 'User_Closed') {
                     self.stopPolling();
                 }

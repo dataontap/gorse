@@ -16,8 +16,12 @@ class HelpDeskService:
         self.jira_api_token = os.environ.get('JIRA_API_TOKEN')
         self.jira_project_key = os.environ.get('JIRA_PROJECT_KEY', 'HELP')
         
-        # Supported ticket statuses
+        # Supported ticket statuses matching JIRA workflow
         self.supported_statuses = [
+            "TO DO",
+            "IN PROGRESS", 
+            "PENDING",
+            "DONE",
             "Need Help", 
             "User_Closed", 
             "In Progress", 
@@ -181,6 +185,12 @@ class HelpDeskService:
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
+                        # Define statuses that should open existing ticket vs create new one
+                        # TO DO, IN PROGRESS, PENDING = open existing
+                        # DONE, Resolved, User_Closed = create new
+                        open_statuses = ['TO DO', 'To Do', 'Need Help', 'IN PROGRESS', 'In Progress', 'PENDING', 'Pending', 
+                                       'Escalated_L1', 'Escalated_L2', 'Escalated_L3']
+                        
                         if firebase_uid:
                             cur.execute("""
                                 SELECT id, session_id, jira_ticket_key, jira_ticket_status, 
@@ -189,7 +199,7 @@ class HelpDeskService:
                                 WHERE firebase_uid = %s 
                                   AND help_ended_at IS NULL
                                   AND (jira_ticket_status IS NULL 
-                                       OR jira_ticket_status NOT IN ('Resolved', 'User_Closed'))
+                                       OR jira_ticket_status NOT IN ('DONE', 'Done', 'Resolved', 'User_Closed'))
                                 ORDER BY help_started_at DESC
                                 LIMIT 1
                             """, (firebase_uid,))
@@ -201,7 +211,7 @@ class HelpDeskService:
                                 WHERE user_id = %s 
                                   AND help_ended_at IS NULL
                                   AND (jira_ticket_status IS NULL 
-                                       OR jira_ticket_status NOT IN ('Resolved', 'User_Closed'))
+                                       OR jira_ticket_status NOT IN ('DONE', 'Done', 'Resolved', 'User_Closed'))
                                 ORDER BY help_started_at DESC
                                 LIMIT 1
                             """, (user_id,))
