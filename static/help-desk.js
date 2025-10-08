@@ -755,16 +755,20 @@ Thank you for using our help service!
 
 HelpDeskClient.prototype.getStatusClass = function(status) {
     var statusMap = {
-        'Need Help': 'need-help',
+        'TO DO': 'to-do',
+        'IN PROGRESS': 'in-progress',
+        'PENDING': 'pending',
+        'DONE': 'done',
+        'Need Help': 'to-do',
         'In Progress': 'in-progress',
-        'User_Closed': 'user-closed',
-        'Resolved': 'resolved',
+        'User_Closed': 'done',
+        'Resolved': 'done',
         'Escalated': 'escalated',
         'Escalated_L1': 'escalated',
         'Escalated_L2': 'escalated',
         'Escalated_L3': 'escalated'
     };
-    return statusMap[status] || 'need-help';
+    return statusMap[status] || 'to-do';
 };
 
 HelpDeskClient.prototype.startTicketTimer = function() {

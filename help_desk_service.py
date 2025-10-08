@@ -210,20 +210,48 @@ class HelpDeskService:
                         
                         session = cur.fetchone()
                         if session:
-                            jira_status = session[3] or 'Need Help'
+                            jira_ticket_key = session[2]
+                            db_status = session[3]
+                            
+                            # Fetch real-time status from Jira if ticket exists
+                            jira_status = db_status or 'TO DO'
+                            if jira_ticket_key and self.jira_url and self.jira_username and self.jira_api_token:
+                                try:
+                                    auth = (self.jira_username, self.jira_api_token)
+                                    response = requests.get(
+                                        f"{self.jira_url}/rest/api/3/issue/{jira_ticket_key}",
+                                        auth=auth,
+                                        headers={"Accept": "application/json"}
+                                    )
+                                    if response.status_code == 200:
+                                        issue_data = response.json()
+                                        jira_status = issue_data.get('fields', {}).get('status', {}).get('name', db_status or 'TO DO')
+                                        
+                                        # Update database with latest status
+                                        if jira_status != db_status:
+                                            cur.execute("""
+                                                UPDATE need_for_help 
+                                                SET jira_ticket_status = %s, updated_at = CURRENT_TIMESTAMP
+                                                WHERE id = %s
+                                            """, (jira_status, session[0]))
+                                            conn.commit()
+                                            print(f"Updated ticket {jira_ticket_key} status from {db_status} to {jira_status}")
+                                except Exception as jira_err:
+                                    print(f"Error fetching Jira status: {jira_err}")
+                            
                             return {
                                 'success': True,
                                 'help_session_id': session[0],
                                 'session_id': session[1],
                                 'jira_ticket': {
-                                    'key': session[2],
+                                    'key': jira_ticket_key,
                                     'status': jira_status,
-                                    'jira_ticket_status': jira_status,  # Duplicate for compatibility
-                                    'url': f"{self.jira_url}/browse/{session[2]}" if session[2] else None,
+                                    'jira_ticket_status': jira_status,
+                                    'url': f"{self.jira_url}/browse/{jira_ticket_key}" if jira_ticket_key else None,
                                     'started_at': session[4].isoformat() if session[4] else None
                                 },
                                 'started_at': session[4].isoformat() if session[4] else None,
-                                'jira_ticket_status': jira_status  # Add at root level too
+                                'jira_ticket_status': jira_status
                             }
                         else:
                             return {'success': False, 'error': 'No active session found'}

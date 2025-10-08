@@ -7,6 +7,38 @@
     margin: 10px 0;
 }
 
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.status-to-do {
+    background: #6c757d;
+    color: white;
+}
+
+.status-in-progress {
+    background: #0d6efd;
+    color: white;
+}
+
+.status-pending {
+    background: #0dcaf0;
+    color: white;
+}
+
+.status-done {
+    background: #198754;
+    color: white;
+}
+
+.status-escalated {
+    background: #dc3545;
+    color: white;
+}
+
 .ticket-badge {
     display: flex;
     align-items: center;
