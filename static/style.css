@@ -3895,16 +3895,22 @@ input:checked + .toggle-slider:before {
     color: var(--text-secondary);
 }
 
+.invitation-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .invitation-status {
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 500;
     text-transform: capitalize;
-    margin-right: 10px;
 }
 
-.status-invite-sent {
+.status-invite-sent,
+.status-re-invited {
     background: #e3f2fd;
     color: #1976d2;
 }
@@ -3922,6 +3928,27 @@ input:checked + .toggle-slider:before {
 .status-invite-cancelled {
     background: #f5f5f5;
     color: #757575;
+}
+
+.resend-invite-btn,
+.cancel-invite-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.resend-invite-btn:hover {
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196f3;
+}
+
+.cancel-invite-btn:hover {
+    background: rgba(244, 67, 54, 0.1);
+    color: #f44336;
 }
 
 /* Accepted Users Container */
