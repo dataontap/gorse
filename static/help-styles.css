@@ -102,6 +102,71 @@
     color: #333;
 }
 
+.ticket-comments-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.ticket-comments-section h4 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.comments-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.comment-item {
+    background: white;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-left: 3px solid #2196f3;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.comment-author {
+    font-weight: 600;
+    color: #2196f3;
+    font-size: 0.9em;
+}
+
+.comment-author i {
+    margin-right: 5px;
+}
+
+.comment-date {
+    font-size: 0.8em;
+    color: #666;
+}
+
+.comment-body {
+    color: #333;
+    line-height: 1.5;
+    font-size: 0.95em;
+}
+
+.no-comments, .loading-comments {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+.no-comments i, .loading-comments i {
+    margin-right: 8px;
+}
+
 .ai-chat-section, .callback-section {
     margin-bottom: 20px;
     padding-bottom: 15px;

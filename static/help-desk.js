@@ -11,7 +11,7 @@ function HelpDeskClient() {
 HelpDeskClient.prototype.startHelpSession = function() {
     var self = this;
     var userData = this.getCurrentUserData();
-    
+
     // Get browser's local timestamp with timezone
     var now = new Date();
     var browserTimestamp = now.toLocaleString('en-US', {
@@ -61,6 +61,10 @@ HelpDeskClient.prototype.startHelpSession = function() {
 
             if (result.jira_ticket) {
                 self.showJiraTicketInfo(result.jira_ticket, result.existing);
+                // Fetch and display comments if a ticket is present
+                if (result.jira_ticket.key) {
+                    self.fetchJiraComments(result.jira_ticket.key);
+                }
             }
 
             return self.currentSession;
@@ -477,10 +481,10 @@ HelpDeskClient.prototype.getCurrentUserData = function() {
 
 HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket, isExisting) {
     var self = this;
-    
+
     // Use the actual JIRA status from the ticket object
     var status = jiraTicket.status || jiraTicket.jira_ticket_status || 'Need Help';
-    
+
     // Format the original submission time
     var submissionTime = 'Unknown';
     if (jiraTicket.started_at) {
@@ -545,33 +549,40 @@ HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket, isExisting) {
                     </div>
                 </div>
 
-                <div class="context-submission-form">
-                    <h4>Provide Additional Context</h4>
-
-                    <div class="form-group">
-                        <label for="contextCategory">Category:</label>
-                        <select id="contextCategory" class="form-control">
-                            <option value="">Select a category...</option>
-                            <option value="Technical Issue">Technical Issue</option>
-                            <option value="Billing Question">Billing Question</option>
-                            <option value="Account Problem">Account Problem</option>
-                            <option value="Feature Request">Feature Request</option>
-                            <option value="Other">Other</option>
-                        </select>
+                <div class="ticket-comments-section" id="ticketCommentsSection">
+                        <h4><i class="fas fa-comments"></i> Support Team Replies</h4>
+                        <div class="comments-list" id="commentsList">
+                            <div class="loading-comments">Loading comments...</div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="contextDescription">Description:</label>
-                        <textarea id="contextDescription" class="form-control" rows="4" 
-                                  placeholder="Please describe your issue in detail..."></textarea>
+                    <div class="context-submission-form">
+                        <h4>Provide Additional Context</h4>
+
+                        <div class="form-group">
+                            <label for="contextCategory">Category:</label>
+                            <select id="contextCategory" class="form-control">
+                                <option value="">Select a category...</option>
+                                <option value="Technical Issue">Technical Issue</option>
+                                <option value="Billing Question">Billing Question</option>
+                                <option value="Account Problem">Account Problem</option>
+                                <option value="Feature Request">Feature Request</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contextDescription">Description:</label>
+                            <textarea id="contextDescription" class="form-control" rows="4" 
+                                      placeholder="Please describe your issue in detail..."></textarea>
+                        </div>
+
+                        <button class="btn-submit-context" onclick="helpDesk.submitTicketContext()">
+                            <i class="fas fa-paper-plane"></i> Submit Context
+                        </button>
+
+                        <div id="contextMessage" class="context-message"></div>
                     </div>
-
-                    <button class="btn-submit-context" onclick="helpDesk.submitTicketContext()">
-                        <i class="fas fa-paper-plane"></i> Submit Context
-                    </button>
-
-                    <div id="contextMessage" class="context-message"></div>
-                </div>
             </div>
         </div>
     `;
@@ -586,6 +597,50 @@ HelpDeskClient.prototype.showJiraTicketInfo = function(jiraTicket, isExisting) {
     this.startTicketTimer();
     this.startStatusPolling();
 };
+
+HelpDeskClient.prototype.fetchJiraComments = function(ticketKey) {
+    var commentsListElement = document.getElementById('commentsList');
+    if (!commentsListElement) return;
+
+    commentsListElement.innerHTML = '<div class="loading-comments">Loading comments...</div>';
+
+    fetch('/api/help/jira-comments?ticketKey=' + ticketKey)
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(result) {
+        if (result.status === 'success' && result.comments && result.comments.length > 0) {
+            commentsListElement.innerHTML = ''; // Clear loading message
+            result.comments.forEach(function(comment) {
+                var commentDiv = document.createElement('div');
+                commentDiv.className = 'comment';
+                
+                var author = comment.author ? comment.author.displayName : 'Anonymous';
+                var timestamp = comment.created ? new Date(comment.created).toLocaleString() : 'Unknown time';
+
+                commentDiv.innerHTML = `
+                    <div class="comment-header">
+                        <strong>${author}</strong>
+                        <span class="comment-timestamp">${timestamp}</span>
+                    </div>
+                    <div class="comment-body">
+                        <p>${comment.body || 'No content'}</p>
+                    </div>
+                `;
+                commentsListElement.appendChild(commentDiv);
+            });
+        } else if (result.status === 'success' && result.comments.length === 0) {
+            commentsListElement.innerHTML = '<div class="no-comments">No comments found for this ticket.</div>';
+        } else {
+            throw new Error(result.message || 'Failed to fetch comments');
+        }
+    })
+    .catch(function(error) {
+        console.error('Error fetching JIRA comments:', error);
+        commentsListElement.innerHTML = `<div class="error-comments">Error loading comments: ${error.message}</div>`;
+    });
+};
+
 
 HelpDeskClient.prototype.showToggleWarning = function(clickCount) {
     var self = this;
@@ -847,6 +902,10 @@ HelpDeskClient.prototype.checkTicketStatus = function() {
                     result.ticket.jira_ticket_status === 'User_Closed') {
                     self.stopPolling();
                 }
+            }
+            // Fetch comments if ticket key is available and comments haven't been loaded yet
+            if (result.ticket.jira_ticket && result.ticket.jira_ticket.key && !document.getElementById('ticketCommentsSection').querySelector('.comment')) {
+                 self.fetchJiraComments(result.ticket.jira_ticket.key);
             }
         } else if (result.status === 'success' && !result.has_open_ticket) {
             // No open ticket, stop polling

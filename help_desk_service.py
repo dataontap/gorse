@@ -179,6 +179,67 @@ class HelpDeskService:
             print(f"Error starting help session: {str(e)}")
             return {'success': False, 'error': str(e)}
     
+    def get_jira_comments(self, ticket_key):
+        """Fetch comments from JIRA ticket"""
+        try:
+            if not all([self.jira_url, self.jira_username, self.jira_api_token]):
+                return []
+            
+            auth = (self.jira_username, self.jira_api_token)
+            response = requests.get(
+                f"{self.jira_url}/rest/api/3/issue/{ticket_key}/comment",
+                auth=auth,
+                headers={"Accept": "application/json"}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                comments = []
+                
+                for comment in data.get('comments', []):
+                    # Extract text from ADF format
+                    body_text = self._extract_text_from_adf(comment.get('body', {}))
+                    
+                    comments.append({
+                        'id': comment.get('id'),
+                        'author': comment.get('author', {}).get('displayName', 'Unknown'),
+                        'body': body_text,
+                        'created': comment.get('created'),
+                        'updated': comment.get('updated')
+                    })
+                
+                return comments
+            else:
+                print(f"Failed to fetch JIRA comments: {response.status_code}")
+                return []
+                
+        except Exception as e:
+            print(f"Error fetching JIRA comments: {str(e)}")
+            return []
+    
+    def _extract_text_from_adf(self, adf_content):
+        """Extract plain text from Atlassian Document Format"""
+        try:
+            if not adf_content:
+                return ""
+            
+            text_parts = []
+            
+            def extract_from_content(content_list):
+                for item in content_list:
+                    if item.get('type') == 'text':
+                        text_parts.append(item.get('text', ''))
+                    elif 'content' in item:
+                        extract_from_content(item['content'])
+            
+            if 'content' in adf_content:
+                extract_from_content(adf_content['content'])
+            
+            return ' '.join(text_parts).strip()
+        except Exception as e:
+            print(f"Error extracting text from ADF: {str(e)}")
+            return str(adf_content)
+
     def get_active_session(self, user_id=None, firebase_uid=None):
         """Get active session for a user by Firebase UID"""
         try:
@@ -223,8 +284,10 @@ class HelpDeskService:
                             jira_ticket_key = session[2]
                             db_status = session[3]
                             
-                            # Fetch real-time status from Jira if ticket exists
+                            # Fetch real-time status and comments from Jira if ticket exists
                             jira_status = db_status or 'TO DO'
+                            jira_comments = []
+                            
                             if jira_ticket_key and self.jira_url and self.jira_username and self.jira_api_token:
                                 try:
                                     auth = (self.jira_username, self.jira_api_token)
@@ -246,8 +309,12 @@ class HelpDeskService:
                                             """, (jira_status, session[0]))
                                             conn.commit()
                                             print(f"Updated ticket {jira_ticket_key} status from {db_status} to {jira_status}")
+                                    
+                                    # Fetch comments
+                                    jira_comments = self.get_jira_comments(jira_ticket_key)
+                                    
                                 except Exception as jira_err:
-                                    print(f"Error fetching Jira status: {jira_err}")
+                                    print(f"Error fetching Jira data: {jira_err}")
                             
                             return {
                                 'success': True,
@@ -258,7 +325,8 @@ class HelpDeskService:
                                     'status': jira_status,
                                     'jira_ticket_status': jira_status,
                                     'url': f"{self.jira_url}/browse/{jira_ticket_key}" if jira_ticket_key else None,
-                                    'started_at': session[4].isoformat() if session[4] else None
+                                    'started_at': session[4].isoformat() if session[4] else None,
+                                    'comments': jira_comments
                                 },
                                 'started_at': session[4].isoformat() if session[4] else None,
                                 'jira_ticket_status': jira_status
