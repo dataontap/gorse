@@ -3743,6 +3743,11 @@ input:checked + .toggle-slider:before {
     text-transform: capitalize;
 }
 
+.status-pending {
+    background: #fff3e0;
+    color: #e65100;
+}
+
 .status-invite-sent {
     background: #e3f2fd;
     color: #1976d2;
