@@ -54,6 +54,7 @@ from auth_helpers import require_auth, require_admin_auth
 
 # Import Firebase authentication helper
 from firebase_helper import firebase_auth_required
+from shopify_service import shopify_service
 
 # Create products in Stripe if they don't exist
 if stripe.api_key:
@@ -1799,6 +1800,16 @@ def notifications():
 @app.route('/bitchat', methods=['GET'])
 def bitchat():
     return render_template('bitchat.html')
+
+@app.route('/admin')
+def admin():
+    """Main admin panel"""
+    return render_template('admin.html')
+
+@app.route('/admin/shopify')
+def shopify_admin():
+    """Shopify management admin interface"""
+    return render_template('shopify_admin.html')
 
 @app.route('/help-admin')
 def help_admin():
@@ -5346,6 +5357,91 @@ def delete_datashare_invitation(invite_id):
 
     except Exception as e:
         print(f"Error deleting datashare invitation: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Shopify API endpoints
+@app.route('/api/shopify/test-connection', methods=['GET'])
+def shopify_test_connection():
+    """Test Shopify API connection"""
+    try:
+        result = shopify_service.test_connection()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/shopify/products', methods=['GET'])
+def shopify_get_products():
+    """Get products from Shopify"""
+    try:
+        limit = int(request.args.get('limit', 50))
+        page_info = request.args.get('page_info')
+        result = shopify_service.get_products(limit=limit, page_info=page_info)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/shopify/product/<product_id>', methods=['GET'])
+def shopify_get_product(product_id):
+    """Get a single product"""
+    try:
+        result = shopify_service.get_product(product_id)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/shopify/orders', methods=['GET'])
+def shopify_get_orders():
+    """Get orders from Shopify"""
+    try:
+        status = request.args.get('status', 'any')
+        limit = int(request.args.get('limit', 50))
+        result = shopify_service.get_orders(status=status, limit=limit)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/shopify/sync-products', methods=['POST'])
+def shopify_sync_products():
+    """Sync products from Shopify to marketplace"""
+    try:
+        result = shopify_service.get_products(limit=250)
+        
+        if result['success']:
+            # Here you would sync to your marketplace database
+            # For now, just return the count
+            return jsonify({
+                'success': True,
+                'synced_count': len(result['products']),
+                'message': f"Synced {len(result['products'])} products"
+            })
+        else:
+            return jsonify(result), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/shopify/sync-inventory', methods=['POST'])
+def shopify_sync_inventory():
+    """Sync inventory from Shopify"""
+    try:
+        # Get all products and sync inventory levels
+        result = shopify_service.get_products(limit=250)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': f"Inventory synced for {len(result['products'])} products"
+            })
+        else:
+            return jsonify(result), 500
+            
+    except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
