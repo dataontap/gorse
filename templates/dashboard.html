@@ -467,7 +467,7 @@
                         <canvas id="visualizerCanvas" style="width: 100%; height: 100%;"></canvas>
                     </div>
                     <button class="play-welcome-btn" id="playWelcomeBtn" onclick="playWelcomeMessage()" style="margin-top: 10px;">
-                        <i class="fas fa-play"></i> Load
+                        <i class="fas fa-play"></i>
                     </button>
                     <audio id="welcomeAudio" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
                 </div>
@@ -1072,10 +1072,10 @@
                         
                         // Update button when all are loaded
                         if (loadedCount === totalToLoad) {
-                            playBtn.innerHTML = '<i class="fas fa-check"></i> Ready';
+                            playBtn.innerHTML = '<i class="fas fa-check"></i>';
                             playBtn.disabled = false;
                             setTimeout(() => {
-                                playBtn.innerHTML = '<i class="fas fa-play"></i> Load';
+                                playBtn.innerHTML = '<i class="fas fa-play"></i>';
                             }, 2000);
                         }
                     })
@@ -1083,7 +1083,7 @@
                         console.error(`Error pre-generating ${lang}/${voice}:`, error);
                         loadedCount++;
                         if (loadedCount === totalToLoad) {
-                            playBtn.innerHTML = '<i class="fas fa-play"></i> Load';
+                            playBtn.innerHTML = '<i class="fas fa-play"></i>';
                             playBtn.disabled = false;
                         }
                     });
@@ -1180,14 +1180,14 @@
                 } else {
                     alert('Error generating welcome message: ' + (data.error || 'Unknown error'));
                     playBtn.disabled = false;
-                    playBtn.innerHTML = '<i class="fas fa-play"></i> Load';
+                    playBtn.innerHTML = '<i class="fas fa-play"></i>';
                 }
             })
             .catch(error => {
                 console.error('Error playing welcome message:', error);
                 alert('Error playing welcome message. Please try again.');
                 playBtn.disabled = false;
-                playBtn.innerHTML = '<i class="fas fa-play"></i> Load';
+                playBtn.innerHTML = '<i class="fas fa-play"></i>';
             });
         }
 
@@ -1228,11 +1228,11 @@
             }, { once: true });
             
             playBtn.disabled = false;
-            playBtn.innerHTML = '<i class="fas fa-check"></i> Ready';
+            playBtn.innerHTML = '<i class="fas fa-check"></i>';
             
-            // Show "Ready" for 1 second, then change to "Load"
+            // Show checkmark for 1 second, then change to play icon
             setTimeout(() => {
-                playBtn.innerHTML = '<i class="fas fa-play"></i> Load';
+                playBtn.innerHTML = '<i class="fas fa-play"></i>';
             }, 1000);
         }
 
