@@ -1200,6 +1200,9 @@
             audio.style.display = 'block';
             visualizer.style.display = 'block';
             
+            // Hide the play button once playback starts
+            playBtn.style.display = 'none';
+            
             // Set up audio visualization
             initAudioContext();
             if (!audioSource) {
@@ -1226,14 +1229,6 @@
                 visualizer.style.display = 'none';
                 currentPlaybackPosition = 0;
             }, { once: true });
-            
-            playBtn.disabled = false;
-            playBtn.innerHTML = '<i class="fas fa-check"></i>';
-            
-            // Show checkmark for 1 second, then change to play icon
-            setTimeout(() => {
-                playBtn.innerHTML = '<i class="fas fa-play"></i>';
-            }, 1000);
         }
 
         function updateWelcomeMessage() {
