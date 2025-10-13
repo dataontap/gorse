@@ -68,7 +68,12 @@ Preferred communication style: Simple, everyday language.
 
 ### Communication & AI Services
 
-**ElevenLabs Voice Synthesis**: Text-to-speech services for generating personalized welcome messages and voice-based user interactions with multi-language support.
+**ElevenLabs Voice Synthesis**: Advanced text-to-speech services providing multilingual welcome messages with custom voice profiles. Supports 30 languages (including English, French, Spanish, Chinese, Japanese, Arabic, Portuguese, German, Hindi, Korean, Italian, Russian, Dutch, Turkish, Polish, Swedish, Filipino, Ukrainian, Greek, Czech, Finnish, Romanian, Vietnamese, Hungarian, Norwegian, Thai, Indonesian, Danish, Hebrew, Malay) with 3 distinct voice personalities:
+- **CanadianRockstar**: Energetic and enthusiastic voice (Adam from ElevenLabs)
+- **ScienceTeacher**: Clear and professional voice (Bella from ElevenLabs)
+- **BuddyFriend**: Warm and friendly voice (Antoni from ElevenLabs)
+
+The system includes intelligent caching for instant playback, automatic pre-generation of EN/FR/ES messages, position tracking for seamless language/voice switching, and real-time audio visualization. API endpoints: `/api/welcome-message/voices`, `/api/welcome-message/generate`, `/api/welcome-audio/<id>`.
 
 **OpenAI Integration**: AI-powered help desk services and automated customer support through OpenAI's API for intelligent query handling.
 

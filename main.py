@@ -987,59 +987,12 @@ def register_firebase_user():
                         except Exception as token_err:
                             print(f"Error awarding new member token: {str(token_err)}")
 
-                        # Schedule welcome message and audio generation
+                        # Schedule welcome notification
                         import threading
                         def send_welcome_message():
                             import time
                             time.sleep(3)  # Wait 3 seconds for FCM token registration
                             try:
-                                # Create welcome_messages table if it doesn't exist
-                                with get_db_connection() as conn:
-                                    if conn:
-                                        with conn.cursor() as cur:
-                                            cur.execute("""
-                                                CREATE TABLE IF NOT EXISTS welcome_messages (
-                                                    id SERIAL PRIMARY KEY,
-                                                    user_id INTEGER NOT NULL,
-                                                    firebase_uid VARCHAR(128),
-                                                    language VARCHAR(10) DEFAULT 'en',
-                                                    voice_id VARCHAR(100),
-                                                    audio_data BYTEA,
-                                                    audio_url VARCHAR(500),
-                                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                                                )
-                                            """)
-                                            conn.commit()
-
-                                # Generate welcome audio message
-                                audio_message_id = None
-                                audio_url = None
-                                try:
-                                    audio_result = elevenlabs_service.generate_welcome_message(
-                                        user_name=display_name,
-                                        language='en'
-                                    )
-
-                                    if audio_result['success']:
-                                        # Store the audio message with a generated URL path
-                                        audio_url = f"/api/welcome-audio/{user_id}/{firebase_uid}"
-
-                                        with get_db_connection() as conn:
-                                            if conn:
-                                                with conn.cursor() as cur:
-                                                    cur.execute("""
-                                                        INSERT INTO welcome_messages 
-                                                        (user_id, firebase_uid, language, voice_id, audio_data, audio_url, created_at)
-                                                        VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-                                                        RETURNING id
-                                                    """, (user_id, firebase_uid, 'en', '21m00Tcm4TlvDq8ikWAM', audio_result['audio_data'], audio_url))
-
-                                                    audio_message_id = cur.fetchone()[0]
-                                                    conn.commit()
-                                                    print(f"Welcome audio message created with ID: {audio_message_id} at URL: {audio_url}")
-                                except Exception as audio_err:
-                                    print(f"Error generating welcome audio: {str(audio_err)}")
-                                    audio_message_id = None
                                 # Get user's FCM token
                                 with get_db_connection() as conn:
                                     if conn:
