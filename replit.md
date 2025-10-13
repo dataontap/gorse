@@ -89,3 +89,5 @@ Preferred communication style: Simple, everyday language.
 **GitHub Integration**: Source code management with potential automated deployment pipelines and version control integration.
 
 **Jira Integration**: Help desk ticketing system integration for comprehensive customer support workflow management. Configured using environment variables (JIRA_API_TOKEN, JIRA_EMAIL, JIRA_PROJECT_KEY) for dotmobile.atlassian.net workspace. Note: User dismissed the Replit JIRA connector, so manual integration with environment variables is used instead.
+
+**Shopify Integration**: E-commerce platform integration for marketplace product management. The platform uses Shopify Admin API for product synchronization, inventory management, and order tracking through the centralized admin panel at `/admin/shopify`.
