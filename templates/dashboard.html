@@ -424,10 +424,7 @@
                     Welcome. Something new here each time.
                 </div>
                 <div class="welcome-message-controls">
-                    <button class="play-welcome-btn" id="playWelcomeBtn" onclick="playWelcomeMessage()">
-                        <i class="fas fa-play"></i> Play Welcome Message
-                    </button>
-                    <div class="voice-controls" style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div class="voice-controls" style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <select id="welcomeLanguage" onchange="updateWelcomeMessage()" style="flex: 1; min-width: 150px;">
                             <option value="en">English</option>
                             <option value="es">Español</option>
@@ -469,6 +466,9 @@
                     <div class="audio-visualizer" id="audioVisualizer" style="display: none; height: 60px; margin-top: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; position: relative; overflow: hidden;">
                         <canvas id="visualizerCanvas" style="width: 100%; height: 100%;"></canvas>
                     </div>
+                    <button class="play-welcome-btn" id="playWelcomeBtn" onclick="playWelcomeMessage()" style="margin-top: 10px;">
+                        <i class="fas fa-play"></i> Load
+                    </button>
                     <audio id="welcomeAudio" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
                 </div>
             </div>
@@ -1075,7 +1075,7 @@
                             playBtn.innerHTML = '<i class="fas fa-check"></i> Ready';
                             playBtn.disabled = false;
                             setTimeout(() => {
-                                playBtn.innerHTML = originalHTML;
+                                playBtn.innerHTML = '<i class="fas fa-play"></i> Load';
                             }, 2000);
                         }
                     })
@@ -1083,7 +1083,7 @@
                         console.error(`Error pre-generating ${lang}/${voice}:`, error);
                         loadedCount++;
                         if (loadedCount === totalToLoad) {
-                            playBtn.innerHTML = originalHTML;
+                            playBtn.innerHTML = '<i class="fas fa-play"></i> Load';
                             playBtn.disabled = false;
                         }
                     });
@@ -1180,14 +1180,14 @@
                 } else {
                     alert('Error generating welcome message: ' + (data.error || 'Unknown error'));
                     playBtn.disabled = false;
-                    playBtn.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
+                    playBtn.innerHTML = '<i class="fas fa-play"></i> Load';
                 }
             })
             .catch(error => {
                 console.error('Error playing welcome message:', error);
                 alert('Error playing welcome message. Please try again.');
                 playBtn.disabled = false;
-                playBtn.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
+                playBtn.innerHTML = '<i class="fas fa-play"></i> Load';
             });
         }
 
@@ -1230,9 +1230,9 @@
             playBtn.disabled = false;
             playBtn.innerHTML = '<i class="fas fa-check"></i> Ready';
             
-            // Show "Ready" for 1 second, then change to "Play Welcome Message"
+            // Show "Ready" for 1 second, then change to "Load"
             setTimeout(() => {
-                playBtn.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
+                playBtn.innerHTML = '<i class="fas fa-play"></i> Load';
             }, 1000);
         }
 
