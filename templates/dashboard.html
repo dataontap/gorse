@@ -409,10 +409,10 @@
             <div class="welcome-message-info">
                 <div class="welcome-message-title">
                     <i class="fas fa-volume-up"></i>
-                    Your Personalized Welcome Message
+                    DOT message
                 </div>
                 <div class="welcome-message-description">
-                    Listen to your custom welcome message with today's date and personalized greeting.
+                    Welcome. Something new here each time.
                 </div>
                 <div class="welcome-message-controls">
                     <button class="play-welcome-btn" id="playWelcomeBtn" onclick="playWelcomeMessage()">
@@ -1027,10 +1027,19 @@
         }
 
         function pregenerateWelcomeMessages(firebaseUid) {
-            const languages = ['en', 'fr', 'es'];
+            const languages = ['en', 'fr'];  // Pre-load only English and French
             const voices = ['ScienceTeacher', 'CanadianRockstar', 'BuddyFriend'];
             
-            console.log('Pre-generating welcome messages for EN, FR, ES in all voices...');
+            console.log('Pre-generating welcome messages for EN, FR in all voices...');
+            
+            // Show loading indicator
+            const playBtn = document.getElementById('playWelcomeBtn');
+            const originalHTML = playBtn.innerHTML;
+            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            playBtn.disabled = true;
+            
+            let totalToLoad = languages.length * voices.length;
+            let loadedCount = 0;
             
             languages.forEach(lang => {
                 voices.forEach(voice => {
@@ -1050,8 +1059,25 @@
                             preloadedMessages[key] = data.audio_url;
                             console.log(`Pre-generated: ${lang} / ${voice} ${data.cached ? '(cached)' : '(new)'}`);
                         }
+                        loadedCount++;
+                        
+                        // Update button when all are loaded
+                        if (loadedCount === totalToLoad) {
+                            playBtn.innerHTML = '<i class="fas fa-check"></i> Ready';
+                            playBtn.disabled = false;
+                            setTimeout(() => {
+                                playBtn.innerHTML = originalHTML;
+                            }, 2000);
+                        }
                     })
-                    .catch(error => console.error(`Error pre-generating ${lang}/${voice}:`, error));
+                    .catch(error => {
+                        console.error(`Error pre-generating ${lang}/${voice}:`, error);
+                        loadedCount++;
+                        if (loadedCount === totalToLoad) {
+                            playBtn.innerHTML = originalHTML;
+                            playBtn.disabled = false;
+                        }
+                    });
                 });
             });
         }
@@ -1193,21 +1219,33 @@
             }, { once: true });
             
             playBtn.disabled = false;
-            playBtn.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
+            playBtn.innerHTML = '<i class="fas fa-check"></i> Ready';
+            
+            // Show "Ready" for 1 second, then change to "Play Welcome Message"
+            setTimeout(() => {
+                playBtn.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
+            }, 1000);
         }
 
         function updateWelcomeMessage() {
             // Save current position when switching
             const audio = document.getElementById('welcomeAudio');
+            const playBtn = document.getElementById('playWelcomeBtn');
+            
             if (!audio.paused) {
                 currentPlaybackPosition = audio.currentTime;
                 audio.pause();
                 if (animationId) {
                     cancelAnimationFrame(animationId);
                 }
-                // Auto-play new selection
-                setTimeout(() => playWelcomeMessage(), 100);
             }
+            
+            // Show loading state
+            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            playBtn.disabled = true;
+            
+            // Auto-generate new selection
+            setTimeout(() => playWelcomeMessage(), 100);
         }
 
         function dismissWelcomeMessage() {
