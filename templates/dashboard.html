@@ -418,15 +418,47 @@
                     <button class="play-welcome-btn" id="playWelcomeBtn" onclick="playWelcomeMessage()">
                         <i class="fas fa-play"></i> Play Welcome Message
                     </button>
-                    <div class="voice-controls" style="margin-top: 10px;">
-                        <select id="welcomeLanguage" onchange="updateWelcomeMessage()">
+                    <div class="voice-controls" style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <select id="welcomeLanguage" onchange="updateWelcomeMessage()" style="flex: 1; min-width: 150px;">
                             <option value="en">English</option>
                             <option value="es">Español</option>
                             <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="it">Italiano</option>
+                            <option value="pt">Português</option>
+                            <option value="nl">Nederlands</option>
+                            <option value="pl">Polski</option>
+                            <option value="ar">العربية</option>
+                            <option value="hi">हिन्दी</option>
+                            <option value="ja">日本語</option>
+                            <option value="ko">한국어</option>
+                            <option value="zh">中文</option>
+                            <option value="ru">Русский</option>
+                            <option value="tr">Türkçe</option>
+                            <option value="sv">Svenska</option>
+                            <option value="no">Norsk</option>
+                            <option value="da">Dansk</option>
+                            <option value="fi">Suomi</option>
+                            <option value="cs">Čeština</option>
+                            <option value="ro">Română</option>
+                            <option value="el">Ελληνικά</option>
+                            <option value="he">עברית</option>
+                            <option value="th">ไทย</option>
+                            <option value="vi">Tiếng Việt</option>
+                            <option value="id">Bahasa Indonesia</option>
+                            <option value="ms">Bahasa Melayu</option>
+                            <option value="fil">Filipino</option>
+                            <option value="uk">Українська</option>
+                            <option value="bg">Български</option>
                         </select>
-                        <select id="welcomeVoice" onchange="updateWelcomeMessage()">
-                            <option value="">Loading voices...</option>
+                        <select id="welcomeVoice" onchange="updateWelcomeMessage()" style="flex: 1; min-width: 150px;">
+                            <option value="ScienceTeacher">ScienceTeacher</option>
+                            <option value="CanadianRockstar">CanadianRockstar</option>
+                            <option value="BuddyFriend">BuddyFriend</option>
                         </select>
+                    </div>
+                    <div class="audio-visualizer" id="audioVisualizer" style="display: none; height: 60px; margin-top: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; position: relative; overflow: hidden;">
+                        <canvas id="visualizerCanvas" style="width: 100%; height: 100%;"></canvas>
                     </div>
                     <audio id="welcomeAudio" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
                 </div>
@@ -970,121 +1002,212 @@
         // Welcome message functionality
         let currentWelcomeMessageId = null;
         let availableVoices = [];
+        let audioContext = null;
+        let analyser = null;
+        let audioSource = null;
+        let animationId = null;
+        let currentPlaybackPosition = 0;
+        let preloadedMessages = {};
 
         function loadWelcomeMessage() {
             const firebaseUid = getFirebaseUID();
             if (!firebaseUid) return;
 
-            // Load available voices
-            fetch('/api/welcome-message/voices')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.voices) {
-                        availableVoices = data.voices;
-                        populateVoiceSelect();
-                    }
-                })
-                .catch(error => console.error('Error loading voices:', error));
+            // Show welcome card by default
+            const welcomeCardDismissed = localStorage.getItem('welcomeMessageDismissed');
+            if (welcomeCardDismissed !== 'true') {
+                const welcomeCard = document.getElementById('welcomeMessageCard');
+                if (welcomeCard) {
+                    welcomeCard.style.display = 'flex';
+                }
+            }
 
-            // Check if user has notifications (welcome message)
-            fetch(`/api/notifications?firebaseUid=${firebaseUid}&limit=10`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.notifications) {
-                        const hasWelcomeNotification = data.notifications.some(n => n.type === 'welcome');
-                        const welcomeCardDismissed = localStorage.getItem('welcomeMessageDismissed');
-                        
-                        if (hasWelcomeNotification && welcomeCardDismissed !== 'true') {
-                            const welcomeCard = document.getElementById('welcomeMessageCard');
-                            if (welcomeCard) {
-                                welcomeCard.style.display = 'flex';
-                                // Add link to notifications
-                                const welcomeDescription = welcomeCard.querySelector('.welcome-message-description');
-                                if (welcomeDescription) {
-                                    welcomeDescription.innerHTML = `
-                                        Listen to your custom welcome message with today's date and personalized greeting.
-                                        <br><a href="/notifications" style="color: rgba(255,255,255,0.9); text-decoration: underline;">
-                                            View in Notifications →
-                                        </a>
-                                    `;
-                                }
-                            }
-                        }
-                    }
-                })
-                .catch(error => console.error('Error checking for welcome notifications:', error));
+            // Pre-generate EN, FR, ES for all 3 voices
+            pregenerateWelcomeMessages(firebaseUid);
         }
 
-        function populateVoiceSelect() {
-            const voiceSelect = document.getElementById('welcomeVoice');
-            if (!voiceSelect || !availableVoices.length) return;
-
-            voiceSelect.innerHTML = '';
-            availableVoices.forEach(voice => {
-                const option = document.createElement('option');
-                option.value = voice.voice_id;
-                option.textContent = `${voice.name} (${voice.labels?.gender || 'Unknown'})`;
-                voiceSelect.appendChild(option);
+        function pregenerateWelcomeMessages(firebaseUid) {
+            const languages = ['en', 'fr', 'es'];
+            const voices = ['ScienceTeacher', 'CanadianRockstar', 'BuddyFriend'];
+            
+            console.log('Pre-generating welcome messages for EN, FR, ES in all voices...');
+            
+            languages.forEach(lang => {
+                voices.forEach(voice => {
+                    fetch('/api/welcome-message/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            firebase_uid: firebaseUid,
+                            language: lang,
+                            voice_profile: voice
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const key = `${lang}_${voice}`;
+                            preloadedMessages[key] = data.audio_url;
+                            console.log(`Pre-generated: ${lang} / ${voice} ${data.cached ? '(cached)' : '(new)'}`);
+                        }
+                    })
+                    .catch(error => console.error(`Error pre-generating ${lang}/${voice}:`, error));
+                });
             });
+        }
 
-            // Select default voice (Rachel)
-            voiceSelect.value = '21m00Tcm4TlvDq8ikWAM';
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+            }
+        }
+
+        function visualizeAudio() {
+            const canvas = document.getElementById('visualizerCanvas');
+            const canvasCtx = canvas.getContext('2d');
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            function draw() {
+                animationId = requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+
+                canvasCtx.fillStyle = 'rgba(102, 126, 234, 0.1)';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = (dataArray[i] / 255) * canvas.height;
+                    const gradient = canvasCtx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
+                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+                    gradient.addColorStop(1, 'rgba(102, 126, 234, 0.6)');
+                    
+                    canvasCtx.fillStyle = gradient;
+                    canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                    x += barWidth + 1;
+                }
+            }
+
+            draw();
         }
 
         function playWelcomeMessage() {
             const firebaseUid = getFirebaseUID();
             const language = document.getElementById('welcomeLanguage').value;
-            const voiceId = document.getElementById('welcomeVoice').value;
+            const voiceProfile = document.getElementById('welcomeVoice').value;
             const playBtn = document.getElementById('playWelcomeBtn');
             const audio = document.getElementById('welcomeAudio');
+            const visualizer = document.getElementById('audioVisualizer');
 
             if (!firebaseUid) {
                 alert('Please log in to play welcome message');
                 return;
             }
 
+            // Save current position before switching
+            if (!audio.paused) {
+                currentPlaybackPosition = audio.currentTime;
+            }
+
             // Update button state
             playBtn.disabled = true;
-            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+
+            // Check if pre-loaded
+            const key = `${language}_${voiceProfile}`;
+            if (preloadedMessages[key]) {
+                loadAndPlayAudio(preloadedMessages[key]);
+                return;
+            }
 
             // Generate new welcome message
             fetch('/api/welcome-message/generate', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     firebase_uid: firebaseUid,
                     language: language,
-                    voice_id: voiceId
+                    voice_profile: voiceProfile
                 })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.audio_url) {
-                    currentWelcomeMessageId = data.message_id;
-                    audio.src = data.audio_url;
-                    audio.style.display = 'block';
-                    audio.play();
+                    preloadedMessages[key] = data.audio_url;
+                    loadAndPlayAudio(data.audio_url);
                 } else {
                     alert('Error generating welcome message: ' + (data.error || 'Unknown error'));
+                    playBtn.disabled = false;
+                    playBtn.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
                 }
             })
             .catch(error => {
                 console.error('Error playing welcome message:', error);
                 alert('Error playing welcome message. Please try again.');
-            })
-            .finally(() => {
                 playBtn.disabled = false;
                 playBtn.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
             });
         }
 
-        function updateWelcomeMessage() {
-            // Reset audio when settings change
+        function loadAndPlayAudio(audioUrl) {
             const audio = document.getElementById('welcomeAudio');
-            audio.style.display = 'none';
-            audio.src = '';
+            const playBtn = document.getElementById('playWelcomeBtn');
+            const visualizer = document.getElementById('audioVisualizer');
+            
+            audio.src = audioUrl;
+            audio.style.display = 'block';
+            visualizer.style.display = 'block';
+            
+            // Set up audio visualization
+            initAudioContext();
+            if (!audioSource) {
+                audioSource = audioContext.createMediaElementSource(audio);
+                audioSource.connect(analyser);
+                analyser.connect(audioContext.destination);
+            }
+            
+            // Resume from saved position minus 2-5 seconds
+            audio.addEventListener('loadedmetadata', () => {
+                if (currentPlaybackPosition > 0) {
+                    const resumePosition = Math.max(0, currentPlaybackPosition - (Math.random() * 3 + 2));
+                    audio.currentTime = resumePosition;
+                    console.log(`Resuming from ${resumePosition.toFixed(1)}s (was at ${currentPlaybackPosition.toFixed(1)}s)`);
+                }
+                audio.play();
+                visualizeAudio();
+            }, { once: true });
+            
+            audio.addEventListener('ended', () => {
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+                visualizer.style.display = 'none';
+                currentPlaybackPosition = 0;
+            }, { once: true });
+            
+            playBtn.disabled = false;
+            playBtn.innerHTML = '<i class="fas fa-play"></i> Play Welcome Message';
+        }
+
+        function updateWelcomeMessage() {
+            // Save current position when switching
+            const audio = document.getElementById('welcomeAudio');
+            if (!audio.paused) {
+                currentPlaybackPosition = audio.currentTime;
+                audio.pause();
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+                // Auto-play new selection
+                setTimeout(() => playWelcomeMessage(), 100);
+            }
         }
 
         function dismissWelcomeMessage() {

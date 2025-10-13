@@ -253,6 +253,33 @@ try:
                 else:
                     print("processed_stripe_events table already exists")
 
+                # Check if welcome_messages table exists (for caching ElevenLabs audio)
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'welcome_messages')")
+                welcome_messages_exists = cur.fetchone()[0]
+
+                if not welcome_messages_exists:
+                    print("Creating welcome_messages table...")
+                    create_welcome_messages_sql = """
+                        CREATE TABLE welcome_messages (
+                            id SERIAL PRIMARY KEY,
+                            firebase_uid VARCHAR(128) NOT NULL,
+                            language VARCHAR(10) NOT NULL,
+                            voice_profile VARCHAR(50) NOT NULL,
+                            audio_data BYTEA NOT NULL,
+                            content_type VARCHAR(50) DEFAULT 'audio/mpeg',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            UNIQUE(firebase_uid, language, voice_profile)
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_welcome_messages_firebase_uid ON welcome_messages(firebase_uid);
+                        CREATE INDEX IF NOT EXISTS idx_welcome_messages_language ON welcome_messages(language);
+                        CREATE INDEX IF NOT EXISTS idx_welcome_messages_voice_profile ON welcome_messages(voice_profile);
+                    """
+                    cur.execute(create_welcome_messages_sql)
+                    conn.commit()
+                    print("welcome_messages table created successfully")
+                else:
+                    print("welcome_messages table already exists")
+
                 conn.commit()
         else:
             print("No database connection available for table creation")
@@ -4499,6 +4526,142 @@ def mark_notification_read(notification_id):
     except Exception as e:
         print(f"Error marking notification as read: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/welcome-message/voices', methods=['GET'])
+def get_welcome_voices():
+    """Get available voice profiles for welcome messages"""
+    try:
+        voice_profiles = elevenlabs_service.get_voice_profiles()
+        voices = []
+        
+        for profile_name, profile_data in voice_profiles.items():
+            voices.append({
+                'name': profile_name,
+                'voice_id': profile_data['voice_id'],
+                'description': profile_data['description']
+            })
+        
+        return jsonify({
+            'success': True,
+            'voices': voices
+        })
+    except Exception as e:
+        print(f"Error getting welcome voices: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/welcome-message/generate', methods=['POST'])
+def generate_welcome_message():
+    """Generate welcome message with caching"""
+    try:
+        data = request.get_json() or {}
+        firebase_uid = data.get('firebase_uid')
+        language = data.get('language', 'en')
+        voice_profile = data.get('voice_profile', 'ScienceTeacher')
+        
+        if not firebase_uid:
+            return jsonify({'success': False, 'error': 'Firebase UID required'}), 400
+        
+        # Check cache first
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT id, audio_data, content_type 
+                        FROM welcome_messages 
+                        WHERE firebase_uid = %s AND language = %s AND voice_profile = %s
+                    """, (firebase_uid, language, voice_profile))
+                    
+                    cached = cur.fetchone()
+                    if cached:
+                        message_id, audio_data, content_type = cached
+                        # Return cached audio URL
+                        return jsonify({
+                            'success': True,
+                            'audio_url': f'/api/welcome-audio/{message_id}',
+                            'message_id': message_id,
+                            'cached': True
+                        })
+        
+        # Generate new welcome message
+        result = elevenlabs_service.generate_welcome_message(
+            user_name=None,
+            language=language,
+            voice_profile=voice_profile
+        )
+        
+        if result.get('success'):
+            # Store in database
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            INSERT INTO welcome_messages 
+                            (firebase_uid, language, voice_profile, audio_data, content_type)
+                            VALUES (%s, %s, %s, %s, %s)
+                            ON CONFLICT (firebase_uid, language, voice_profile) 
+                            DO UPDATE SET audio_data = EXCLUDED.audio_data, created_at = CURRENT_TIMESTAMP
+                            RETURNING id
+                        """, (
+                            firebase_uid,
+                            language,
+                            voice_profile,
+                            result['audio_data'],
+                            result['content_type']
+                        ))
+                        
+                        message_id = cur.fetchone()[0]
+                        conn.commit()
+                        
+                        return jsonify({
+                            'success': True,
+                            'audio_url': f'/api/welcome-audio/{message_id}',
+                            'message_id': message_id,
+                            'cached': False
+                        })
+            
+            return jsonify({'success': False, 'error': 'Database error'}), 500
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Unknown error')
+            }), 500
+            
+    except Exception as e:
+        print(f"Error generating welcome message: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/welcome-audio/<int:message_id>', methods=['GET'])
+def get_welcome_audio(message_id):
+    """Retrieve cached welcome audio"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT audio_data, content_type 
+                        FROM welcome_messages 
+                        WHERE id = %s
+                    """, (message_id,))
+                    
+                    result = cur.fetchone()
+                    if result:
+                        audio_data, content_type = result
+                        return Response(
+                            audio_data,
+                            mimetype=content_type,
+                            headers={
+                                'Cache-Control': 'public, max-age=3600',
+                                'Content-Disposition': f'inline; filename="welcome_{message_id}.mp3"'
+                            }
+                        )
+                    else:
+                        return jsonify({'error': 'Audio not found'}), 404
+        
+        return jsonify({'error': 'Database error'}), 500
+        
+    except Exception as e:
+        print(f"Error retrieving welcome audio: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/update-personal-message', methods=['POST'])
 def update_personal_message():
