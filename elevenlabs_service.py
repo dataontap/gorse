@@ -322,37 +322,39 @@ class ElevenLabsService:
     # TIP MESSAGE GENERATORS
     def _generate_english_tip(self, user_name, day_name, date_str):
         return f"""
-        Here's a quick tip for today, {day_name}, {date_str}!
+        Here's a helpful tip for {day_name}, {date_str}!
         
-        Did you know you can easily manage your data usage right from your dashboard? Simply tap on the data circle to see a detailed breakdown of your consumption patterns.
+        Did you know DOT Mobile rewards you with DOTM tokens for using our services? Every data purchase and subscription earns you cryptocurrency rewards that you can track right from your dashboard. These tokens are real Ethereum-based assets you can manage and use.
         
-        To get the most out of your global connectivity, we recommend enabling automatic eSIM profile switching in your settings. This ensures you're always on the best network wherever you travel.
+        Another powerful feature: Bitchat lets you send secure, encrypted messages to other DOT Mobile users without using any of your data allowance. It's perfect for staying connected while traveling or coordinating with fellow global citizens.
         
-        Don't forget to check out our marketplace for exclusive data deals and packages. You can also earn DOTM tokens by referring friends - each successful referral gives you bonus tokens to use across our platform.
-        
-        Pro tip: Use the Bitchat feature to stay connected with other DOT Mobile users without using your data allowance. It's perfect for coordinating with travel companions or networking with other global citizens.
+        Pro tip: Your eSIM profiles work seamlessly across the globe with OXIO's network infrastructure. Check your dashboard to see your current network status, manage your data usage in real-time, and access advanced features like VPN services and Wi-Fi calling.
         
         That's your tip for today - enjoy your perfectly connected experience!
         """
     
     def _generate_spanish_tip(self, user_name, day_name, date_str):
         return f"""
-        ¡Aquí hay un consejo rápido para hoy, {day_name}, {date_str}!
+        ¡Aquí hay un consejo útil para {day_name}, {date_str}!
         
-        ¿Sabías que puedes administrar fácilmente tu uso de datos desde tu panel de control? Simplemente toca el círculo de datos para ver un desglose detallado de tus patrones de consumo.
+        ¿Sabías que DOT Mobile te recompensa con tokens DOTM por usar nuestros servicios? Cada compra de datos y suscripción te gana recompensas de criptomonedas que puedes rastrear desde tu panel de control. Estos tokens son activos reales basados en Ethereum.
         
-        Para aprovechar al máximo tu conectividad global, recomendamos habilitar el cambio automático de perfil eSIM en tu configuración.
+        Otra característica poderosa: Bitchat te permite enviar mensajes seguros y encriptados a otros usuarios de DOT Mobile sin usar tu asignación de datos. Es perfecto para mantenerte conectado mientras viajas.
+        
+        Consejo profesional: Tus perfiles eSIM funcionan perfectamente en todo el mundo con la infraestructura de red de OXIO. Revisa tu panel para ver el estado de tu red, administrar tu uso de datos en tiempo real y acceder a funciones avanzadas como servicios VPN y llamadas Wi-Fi.
         
         ¡Ese es tu consejo para hoy - disfruta de tu experiencia perfectamente conectada!
         """
     
     def _generate_french_tip(self, user_name, day_name, date_str):
         return f"""
-        Voici un conseil rapide pour aujourd'hui, {day_name}, {date_str}!
+        Voici un conseil utile pour {day_name}, {date_str}!
         
-        Saviez-vous que vous pouvez facilement gérer votre utilisation de données depuis votre tableau de bord? Appuyez simplement sur le cercle de données pour voir une répartition détaillée de vos modèles de consommation.
+        Saviez-vous que DOT Mobile vous récompense avec des jetons DOTM pour l'utilisation de nos services? Chaque achat de données et abonnement vous rapporte des récompenses en cryptomonnaie que vous pouvez suivre depuis votre tableau de bord. Ces jetons sont de véritables actifs basés sur Ethereum.
         
-        Pour tirer le meilleur parti de votre connectivité mondiale, nous recommandons d'activer le changement automatique de profil eSIM dans vos paramètres.
+        Autre fonctionnalité puissante: Bitchat vous permet d'envoyer des messages sécurisés et cryptés à d'autres utilisateurs DOT Mobile sans utiliser votre allocation de données. C'est parfait pour rester connecté en voyage.
+        
+        Conseil pro: Vos profils eSIM fonctionnent parfaitement dans le monde entier avec l'infrastructure réseau d'OXIO. Consultez votre tableau de bord pour voir l'état de votre réseau, gérer votre utilisation de données en temps réel et accéder à des fonctionnalités avancées comme les services VPN et les appels Wi-Fi.
         
         C'est votre conseil pour aujourd'hui - profitez de votre expérience parfaitement connectée!
         """
@@ -362,15 +364,15 @@ class ElevenLabsService:
         return f"""
         Welcome back! Here's what's new on {day_name}, {date_str}.
         
-        We're excited to announce some fresh updates to your DOT Mobile experience!
+        We're excited to announce some major updates to your DOT Mobile experience!
         
-        First, we've launched our new Encrypted Bluetooth Mesh Network feature. You can now connect with nearby DOT Mobile users to create a secure, decentralized communication network. Check it out in your dashboard!
+        First, we've launched personalized voice messages in 30 languages! You can now hear platform updates in your preferred language with your choice of 3 distinct voice profiles - CanadianRockstar for energy, ScienceTeacher for clarity, or BuddyFriend for warmth. Switch languages and voices anytime from your dashboard.
         
-        We've also enhanced our global coverage with new partnerships in Southeast Asia and Latin America. This means even better connectivity and more affordable rates in over 25 new countries.
+        We've also introduced an intelligent message system that learns as you use it. The platform now delivers progressive content - starting with welcome messages for new users, followed by helpful tips about features like DOTM token rewards and Bitchat, and finally keeping you updated with the latest platform news.
         
-        Your DOTM token rewards program has been upgraded! You can now use tokens for premium features like priority customer support, exclusive data packages, and early access to new services.
+        Plus, our Shopify marketplace integration is now live! Browse and purchase exclusive DOT Mobile products and data packages directly from our integrated marketplace. All purchases automatically earn you DOTM token rewards.
         
-        Don't forget to update your app to the latest version to enjoy all these new features. As always, we're working hard to keep you connected wherever you go.
+        Check your dashboard to explore these new features. As always, we're working hard to keep you connected wherever you go.
         
         Thanks for being part of the DOT Mobile community!
         """
@@ -379,9 +381,15 @@ class ElevenLabsService:
         return f"""
         ¡Bienvenido de nuevo! Aquí está lo nuevo en {day_name}, {date_str}.
         
-        ¡Estamos emocionados de anunciar algunas actualizaciones nuevas para tu experiencia DOT Mobile!
+        ¡Estamos emocionados de anunciar importantes actualizaciones para tu experiencia DOT Mobile!
         
-        Primero, hemos lanzado nuestra nueva función de Red Mesh Bluetooth Encriptada. Ahora puedes conectarte con usuarios cercanos de DOT Mobile para crear una red de comunicación segura y descentralizada.
+        Primero, hemos lanzado mensajes de voz personalizados en 30 idiomas. Ahora puedes escuchar actualizaciones de la plataforma en tu idioma preferido con tu elección de 3 perfiles de voz distintos - CanadianRockstar para energía, ScienceTeacher para claridad, o BuddyFriend para calidez. Cambia idiomas y voces en cualquier momento desde tu panel.
+        
+        También hemos introducido un sistema de mensajes inteligente que aprende mientras lo usas. La plataforma ahora entrega contenido progresivo - comenzando con mensajes de bienvenida para nuevos usuarios, seguido de consejos útiles sobre características como recompensas de tokens DOTM y Bitchat, y finalmente manteniéndote actualizado con las últimas noticias de la plataforma.
+        
+        Además, nuestra integración con Shopify ya está activa. Navega y compra productos exclusivos de DOT Mobile y paquetes de datos directamente desde nuestro mercado integrado. Todas las compras te ganan automáticamente recompensas de tokens DOTM.
+        
+        Revisa tu panel para explorar estas nuevas características. Como siempre, trabajamos duro para mantenerte conectado donde quiera que vayas.
         
         ¡Gracias por ser parte de la comunidad DOT Mobile!
         """
@@ -390,9 +398,15 @@ class ElevenLabsService:
         return f"""
         Bienvenue de retour! Voici les nouveautés du {day_name}, {date_str}.
         
-        Nous sommes ravis d'annoncer de nouvelles mises à jour pour votre expérience DOT Mobile!
+        Nous sommes ravis d'annoncer des mises à jour majeures pour votre expérience DOT Mobile!
         
-        Tout d'abord, nous avons lancé notre nouvelle fonctionnalité de Réseau Maillé Bluetooth Crypté. Vous pouvez maintenant vous connecter avec les utilisateurs DOT Mobile à proximité pour créer un réseau de communication sécurisé et décentralisé.
+        Tout d'abord, nous avons lancé des messages vocaux personnalisés en 30 langues! Vous pouvez maintenant entendre les mises à jour de la plateforme dans votre langue préférée avec votre choix de 3 profils vocaux distincts - CanadianRockstar pour l'énergie, ScienceTeacher pour la clarté, ou BuddyFriend pour la chaleur. Changez de langue et de voix à tout moment depuis votre tableau de bord.
+        
+        Nous avons également introduit un système de messages intelligent qui apprend pendant que vous l'utilisez. La plateforme propose maintenant du contenu progressif - commençant par des messages de bienvenue pour les nouveaux utilisateurs, suivi de conseils utiles sur les fonctionnalités comme les récompenses en jetons DOTM et Bitchat, et enfin vous tenant au courant des dernières nouvelles de la plateforme.
+        
+        De plus, notre intégration Shopify est maintenant en ligne! Parcourez et achetez des produits exclusifs DOT Mobile et des forfaits de données directement depuis notre marketplace intégré. Tous les achats vous rapportent automatiquement des récompenses en jetons DOTM.
+        
+        Consultez votre tableau de bord pour explorer ces nouvelles fonctionnalités. Comme toujours, nous travaillons dur pour vous garder connecté où que vous alliez.
         
         Merci de faire partie de la communauté DOT Mobile!
         """
