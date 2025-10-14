@@ -1018,6 +1018,7 @@
         let animationId = null;
         let currentPlaybackPosition = 0;
         let preloadedMessages = {};
+        let currentMessageType = 'welcome';  // Track current message type
 
         function loadWelcomeMessage() {
             const firebaseUid = getFirebaseUID();
@@ -1066,8 +1067,12 @@
                     .then(data => {
                         if (data.success) {
                             const key = `${lang}_${voice}`;
-                            preloadedMessages[key] = data.audio_url;
-                            console.log(`Pre-generated: ${lang} / ${voice} ${data.cached ? '(cached)' : '(new)'}`);
+                            // Store both audio URL and message type
+                            preloadedMessages[key] = {
+                                audioUrl: data.audio_url,
+                                messageType: data.message_type || 'welcome'
+                            };
+                            console.log(`Pre-generated: ${lang} / ${voice} / ${data.message_type} ${data.cached ? '(cached)' : '(new)'}`);
                         }
                         loadedCount++;
                         
@@ -1159,7 +1164,9 @@
             // Check if pre-loaded
             const key = `${language}_${voiceProfile}`;
             if (preloadedMessages[key]) {
-                loadAndPlayAudio(preloadedMessages[key]);
+                const cached = preloadedMessages[key];
+                currentMessageType = cached.messageType || 'welcome';  // Restore message type from cache
+                loadAndPlayAudio(cached.audioUrl);
                 return;
             }
 
@@ -1176,7 +1183,12 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.audio_url) {
-                    preloadedMessages[key] = data.audio_url;
+                    // Store both audio URL and message type
+                    preloadedMessages[key] = {
+                        audioUrl: data.audio_url,
+                        messageType: data.message_type || 'welcome'
+                    };
+                    currentMessageType = data.message_type || 'welcome';  // Store message type
                     loadAndPlayAudio(data.audio_url);
                 } else {
                     alert('Error generating welcome message: ' + (data.error || 'Unknown error'));
@@ -1229,6 +1241,32 @@
                 }
                 visualizer.style.display = 'none';
                 currentPlaybackPosition = 0;
+                
+                // Track that user completed listening to this message
+                const firebaseUid = getFirebaseUID();
+                const language = document.getElementById('welcomeLanguage').value;
+                const voiceProfile = document.getElementById('welcomeVoice').value;
+                
+                if (firebaseUid) {
+                    fetch('/api/welcome-message/track-listen', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            firebase_uid: firebaseUid,
+                            message_type: currentMessageType,
+                            language: language,
+                            voice_profile: voiceProfile,
+                            completed: true
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Message listen tracked:', data);
+                    })
+                    .catch(error => {
+                        console.error('Error tracking message listen:', error);
+                    });
+                }
             }, { once: true });
         }
 
@@ -1299,7 +1337,12 @@
                         }
                         
                         if (data.success && data.audio_url) {
-                            preloadedMessages[key] = data.audio_url;
+                            // Store both audio URL and message type
+                            preloadedMessages[key] = {
+                                audioUrl: data.audio_url,
+                                messageType: data.message_type || 'welcome'
+                            };
+                            currentMessageType = data.message_type || 'welcome';  // Store message type
                             playBtn.innerHTML = 'Ready!';
                             
                             // Auto-switch to new audio after a brief moment
