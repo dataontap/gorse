@@ -18,13 +18,15 @@ Preferred communication style: Simple, everyday language.
 
 **Database Layer**: PostgreSQL database with connection pooling for managing user data, subscriptions, purchases, and service configurations. The system uses contextual database connections to ensure proper resource management across all services.
 
-**Service-Oriented Design**: The platform employs a modular service architecture where each major functionality (OXIO connectivity, Stripe payments, Firebase authentication, email services) is encapsulated in dedicated service classes.
+**Service-Oriented Design**: The platform employs a modular service architecture where each major functionality (OXIO connectivity, Stripe payments, Firebase authentication, email services, device tracking) is encapsulated in dedicated service classes.
+
+**Device Tracking System**: Automated device detection and management system that identifies and tracks user devices across the platform. Uses user-agent parsing to extract device information (manufacturer, model, OS, browser) and creates unique device fingerprints based on user agent, IP address, and Firebase UID. The system automatically registers devices on login, maintains online/offline status, syncs device activity every 30 seconds, and displays devices dynamically in the Marketplace. All device endpoints enforce strict Firebase ID token verification for security, ensuring only authenticated users can access their device information. Database schema includes comprehensive device metadata (model, manufacturer, OS version, browser, estimated value, last active timestamp) with proper foreign key relationships to users table.
 
 ### Authentication & User Management
 
-**Firebase Authentication**: Firebase handles user authentication and identity management, with Firebase Admin SDK integration for server-side token verification and user management operations.
+**Firebase Authentication**: Firebase handles user authentication and identity management, with Firebase Admin SDK integration for server-side token verification and user management operations. All device tracking endpoints require verified Firebase ID tokens with no fallback mechanisms, ensuring production-grade security.
 
-**Dual Identity System**: Users maintain both Firebase UIDs for authentication and internal database IDs for service management, with OXIO user IDs linking to connectivity services.
+**Dual Identity System**: Users maintain both Firebase UIDs for authentication and internal database IDs for service management, with OXIO user IDs linking to connectivity services. Device tracking uses Firebase UIDs for secure device-to-user association.
 
 ### Payment & Billing Architecture
 
