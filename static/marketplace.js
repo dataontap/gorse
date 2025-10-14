@@ -80,6 +80,10 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCartPreview();
     initializeBackToTop();
     
+    // Register device and load user devices
+    registerCurrentDevice();
+    loadUserDevices();
+    
     // Initialize offers cards
     setTimeout(() => {
         populateOfferCards();
@@ -880,7 +884,184 @@ function showConfirmationDrawer(amount, price, productType) {
     alert(`Purchase: ${amount}GB for $${price} (${productType})`);
 }
 
+// Device Detection and Management Functions
+async function getFirebaseIdToken() {
+    if (typeof firebase === 'undefined' || !firebase.auth || !firebase.auth().currentUser) {
+        return null;
+    }
+    
+    try {
+        const idToken = await firebase.auth().currentUser.getIdToken();
+        return idToken;
+    } catch (error) {
+        console.error('Error getting Firebase ID token:', error);
+        return null;
+    }
+}
+
+async function registerCurrentDevice() {
+    const idToken = await getFirebaseIdToken();
+    if (!idToken) {
+        console.log('No Firebase ID token found, skipping device registration');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/devices/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify({})
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            console.log('Device registered:', data.action);
+        } else {
+            console.error('Error registering device:', data.error);
+        }
+    } catch (error) {
+        console.error('Error registering device:', error);
+    }
+}
+
+async function loadUserDevices() {
+    const idToken = await getFirebaseIdToken();
+    if (!idToken) {
+        console.log('No Firebase ID token found, cannot load devices');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/devices/my-devices', {
+            headers: {
+                'Authorization': `Bearer ${idToken}`
+            }
+        });
+        const data = await response.json();
+
+        if (data.success && data.devices && data.devices.length > 0) {
+            renderDevices(data.devices);
+        } else {
+            console.log('No devices found for user');
+        }
+    } catch (error) {
+        console.error('Error loading devices:', error);
+    }
+}
+
+function renderDevices(devices) {
+    const phoneValueSection = document.querySelector('.phone-value-section');
+    if (!phoneValueSection) {
+        console.error('Phone value section not found');
+        return;
+    }
+
+    // Clear existing hardcoded device
+    phoneValueSection.innerHTML = '';
+
+    devices.forEach((device, index) => {
+        const deviceCard = createDeviceCard(device, index === 0);
+        phoneValueSection.appendChild(deviceCard);
+    });
+}
+
+function createDeviceCard(device, isPrimary) {
+    const card = document.createElement('div');
+    card.className = 'device-value-card';
+    
+    // Determine device icon
+    let deviceIcon = 'fa-mobile-alt';
+    if (device.device_type === 'tablet') {
+        deviceIcon = 'fa-tablet-alt';
+    } else if (device.device_type === 'desktop') {
+        deviceIcon = 'fa-desktop';
+    } else if (device.device_type === 'mobile') {
+        deviceIcon = 'fa-mobile-alt';
+    }
+
+    // Determine status badge
+    const statusClass = device.device_status === 'online' ? 'excellent' : 'fair';
+    const statusText = device.device_status === 'online' ? 'Online' : 'Offline';
+
+    // Format device specs
+    const specs = [];
+    if (device.storage_capacity) specs.push(device.storage_capacity);
+    if (device.color) specs.push(device.color);
+    if (device.os_family && device.os_version) {
+        specs.push(`${device.os_family} ${device.os_version}`);
+    } else if (device.os_family) {
+        specs.push(device.os_family);
+    }
+    const specsText = specs.join(' - ') || 'No specifications available';
+
+    // Format device name
+    const deviceName = device.device_model !== 'unknown' 
+        ? device.device_model 
+        : (device.device_brand !== 'unknown' ? `${device.device_brand} Device` : 'Unknown Device');
+
+    // Estimated value
+    const valueText = device.estimated_value 
+        ? `$${parseFloat(device.estimated_value).toFixed(0)}` 
+        : 'N/A';
+
+    card.innerHTML = `
+        <div class="device-details">
+            <div class="device-image" style="display: flex; align-items: center; justify-content: center; background-color: #333;">
+                <i class="fas ${deviceIcon}" style="font-size: 48px; color: #fff;"></i>
+            </div>
+            <div class="device-info">
+                <h3>${deviceName}</h3>
+                <p class="device-specs">${specsText}</p>
+                <div class="device-condition">
+                    <span class="condition-badge ${statusClass}">${statusText}</span>
+                </div>
+                ${device.estimated_value ? `
+                <div class="device-price">
+                    <span class="estimated-value">Estimated device value:</span>
+                    <div class="price-container">
+                        <span class="current-value">${valueText}</span>
+                        <span class="price-trend up"><i class="fas fa-arrow-up"></i> <strong>2.5%</strong></span>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+        ${device.estimated_value ? `
+        <div class="action-buttons" style="width: 100%;">
+            <button class="btn btn-outline-primary w-100 mb-2" style="max-width: 100%;"><i class="fas fa-sync-alt"></i> Trade-in</button>
+            <button class="btn btn-primary w-100" style="max-width: 100%;"><i class="fas fa-tag"></i> Sell</button>
+        </div>
+        ` : ''}
+    `;
+
+    return card;
+}
+
+// Sync device status periodically (every 30 seconds)
+setInterval(async function() {
+    const idToken = await getFirebaseIdToken();
+    if (idToken) {
+        try {
+            await fetch('/api/devices/sync', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({})
+            });
+        } catch (error) {
+            console.error('Error syncing device:', error);
+        }
+    }
+}, 30000);
+
 // Make functions globally available
 window.dismissOfferCard = dismissOfferCard;
 window.clearDismissedOffers = clearDismissedOffers;
 window.showConfirmationDrawer = showConfirmationDrawer;
+window.registerCurrentDevice = registerCurrentDevice;
+window.loadUserDevices = loadUserDevices;

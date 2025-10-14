@@ -56,6 +56,9 @@ from auth_helpers import require_auth, require_admin_auth
 from firebase_helper import firebase_auth_required
 from shopify_service import shopify_service
 
+# Import device service
+from device_service import register_or_update_device, get_user_devices, mark_devices_offline
+
 # Create products in Stripe if they don't exist
 if stripe.api_key:
     try:
@@ -1768,6 +1771,121 @@ def payments():
 @app.route('/marketplace', methods=['GET'])
 def marketplace():
     return render_template('marketplace.html')
+
+# Device Detection and Management API
+@app.route('/api/devices/register', methods=['POST'])
+def register_device():
+    """Register or update a device for the current user"""
+    try:
+        from firebase_helper import verify_firebase_token
+        
+        # Verify Firebase token and get UID - NO FALLBACK for security
+        decoded_token, error = verify_firebase_token(request)
+        
+        if error:
+            return jsonify({'success': False, 'error': f'Authentication required: {error}'}), 401
+        
+        firebase_uid = decoded_token.get('uid')
+        
+        # Get user_id from firebase_uid
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    user = cur.fetchone()
+                    
+                    if not user:
+                        return jsonify({'success': False, 'error': 'User not found'}), 404
+                    
+                    user_id = user[0]
+        
+        user_agent = request.headers.get('User-Agent', 'unknown')
+        ip_address = request.remote_addr
+        
+        result = register_or_update_device(user_id, firebase_uid, user_agent, ip_address)
+        
+        if result['success']:
+            mark_devices_offline(firebase_uid)
+            return jsonify(result)
+        else:
+            return jsonify(result), 500
+    
+    except Exception as e:
+        print(f"Error in device registration: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/devices/my-devices', methods=['GET'])
+def get_my_devices():
+    """Get all devices for the authenticated user"""
+    try:
+        from firebase_helper import verify_firebase_token
+        
+        # Verify Firebase token and get UID - NO FALLBACK for security
+        decoded_token, error = verify_firebase_token(request)
+        
+        if error:
+            return jsonify({'success': False, 'error': f'Authentication required: {error}'}), 401
+        
+        firebase_uid = decoded_token.get('uid')
+        
+        # Verify user exists
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    user = cur.fetchone()
+                    
+                    if not user:
+                        return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        result = get_user_devices(firebase_uid)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 500
+    
+    except Exception as e:
+        print(f"Error fetching devices: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/devices/sync', methods=['POST'])
+def sync_device():
+    """Update device last_active timestamp"""
+    try:
+        from firebase_helper import verify_firebase_token
+        
+        # Verify Firebase token and get UID - NO FALLBACK for security
+        decoded_token, error = verify_firebase_token(request)
+        
+        if error:
+            return jsonify({'success': False, 'error': f'Authentication required: {error}'}), 401
+        
+        firebase_uid = decoded_token.get('uid')
+        
+        # Get user_id from firebase_uid
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    user = cur.fetchone()
+                    
+                    if not user:
+                        return jsonify({'success': False, 'error': 'User not found'}), 404
+                    
+                    user_id = user[0]
+        
+        user_agent = request.headers.get('User-Agent', 'unknown')
+        ip_address = request.remote_addr
+        
+        result = register_or_update_device(user_id, firebase_uid, user_agent, ip_address)
+        mark_devices_offline(firebase_uid)
+        
+        return jsonify({'success': True, 'message': 'Device synced'})
+    
+    except Exception as e:
+        print(f"Error syncing device: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/tokens', methods=['GET'])
 def tokens():
