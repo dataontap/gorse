@@ -68,12 +68,19 @@ Preferred communication style: Simple, everyday language.
 
 ### Communication & AI Services
 
-**ElevenLabs Voice Synthesis**: Advanced text-to-speech services providing multilingual welcome messages with custom voice profiles. Supports 30 languages (including English, French, Spanish, Chinese, Japanese, Arabic, Portuguese, German, Hindi, Korean, Italian, Russian, Dutch, Turkish, Polish, Swedish, Filipino, Ukrainian, Greek, Czech, Finnish, Romanian, Vietnamese, Hungarian, Norwegian, Thai, Indonesian, Danish, Hebrew, Malay) with 3 distinct voice personalities:
+**ElevenLabs Voice Synthesis**: Advanced text-to-speech services providing multilingual personalized messages with custom voice profiles. Supports 30 languages (including English, French, Spanish, Chinese, Japanese, Arabic, Portuguese, German, Hindi, Korean, Italian, Russian, Dutch, Turkish, Polish, Swedish, Filipino, Ukrainian, Greek, Czech, Finnish, Romanian, Vietnamese, Hungarian, Norwegian, Thai, Indonesian, Danish, Hebrew, Malay) with 3 distinct voice personalities:
 - **CanadianRockstar**: Energetic and enthusiastic voice (Adam from ElevenLabs)
 - **ScienceTeacher**: Clear and professional voice (Bella from ElevenLabs)
 - **BuddyFriend**: Warm and friendly voice (Antoni from ElevenLabs)
 
-The system includes intelligent caching for instant playback, automatic pre-generation of EN/FR/ES messages, position tracking for seamless language/voice switching, and real-time audio visualization. API endpoints: `/api/welcome-message/voices`, `/api/welcome-message/generate`, `/api/welcome-audio/<id>`.
+The system includes intelligent caching for instant playback, automatic pre-generation of EN/FR messages, position tracking for seamless language/voice switching, and real-time audio visualization.
+
+**Intelligent Message System**: Progressive content delivery that adapts to user behavior. The platform automatically selects message types based on listening history:
+- **Welcome Messages**: Initial introduction to DOT Mobile platform and services for new users
+- **Tip Messages**: Helpful information about DOTM token rewards, Bitchat secure messaging, eSIM management, and network features like VPN and Wi-Fi calling
+- **Update Messages**: Latest platform features including the 30-language voice system, intelligent message progression, and Shopify marketplace integration
+
+Messages are tracked through a database history system that ensures users receive progressive content - starting with welcome for new users, then tips after hearing the welcome, and finally updates. The caching system preserves message types to ensure accurate telemetry across all playback scenarios. API endpoints: `/api/welcome-message/voices`, `/api/welcome-message/generate`, `/api/welcome-message/track-listen`, `/api/welcome-audio/<id>`.
 
 **OpenAI Integration**: AI-powered help desk services and automated customer support through OpenAI's API for intelligent query handling.
 
