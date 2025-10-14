@@ -80,8 +80,8 @@ class ElevenLabsService:
             return profile["voice_id"], profile["settings"]
         return None, None
     
-    def generate_welcome_message(self, user_name=None, language="en", voice_profile="ScienceTeacher"):
-        """Generate personalized welcome message text"""
+    def generate_welcome_message(self, user_name=None, language="en", voice_profile="ScienceTeacher", message_type="welcome"):
+        """Generate personalized message text based on message type"""
         now = datetime.now()
         day_name = now.strftime("%A")
         date_str = now.strftime("%B %d, %Y")
@@ -92,42 +92,60 @@ class ElevenLabsService:
             voice_id = "21m00Tcm4TlvDq8ikWAM"  # Default Rachel voice
             voice_settings = None
         
-        # Language message generators
-        language_generators = {
-            "en": self._generate_english_message,
-            "es": self._generate_spanish_message,
-            "fr": self._generate_french_message,
-            "de": self._generate_german_message,
-            "it": self._generate_italian_message,
-            "pt": self._generate_portuguese_message,
-            "nl": self._generate_dutch_message,
-            "pl": self._generate_polish_message,
-            "ar": self._generate_arabic_message,
-            "hi": self._generate_hindi_message,
-            "ja": self._generate_japanese_message,
-            "ko": self._generate_korean_message,
-            "zh": self._generate_chinese_message,
-            "ru": self._generate_russian_message,
-            "tr": self._generate_turkish_message,
-            "sv": self._generate_swedish_message,
-            "no": self._generate_norwegian_message,
-            "da": self._generate_danish_message,
-            "fi": self._generate_finnish_message,
-            "cs": self._generate_czech_message,
-            "ro": self._generate_romanian_message,
-            "el": self._generate_greek_message,
-            "he": self._generate_hebrew_message,
-            "th": self._generate_thai_message,
-            "vi": self._generate_vietnamese_message,
-            "id": self._generate_indonesian_message,
-            "ms": self._generate_malay_message,
-            "fil": self._generate_filipino_message,
-            "uk": self._generate_ukrainian_message,
-            "bg": self._generate_bulgarian_message
-        }
+        # Language message generators by type
+        if message_type == "welcome":
+            language_generators = {
+                "en": self._generate_english_message,
+                "es": self._generate_spanish_message,
+                "fr": self._generate_french_message,
+                "de": self._generate_german_message,
+                "it": self._generate_italian_message,
+                "pt": self._generate_portuguese_message,
+                "nl": self._generate_dutch_message,
+                "pl": self._generate_polish_message,
+                "ar": self._generate_arabic_message,
+                "hi": self._generate_hindi_message,
+                "ja": self._generate_japanese_message,
+                "ko": self._generate_korean_message,
+                "zh": self._generate_chinese_message,
+                "ru": self._generate_russian_message,
+                "tr": self._generate_turkish_message,
+                "sv": self._generate_swedish_message,
+                "no": self._generate_norwegian_message,
+                "da": self._generate_danish_message,
+                "fi": self._generate_finnish_message,
+                "cs": self._generate_czech_message,
+                "ro": self._generate_romanian_message,
+                "el": self._generate_greek_message,
+                "he": self._generate_hebrew_message,
+                "th": self._generate_thai_message,
+                "vi": self._generate_vietnamese_message,
+                "id": self._generate_indonesian_message,
+                "ms": self._generate_malay_message,
+                "fil": self._generate_filipino_message,
+                "uk": self._generate_ukrainian_message,
+                "bg": self._generate_bulgarian_message
+            }
+        elif message_type == "tip":
+            language_generators = {
+                "en": self._generate_english_tip,
+                "es": self._generate_spanish_tip,
+                "fr": self._generate_french_tip,
+            }
+        elif message_type == "update":
+            language_generators = {
+                "en": self._generate_english_update,
+                "es": self._generate_spanish_update,
+                "fr": self._generate_french_update,
+            }
+        else:
+            # Default to welcome
+            language_generators = {
+                "en": self._generate_english_message,
+            }
         
         # Get message generator or fallback to English
-        generator = language_generators.get(language, language_generators["en"])
+        generator = language_generators.get(language, language_generators.get("en", self._generate_english_message))
         message_text = generator(user_name, day_name, date_str)
         
         return self.text_to_speech(message_text, voice_id, language, voice_settings)
@@ -300,6 +318,84 @@ class ElevenLabsService:
     def _generate_bulgarian_message(self, user_name, day_name, date_str):
         name_part = f"Здравей {user_name}! Произнасям ли правилно името ти? " if user_name else ""
         return f"{name_part}Добре дошли в DOT Mobile! Днес е {day_name}, {date_str}, и сме развълнувани да ви приветстваме в нашата глобална мрежа за свързаност. Току-що станахте част от нещо революционно. Добре дошли и се насладете на изследването на света, докато оставате перфектно свързани!"
+    
+    # TIP MESSAGE GENERATORS
+    def _generate_english_tip(self, user_name, day_name, date_str):
+        return f"""
+        Here's a quick tip for today, {day_name}, {date_str}!
+        
+        Did you know you can easily manage your data usage right from your dashboard? Simply tap on the data circle to see a detailed breakdown of your consumption patterns.
+        
+        To get the most out of your global connectivity, we recommend enabling automatic eSIM profile switching in your settings. This ensures you're always on the best network wherever you travel.
+        
+        Don't forget to check out our marketplace for exclusive data deals and packages. You can also earn DOTM tokens by referring friends - each successful referral gives you bonus tokens to use across our platform.
+        
+        Pro tip: Use the Bitchat feature to stay connected with other DOT Mobile users without using your data allowance. It's perfect for coordinating with travel companions or networking with other global citizens.
+        
+        That's your tip for today - enjoy your perfectly connected experience!
+        """
+    
+    def _generate_spanish_tip(self, user_name, day_name, date_str):
+        return f"""
+        ¡Aquí hay un consejo rápido para hoy, {day_name}, {date_str}!
+        
+        ¿Sabías que puedes administrar fácilmente tu uso de datos desde tu panel de control? Simplemente toca el círculo de datos para ver un desglose detallado de tus patrones de consumo.
+        
+        Para aprovechar al máximo tu conectividad global, recomendamos habilitar el cambio automático de perfil eSIM en tu configuración.
+        
+        ¡Ese es tu consejo para hoy - disfruta de tu experiencia perfectamente conectada!
+        """
+    
+    def _generate_french_tip(self, user_name, day_name, date_str):
+        return f"""
+        Voici un conseil rapide pour aujourd'hui, {day_name}, {date_str}!
+        
+        Saviez-vous que vous pouvez facilement gérer votre utilisation de données depuis votre tableau de bord? Appuyez simplement sur le cercle de données pour voir une répartition détaillée de vos modèles de consommation.
+        
+        Pour tirer le meilleur parti de votre connectivité mondiale, nous recommandons d'activer le changement automatique de profil eSIM dans vos paramètres.
+        
+        C'est votre conseil pour aujourd'hui - profitez de votre expérience parfaitement connectée!
+        """
+    
+    # UPDATE MESSAGE GENERATORS
+    def _generate_english_update(self, user_name, day_name, date_str):
+        return f"""
+        Welcome back! Here's what's new on {day_name}, {date_str}.
+        
+        We're excited to announce some fresh updates to your DOT Mobile experience!
+        
+        First, we've launched our new Encrypted Bluetooth Mesh Network feature. You can now connect with nearby DOT Mobile users to create a secure, decentralized communication network. Check it out in your dashboard!
+        
+        We've also enhanced our global coverage with new partnerships in Southeast Asia and Latin America. This means even better connectivity and more affordable rates in over 25 new countries.
+        
+        Your DOTM token rewards program has been upgraded! You can now use tokens for premium features like priority customer support, exclusive data packages, and early access to new services.
+        
+        Don't forget to update your app to the latest version to enjoy all these new features. As always, we're working hard to keep you connected wherever you go.
+        
+        Thanks for being part of the DOT Mobile community!
+        """
+    
+    def _generate_spanish_update(self, user_name, day_name, date_str):
+        return f"""
+        ¡Bienvenido de nuevo! Aquí está lo nuevo en {day_name}, {date_str}.
+        
+        ¡Estamos emocionados de anunciar algunas actualizaciones nuevas para tu experiencia DOT Mobile!
+        
+        Primero, hemos lanzado nuestra nueva función de Red Mesh Bluetooth Encriptada. Ahora puedes conectarte con usuarios cercanos de DOT Mobile para crear una red de comunicación segura y descentralizada.
+        
+        ¡Gracias por ser parte de la comunidad DOT Mobile!
+        """
+    
+    def _generate_french_update(self, user_name, day_name, date_str):
+        return f"""
+        Bienvenue de retour! Voici les nouveautés du {day_name}, {date_str}.
+        
+        Nous sommes ravis d'annoncer de nouvelles mises à jour pour votre expérience DOT Mobile!
+        
+        Tout d'abord, nous avons lancé notre nouvelle fonctionnalité de Réseau Maillé Bluetooth Crypté. Vous pouvez maintenant vous connecter avec les utilisateurs DOT Mobile à proximité pour créer un réseau de communication sécurisé et décentralisé.
+        
+        Merci de faire partie de la communauté DOT Mobile!
+        """
     
     def text_to_speech(self, text, voice_id, language="en", custom_settings=None):
         """Convert text to speech using ElevenLabs API"""
