@@ -4117,3 +4117,110 @@ input:checked + .toggle-slider:before {
     50% { opacity: 0.5; }
 }
 /* Replaced offer cards with a new grid-based section with centered text and improved styling. */
+/* Global Persistent Audio Mini Player */
+.global-mini-player {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    min-width: 300px;
+    max-width: 400px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.mini-player-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.mini-player-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.mini-player-title {
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mini-player-details {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+}
+
+.mini-player-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.mini-player-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.mini-player-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.mini-player-btn:active {
+    transform: scale(0.95);
+}
+
+#miniPlayerVisualizer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    border-radius: 0 0 12px 12px;
+}
+
+/* Responsive mobile adjustments */
+@media (max-width: 768px) {
+    .global-mini-player {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        min-width: 0;
+    }
+}
