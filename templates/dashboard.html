@@ -393,20 +393,23 @@
             <div class="bitchat-info">
                 <div class="bitchat-title">
                     <i class="fas fa-comments"></i>
-                    Ensuring Minimal Connectivity
-                </div>
-                <div class="bitchat-description" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.8); margin: 5px 0;">
-                    Connect to Encrypted Bluetooth Mesh Network Anonymously.
+                    Encrypted Bluetooth Mesh Network
                 </div>
                 <div class="bitchat-status">
                     <span class="connection-status" id="connectionStatus">
                         <i class="fas fa-circle status-indicator" id="statusIndicator"></i>
-                        <span id="connectionText">Connecting...</span>
+                        <span id="connectionText">Disconnected</span>
                     </span>
                     <div class="nearby-users" id="nearbyUsers">
-                        <span id="userCount">0</span> people/relays nearby
+                        <span id="userCount">0</span> People / Relays
+                    </div>
+                    <div class="channel-users" style="font-size: 0.9em; color: rgba(255, 255, 255, 0.8); margin-top: 5px;">
+                        <span id="channelUserCount">0</span> On My Channels
                     </div>
                 </div>
+                <a href="/bitchat" class="bitchat-connect-btn" style="background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; display: inline-block; margin-top: 10px; font-weight: bold; transition: all 0.3s ease; text-align: center;">
+                    Connect
+                </a>
             </div>
             <button class="close-banner" onclick="dismissBitchatCard()" aria-label="Close bitchat card">
                 <i class="fas fa-times"></i>
