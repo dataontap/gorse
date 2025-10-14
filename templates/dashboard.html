@@ -666,6 +666,7 @@
     <script src="/static/translations.js"></script>
     <script src="/static/help-desk.js"></script>
     <script src="/static/app.js"></script>
+    <script src="/static/global-audio-player.js"></script>
     <script>
         // Helper function to get Firebase UID safely
         function getFirebaseUID() {
@@ -1205,85 +1206,40 @@
         }
 
         function loadAndPlayAudio(audioUrl) {
-            const audio = document.getElementById('welcomeAudio');
-            const playBtn = document.getElementById('playWelcomeBtn');
-            const visualizer = document.getElementById('audioVisualizer');
-            
-            audio.src = audioUrl;
-            audio.style.display = 'block';
-            visualizer.style.display = 'block';
-            
-            // Hide the play button once playback starts
-            playBtn.style.display = 'none';
-            
-            // Set up audio visualization
-            initAudioContext();
-            if (!audioSource) {
-                audioSource = audioContext.createMediaElementSource(audio);
-                audioSource.connect(analyser);
-                analyser.connect(audioContext.destination);
-            }
-            
-            // Resume from saved position minus 5 seconds and auto-play
-            audio.addEventListener('loadedmetadata', () => {
-                if (currentPlaybackPosition > 0) {
-                    const resumePosition = Math.max(0, currentPlaybackPosition - 5);
-                    audio.currentTime = resumePosition;
-                    console.log(`Auto-playing from ${resumePosition.toFixed(1)}s (was at ${currentPlaybackPosition.toFixed(1)}s)`);
-                }
-                audio.play();
-                visualizeAudio();
-            }, { once: true });
-            
-            audio.addEventListener('ended', () => {
-                if (animationId) {
-                    cancelAnimationFrame(animationId);
-                }
-                visualizer.style.display = 'none';
-                currentPlaybackPosition = 0;
-                
-                // Track that user completed listening to this message
-                const firebaseUid = getFirebaseUID();
-                const language = document.getElementById('welcomeLanguage').value;
-                const voiceProfile = document.getElementById('welcomeVoice').value;
-                
-                if (firebaseUid) {
-                    fetch('/api/welcome-message/track-listen', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            firebase_uid: firebaseUid,
-                            message_type: currentMessageType,
-                            language: language,
-                            voice_profile: voiceProfile,
-                            completed: true
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Message listen tracked:', data);
-                    })
-                    .catch(error => {
-                        console.error('Error tracking message listen:', error);
-                    });
-                }
-            }, { once: true });
-        }
-
-        let generationCountdownInterval = null;
-
-        function updateWelcomeMessage() {
-            // Save current position when switching (DON'T stop the audio!)
-            const audio = document.getElementById('welcomeAudio');
             const playBtn = document.getElementById('playWelcomeBtn');
             const firebaseUid = getFirebaseUID();
             const language = document.getElementById('welcomeLanguage').value;
             const voiceProfile = document.getElementById('welcomeVoice').value;
             
-            // Always save the current position if audio has been loaded
-            if (audio && audio.currentTime > 0) {
-                currentPlaybackPosition = audio.currentTime;
+            // Hide the play button once playback starts
+            playBtn.style.display = 'none';
+            
+            // Use the global audio player with metadata
+            if (window.globalAudioPlayer) {
+                window.globalAudioPlayer.play(audioUrl, {
+                    firebaseUid: firebaseUid,
+                    language: language,
+                    voiceProfile: voiceProfile,
+                    messageType: currentMessageType
+                });
+                
+                // Set up callback for when audio ends (for dashboard UI updates)
+                window.onGlobalAudioEnded = () => {
+                    playBtn.style.display = 'block';
+                    playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    playBtn.disabled = false;
+                    currentPlaybackPosition = 0;
+                };
             }
+        }
+
+        let generationCountdownInterval = null;
+
+        function updateWelcomeMessage() {
+            const playBtn = document.getElementById('playWelcomeBtn');
+            const firebaseUid = getFirebaseUID();
+            const language = document.getElementById('welcomeLanguage').value;
+            const voiceProfile = document.getElementById('welcomeVoice').value;
             
             if (!firebaseUid) {
                 return;
