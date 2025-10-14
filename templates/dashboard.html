@@ -1211,12 +1211,12 @@
                 analyser.connect(audioContext.destination);
             }
             
-            // Resume from saved position minus 2-5 seconds
+            // Resume from saved position minus 5 seconds and auto-play
             audio.addEventListener('loadedmetadata', () => {
                 if (currentPlaybackPosition > 0) {
-                    const resumePosition = Math.max(0, currentPlaybackPosition - (Math.random() * 3 + 2));
+                    const resumePosition = Math.max(0, currentPlaybackPosition - 5);
                     audio.currentTime = resumePosition;
-                    console.log(`Resuming from ${resumePosition.toFixed(1)}s (was at ${currentPlaybackPosition.toFixed(1)}s)`);
+                    console.log(`Auto-playing from ${resumePosition.toFixed(1)}s (was at ${currentPlaybackPosition.toFixed(1)}s)`);
                 }
                 audio.play();
                 visualizeAudio();
@@ -1232,12 +1232,17 @@
         }
 
         function updateWelcomeMessage() {
-            // Save current position when switching
+            // Save current position when switching (whether playing or paused)
             const audio = document.getElementById('welcomeAudio');
             const playBtn = document.getElementById('playWelcomeBtn');
             
-            if (!audio.paused) {
+            // Always save the current position if audio has been loaded
+            if (audio && audio.currentTime > 0) {
                 currentPlaybackPosition = audio.currentTime;
+            }
+            
+            // Pause if playing
+            if (!audio.paused) {
                 audio.pause();
                 if (animationId) {
                     cancelAnimationFrame(animationId);
