@@ -4687,6 +4687,46 @@ def get_estimated_generation_time():
         print(f"Error getting estimated time: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/welcome-message/track-listen', methods=['POST'])
+def track_message_listen():
+    """Track when a user listens to a message"""
+    try:
+        data = request.get_json() or {}
+        firebase_uid = data.get('firebase_uid')
+        message_type = data.get('message_type', 'welcome')
+        language = data.get('language', 'en')
+        voice_profile = data.get('voice_profile', 'ScienceTeacher')
+        completed = data.get('completed', False)
+        
+        if not firebase_uid:
+            return jsonify({'success': False, 'error': 'Firebase UID required'}), 400
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Insert or update listening record
+                    cur.execute("""
+                        INSERT INTO user_message_history 
+                        (firebase_uid, message_type, language, voice_profile, completed, listened_at)
+                        VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                        RETURNING id
+                    """, (firebase_uid, message_type, language, voice_profile, completed))
+                    
+                    history_id = cur.fetchone()[0]
+                    conn.commit()
+                    
+                    return jsonify({
+                        'success': True,
+                        'history_id': history_id,
+                        'message': 'Listening tracked successfully'
+                    })
+        
+        return jsonify({'success': False, 'error': 'Database error'}), 500
+        
+    except Exception as e:
+        print(f"Error tracking message listen: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/update-personal-message', methods=['POST'])
 def update_personal_message():
     """Update or create a personal message for a specific Firebase UID"""
