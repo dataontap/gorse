@@ -4504,15 +4504,40 @@ def get_welcome_voices():
 
 @app.route('/api/welcome-message/generate', methods=['POST'])
 def generate_welcome_message():
-    """Generate welcome message with caching"""
+    """Generate message with caching and type selection based on user history"""
     try:
         data = request.get_json() or {}
         firebase_uid = data.get('firebase_uid')
         language = data.get('language', 'en')
         voice_profile = data.get('voice_profile', 'ScienceTeacher')
+        requested_type = data.get('message_type')  # Optional override
         
         if not firebase_uid:
             return jsonify({'success': False, 'error': 'Firebase UID required'}), 400
+        
+        # Determine message type based on user history (if not explicitly requested)
+        message_type = requested_type
+        if not message_type:
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Check what message types user has listened to
+                        cur.execute("""
+                            SELECT DISTINCT message_type 
+                            FROM user_message_history 
+                            WHERE firebase_uid = %s AND completed = TRUE
+                            ORDER BY message_type
+                        """, (firebase_uid,))
+                        
+                        listened_types = [row[0] for row in cur.fetchall()]
+                        
+                        # Select next message type
+                        if 'welcome' not in listened_types:
+                            message_type = 'welcome'
+                        elif 'tip' not in listened_types:
+                            message_type = 'tip'
+                        else:
+                            message_type = 'update'
         
         # Check cache first
         with get_db_connection() as conn:
@@ -4521,8 +4546,8 @@ def generate_welcome_message():
                     cur.execute("""
                         SELECT id, audio_data, content_type 
                         FROM welcome_messages 
-                        WHERE firebase_uid = %s AND language = %s AND voice_profile = %s
-                    """, (firebase_uid, language, voice_profile))
+                        WHERE firebase_uid = %s AND language = %s AND voice_profile = %s AND message_type = %s
+                    """, (firebase_uid, language, voice_profile, message_type))
                     
                     cached = cur.fetchone()
                     if cached:
@@ -4532,31 +4557,33 @@ def generate_welcome_message():
                             'success': True,
                             'audio_url': f'/api/welcome-audio/{message_id}',
                             'message_id': message_id,
+                            'message_type': message_type,
                             'cached': True
                         })
         
-        # Generate new welcome message and track generation time
+        # Generate new message and track generation time
         import time
         start_time = time.time()
         
         result = elevenlabs_service.generate_welcome_message(
             user_name=None,
             language=language,
-            voice_profile=voice_profile
+            voice_profile=voice_profile,
+            message_type=message_type
         )
         
         generation_time_ms = int((time.time() - start_time) * 1000)
         
         if result.get('success'):
-            # Store in database with generation time
+            # Store in database with generation time and message type
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
                         cur.execute("""
                             INSERT INTO welcome_messages 
-                            (firebase_uid, language, voice_profile, audio_data, content_type, generation_time_ms)
-                            VALUES (%s, %s, %s, %s, %s, %s)
-                            ON CONFLICT (firebase_uid, language, voice_profile) 
+                            (firebase_uid, language, voice_profile, audio_data, content_type, generation_time_ms, message_type)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (firebase_uid, language, voice_profile, message_type) 
                             DO UPDATE SET audio_data = EXCLUDED.audio_data, 
                                         created_at = CURRENT_TIMESTAMP,
                                         generation_time_ms = EXCLUDED.generation_time_ms
@@ -4567,7 +4594,8 @@ def generate_welcome_message():
                             voice_profile,
                             result['audio_data'],
                             result['content_type'],
-                            generation_time_ms
+                            generation_time_ms,
+                            message_type
                         ))
                         
                         message_id = cur.fetchone()[0]
@@ -4577,6 +4605,7 @@ def generate_welcome_message():
                             'success': True,
                             'audio_url': f'/api/welcome-audio/{message_id}',
                             'message_id': message_id,
+                            'message_type': message_type,
                             'cached': False,
                             'generation_time_ms': generation_time_ms
                         })
