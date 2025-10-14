@@ -4535,31 +4535,39 @@ def generate_welcome_message():
                             'cached': True
                         })
         
-        # Generate new welcome message
+        # Generate new welcome message and track generation time
+        import time
+        start_time = time.time()
+        
         result = elevenlabs_service.generate_welcome_message(
             user_name=None,
             language=language,
             voice_profile=voice_profile
         )
         
+        generation_time_ms = int((time.time() - start_time) * 1000)
+        
         if result.get('success'):
-            # Store in database
+            # Store in database with generation time
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
                         cur.execute("""
                             INSERT INTO welcome_messages 
-                            (firebase_uid, language, voice_profile, audio_data, content_type)
-                            VALUES (%s, %s, %s, %s, %s)
+                            (firebase_uid, language, voice_profile, audio_data, content_type, generation_time_ms)
+                            VALUES (%s, %s, %s, %s, %s, %s)
                             ON CONFLICT (firebase_uid, language, voice_profile) 
-                            DO UPDATE SET audio_data = EXCLUDED.audio_data, created_at = CURRENT_TIMESTAMP
+                            DO UPDATE SET audio_data = EXCLUDED.audio_data, 
+                                        created_at = CURRENT_TIMESTAMP,
+                                        generation_time_ms = EXCLUDED.generation_time_ms
                             RETURNING id
                         """, (
                             firebase_uid,
                             language,
                             voice_profile,
                             result['audio_data'],
-                            result['content_type']
+                            result['content_type'],
+                            generation_time_ms
                         ))
                         
                         message_id = cur.fetchone()[0]
@@ -4569,7 +4577,8 @@ def generate_welcome_message():
                             'success': True,
                             'audio_url': f'/api/welcome-audio/{message_id}',
                             'message_id': message_id,
-                            'cached': False
+                            'cached': False,
+                            'generation_time_ms': generation_time_ms
                         })
             
             return jsonify({'success': False, 'error': 'Database error'}), 500
@@ -4615,6 +4624,39 @@ def get_welcome_audio(message_id):
     except Exception as e:
         print(f"Error retrieving welcome audio: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/welcome-message/estimated-time', methods=['GET'])
+def get_estimated_generation_time():
+    """Get estimated generation time based on recent messages"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get average generation time from last 10 generated messages
+                    cur.execute("""
+                        SELECT AVG(generation_time_ms) as avg_time
+                        FROM (
+                            SELECT generation_time_ms 
+                            FROM welcome_messages 
+                            WHERE generation_time_ms IS NOT NULL 
+                            ORDER BY created_at DESC 
+                            LIMIT 10
+                        ) recent_messages
+                    """)
+                    
+                    result = cur.fetchone()
+                    avg_time = result[0] if result and result[0] else 3000  # Default to 3 seconds
+                    
+                    return jsonify({
+                        'success': True,
+                        'estimated_time_ms': int(avg_time)
+                    })
+        
+        return jsonify({'success': False, 'error': 'Database error'}), 500
+        
+    except Exception as e:
+        print(f"Error getting estimated time: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/update-personal-message', methods=['POST'])
 def update_personal_message():

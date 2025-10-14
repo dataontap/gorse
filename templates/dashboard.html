@@ -1231,30 +1231,103 @@
             }, { once: true });
         }
 
+        let generationCountdownInterval = null;
+
         function updateWelcomeMessage() {
-            // Save current position when switching (whether playing or paused)
+            // Save current position when switching (DON'T stop the audio!)
             const audio = document.getElementById('welcomeAudio');
             const playBtn = document.getElementById('playWelcomeBtn');
+            const firebaseUid = getFirebaseUID();
+            const language = document.getElementById('welcomeLanguage').value;
+            const voiceProfile = document.getElementById('welcomeVoice').value;
             
             // Always save the current position if audio has been loaded
             if (audio && audio.currentTime > 0) {
                 currentPlaybackPosition = audio.currentTime;
             }
             
-            // Pause if playing
-            if (!audio.paused) {
-                audio.pause();
-                if (animationId) {
-                    cancelAnimationFrame(animationId);
-                }
+            if (!firebaseUid) {
+                return;
             }
             
-            // Show loading state
-            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-            playBtn.disabled = true;
-            
-            // Auto-generate new selection
-            setTimeout(() => playWelcomeMessage(), 100);
+            // Get estimated generation time and start countdown
+            fetch('/api/welcome-message/estimated-time')
+                .then(response => response.json())
+                .then(timeData => {
+                    const estimatedMs = timeData.estimated_time_ms || 3000;
+                    const estimatedSeconds = Math.ceil(estimatedMs / 1000);
+                    
+                    // Show countdown in play button
+                    playBtn.style.display = 'block';
+                    let countdown = estimatedSeconds;
+                    playBtn.innerHTML = `Ready in ${countdown}`;
+                    playBtn.disabled = true;
+                    
+                    // Clear any existing countdown
+                    if (generationCountdownInterval) {
+                        clearInterval(generationCountdownInterval);
+                    }
+                    
+                    // Start countdown
+                    generationCountdownInterval = setInterval(() => {
+                        countdown--;
+                        if (countdown > 0) {
+                            playBtn.innerHTML = `Ready in ${countdown}`;
+                        } else {
+                            playBtn.innerHTML = 'Ready!';
+                            clearInterval(generationCountdownInterval);
+                        }
+                    }, 1000);
+                    
+                    // Start generation in background
+                    const key = `${language}_${voiceProfile}`;
+                    fetch('/api/welcome-message/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            firebase_uid: firebaseUid,
+                            language: language,
+                            voice_profile: voiceProfile
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Clear countdown
+                        if (generationCountdownInterval) {
+                            clearInterval(generationCountdownInterval);
+                        }
+                        
+                        if (data.success && data.audio_url) {
+                            preloadedMessages[key] = data.audio_url;
+                            playBtn.innerHTML = 'Ready!';
+                            
+                            // Auto-switch to new audio after a brief moment
+                            setTimeout(() => {
+                                loadAndPlayAudio(data.audio_url);
+                            }, 500);
+                        } else {
+                            playBtn.innerHTML = 'Error';
+                            playBtn.disabled = false;
+                            playBtn.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error generating message:', error);
+                        if (generationCountdownInterval) {
+                            clearInterval(generationCountdownInterval);
+                        }
+                        playBtn.innerHTML = 'Error';
+                        playBtn.disabled = false;
+                        playBtn.style.display = 'none';
+                    });
+                })
+                .catch(error => {
+                    console.error('Error getting estimated time:', error);
+                    // Fallback to old behavior
+                    playBtn.innerHTML = 'Generating...';
+                    playBtn.disabled = true;
+                    setTimeout(() => playWelcomeMessage(), 100);
+                });
         }
 
         function dismissWelcomeMessage() {
