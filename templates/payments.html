@@ -20,18 +20,26 @@
 </head>
 <body class="dashboard-body">
     <div class="top-bar">
-        <div class="menu-icon">
+        <div class="menu-icon" onclick="toggleMenu(this)">
             <i class="fas fa-bars"></i>
             <div class="menu-dropdown">
-                <a href="/dashboard"><i https://youtu.be/MrjOEq0Irtw?si=yJSQhgp7mn3C8eKt fa-database"></i> Data</a>
+                <a href="/dashboard"><i class="fas fa-database"></i> Data</a>
                 <a href="/network"><i class="fas fa-network-wired"></i> Network</a>
                 <a href="/marketplace"><i class="fas fa-store"></i> Marketplace</a>
                 <a href="/notifications"><i class="fas fa-bell"></i> Notifications</a>
                 <a href="/bitchat"><i class="fas fa-comments"></i> Bitchat</a>
             </div>
         </div>
+        <div class="theme-toggles">
+            <div id="darkModeToggle" class="theme-toggle active" title="Dark Mode">
+                <i class="fas fa-moon"></i>
+            </div>
+            <div id="lightModeToggle" class="theme-toggle" title="Light Mode">
+                <i class="fas fa-sun"></i>
+            </div>
+        </div>
         <div class="profile-section">
-            <i class="fas fa-user-circle"></i>
+            <i class="fas fa-user-circle" onclick="toggleProfileDropdown()"></i>
             <div class="profile-dropdown">
                 <div class="profile-info">
                     <div class="profile-header">
@@ -39,7 +47,9 @@
                         <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
                     </div>
                     <div class="wallet-pill-container">
-                        <a href="/payments" class="wallet-value-pill">$10,000.00 USD</a>
+                        <a href="/payments" class="wallet-value-pill" id="tokenBalancePill">
+                            Loading DOTM...
+                        </a>
                     </div>
                     <div id="qrCodePopup" class="qr-code-popup">
                         <div id="qrcode"></div>
@@ -62,10 +72,12 @@
                         </select>
                     </div>
                 </div>
+                <a href="#" id="logoutBtn" onclick="handleLogout(event)">
+                    <i class="fas fa-sign-out-alt"></i> <span data-translate="logout">Logout</span>
+                </a>
                 <a href="#" id="helpToggle">
-                    <i class="fas fa-phone-alt"></i> Live Person Callback
-                    <span id="helpTimer" class="help-timer" style="display: none;">00:04:20</span>
-                    <i id="helpPhoneIcon" class="fas fa-phone-alt" style="display: none;"></i>
+                    <i class="fas fa-question-circle"></i> <span id="helpText">Help</span>
+                    <i id="helpPhoneIcon" class="fas fa-phone" style="display: none; margin-left: 8px;"></i>
                 </a>
                 <div class="help-section" style="display: none;">
                     <div class="help-content">
@@ -83,19 +95,6 @@
                         <p class="help-note">LLMs goto mcp.dotmobile.app</p>
                     </div>
                 </div>
-            </div>
-                <div class="settings-submenu" style="display: none;">
-                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span data-translate="darkMode">Dark Mode</span></a>
-                    <div class="language-selector-container">
-                        <label for="languageSelect"><i class="fas fa-globe"></i> <span data-translate="language">Language</span></label>
-                        <select id="languageSelect" class="language-select">
-                            <option value="en" data-translate="english">English</option>
-                            <option value="es" data-translate="spanish">Español</option>
-                            <option value="fr" data-translate="french">Français</option>
-                        </select>
-                    </div>
-                </div>
-                <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </div>
     </div>
