@@ -80,17 +80,32 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCartPreview();
     initializeBackToTop();
     
-    // Register device and load user devices
-    registerCurrentDevice();
-    loadUserDevices();
-    
-    // Initialize offers cards
+    // Initialize offers cards (non-user-specific)
     setTimeout(() => {
         populateOfferCards();
         setTimeout(() => {
             initializeCardStack();
         }, 200);
     }, 100);
+});
+
+// Listen for Firebase auth state changes before loading user-specific data
+document.addEventListener('firebaseAuthStateChanged', function(event) {
+    const { isSignedIn, firebaseUser, userData } = event.detail;
+    
+    if (isSignedIn && firebaseUser) {
+        console.log('Marketplace: User authenticated, loading devices for:', firebaseUser.uid);
+        // Only load user devices after authentication is confirmed
+        registerCurrentDevice();
+        loadUserDevices();
+    } else {
+        console.log('Marketplace: No authenticated user, skipping device loading');
+        // Clear any existing device display if user logs out
+        const devicesSection = document.querySelector('.my-devices-section');
+        if (devicesSection) {
+            devicesSection.innerHTML = '<h3>📱 My Device(s)</h3><p>Please log in to see your devices</p>';
+        }
+    }
 });
 
 function initializeMarketplace() {

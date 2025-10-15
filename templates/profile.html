@@ -412,16 +412,20 @@
     <script src="/static/app.js"></script>
     <script src="/static/global-audio-player.js"></script>
     <script>
-        // Load Firebase user data from localStorage
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Profile page DOM loaded, initializing Firebase auth...');
+        // Listen for Firebase auth state changes - PRIMARY auth handler for profile
+        document.addEventListener('firebaseAuthStateChanged', function(event) {
+            const { isSignedIn, firebaseUser, userData } = event.detail;
             
-            // Small delay to ensure Firebase scripts are fully loaded
-            setTimeout(() => {
+            console.log('Profile page received auth state change:', event.detail);
+            
+            if (isSignedIn && firebaseUser) {
+                console.log('Profile: User authenticated, loading profile data for:', firebaseUser.uid);
+                // Load all user-specific data only after authentication is confirmed
                 loadFirebaseUserData();
-                // Also try direct API call as fallback
-                loadUserDataDirectly();
-            }, 100);
+            } else {
+                console.log('Profile: No authenticated user, redirecting to login');
+                window.location.href = '/login';
+            }
         });
         
         // Direct API call to load user data as fallback
@@ -429,7 +433,12 @@
             try {
                 // Get Firebase UID from localStorage or auth state
                 const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                const firebaseUid = cachedUser?.uid || 'l6oVogd1fQhbfsz02g7b2ab0j9B2'; // User's UID
+                const firebaseUid = cachedUser?.uid;
+                
+                if (!firebaseUid) {
+                    console.log('No Firebase UID available, skipping direct API call');
+                    return;
+                }
                 
                 console.log('Direct API call for user data:', firebaseUid);
                 

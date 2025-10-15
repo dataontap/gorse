@@ -691,29 +691,27 @@
             return null;
         }
 
-        // Listen for authentication state changes
+        // Listen for authentication state changes - PRIMARY auth handler
         document.addEventListener('firebaseAuthStateChanged', function(e) {
             console.log('Dashboard page received auth state change:', e.detail);
             if (e.detail.isSignedIn && e.detail.uid) {
-                // Reload dashboard data when user signs in
+                // Load ALL user-specific data only after authentication is confirmed
                 loadUserDataBalance();
                 loadSubscriptionStatus();
                 loadWelcomeMessage();
+                loadDotmBalance();
+            } else {
+                console.log('Dashboard: No authenticated user');
             }
         });
 
-        // Load user data and display data balance
+        // Load non-user-specific data on page load
         document.addEventListener('DOMContentLoaded', function() {
-            loadUserDataBalance();
+            // Only load non-user-specific data here
             loadMemberCount();
-            loadSubscriptionStatus();
-            loadWelcomeMessage();
-
-            // Check if banner was previously dismissed
             checkBannerDismissedState();
-
-            // Load DOTM balance
-            loadDotmBalance();
+            
+            // User-specific data is loaded by firebaseAuthStateChanged event above
         });
 
         var dataBalanceValue = 0;
