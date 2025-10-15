@@ -698,6 +698,11 @@ function sendInvitation() {
     }
 
     const firebaseUid = getFirebaseUID();
+    
+    if (!firebaseUid) {
+        alert('Please sign in first to send invitations. Your session may have expired.');
+        return;
+    }
 
     // Disable button during processing
     const sendBtn = document.getElementById('sendInvitationBtn');
@@ -743,9 +748,15 @@ function sendInvitation() {
 }
 
 function createDemoUser() {
+    const firebaseUid = getFirebaseUID();
+    
+    if (!firebaseUid) {
+        alert('Please sign in first to create demo users. Your session may have expired.');
+        return;
+    }
+
     const timestamp = Date.now();
     const demoEmail = `demo${timestamp}@example.com`;
-    const firebaseUid = getFirebaseUID();
 
     fetch('/api/send-invitation', {
         method: 'POST',
@@ -1443,6 +1454,11 @@ function sendInvitation() {
     }
 
     const firebaseUid = getFirebaseUID();
+    
+    if (!firebaseUid) {
+        alert('Please sign in first to send invitations. Your session may have expired.');
+        return;
+    }
 
     // Disable button during processing
     const sendBtn = document.getElementById('sendInvitationBtn');
@@ -1488,9 +1504,15 @@ function sendInvitation() {
 }
 
 function createDemoUser() {
+    const firebaseUid = getFirebaseUID();
+    
+    if (!firebaseUid) {
+        alert('Please sign in first to create demo users. Your session may have expired.');
+        return;
+    }
+
     const timestamp = Date.now();
     const demoEmail = `demo${timestamp}@example.com`;
-    const firebaseUid = getFirebaseUID();
 
     fetch('/api/send-invitation', {
         method: 'POST',
@@ -2188,6 +2210,11 @@ function sendInvitation() {
     }
 
     const firebaseUid = getFirebaseUID();
+    
+    if (!firebaseUid) {
+        alert('Please sign in first to send invitations. Your session may have expired.');
+        return;
+    }
 
     // Disable button during processing
     const sendBtn = document.getElementById('sendInvitationBtn');
@@ -2233,9 +2260,15 @@ function sendInvitation() {
 }
 
 function createDemoUser() {
+    const firebaseUid = getFirebaseUID();
+    
+    if (!firebaseUid) {
+        alert('Please sign in first to create demo users. Your session may have expired.');
+        return;
+    }
+
     const timestamp = Date.now();
     const demoEmail = `demo${timestamp}@example.com`;
-    const firebaseUid = getFirebaseUID();
 
     fetch('/api/send-invitation', {
         method: 'POST',
