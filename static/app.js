@@ -985,22 +985,58 @@ function editUserCard(element) {
 // Remove user card function
 function removeUserCard(element) {
     const userCard = element.closest('.user-card');
+    const inviteId = userCard?.getAttribute('data-invite-id');
+    
+    if (!inviteId) {
+        console.error('No invite ID found on card');
+        return;
+    }
+    
     if (userCard && confirm('Are you sure you want to remove this user?')) {
+        const firebaseUid = getFirebaseUID();
+        
+        if (!firebaseUid) {
+            alert('Please sign in to remove users. Your session may have expired.');
+            return;
+        }
+
+        // Animate removal
         userCard.style.transition = 'all 0.3s ease';
         userCard.style.transform = 'translateX(100%)';
         userCard.style.opacity = '0';
 
-        setTimeout(() => {
-            userCard.remove();
-            toggleSortControls();
+        // Delete from database
+        fetch(`/api/invites/${inviteId}?firebaseUid=${firebaseUid}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                setTimeout(() => {
+                    userCard.remove();
+                    toggleSortControls();
 
-            // Update user count
-            const userCards = document.querySelectorAll('.accepted-user');
-            const userCountElement = document.querySelector('.user-count');
-            if (userCountElement) {
-                userCountElement.textContent = userCards.length;
+                    // Update user count
+                    const userCards = document.querySelectorAll('.accepted-user');
+                    const userCountElement = document.querySelector('.user-count');
+                    if (userCountElement) {
+                        userCountElement.textContent = userCards.length;
+                    }
+                }, 300);
+            } else {
+                // Revert animation if delete failed
+                userCard.style.transform = '';
+                userCard.style.opacity = '1';
+                alert('Error removing user: ' + (data.message || 'Unknown error'));
             }
-        }, 300);
+        })
+        .catch(error => {
+            console.error('Error removing user:', error);
+            // Revert animation if delete failed
+            userCard.style.transform = '';
+            userCard.style.opacity = '1';
+            alert('Error removing user. Please try again.');
+        });
     }
 }
 
@@ -1089,6 +1125,7 @@ function createUserCard(invite) {
 
     const userCard = document.createElement('div');
     userCard.className = 'dashboard-content user-card accepted-user';
+    userCard.setAttribute('data-invite-id', invite.id);
     userCard.setAttribute('data-data-percentage', dataPercentage);
     userCard.setAttribute('data-time-percentage', timePercentage);
     userCard.setAttribute('data-dollar-amount', dollarAmount);
@@ -1741,22 +1778,58 @@ function editUserCard(element) {
 // Remove user card function
 function removeUserCard(element) {
     const userCard = element.closest('.user-card');
+    const inviteId = userCard?.getAttribute('data-invite-id');
+    
+    if (!inviteId) {
+        console.error('No invite ID found on card');
+        return;
+    }
+    
     if (userCard && confirm('Are you sure you want to remove this user?')) {
+        const firebaseUid = getFirebaseUID();
+        
+        if (!firebaseUid) {
+            alert('Please sign in to remove users. Your session may have expired.');
+            return;
+        }
+
+        // Animate removal
         userCard.style.transition = 'all 0.3s ease';
         userCard.style.transform = 'translateX(100%)';
         userCard.style.opacity = '0';
 
-        setTimeout(() => {
-            userCard.remove();
-            toggleSortControls();
+        // Delete from database
+        fetch(`/api/invites/${inviteId}?firebaseUid=${firebaseUid}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                setTimeout(() => {
+                    userCard.remove();
+                    toggleSortControls();
 
-            // Update user count
-            const userCards = document.querySelectorAll('.accepted-user');
-            const userCountElement = document.querySelector('.user-count');
-            if (userCountElement) {
-                userCountElement.textContent = userCards.length;
+                    // Update user count
+                    const userCards = document.querySelectorAll('.accepted-user');
+                    const userCountElement = document.querySelector('.user-count');
+                    if (userCountElement) {
+                        userCountElement.textContent = userCards.length;
+                    }
+                }, 300);
+            } else {
+                // Revert animation if delete failed
+                userCard.style.transform = '';
+                userCard.style.opacity = '1';
+                alert('Error removing user: ' + (data.message || 'Unknown error'));
             }
-        }, 300);
+        })
+        .catch(error => {
+            console.error('Error removing user:', error);
+            // Revert animation if delete failed
+            userCard.style.transform = '';
+            userCard.style.opacity = '1';
+            alert('Error removing user. Please try again.');
+        });
     }
 }
 
@@ -1845,6 +1918,7 @@ function createUserCard(invite) {
 
     const userCard = document.createElement('div');
     userCard.className = 'dashboard-content user-card accepted-user';
+    userCard.setAttribute('data-invite-id', invite.id);
     userCard.setAttribute('data-data-percentage', dataPercentage);
     userCard.setAttribute('data-time-percentage', timePercentage);
     userCard.setAttribute('data-dollar-amount', dollarAmount);
@@ -2497,22 +2571,58 @@ function editUserCard(element) {
 // Remove user card function
 function removeUserCard(element) {
     const userCard = element.closest('.user-card');
+    const inviteId = userCard?.getAttribute('data-invite-id');
+    
+    if (!inviteId) {
+        console.error('No invite ID found on card');
+        return;
+    }
+    
     if (userCard && confirm('Are you sure you want to remove this user?')) {
+        const firebaseUid = getFirebaseUID();
+        
+        if (!firebaseUid) {
+            alert('Please sign in to remove users. Your session may have expired.');
+            return;
+        }
+
+        // Animate removal
         userCard.style.transition = 'all 0.3s ease';
         userCard.style.transform = 'translateX(100%)';
         userCard.style.opacity = '0';
 
-        setTimeout(() => {
-            userCard.remove();
-            toggleSortControls();
+        // Delete from database
+        fetch(`/api/invites/${inviteId}?firebaseUid=${firebaseUid}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                setTimeout(() => {
+                    userCard.remove();
+                    toggleSortControls();
 
-            // Update user count
-            const userCards = document.querySelectorAll('.accepted-user');
-            const userCountElement = document.querySelector('.user-count');
-            if (userCountElement) {
-                userCountElement.textContent = userCards.length;
+                    // Update user count
+                    const userCards = document.querySelectorAll('.accepted-user');
+                    const userCountElement = document.querySelector('.user-count');
+                    if (userCountElement) {
+                        userCountElement.textContent = userCards.length;
+                    }
+                }, 300);
+            } else {
+                // Revert animation if delete failed
+                userCard.style.transform = '';
+                userCard.style.opacity = '1';
+                alert('Error removing user: ' + (data.message || 'Unknown error'));
             }
-        }, 300);
+        })
+        .catch(error => {
+            console.error('Error removing user:', error);
+            // Revert animation if delete failed
+            userCard.style.transform = '';
+            userCard.style.opacity = '1';
+            alert('Error removing user. Please try again.');
+        });
     }
 }
 
@@ -2601,6 +2711,7 @@ function createUserCard(invite) {
 
     const userCard = document.createElement('div');
     userCard.className = 'dashboard-content user-card accepted-user';
+    userCard.setAttribute('data-invite-id', invite.id);
     userCard.setAttribute('data-data-percentage', dataPercentage);
     userCard.setAttribute('data-time-percentage', timePercentage);
     userCard.setAttribute('data-dollar-amount', dollarAmount);
