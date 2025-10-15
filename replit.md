@@ -26,6 +26,8 @@ Preferred communication style: Simple, everyday language.
 
 **Firebase Authentication**: Firebase handles user authentication and identity management, with Firebase Admin SDK integration for server-side token verification and user management operations. All device tracking endpoints require verified Firebase ID tokens with no fallback mechanisms, ensuring production-grade security.
 
+**Authentication Event System**: The platform uses a custom `firebaseAuthStateChanged` event to coordinate authentication across all pages. This prevents race conditions where pages load user data before Firebase authentication completes. All protected pages (dashboard, profile, marketplace, network, payments, admin) wait for this event before loading user-specific data, ensuring reliable authentication state across the application.
+
 **Dual Identity System**: Users maintain both Firebase UIDs for authentication and internal database IDs for service management, with OXIO user IDs linking to connectivity services. Device tracking uses Firebase UIDs for secure device-to-user association.
 
 ### Payment & Billing Architecture
