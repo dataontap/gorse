@@ -52,15 +52,30 @@
                 <a href="/bitchat"><i class="fas fa-comments"></i> Bitchat</a>
             </div>
         </div>
+        <div class="theme-toggles">
+            <div id="darkModeToggle" class="theme-toggle active" title="Dark Mode">
+                <i class="fas fa-moon"></i>
+            </div>
+            <div id="lightModeToggle" class="theme-toggle" title="Light Mode">
+                <i class="fas fa-sun"></i>
+            </div>
+        </div>
         <div class="profile-section">
-            <i class="fas fa-user-circle"></i>
+            <i class="fas fa-user-circle" onclick="toggleProfileDropdown()"></i>
             <div class="profile-dropdown">
                 <div class="profile-info">
-                    My Account 
-                    <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
-                    <a href="/payments" class="wallet-value-pill">$542.00 USD</a>
+                    <div class="profile-header">
+                        <span class="account-text">My Account</span>
+                        <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
+                    </div>
+                    <div class="wallet-pill-container">
+                        <a href="/payments" class="wallet-value-pill" id="tokenBalancePill">
+                            Loading DOTM...
+                        </a>
+                    </div>
                     <div id="qrCodePopup" class="qr-code-popup">
                         <div id="qrcode"></div>
+                        <p id="qrMemberCount" class="member-count-qr">#1/X</p>
                         <p>Scan to link accounts</p>
                     </div>
                 </div>
@@ -79,10 +94,12 @@
                         </select>
                     </div>
                 </div>
-                <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="#" id="logoutBtn" onclick="handleLogout(event)">
+                    <i class="fas fa-sign-out-alt"></i> <span data-translate="logout">Logout</span>
+                </a>
                 <a href="#" id="helpToggle">
                     <i class="fas fa-question-circle"></i> <span id="helpText">Help</span>
-                    <i id="helpPhoneIcon" class="fas fa-phone-alt" style="display: none;"></i>
+                    <i id="helpPhoneIcon" class="fas fa-phone" style="display: none; margin-left: 8px;"></i>
                 </a>
                 <div class="help-section" style="display: none;">
                     <div class="help-content">
