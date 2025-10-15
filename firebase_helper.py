@@ -91,3 +91,26 @@ def firebase_auth_required(f):
         request.firebase_user = decoded_token
         return f(*args, **kwargs)
     return decorated_function
+
+def firebase_page_auth_required(f):
+    """Decorator for Firebase Authentication on page routes - redirects to login if not authenticated"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        from flask import session, redirect, url_for
+        
+        # Check if user has a valid Firebase session
+        firebase_uid = session.get('firebase_uid')
+        
+        if not firebase_uid:
+            # No session found, redirect to login
+            return redirect(url_for('login'))
+        
+        # Verify user exists in database
+        user = get_user_by_firebase_uid(firebase_uid)
+        if not user:
+            # User not found, clear session and redirect to login
+            session.clear()
+            return redirect(url_for('login'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
