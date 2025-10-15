@@ -274,6 +274,14 @@
                 <a href="/bitchat"><i class="fas fa-comments"></i> Bitchat</a>
             </div>
         </div>
+        <div class="theme-toggles">
+            <div id="darkModeToggle" class="theme-toggle active" title="Dark Mode">
+                <i class="fas fa-moon"></i>
+            </div>
+            <div id="lightModeToggle" class="theme-toggle" title="Light Mode">
+                <i class="fas fa-sun"></i>
+            </div>
+        </div>
         <div class="profile-section">
             <i class="fas fa-user-circle" onclick="toggleProfileDropdown()"></i>
             <div class="profile-dropdown">
@@ -281,30 +289,56 @@
                     <div class="profile-header">
                         <span class="account-text">My Account</span>
                         <i class="fas fa-qrcode qr-code-icon" onclick="toggleQRCode(event)"></i>
-                        <div id="qrCodePopup" class="qr-code-popup">
-                            <div id="qrcode"></div>
-                            <p>Scan to link accounts</p>
-                            <p id="qrMemberCount" class="member-count">Loading...</p>
-                        </div>
                     </div>
                     <div class="wallet-pill-container">
-                        <a href="/payments" class="wallet-value-pill">$542.00 USD</a>
+                        <a href="/payments" class="wallet-value-pill" id="tokenBalancePill">
+                            Loading DOTM...
+                        </a>
+                    </div>
+                    <div id="qrCodePopup" class="qr-code-popup">
+                        <div id="qrcode"></div>
+                        <p id="qrMemberCount" class="member-count-qr">#1/X</p>
+                        <p>Scan to link accounts</p>
                     </div>
                 </div>
                 <a href="/profile"><i class="fas fa-user"></i> Profile</a>
                 <a href="#"><i class="fas fa-shopping-cart"></i> Orders</a>
                 <a href="/payments"><i class="fas fa-credit-card"></i> Payments</a>
-                <a href="/bitchat" class="nav-link">
-                    🔗 Bitchat
-                </a>
                 <a href="#" id="settingsToggle"><i class="fas fa-cog"></i> Settings</a>
                 <div class="settings-submenu" style="display: none;">
-                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span>Dark Mode</span></a>
+                    <a href="#" id="darkModeToggle"><i class="fas fa-moon"></i> <span data-translate="darkMode">Dark Mode</span></a>
+                    <div class="language-selector-container">
+                        <label for="languageSelect"><i class="fas fa-globe"></i> <span data-translate="language">Language</span></label>
+                        <select id="languageSelect" class="language-select">
+                            <option value="en" data-translate="english">English</option>
+                            <option value="es" data-translate="spanish">Español</option>
+                            <option value="fr" data-translate="french">Français</option>
+                        </select>
+                    </div>
                 </div>
-                <a href="/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="#" id="logoutBtn" onclick="handleLogout(event)">
+                    <i class="fas fa-sign-out-alt"></i> <span data-translate="logout">Logout</span>
+                </a>
                 <a href="#" id="helpToggle">
                     <i class="fas fa-question-circle"></i> <span id="helpText">Help</span>
+                    <i id="helpPhoneIcon" class="fas fa-phone" style="display: none; margin-left: 8px;"></i>
                 </a>
+                <div class="help-section" style="display: none;">
+                    <div class="help-content">
+                        <p><i class="fas fa-question-circle"></i> Talk to AI instead:</p>
+                        <ul>
+                            <li style="display: flex; align-items: center;">
+                                <span class="online-indicator chatgpt-indicator"></span>
+                                <a href="https://chat.openai.com" class="help-link" target="_blank">ChatGPT</a>
+                            </li>
+                            <li style="display: flex; align-items: center;">
+                                <span class="online-indicator gemini-indicator"></span>
+                                <a href="https://gemini.google.com" class="help-link" target="_blank">Google Gemini</a>
+                            </li>
+                        </ul>
+                        <p class="help-note">LLMs goto mcp.dotmobile.app</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
