@@ -12,11 +12,11 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
-    
+
     <!-- Custom Firebase Scripts -->
     <script src="/static/firebase-init.js"></script>
     <script src="/static/firebase-auth.js"></script>
-    
+
     <!-- Authentication Guard -->
     <script src="/static/auth-guard.js"></script>
 
@@ -253,7 +253,7 @@
             color: white;
             backdrop-filter: blur(5px);
         }
-        
+
         .voice-controls select option {
             background: #2a2a2a;
             color: white;
@@ -538,7 +538,7 @@
                         <button class="btn btn-primary" onclick="confirmPurchase()">Confirm</button>
                     </div>
                 </div>
-                
+
                 <div id="purchaseSuccess" class="purchase-success-view" style="display: none;">
                     <h3>Purchase Successful!</h3>
                     <div class="success-globe-display">
@@ -641,8 +641,8 @@
         </div>
         <!-- Beta Tester Toggle -->
         <div class="beta-tester-card">
-            <h3>🔴 Live Demo Mode</h3>
-            <p>This is wireless service provider development live demo. Request BETA access, and try connectivity service anywhere on the planet Earth and up to 15km+ above (soon). Requires membership.</p>
+            <h3>🔴 Live ALPHA Demo</h3>
+            <p>You are currently in wireless service provider development ALPHA demo mode. Request BETA access and try connectivity service anywhere on the planet Earth and up to 15km+ above (soon). Requires payment.</p>
             <div class="beta-action-container">
                 <a href="#" onclick="buyESIM()" class="beta-enroll-btn" style="text-decoration: none; display: inline-block;">Request $1 BETA eSIM</a>
                 <div id="betaStatus" class="beta-status" style="display: none;">
@@ -682,12 +682,12 @@
             if (currentUserData && currentUserData.uid) {
                 return currentUserData.uid;
             }
-            
+
             // Fallback: try to get from Firebase directly
             if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
                 return firebase.auth().currentUser.uid;
             }
-            
+
             return null;
         }
 
@@ -710,7 +710,7 @@
             // Only load non-user-specific data here
             loadMemberCount();
             checkBannerDismissedState();
-            
+
             // User-specific data is loaded by firebaseAuthStateChanged event above
         });
 
@@ -851,7 +851,7 @@
         function updateMembershipBanner(subscriptionData) {
             var membershipBanner = document.getElementById('membershipBanner');
             var bitchatCard = document.getElementById('bitchatStatusCard');
-            
+
             if (!membershipBanner || !bitchatCard) return;
 
             if (subscriptionData.status === 'active') {
@@ -993,14 +993,14 @@
         function checkBannerDismissedState() {
             var membershipDismissed = localStorage.getItem('membershipBannerDismissed');
             var bitchatDismissed = localStorage.getItem('bitchatCardDismissed');
-            
+
             if (membershipDismissed === 'true') {
                 var banner = document.getElementById('membershipBanner');
                 if (banner) {
                     banner.style.display = 'none';
                 }
             }
-            
+
             if (bitchatDismissed === 'true') {
                 var bitchatCard = document.getElementById('bitchatStatusCard');
                 if (bitchatCard) {
@@ -1040,25 +1040,25 @@
                 }
             }
 
-            // Pre-generate EN, FR, ES for all 3 voices
+            // Pre-generate EN, FR for all 3 voices
             pregenerateWelcomeMessages(firebaseUid);
         }
 
         function pregenerateWelcomeMessages(firebaseUid) {
             const languages = ['en', 'fr'];  // Pre-load only English and French
             const voices = ['ScienceTeacher', 'CanadianRockstar', 'BuddyFriend'];
-            
+
             console.log('Pre-generating welcome messages for EN, FR in all voices...');
-            
+
             // Show loading indicator
             const playBtn = document.getElementById('playWelcomeBtn');
             const originalHTML = playBtn.innerHTML;
             playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
             playBtn.disabled = true;
-            
+
             let totalToLoad = languages.length * voices.length;
             let loadedCount = 0;
-            
+
             languages.forEach(lang => {
                 voices.forEach(voice => {
                     fetch('/api/welcome-message/generate', {
@@ -1082,7 +1082,7 @@
                             console.log(`Pre-generated: ${lang} / ${voice} / ${data.message_type} ${data.cached ? '(cached)' : '(new)'}`);
                         }
                         loadedCount++;
-                        
+
                         // Update button when all are loaded
                         if (loadedCount === totalToLoad) {
                             playBtn.innerHTML = '<i class="fas fa-check"></i>';
@@ -1136,7 +1136,7 @@
                     const gradient = canvasCtx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
                     gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
                     gradient.addColorStop(1, 'rgba(102, 126, 234, 0.6)');
-                    
+
                     canvasCtx.fillStyle = gradient;
                     canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
                     x += barWidth + 1;
@@ -1216,10 +1216,10 @@
             const firebaseUid = getFirebaseUID();
             const language = document.getElementById('welcomeLanguage').value;
             const voiceProfile = document.getElementById('welcomeVoice').value;
-            
+
             // Hide the play button once playback starts
             playBtn.style.display = 'none';
-            
+
             // Use the global audio player with metadata
             if (window.globalAudioPlayer) {
                 window.globalAudioPlayer.play(audioUrl, {
@@ -1228,7 +1228,7 @@
                     voiceProfile: voiceProfile,
                     messageType: currentMessageType
                 });
-                
+
                 // Set up callback for when audio ends (for dashboard UI updates)
                 window.onGlobalAudioEnded = () => {
                     playBtn.style.display = 'block';
@@ -1246,29 +1246,29 @@
             const firebaseUid = getFirebaseUID();
             const language = document.getElementById('welcomeLanguage').value;
             const voiceProfile = document.getElementById('welcomeVoice').value;
-            
+
             if (!firebaseUid) {
                 return;
             }
-            
+
             // Get estimated generation time and start countdown
             fetch('/api/welcome-message/estimated-time')
                 .then(response => response.json())
                 .then(timeData => {
                     const estimatedMs = timeData.estimated_time_ms || 3000;
                     const estimatedSeconds = Math.ceil(estimatedMs / 1000);
-                    
+
                     // Show countdown in play button
                     playBtn.style.display = 'block';
                     let countdown = estimatedSeconds;
                     playBtn.innerHTML = `Ready in ${countdown}`;
                     playBtn.disabled = true;
-                    
+
                     // Clear any existing countdown
                     if (generationCountdownInterval) {
                         clearInterval(generationCountdownInterval);
                     }
-                    
+
                     // Start countdown
                     generationCountdownInterval = setInterval(() => {
                         countdown--;
@@ -1279,7 +1279,7 @@
                             clearInterval(generationCountdownInterval);
                         }
                     }, 1000);
-                    
+
                     // Start generation in background
                     const key = `${language}_${voiceProfile}`;
                     fetch('/api/welcome-message/generate', {
@@ -1297,7 +1297,7 @@
                         if (generationCountdownInterval) {
                             clearInterval(generationCountdownInterval);
                         }
-                        
+
                         if (data.success && data.audio_url) {
                             // Store both audio URL and message type
                             preloadedMessages[key] = {
@@ -1306,7 +1306,7 @@
                             };
                             currentMessageType = data.message_type || 'welcome';  // Store message type
                             playBtn.innerHTML = 'Ready!';
-                            
+
                             // Auto-switch to new audio after a brief moment
                             setTimeout(() => {
                                 loadAndPlayAudio(data.audio_url);
