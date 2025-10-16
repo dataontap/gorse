@@ -8,8 +8,11 @@ The platform includes a Model Context Protocol (MCP) server for AI assistant int
 
 ## Recent Changes
 
-### October 16, 2025 - eSIM Activation Service Bug Fix
-**Issue Resolved**: Fixed critical bug in `esim_activation_service.py` where user data was incorrectly accessed as a tuple instead of a dictionary, causing activation failures.
+### October 16, 2025 - eSIM Activation Webhook Improvements
+
+**Webhook Rollback Logic Removed**: Removed `rollback_iccid_assignment()` function calls from Stripe webhook error handling in `main.py`. Since ICCID assignment happens after successful payment, there is no need to rollback ICCID assignments on activation failures. The webhook now simply logs the ICCID assignment status without attempting rollbacks.
+
+**eSIM Activation Service Bug Fix**: Fixed critical bug in `esim_activation_service.py` where user data was incorrectly accessed as a tuple instead of a dictionary, causing activation failures.
 
 **Root Cause**: The `get_user_by_firebase_uid()` function returns a dictionary with keys like `{'id': ..., 'email': ..., 'oxio_user_id': ...}`, but the service was trying to access it with numeric indices like `user_data[0]`, `user_data[1]`.
 
@@ -21,6 +24,8 @@ The platform includes a Model Context Protocol (MCP) server for AI assistant int
 - `user_data[9]` → `user_data.get('oxio_group_id')`
 
 **Recovery Tool**: Created manual fix endpoint `/api/admin/fix-failed-esim-activation` for recovering from partial webhook failures where Stripe payment succeeded and ICCID was assigned but activation failed. This endpoint can complete the activation process and properly record all data.
+
+**Email Template Enhancement**: Updated activation email template with embedded QR code image, LPA activation code, and step-by-step instructions for eSIM setup.
 
 ## User Preferences
 

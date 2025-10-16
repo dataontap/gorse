@@ -2713,11 +2713,7 @@ def handle_stripe_webhook():
                     else:
                         print(f"❌ eSIM activation service failed: {activation_result.get('error', 'Unknown error')}")
                         print(f"   Failed at step: {activation_result.get('step', 'unknown')}")
-
-                        # ROLLBACK: If activation failed and this was a new ICCID assignment, rollback
-                        if not existing_iccid and assigned_iccid and assigned_iccid.get('iccid'):
-                            print(f"🔄 Rolling back ICCID assignment for {assigned_iccid['iccid']} due to activation failure")
-                            rollback_iccid_assignment(assigned_iccid['iccid'], firebase_uid)
+                        print(f"   Note: ICCID {assigned_iccid.get('iccid') if assigned_iccid else 'N/A'} assigned after payment - no rollback needed")
 
                         return jsonify({
                             'status': 'activation_failed',
@@ -2727,11 +2723,7 @@ def handle_stripe_webhook():
 
                 except Exception as e:
                     print(f"❌ Error in eSIM Beta activation: {str(e)}")
-
-                    # ROLLBACK: If there was an exception and this was a new ICCID assignment, rollback
-                    if not existing_iccid and assigned_iccid and assigned_iccid.get('iccid'):
-                        print(f"🔄 Rolling back ICCID assignment for {assigned_iccid['iccid']} due to exception")
-                        rollback_iccid_assignment(assigned_iccid['iccid'], firebase_uid)
+                    print(f"   Note: ICCID {assigned_iccid.get('iccid') if assigned_iccid else 'N/A'} assigned after payment - no rollback needed")
 
                     return jsonify({
                         'status': 'error',
