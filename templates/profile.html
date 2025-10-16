@@ -823,24 +823,42 @@
                     return;
                 }
 
-                fetch(`/api/oxio-user-data?firebaseUid=${firebaseUid}`)
+                // Load data from local database instead of direct OXIO API
+                fetch(`/api/auth/current-user?firebaseUid=${firebaseUid}`)
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         return response.json();
                     })
-                    .then(data => {
-                        console.log('OXIO data loaded successfully:', data);
-                        displayOxioData(data);
+                    .then(userData => {
+                        console.log('User data loaded from database:', userData);
+                        
+                        // Format data to match expected structure
+                        const oxioData = {
+                            status: 'success',
+                            oxio_data: {
+                                oxio_user_id: userData.oxio_user_id || null,
+                                oxio_group_id: userData.oxio_group_id || null,
+                                email: userData.email || null,
+                                status: userData.oxio_user_id ? 'active' : 'pending',
+                                iccid: userData.iccid || null,
+                                line_id: userData.line_id || null,
+                                phone_number: userData.phone_number || null,
+                                regions: []
+                            }
+                        };
+                        
+                        displayOxioData(oxioData);
                     })
                     .catch(error => {
-                        console.error('Error loading OXIO data:', error);
-                        displayOxioError(error.message);
+                        console.error('Error loading user data:', error);
+                        // Don't show error - just display N/A values
+                        displayNoOxioData();
                     });
             } catch (error) {
                 console.error('Error in loadOxioDataWithUID:', error);
-                displayOxioError(error.message);
+                displayNoOxioData();
             }
         }
 
@@ -2470,11 +2488,11 @@
                                             </p>` : ''}
                                             <p><strong>ICCID:</strong> <code>${esim.iccid || 'N/A'}</code></p>
                                             <p><strong>Status:</strong> 
-                                                <span class="badge ${esim.status === 'active' ? 'badge-success' : 'badge-warning'}">
-                                                    ${esim.status || 'Pending'}
+                                                <span class="badge ${esim.activation_status === 'activated' || esim.status === 'active' ? 'badge-success' : 'badge-warning'}">
+                                                    ${esim.activation_status || esim.status || 'Pending'}
                                                 </span>
                                             </p>
-                                            <p><strong>Activated:</strong> ${esim.activated_date ? new Date(esim.activated_date).toLocaleDateString() : 'Pending'}</p>
+                                            <p><strong>Activated:</strong> ${esim.created_at ? new Date(esim.created_at).toLocaleDateString() : 'Pending'}</p>
                                         </div>
                                         <div class="col-md-6 text-center">
                                             ${esim.qr_code ? `
