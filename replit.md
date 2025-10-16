@@ -6,6 +6,22 @@ The DOTM Platform is a comprehensive telecommunications service platform that pr
 
 The platform includes a Model Context Protocol (MCP) server for AI assistant integration, comprehensive API services, and a multi-layered service architecture supporting everything from basic connectivity to advanced network features.
 
+## Recent Changes
+
+### October 16, 2025 - eSIM Activation Service Bug Fix
+**Issue Resolved**: Fixed critical bug in `esim_activation_service.py` where user data was incorrectly accessed as a tuple instead of a dictionary, causing activation failures.
+
+**Root Cause**: The `get_user_by_firebase_uid()` function returns a dictionary with keys like `{'id': ..., 'email': ..., 'oxio_user_id': ...}`, but the service was trying to access it with numeric indices like `user_data[0]`, `user_data[1]`.
+
+**Fix Applied**: Changed all user data access from tuple-style indexing to dictionary key access using `.get()` method:
+- `user_data[0]` → `user_data.get('id')`
+- `user_data[1]` → `user_data.get('email')`
+- `user_data[7]` → `user_data.get('oxio_user_id')`
+- `user_data[8]` → `user_data.get('eth_address')`
+- `user_data[9]` → `user_data.get('oxio_group_id')`
+
+**Recovery Tool**: Created manual fix endpoint `/api/admin/fix-failed-esim-activation` for recovering from partial webhook failures where Stripe payment succeeded and ICCID was assigned but activation failed. This endpoint can complete the activation process and properly record all data.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
