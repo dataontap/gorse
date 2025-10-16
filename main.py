@@ -5730,23 +5730,25 @@ def resend_esim_activation_email():
         try:
             from esim_activation_service import esim_activation_service
             
-            # Prepare email data
-            email_data = {
-                'user_email': user_email,
-                'user_name': user_name or user_email.split('@')[0],
+            # Prepare eSIM data dictionary
+            esim_data = {
                 'phone_number': phone_number or 'Pending',
                 'line_id': line_id,
                 'iccid': iccid,
                 'activation_url': activation_url,
                 'qr_code_url': esim_qr_code,
-                'oxio_user_id': oxio_user_id,
                 'activation_date': created_at.strftime('%Y-%m-%d %H:%M:%S') if created_at else 'Unknown'
             }
             
-            # Send the email
-            email_result = esim_activation_service._send_activation_email(email_data)
+            # Send the email with correct parameters
+            email_result = esim_activation_service._send_activation_email(
+                user_email=user_email,
+                user_name=user_name or user_email.split('@')[0],
+                esim_data=esim_data,
+                oxio_user_id=oxio_user_id
+            )
             
-            if email_result.get('success'):
+            if email_result:
                 print(f"   ✅ Activation email sent successfully to {user_email}")
                 return jsonify({
                     'success': True,
@@ -5759,10 +5761,10 @@ def resend_esim_activation_email():
                     }
                 })
             else:
-                print(f"   ❌ Failed to send email: {email_result.get('error', 'Unknown error')}")
+                print(f"   ❌ Failed to send email")
                 return jsonify({
                     'success': False,
-                    'error': f"Failed to send email: {email_result.get('error', 'Unknown error')}"
+                    'error': 'Failed to send activation email'
                 }), 500
                 
         except Exception as e:
