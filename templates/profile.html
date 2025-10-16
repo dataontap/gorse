@@ -209,7 +209,7 @@
                                 <div class="col-md-6">
                                     <p><strong>DOT User ID:</strong><br>
                                         <span class="text-break" id="dotUserID">Loading...</span>
-                                        <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyDotUserID()" title="Copy DOT User ID"><i class="fas fa-copy"></i></button>
+                                        <button class="btn btn-sm btn-outline-secondary copy-btn" id="dotUserIDCopyBtn" onclick="copyDotUserID()" title="Copy DOT User ID" style="display: none;"><i class="fas fa-copy"></i></button>
                                     </p>
                                 </div>
                             </div>
@@ -217,13 +217,13 @@
                                 <div class="col-md-6">
                                     <p><strong>OXIO User ID:</strong><br>
                                         <span class="text-break font-monospace" id="oxioUserID">Loading...</span>
-                                        <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyOxioUserID()" title="Copy OXIO User ID"><i class="fas fa-copy"></i></button>
+                                        <button class="btn btn-sm btn-outline-secondary copy-btn" id="oxioUserIDCopyBtn" onclick="copyOxioUserID()" title="Copy OXIO User ID" style="display: none;"><i class="fas fa-copy"></i></button>
                                     </p>
                                 </div>
                                 <div class="col-md-6">
                                     <p><strong>OXIO Group ID:</strong><br>
                                         <span class="text-break font-monospace" id="oxioGroupID">Loading...</span>
-                                        <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyOxioGroupID()" title="Copy OXIO Group ID"><i class="fas fa-copy"></i></button>
+                                        <button class="btn btn-sm btn-outline-secondary copy-btn" id="oxioGroupIDCopyBtn" onclick="copyOxioGroupID()" title="Copy OXIO Group ID" style="display: none;"><i class="fas fa-copy"></i></button>
                                     </p>
                                 </div>
                             </div>
@@ -669,20 +669,35 @@
 
             // Update DOT User ID
             const dotUserIDElement = document.getElementById('dotUserID');
+            const dotUserIDCopyBtn = document.getElementById('dotUserIDCopyBtn');
             if (dotUserIDElement) {
-                dotUserIDElement.textContent = userData.userId || 'N/A';
+                const dotUserId = userData.userId || 'N/A';
+                dotUserIDElement.textContent = dotUserId;
+                if (dotUserIDCopyBtn) {
+                    dotUserIDCopyBtn.style.display = (dotUserId && dotUserId !== 'N/A') ? 'inline-block' : 'none';
+                }
             }
 
             // Update OXIO User ID
             const oxioUserIDElement = document.getElementById('oxioUserID');
+            const oxioUserIDCopyBtn = document.getElementById('oxioUserIDCopyBtn');
             if (oxioUserIDElement) {
-                oxioUserIDElement.textContent = userData.oxioUserId || '';
+                const oxioUserId = userData.oxioUserId || 'N/A';
+                oxioUserIDElement.textContent = oxioUserId;
+                if (oxioUserIDCopyBtn) {
+                    oxioUserIDCopyBtn.style.display = (oxioUserId && oxioUserId !== 'N/A') ? 'inline-block' : 'none';
+                }
             }
 
             // Update OXIO Group ID
             const oxioGroupIDElement = document.getElementById('oxioGroupID');
+            const oxioGroupIDCopyBtn = document.getElementById('oxioGroupIDCopyBtn');
             if (oxioGroupIDElement) {
-                oxioGroupIDElement.textContent = userData.oxioGroupId || '';
+                const oxioGroupId = userData.oxioGroupId || 'N/A';
+                oxioGroupIDElement.textContent = oxioGroupId;
+                if (oxioGroupIDCopyBtn) {
+                    oxioGroupIDCopyBtn.style.display = (oxioGroupId && oxioGroupId !== 'N/A') ? 'inline-block' : 'none';
+                }
             }
         }
 
