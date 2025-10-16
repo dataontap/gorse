@@ -284,10 +284,11 @@ class GlobalAudioPlayer {
         const bufferLength = this.analyser.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
 
-        // Set canvas size to match parent container width
+        // Set canvas size to match parent container dimensions
         const parentWidth = canvas.parentElement.offsetWidth;
+        const parentHeight = canvas.parentElement.offsetHeight;
         canvas.width = parentWidth;
-        canvas.height = canvas.offsetHeight;
+        canvas.height = parentHeight;
 
         const draw = () => {
             this.animationId = requestAnimationFrame(draw);
