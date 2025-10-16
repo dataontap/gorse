@@ -109,6 +109,10 @@ class GlobalAudioPlayer {
     }
 
     play(audioUrl, metadata = {}) {
+        // Get the current playback position before changing source
+        const previousPosition = this.audio.currentTime || 0;
+        const wasPaused = this.audio.paused;
+        
         this.audio.src = audioUrl;
         
         // Save metadata
@@ -123,6 +127,13 @@ class GlobalAudioPlayer {
         if (metadata.voiceProfile) {
             document.getElementById('miniPlayerVoice').textContent = metadata.voiceProfile;
         }
+
+        // Set the playback position to 5 seconds before the previous position
+        this.audio.addEventListener('loadedmetadata', () => {
+            const resumePosition = Math.max(0, previousPosition - 5);
+            this.audio.currentTime = resumePosition;
+            console.log(`Resuming audio from ${resumePosition.toFixed(1)}s (previous: ${previousPosition.toFixed(1)}s)`);
+        }, { once: true });
 
         this.audio.play().catch(error => {
             console.error('Error playing audio:', error);

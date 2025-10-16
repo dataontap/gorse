@@ -1251,6 +1251,12 @@
                 return;
             }
 
+            // Store current playback position before switching
+            if (window.globalAudioPlayer && window.globalAudioPlayer.isPlaying()) {
+                currentPlaybackPosition = window.globalAudioPlayer.audio.currentTime;
+                console.log(`Stored playback position: ${currentPlaybackPosition.toFixed(1)}s before switching`);
+            }
+
             // Get estimated generation time and start countdown
             fetch('/api/welcome-message/estimated-time')
                 .then(response => response.json())
