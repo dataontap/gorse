@@ -79,10 +79,19 @@ class eSIMActivationService:
                 user_id, firebase_uid, stripe_session_id, esim_data, activation_result
             )
 
-            # Step 7: Award tokens for purchase (10.33% reward)
+            # Step 7: Update Users table with eSIM details for profile display
+            self._update_user_esim_details(
+                firebase_uid, 
+                phone_number=esim_data.get('phone_number'),
+                lpa_address=esim_data.get('activation_url'),
+                iccid=esim_data.get('iccid'),
+                qr_code=esim_data.get('qr_code')
+            )
+
+            # Step 8: Award tokens for purchase (10.33% reward)
             token_result = self._award_purchase_tokens(user_data.get('eth_address'), purchase_amount)
 
-            # Step 8: Send confirmation email
+            # Step 9: Send confirmation email
             email_sent = self._send_activation_email(
                 user_email, user_name, esim_data, oxio_user_id
             )
@@ -413,6 +422,51 @@ class eSIMActivationService:
 
         except Exception as e:
             print(f"❌ Error updating user OXIO data: {str(e)}")
+
+    def _update_user_esim_details(self, firebase_uid: str, phone_number: str = None, 
+                                   lpa_address: str = None, iccid: str = None, qr_code: str = None):
+        """Update user record with eSIM details for profile display"""
+        try:
+            from main import get_db_connection
+
+            if not any([phone_number, lpa_address, iccid, qr_code]):
+                print("⚠️ No eSIM details provided to update")
+                return
+
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Build dynamic UPDATE query based on provided values
+                        update_parts = []
+                        params = []
+                        
+                        if phone_number:
+                            update_parts.append("phone_number = %s")
+                            params.append(phone_number)
+                        if lpa_address:
+                            update_parts.append("esim_lpa_address = %s")
+                            params.append(lpa_address)
+                        if iccid:
+                            update_parts.append("esim_iccid = %s")
+                            params.append(iccid)
+                        if qr_code:
+                            update_parts.append("esim_qr_code = %s")
+                            params.append(qr_code)
+                        
+                        params.append(firebase_uid)
+                        
+                        update_query = f"""
+                            UPDATE users SET {', '.join(update_parts)}
+                            WHERE firebase_uid = %s
+                        """
+                        
+                        cur.execute(update_query, params)
+                        conn.commit()
+                        
+                        print(f"✅ Updated user eSIM details for {firebase_uid}: phone={phone_number}, LPA={lpa_address[:30] if lpa_address else None}..., ICCID={iccid}")
+
+        except Exception as e:
+            print(f"❌ Error updating user eSIM details: {str(e)}")
 
     def _award_purchase_tokens(self, eth_address: str, purchase_amount: int) -> Dict[str, Any]:
         """Award 10.33% DOTM tokens for purchase"""
