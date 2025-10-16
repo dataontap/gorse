@@ -27,6 +27,8 @@ The platform includes a Model Context Protocol (MCP) server for AI assistant int
 
 **Email Template Enhancement**: Updated activation email template with embedded QR code image, LPA activation code, and step-by-step instructions for eSIM setup.
 
+**Email Retry API**: Created `/api/esim/resend-activation-email` endpoint to resend eSIM activation emails for users who experienced delivery issues. This admin-only endpoint retrieves activation data from the database and re-sends the complete email with QR code and instructions. Successfully tested with Firebase UID `U9w4s17CUjQYi5X5hJJphNAvHMl2`, email sent to aakstinas+1144@oxio.io with confirmation ID.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
