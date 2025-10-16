@@ -608,6 +608,26 @@ class eSIMActivationService:
                         </ul>
                     </div>
 
+                    <div style="background: #e3f2fd; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                        <h3>📲 Activate Your eSIM</h3>
+                        <p><strong>Scan this QR code on your device:</strong></p>
+                        <img src="data:image/png;base64,{{qr_code_url}}" alt="eSIM QR Code" style="max-width: 300px; margin: 10px auto; display: block;" />
+                        <p style="margin-top: 15px;"><strong>Or use this LPA code:</strong></p>
+                        <div style="background: white; padding: 10px; border-radius: 5px; font-family: monospace; word-break: break-all; margin: 10px 0;">
+                            {{activation_url}}
+                        </div>
+                        <div style="background: #fff3cd; border-radius: 5px; padding: 15px; margin-top: 20px; text-align: left;">
+                            <h4 style="margin-top: 0;">📋 Activation Instructions:</h4>
+                            <ol style="margin: 10px 0; padding-left: 20px;">
+                                <li>Open your device's Settings</li>
+                                <li>Go to Cellular/Mobile Data → Add eSIM</li>
+                                <li>Scan the QR code above or enter the LPA code manually</li>
+                                <li>Follow on-screen prompts to complete setup</li>
+                            </ol>
+                            <p style="margin-bottom: 0;"><strong>Note:</strong> Make sure you have an active internet connection (WiFi) during activation.</p>
+                        </div>
+                    </div>
+
                     <div style="background: #e9ecef; border-radius: 8px; padding: 15px; margin: 20px 0;">
                         <h4>📞 Support</h4>
                         <p>Questions? Contact us at <a href="mailto:support@dotmobile.app">support@dotmobile.app</a></p>
