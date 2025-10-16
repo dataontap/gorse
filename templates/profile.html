@@ -642,6 +642,7 @@
 
         function displayUserData(userData) {
             console.log('Displaying user data:', userData);
+            console.log('DOT User ID value:', userData.userId);
 
             // Update email
             if (userData.email) {
@@ -667,14 +668,23 @@
                 }
             }
 
-            // Update DOT User ID
+            // Update DOT User ID - ALWAYS show if available
             const dotUserIDElement = document.getElementById('dotUserID');
             const dotUserIDCopyBtn = document.getElementById('dotUserIDCopyBtn');
             if (dotUserIDElement) {
-                const dotUserId = userData.userId || 'N/A';
-                dotUserIDElement.textContent = dotUserId;
-                if (dotUserIDCopyBtn) {
-                    dotUserIDCopyBtn.style.display = (dotUserId && dotUserId !== 'N/A') ? 'inline-block' : 'none';
+                const dotUserId = userData.userId;
+                console.log('Setting DOT User ID element to:', dotUserId);
+                
+                if (dotUserId && dotUserId !== 'N/A' && dotUserId !== null && dotUserId !== undefined) {
+                    dotUserIDElement.textContent = dotUserId;
+                    if (dotUserIDCopyBtn) {
+                        dotUserIDCopyBtn.style.display = 'inline-block';
+                    }
+                } else {
+                    dotUserIDElement.textContent = 'N/A';
+                    if (dotUserIDCopyBtn) {
+                        dotUserIDCopyBtn.style.display = 'none';
+                    }
                 }
             }
 
@@ -732,6 +742,7 @@
 
                     if (response.ok && data.status === 'success') {
                         console.log('Loaded authenticated user data from API:', data);
+                        console.log('DOT User ID from API:', data.userId);
 
                         // SECURITY: Double-check the email matches what we expect
                         if (data.email !== currentUser.email) {
