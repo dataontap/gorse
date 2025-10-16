@@ -29,6 +29,8 @@ The platform includes a Model Context Protocol (MCP) server for AI assistant int
 
 **Email Retry API**: Created `/api/esim/resend-activation-email` endpoint to resend eSIM activation emails for users who experienced delivery issues. This admin-only endpoint retrieves activation data from the database and re-sends the complete email with QR code and instructions. Successfully tested with Firebase UID `U9w4s17CUjQYi5X5hJJphNAvHMl2`, email sent to aakstinas+1144@oxio.io with confirmation ID.
 
+**Data Extraction Bug Fix**: Fixed critical bug in `_process_activation_data()` method where phone number and activation URL were not being extracted correctly from OXIO API response. The phone number is in `phoneNumbers[0].phoneNumber` array, and activation URL is in `sim.activationUrl` nested object. This was causing empty fields in activation emails and profile pages. Updated the extraction logic to correctly parse the OXIO response structure, and both Users table and oxio_activations table now properly store all eSIM details for profile display.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

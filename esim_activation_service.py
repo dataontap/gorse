@@ -270,18 +270,25 @@ class eSIMActivationService:
         try:
             activation_data = activation_result.get('data', {})
 
+            # Extract phone number from phoneNumbers array
+            phone_numbers = activation_data.get('phoneNumbers', [])
+            phone_number = phone_numbers[0].get('phoneNumber') if phone_numbers and len(phone_numbers) > 0 else None
+
+            # Extract SIM details
+            sim_data = activation_data.get('sim', {})
+            
             esim_data = {
-                'phone_number': activation_data.get('phoneNumber'),
+                'phone_number': phone_number,
                 'line_id': activation_data.get('lineId'),
-                'iccid': activation_data.get('iccid') or activation_data.get('sim', {}).get('iccid'),
+                'iccid': activation_data.get('iccid') or sim_data.get('iccid'),
                 'activation_status': 'activated',
                 'activation_date': datetime.now().isoformat(),
                 'qr_code': self._generate_esim_qr_code(activation_data),
-                'activation_url': activation_data.get('activationUrl'),
-                'activation_code': activation_data.get('activationCode')
+                'activation_url': sim_data.get('activationUrl'),
+                'activation_code': sim_data.get('activationCode')
             }
 
-            print(f"📱 Processed eSIM data: Phone={esim_data['phone_number']}, Line={esim_data['line_id']}")
+            print(f"📱 Processed eSIM data: Phone={esim_data['phone_number']}, Line={esim_data['line_id']}, ICCID={esim_data['iccid']}")
 
             return esim_data
 
