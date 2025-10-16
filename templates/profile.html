@@ -1625,29 +1625,6 @@
             // This function is deprecated - eSIM data is now loaded by loadESIMDetails()
             console.log('loadAssignedICCID() is deprecated, use loadESIMDetails() instead');
             return;
-                    }
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    if (data.has_iccid && data.iccid_data) {
-                        displayICCIDData(data.iccid_data);
-                    } else {
-                        // No ICCID assigned
-                        document.getElementById('iccidSection').style.display = 'none';
-                        document.getElementById('noICCIDMessage').style.display = 'block';
-                    }
-                } else {
-                    console.error('Error loading ICCID data:', data.error);
-                    document.getElementById('iccidSection').style.display = 'none';
-                    document.getElementById('noICCIDMessage').style.display = 'block';
-                }
-            } catch (error) {
-                console.error('Error loading ICCID data:', error);
-                document.getElementById('iccidSection').style.display = 'none';
-                document.getElementById('noICCIDMessage').style.display = 'block';
-            }
         }
 
         function displayICCIDData(iccidData) {
