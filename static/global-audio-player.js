@@ -273,6 +273,10 @@ class GlobalAudioPlayer {
         const bufferLength = this.analyser.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
 
+        // Set canvas size to match display size
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+
         const draw = () => {
             this.animationId = requestAnimationFrame(draw);
             this.analyser.getByteFrequencyData(dataArray);
