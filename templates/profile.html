@@ -5,19 +5,19 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
-    
+
     <!-- Firebase SDK v8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
-    
+
     <!-- Custom Firebase Scripts -->
     <script src="/static/firebase-init.js"></script>
     <script src="/static/firebase-auth.js"></script>
-    
+
     <!-- Authentication Guard -->
     <script src="/static/auth-guard.js"></script>
-    
+
     <style>
         .address-card {
             min-height: 150px; /* Increased height for larger cards */
@@ -430,9 +430,9 @@
         // Listen for Firebase auth state changes - PRIMARY auth handler for profile
         document.addEventListener('firebaseAuthStateChanged', function(event) {
             const { isSignedIn, firebaseUser, userData } = event.detail;
-            
+
             console.log('Profile page received auth state change:', event.detail);
-            
+
             if (isSignedIn && firebaseUser) {
                 console.log('Profile: User authenticated, loading profile data for:', firebaseUser.uid);
                 // Load all user-specific data only after authentication is confirmed
@@ -442,31 +442,31 @@
                 window.location.href = '/login';
             }
         });
-        
+
         // Direct API call to load user data as fallback
         async function loadUserDataDirectly() {
             try {
                 // Get Firebase UID from localStorage or auth state
                 const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
                 const firebaseUid = cachedUser?.uid;
-                
+
                 if (!firebaseUid) {
                     console.log('No Firebase UID available, skipping direct API call');
                     return;
                 }
-                
+
                 console.log('Direct API call for user data:', firebaseUid);
-                
+
                 const response = await fetch(`/api/auth/current-user?firebaseUid=${firebaseUid}`, {
                     headers: {
                         'Authorization': `Bearer ${firebaseUid}`,
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 const data = await response.json();
                 console.log('Direct API response:', data);
-                
+
                 if (response.ok && data.status === 'success') {
                     // Direct DOM updates to ensure OXIO data displays
                     const oxioUserIDElement = document.getElementById('oxioUserID');
@@ -474,24 +474,24 @@
                         oxioUserIDElement.textContent = data.oxioUserId;
                         console.log('Updated OXIO User ID:', data.oxioUserId);
                     }
-                    
+
                     const oxioGroupIDElement = document.getElementById('oxioGroupID');
                     if (oxioGroupIDElement && data.oxioGroupId) {
                         oxioGroupIDElement.textContent = data.oxioGroupId;
                         console.log('Updated OXIO Group ID:', data.oxioGroupId);
                     }
-                    
+
                     const dotUserIDElement = document.getElementById('dotUserID');
                     if (dotUserIDElement && data.userId) {
                         dotUserIDElement.textContent = data.userId;
                         console.log('Updated DOT User ID:', data.userId);
                     }
-                    
+
                     const firebaseUIDElement = document.getElementById('firebaseUID');
                     if (firebaseUIDElement) {
                         firebaseUIDElement.textContent = firebaseUid;
                     }
-                    
+
                     // Also load eSIM data to populate SIM card number
                     loadESIMDataDirectly(firebaseUid);
                 }
@@ -499,26 +499,26 @@
                 console.error('Direct API call error:', error);
             }
         }
-        
+
         // Direct API call to load eSIM data including ICCID
         async function loadESIMDataDirectly(firebaseUid) {
             try {
                 console.log('Loading eSIM data directly for:', firebaseUid);
-                
+
                 const response = await fetch(`/api/user-esim-details?firebaseUid=${firebaseUid}`, {
                     headers: {
                         'X-Admin-Token': 'replit_admin_token_2024',
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 const data = await response.json();
                 console.log('eSIM API response:', data);
-                
+
                 if (response.ok && data.success && data.esims && data.esims.length > 0) {
                     const firstESIM = data.esims[0];
-                    
-                    // Update SIM Card Number (ICCID)
+
+                    // Update SIM card number (ICCID)
                     const simCardElement = document.getElementById('simCardNumber');
                     if (simCardElement && firstESIM.iccid) {
                         simCardElement.textContent = firstESIM.iccid;
@@ -544,27 +544,27 @@
         function loadFirebaseUserData() {
             try {
                 console.log('Loading Firebase user data...');
-                
+
                 // First, try to load data from localStorage (faster, works offline)
                 const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
                 if (cachedUser && cachedUser.uid) {
                     console.log('Found cached user data:', cachedUser);
                     displayUserData(cachedUser);
                 }
-                
+
                 // Then check Firebase for real-time updates
                 if (typeof firebase === 'undefined' || !firebase.auth) {
                     console.log('Firebase not available yet, waiting...');
                     setTimeout(loadFirebaseUserData, 500);
                     return;
                 }
-                
+
                 // Check current auth state immediately
                 const currentUser = firebase.auth().currentUser;
                 if (currentUser) {
                     console.log('Found current Firebase user:', currentUser.email);
                     console.log('Firebase UID:', currentUser.uid);
-                    
+
                     // If we don't have cached data, show Firebase data immediately
                     if (!cachedUser || !cachedUser.uid) {
                         const basicUserData = {
@@ -574,19 +574,19 @@
                         };
                         displayUserData(basicUserData);
                     }
-                    
+
                     // Load additional user data from our API (in background)
                     loadUserDataFromAPI(currentUser.uid);
-                    
+
                     // Load OXIO data with Firebase UID
                     loadOxioDataWithUID(currentUser.uid);
-                    
+
                     // Load assigned ICCID data with QR codes
                     loadAssignedICCID();
-                    
+
                     // Load subscription data with Firebase UID
                     loadSubscriptionDataWithUID(currentUser.uid);
-                    
+
                     // Load beta phone numbers with Firebase UID
                     loadBetaPhoneNumbers(currentUser.uid);
                 } else {
@@ -595,7 +595,7 @@
                         if (firebaseUser) {
                             console.log('Auth state changed - Firebase user:', firebaseUser.email);
                             console.log('Firebase UID:', firebaseUser.uid);
-                            
+
                             // Update email
                             const emailElement = document.getElementById('profileUserEmail');
                             if (emailElement) {
@@ -608,19 +608,19 @@
                                 const displayName = firebaseUser.displayName || firebaseUser.email.split('@')[0];
                                 nameElement.innerHTML = `${displayName} <span class="founding-shield">Member</span>`;
                             }
-                            
+
                             // Load additional user data from our API
                             loadUserDataFromAPI(firebaseUser.uid);
-                            
+
                             // Load OXIO data with Firebase UID
                             loadOxioDataWithUID(firebaseUser.uid);
-                            
+
                             // Load assigned ICCID data with QR codes
                             loadAssignedICCID();
-                            
+
                             // Load subscription data with Firebase UID
                             loadSubscriptionDataWithUID(firebaseUser.uid);
-                            
+
                             // Load beta phone numbers with Firebase UID
                             loadBetaPhoneNumbers(firebaseUser.uid);
                         } else {
@@ -630,7 +630,7 @@
                         }
                     });
                 }
-                
+
             } catch (error) {
                 console.error('Error loading Firebase user data:', error);
                 // Try to redirect to login on error
@@ -639,10 +639,10 @@
                 }, 1000);
             }
         }
-        
+
         function displayUserData(userData) {
             console.log('Displaying user data:', userData);
-            
+
             // Update email
             if (userData.email) {
                 const emailElement = document.getElementById('profileUserEmail');
@@ -650,7 +650,7 @@
                     emailElement.textContent = userData.email;
                 }
             }
-            
+
             // Update display name and founder status
             const nameElement = document.getElementById('profileUserName');
             if (nameElement && userData.email) {
@@ -658,7 +658,7 @@
                 const founderBadge = userData.founderStatus === 'Y' ? 'Founding Member' : 'Member';
                 nameElement.innerHTML = `${displayName} <span class="founding-shield">${founderBadge}</span>`;
             }
-            
+
             // Update Firebase UID
             if (userData.uid) {
                 const firebaseUIDElement = document.getElementById('firebaseUID');
@@ -666,32 +666,32 @@
                     firebaseUIDElement.textContent = userData.uid;
                 }
             }
-            
+
             // Update DOT User ID
             const dotUserIDElement = document.getElementById('dotUserID');
             if (dotUserIDElement) {
                 dotUserIDElement.textContent = userData.userId || '';
             }
-            
+
             // Update OXIO User ID
             const oxioUserIDElement = document.getElementById('oxioUserID');
             if (oxioUserIDElement) {
                 oxioUserIDElement.textContent = userData.oxioUserId || '';
             }
-            
+
             // Update OXIO Group ID
             const oxioGroupIDElement = document.getElementById('oxioGroupID');
             if (oxioGroupIDElement) {
                 oxioGroupIDElement.textContent = userData.oxioGroupId || '';
             }
         }
-        
+
         async function loadUserDataFromAPI(firebaseUid) {
             if (!firebaseUid) {
                 console.error('SECURITY: No Firebase UID provided to loadUserDataFromAPI');
                 return;
             }
-            
+
             try {
                 // SECURITY: Verify this matches the current authenticated user
                 if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
@@ -700,30 +700,30 @@
                         console.error(`SECURITY WARNING: Profile trying to load data for ${firebaseUid} but current user is ${currentUser.uid}`);
                         return;
                     }
-                    
+
                     // Get Firebase ID token for authenticated API call
                     const idToken = await currentUser.getIdToken();
-                    
+
                     console.log('SECURITY: Loading profile data with authentication for:', firebaseUid);
-                    
+
                     const response = await fetch(`/api/auth/current-user?firebaseUid=${firebaseUid}`, {
                         headers: {
                             'Authorization': `Bearer ${idToken}`,
                             'Content-Type': 'application/json'
                         }
                     });
-                    
+
                     const data = await response.json();
-                    
+
                     if (response.ok && data.status === 'success') {
                         console.log('Loaded authenticated user data from API:', data);
-                        
+
                         // SECURITY: Double-check the email matches what we expect
                         if (data.email !== currentUser.email) {
                             console.error(`SECURITY WARNING: API returned data for ${data.email} but current user is ${currentUser.email}`);
                             return;
                         }
-                        
+
                         // Create complete user data object
                         const completeUserData = {
                             uid: firebaseUid,
@@ -738,10 +738,10 @@
                             _verified: true, // Mark as verified
                             _timestamp: Date.now()
                         };
-                        
+
                         // Update display with fresh API data
                         displayUserData(completeUserData);
-                        
+
                         // Store updated user data in localStorage
                         localStorage.setItem('currentUser', JSON.stringify(completeUserData));
                     } else {
@@ -757,19 +757,19 @@
                 showProfileError('Error loading user data');
             }
         }
-        
+
         function showProfileError(message) {
             // Update fields to show error state
             const dotUserIDElement = document.getElementById('dotUserID');
             if (dotUserIDElement) {
                 dotUserIDElement.textContent = message;
             }
-            
+
             const oxioUserIDElement = document.getElementById('oxioUserID');
             if (oxioUserIDElement) {
                 oxioUserIDElement.textContent = message;
             }
-            
+
             const oxioGroupIDElement = document.getElementById('oxioGroupID');
             if (oxioGroupIDElement) {
                 oxioGroupIDElement.textContent = message;
@@ -784,7 +784,7 @@
         function loadOxioDataWithUID(firebaseUid) {
             try {
                 console.log('Loading OXIO data with Firebase UID:', firebaseUid);
-                
+
                 // If no UID provided, try to get it from auth state
                 if (!firebaseUid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
                     firebaseUid = firebase.auth().currentUser.uid;
@@ -1384,17 +1384,17 @@
                     <div class="esim-qr-content">
                         <h3><i class="fas fa-qrcode me-2"></i>eSIM Activation QR Code</h3>
                         <p class="text-muted mb-3">Scan this QR code with your device to install the eSIM</p>
-                        
+
                         <div id="esimQrCodeDisplay" class="mb-3"></div>
-                        
+
                         <div class="mb-3">
                             <strong>ICCID:</strong> <span class="font-monospace">${iccid || 'Not available'}</span>
                         </div>
-                        
+
                         <div class="mb-3">
                             <small class="text-muted font-monospace" style="word-break: break-all;">${qrData || 'No QR data available'}</small>
                         </div>
-                        
+
                         <div class="d-flex justify-content-center gap-2">
                             <button onclick="copyToClipboard('${qrData}', 'QR Code Data')" class="btn btn-outline-primary">
                                 <i class="fas fa-copy"></i> Copy Data
@@ -1515,10 +1515,10 @@
 
                 // Create mailto link
                 const mailtoLink = `mailto:${userEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                
+
                 // Try to open mail client
                 window.location.href = mailtoLink;
-                
+
                 showToast('Email client opened with eSIM details', 'info');
             } catch (error) {
                 console.error('Error preparing email:', error);
@@ -1566,10 +1566,10 @@
         function initiateSIMSwap(lineId, oxioUserId) {
             if (confirm('Are you sure you want to initiate a SIM swap? This will deactivate your current eSIM and require activation of a new one.')) {
                 showToast('SIM swap functionality will be available soon', 'info');
-                
+
                 // TODO: Implement actual SIM swap API call
                 console.log('SIM swap requested for:', { lineId, oxioUserId });
-                
+
                 // Placeholder for future implementation
                 setTimeout(() => {
                     showToast('SIM swap request submitted. You will receive further instructions via email.', 'success');
@@ -1579,7 +1579,7 @@
 
         function viewServiceHistory(lineId) {
             showToast('Service history functionality will be available soon', 'info');
-            
+
             // TODO: Implement service history display
             console.log('Service history requested for line:', lineId);
         }
@@ -1636,7 +1636,7 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (data.success) {
                     if (data.has_iccid && data.iccid_data) {
                         displayICCIDData(data.iccid_data);
@@ -1661,23 +1661,23 @@
             // Show ICCID section, hide no-data message
             document.getElementById('iccidSection').style.display = 'block';
             document.getElementById('noICCIDMessage').style.display = 'none';
-            
+
             // Update ICCID details
             document.getElementById('assignedICCID').textContent = iccidData.iccid || '-';
             document.getElementById('iccidCountry').textContent = iccidData.country || '-';
             document.getElementById('lpaCode').textContent = iccidData.lpa_code || '-';
-            
+
             // Update status badge
             const statusBadge = document.getElementById('iccidStatus');
             statusBadge.textContent = (iccidData.status || 'unknown').toUpperCase();
             statusBadge.className = `badge ${getStatusBadgeClass(iccidData.status)}`;
-            
+
             // Display QR code if available
             if (iccidData.qr_codes && iccidData.qr_codes.svg && iccidData.qr_codes.svg.success) {
                 const qrContainer = document.getElementById('qrCodeSVG');
                 // Display inline SVG QR code
                 qrContainer.innerHTML = iccidData.qr_codes.svg.data;
-                
+
                 // Show download button if PNG is available
                 if (iccidData.qr_codes.png && iccidData.qr_codes.png.success) {
                     document.getElementById('downloadQRBtn').style.display = 'inline-block';
@@ -1764,7 +1764,7 @@
         function loadSubscriptionDataWithUID(firebaseUid) {
             try {
                 console.log('Loading subscription data with Firebase UID:', firebaseUid);
-                
+
                 // If no UID provided, try to get it from auth state
                 if (!firebaseUid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
                     firebaseUid = firebase.auth().currentUser.uid;
@@ -1970,7 +1970,7 @@
 
         function displayBetaPhoneNumbers(data) {
             const container = document.getElementById('betaPhoneContainer');
-            
+
             if (data.success && data.phone_numbers && data.phone_numbers.length > 0) {
                 const phoneNumber = data.phone_numbers[0];
                 const approvedDate = new Date(phoneNumber.approved_at).toLocaleDateString('en-US', { 
@@ -2125,14 +2125,14 @@
                     </p>
                 </div>
             `;
-            
+
             // Close on click outside
             modal.addEventListener('click', function(e) {
                 if (e.target === modal) {
                     modal.remove();
                 }
             });
-            
+
             document.body.appendChild(modal);
         }
 
@@ -2161,19 +2161,19 @@
 
         function loadBetaPhoneNumbers(firebaseUid) {
             console.log('Loading beta phone numbers for:', firebaseUid);
-            
+
             if (!firebaseUid) {
                 console.error('No Firebase UID provided for beta phone numbers');
                 displayBetaPhoneError('Authentication required');
                 return;
             }
-            
+
             // Call the existing API endpoint
             fetch(`/api/user-phone-numbers?firebase_uid=${encodeURIComponent(firebaseUid)}`)
                 .then(response => response.json())
                 .then(data => {
                     console.log('Beta phone numbers response:', data);
-                    
+
                     if (data.success && data.phone_numbers && data.phone_numbers.length > 0) {
                         displayBetaPhoneNumbers(data.phone_numbers);
                     } else {
@@ -2186,7 +2186,7 @@
                     displayBetaPhoneInfo('Ready to get your eSIM! Purchase Beta access to receive your phone number.');
                 });
         }
-        
+
         // Phone number area code parsing function
         function parsePhoneNumberInfo(phoneNumber) {
             if (!phoneNumber || phoneNumber === 'Not assigned' || phoneNumber === 'Activating...') {
@@ -2198,19 +2198,19 @@
                     countryCode: null
                 };
             }
-            
+
             // Clean the phone number
             const cleaned = phoneNumber.replace(/[+\-\s\(\)]/g, '');
-            
+
             if (cleaned.length >= 10) {
                 let countryCode, areaCode, localNumber, areaInfo, formatted;
-                
+
                 if (cleaned.startsWith('1') && cleaned.length === 11) {
                     // North American number
                     countryCode = '1';
                     areaCode = cleaned.slice(1, 4);
                     localNumber = cleaned.slice(4);
-                    
+
                     // Area code information database
                     const areaCodeInfo = {
                         '416': 'Toronto, ON (Downtown)',
@@ -2258,10 +2258,10 @@
                         '510': 'Oakland/Berkeley, CA (East Bay)',
                         '341': 'Oakland/Berkeley, CA (East Bay Overlay)'
                     };
-                    
+
                     areaInfo = areaCodeInfo[areaCode] || `Area Code ${areaCode} (North America)`;
                     formatted = `+1 (${areaCode}) ${localNumber.slice(0,3)}-${localNumber.slice(3)}`;
-                    
+
                 } else if (cleaned.length >= 10) {
                     // International number
                     countryCode = cleaned.slice(0, 2);
@@ -2270,7 +2270,7 @@
                     areaInfo = `International (+${countryCode})`;
                     formatted = `+${countryCode} ${areaCode} ${localNumber}`;
                 }
-                
+
                 return {
                     fullNumber: phoneNumber,
                     formatted: formatted || phoneNumber,
@@ -2279,7 +2279,7 @@
                     countryCode: countryCode
                 };
             }
-            
+
             return {
                 fullNumber: phoneNumber,
                 formatted: phoneNumber,
@@ -2292,16 +2292,16 @@
         function displayBetaPhoneNumbers(phoneNumbers) {
             const container = document.getElementById('betaPhoneContainer');
             if (!container) return;
-            
+
             let html = '';
-            
+
             phoneNumbers.forEach((phoneInfo, index) => {
                 const qrCodes = phoneInfo.qr_codes || {};
                 const phoneNumber = phoneInfo.number;
                 const phoneData = parsePhoneNumberInfo(phoneNumber);
                 const groupId = phoneInfo.group_id;
                 const oxioUserId = phoneInfo.oxio_user_id;
-                
+
                 html += `
                     <div class="address-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px;">
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -2310,7 +2310,7 @@
                             </h5>
                             <span class="service-status-badge" style="background: #4CAF50; color: white;">Active</span>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <p><strong>Phone Number:</strong><br>
@@ -2334,7 +2334,7 @@
                                 </p>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-12">
                                 <p><strong>Group ID:</strong><br>
@@ -2345,7 +2345,7 @@
                                 </p>
                             </div>
                         </div>
-                        
+
                         <div class="row mt-3">
                             <div class="col-md-12">
                                 <div class="btn-group" role="group">
@@ -2368,14 +2368,14 @@
                     </div>
                 `;
             });
-            
+
             container.innerHTML = html;
         }
-        
+
         function displayBetaPhoneInfo(message) {
             const container = document.getElementById('betaPhoneContainer');
             if (!container) return;
-            
+
             container.innerHTML = `
                 <div class="address-card p-3 mb-3" style="text-align: center; color: #CCCCFF; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;">
                     <p><i class="fas fa-mobile-alt"></i> ${message}</p>
@@ -2385,18 +2385,18 @@
                 </div>
             `;
         }
-        
+
         function displayBetaPhoneError(error) {
             const container = document.getElementById('betaPhoneContainer');
             if (!container) return;
-            
+
             container.innerHTML = `
                 <div class="address-card p-3 mb-3" style="text-align: center; color: #ff6b6b;">
                     <p>Error loading phone numbers: ${error}</p>
                 </div>
             `;
         }
-        
+
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(function() {
                 // Simple feedback - could be enhanced with a toast notification
@@ -2428,7 +2428,7 @@
                 .then(response => response.json())
                 .then(data => {
                     loadingEl.style.display = 'none';
-                    
+
                     if (data.success && data.esims && data.esims.length > 0) {
                         // Display eSIM details
                         detailsEl.innerHTML = data.esims.map(esim => `
