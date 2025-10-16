@@ -2,34 +2,7 @@
 
 ## Overview
 
-The DOTM Platform is a comprehensive telecommunications service platform that provides global eSIM connectivity, cryptocurrency rewards, and network optimization features. The platform serves as a bridge between traditional mobile services and blockchain technology, offering users global data connectivity through OXIO's infrastructure while incorporating DOTM token rewards and Firebase-based user management.
-
-The platform includes a Model Context Protocol (MCP) server for AI assistant integration, comprehensive API services, and a multi-layered service architecture supporting everything from basic connectivity to advanced network features.
-
-## Recent Changes
-
-### October 16, 2025 - eSIM Activation Webhook Improvements
-
-**Webhook Rollback Logic Removed**: Removed `rollback_iccid_assignment()` function calls from Stripe webhook error handling in `main.py`. Since ICCID assignment happens after successful payment, there is no need to rollback ICCID assignments on activation failures. The webhook now simply logs the ICCID assignment status without attempting rollbacks.
-
-**eSIM Activation Service Bug Fix**: Fixed critical bug in `esim_activation_service.py` where user data was incorrectly accessed as a tuple instead of a dictionary, causing activation failures.
-
-**Root Cause**: The `get_user_by_firebase_uid()` function returns a dictionary with keys like `{'id': ..., 'email': ..., 'oxio_user_id': ...}`, but the service was trying to access it with numeric indices like `user_data[0]`, `user_data[1]`.
-
-**Fix Applied**: Changed all user data access from tuple-style indexing to dictionary key access using `.get()` method:
-- `user_data[0]` → `user_data.get('id')`
-- `user_data[1]` → `user_data.get('email')`
-- `user_data[7]` → `user_data.get('oxio_user_id')`
-- `user_data[8]` → `user_data.get('eth_address')`
-- `user_data[9]` → `user_data.get('oxio_group_id')`
-
-**Recovery Tool**: Created manual fix endpoint `/api/admin/fix-failed-esim-activation` for recovering from partial webhook failures where Stripe payment succeeded and ICCID was assigned but activation failed. This endpoint can complete the activation process and properly record all data.
-
-**Email Template Enhancement**: Updated activation email template with embedded QR code image, LPA activation code, and step-by-step instructions for eSIM setup.
-
-**Email Retry API**: Created `/api/esim/resend-activation-email` endpoint to resend eSIM activation emails for users who experienced delivery issues. This admin-only endpoint retrieves activation data from the database and re-sends the complete email with QR code and instructions. Successfully tested with Firebase UID `U9w4s17CUjQYi5X5hJJphNAvHMl2`, email sent to aakstinas+1144@oxio.io with confirmation ID.
-
-**Data Extraction Bug Fix**: Fixed critical bug in `_process_activation_data()` method where phone number and activation URL were not being extracted correctly from OXIO API response. The phone number is in `phoneNumbers[0].phoneNumber` array, and activation URL is in `sim.activationUrl` nested object. This was causing empty fields in activation emails and profile pages. Updated the extraction logic to correctly parse the OXIO response structure, and both Users table and oxio_activations table now properly store all eSIM details for profile display.
+The DOTM Platform is a comprehensive telecommunications service platform offering global eSIM connectivity, cryptocurrency rewards, and network optimization. It bridges traditional mobile services with blockchain technology, providing global data through OXIO's infrastructure, integrating DOTM token rewards, and utilizing Firebase for user management. The platform includes a Model Context Protocol (MCP) server for AI assistant integration, extensive API services, and a multi-layered architecture supporting various features from basic connectivity to advanced network management. Its business vision is to revolutionize mobile services by incorporating Web3 technologies, offering a unique value proposition in the telecommunications market.
 
 ## User Preferences
 
@@ -39,96 +12,55 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 
-**Flask-based REST API**: The core application uses Flask with Flask-RESTX for API documentation and Flask-SocketIO for real-time communication. The main application (`main.py`) serves as the central hub coordinating all services and database operations.
-
-**Database Layer**: PostgreSQL database with connection pooling for managing user data, subscriptions, purchases, and service configurations. The system uses contextual database connections to ensure proper resource management across all services.
-
-**Service-Oriented Design**: The platform employs a modular service architecture where each major functionality (OXIO connectivity, Stripe payments, Firebase authentication, email services, device tracking) is encapsulated in dedicated service classes.
-
-**Device Tracking System**: Automated device detection and management system that identifies and tracks user devices across the platform. Uses user-agent parsing to extract device information (manufacturer, model, OS, browser) and creates unique device fingerprints based on user agent, IP address, and Firebase UID. The system automatically registers devices on login, maintains online/offline status, syncs device activity every 30 seconds, and displays devices dynamically in the Marketplace. All device endpoints enforce strict Firebase ID token verification for security, ensuring only authenticated users can access their device information. Database schema includes comprehensive device metadata (model, manufacturer, OS version, browser, estimated value, last active timestamp) with proper foreign key relationships to users table.
+The core application uses Flask with Flask-RESTX for API documentation and Flask-SocketIO for real-time communication. It employs a PostgreSQL database with connection pooling and a modular, service-oriented design. A device tracking system automatically detects, registers, and tracks user devices, displaying their status dynamically in the Marketplace.
 
 ### Authentication & User Management
 
-**Firebase Authentication**: Firebase handles user authentication and identity management, with Firebase Admin SDK integration for server-side token verification and user management operations. All device tracking endpoints require verified Firebase ID tokens with no fallback mechanisms, ensuring production-grade security.
-
-**Authentication Event System**: The platform uses a custom `firebaseAuthStateChanged` event to coordinate authentication across all pages. This prevents race conditions where pages load user data before Firebase authentication completes. All protected pages (dashboard, profile, marketplace, network, payments, admin) wait for this event before loading user-specific data, ensuring reliable authentication state across the application.
-
-**Dual Identity System**: Users maintain both Firebase UIDs for authentication and internal database IDs for service management, with OXIO user IDs linking to connectivity services. Device tracking uses Firebase UIDs for secure device-to-user association.
+Firebase handles user authentication via Firebase Admin SDK for server-side token verification. A custom `firebaseAuthStateChanged` event ensures authentication state consistency across all pages. The system uses a dual identity approach with Firebase UIDs for authentication and internal database IDs for service management, linked with OXIO user IDs.
 
 ### Payment & Billing Architecture
 
-**Stripe Integration**: Complete Stripe integration for subscription management, one-time purchases, and product catalog management. The system automatically creates Stripe customers for new users and manages complex pricing structures including data packages, network features, and membership tiers.
-
-**Dynamic Pricing Engine**: Flexible pricing system supporting multiple billing cycles (one-time, monthly, annual) with service bundling capabilities and multi-currency support (USD/CAD).
+Stripe is fully integrated for subscription management, one-time purchases, and product catalog management, supporting dynamic pricing and multi-currency transactions.
 
 ### Connectivity Services
 
-**OXIO API Integration**: Deep integration with OXIO's staging API for eSIM provisioning, data management, and network services. The platform handles authentication, user provisioning, and service activation through OXIO's infrastructure.
-
-**Network Feature Management**: Configurable network features including VPN services, security enhancements, optimization features, and communication services (voLTE, Wi-Fi calling) with granular on/off controls.
+Deep integration with OXIO's staging API handles eSIM provisioning, data management, and network services. The platform also includes configurable network features like VPN, security enhancements, and communication services (VoLTE, Wi-Fi calling).
 
 ### Blockchain Integration
 
-**Ethereum Smart Contract Integration**: Web3.py integration for DOTM token management, with support for both Sepolia testnet and mainnet deployments. The system tracks token balances and manages cryptocurrency rewards tied to service usage.
-
-**Token Reward System**: Automated token distribution based on service purchases and usage patterns, with configurable reward percentages per product type.
+Web3.py integrates Ethereum smart contracts for DOTM token management on both Sepolia testnet and mainnet, including an automated token reward system based on service usage.
 
 ### MCP Server Architecture
 
-**Model Context Protocol Implementation**: Dedicated MCP server (`mcp_server.py`) providing AI assistants with structured access to service information, pricing data, and feature catalogs while maintaining strict privacy controls.
-
-**Multi-Format API Access**: The MCP server supports both JSON API endpoints for programmatic access and HTML interfaces for interactive browsing, with real-time pricing calculations.
+A dedicated MCP server provides AI assistants with structured access to service information, pricing data, and feature catalogs through multi-format API endpoints (JSON and HTML), while maintaining strict privacy controls.
 
 ### Data Privacy & Security
 
-**Privacy-First Design**: The MCP server implements strict data isolation, exposing only public service information while protecting all user data, transaction details, and internal metrics.
-
-**Environment-Based Configuration**: All sensitive credentials and API keys are managed through environment variables with fallback mechanisms for development environments.
+The platform is designed with privacy in mind, isolating public service information from sensitive user and transaction data. All sensitive credentials are managed through environment variables.
 
 ## External Dependencies
 
 ### Core Infrastructure Services
 
-**OXIO API Platform**: Primary connectivity provider offering global eSIM and data services through their staging API (api-staging.brandvno.com). Handles network provisioning, data allocation, and service activation.
-
-**Firebase Authentication**: Google Firebase for user authentication, identity management, and real-time user state synchronization with comprehensive Admin SDK integration.
-
-**Stripe Payment Processing**: Complete payment infrastructure including subscription management, product catalogs, pricing models, and webhook handling for billing events.
+-   **OXIO API Platform**: Provides global eSIM and data services via their staging API (api-staging.brandvno.com).
+-   **Firebase Authentication**: Google Firebase for user authentication, identity management, and real-time state synchronization.
+-   **Stripe Payment Processing**: Comprehensive payment infrastructure for subscriptions, product catalogs, and webhooks.
 
 ### Communication & AI Services
 
-**ElevenLabs Voice Synthesis**: Advanced text-to-speech services providing multilingual personalized messages with custom voice profiles. Supports 30 languages (including English, French, Spanish, Chinese, Japanese, Arabic, Portuguese, German, Hindi, Korean, Italian, Russian, Dutch, Turkish, Polish, Swedish, Filipino, Ukrainian, Greek, Czech, Finnish, Romanian, Vietnamese, Hungarian, Norwegian, Thai, Indonesian, Danish, Hebrew, Malay) with 3 distinct voice personalities:
-- **CanadianRockstar**: Energetic and enthusiastic voice (Adam from ElevenLabs)
-- **ScienceTeacher**: Clear and professional voice (Bella from ElevenLabs)
-- **BuddyFriend**: Warm and friendly voice (Antoni from ElevenLabs)
-
-The system includes intelligent caching for instant playback, automatic pre-generation of EN/FR messages, position tracking for seamless language/voice switching, and real-time audio visualization.
-
-**Intelligent Message System**: Progressive content delivery that adapts to user behavior. The platform automatically selects message types based on listening history:
-- **Welcome Messages**: Initial introduction to DOT Mobile platform and services for new users
-- **Tip Messages**: Helpful information about DOTM token rewards, Bitchat secure messaging, eSIM management, and network features like VPN and Wi-Fi calling
-- **Update Messages**: Latest platform features including the 30-language voice system, intelligent message progression, and Shopify marketplace integration
-
-Messages are tracked through a database history system that ensures users receive progressive content - starting with welcome for new users, then tips after hearing the welcome, and finally updates. The caching system preserves message types to ensure accurate telemetry across all playback scenarios. API endpoints: `/api/welcome-message/voices`, `/api/welcome-message/generate`, `/api/welcome-message/track-listen`, `/api/welcome-audio/<id>`.
-
-**OpenAI Integration**: AI-powered help desk services and automated customer support through OpenAI's API for intelligent query handling.
-
-**SMTP Email Services**: Configurable email delivery system supporting multiple SMTP providers for transactional emails, notifications, and automated communications.
+-   **ElevenLabs Voice Synthesis**: Advanced text-to-speech services with multilingual support (30 languages) and custom voice profiles (CanadianRockstar, ScienceTeacher, BuddyFriend). Includes intelligent caching and progressive message delivery (Welcome, Tip, Update messages).
+-   **OpenAI Integration**: AI-powered help desk and automated customer support.
+-   **SMTP Email Services**: Configurable system for transactional emails and notifications.
 
 ### Blockchain & Web3
 
-**Ethereum Network**: Web3 integration supporting both Sepolia testnet for development and Ethereum mainnet for production token operations.
-
-**DOTM Smart Contract**: Custom ERC-20 token contract deployed on Ethereum for reward distribution and cryptocurrency integration.
+-   **Ethereum Network**: Web3 integration supporting Sepolia testnet and Ethereum mainnet.
+-   **DOTM Smart Contract**: Custom ERC-20 token contract for rewards.
 
 ### Development & Deployment Tools
 
-**PostgreSQL Database**: Primary data storage with connection pooling and comprehensive schema management for users, subscriptions, transactions, and service configurations.
-
-**Hardhat Development Framework**: Ethereum development environment for smart contract compilation, testing, and deployment with multi-network support.
-
-**GitHub Integration**: Source code management with potential automated deployment pipelines and version control integration.
-
-**Jira Integration**: Help desk ticketing system integration for comprehensive customer support workflow management. Configured using environment variables (JIRA_API_TOKEN, JIRA_EMAIL, JIRA_PROJECT_KEY) for dotmobile.atlassian.net workspace. Note: User dismissed the Replit JIRA connector, so manual integration with environment variables is used instead.
-
-**Shopify Integration**: E-commerce platform integration for marketplace product management. The platform uses Shopify Admin API for product synchronization, inventory management, and order tracking through the centralized admin panel at `/admin/shopify`.
+-   **PostgreSQL Database**: Primary data storage.
+-   **Hardhat Development Framework**: For Ethereum smart contract development.
+-   **GitHub Integration**: Source code management.
+-   **Jira Integration**: Ticketing system for customer support.
+-   **Shopify Integration**: E-commerce platform for marketplace product management via Shopify Admin API.
