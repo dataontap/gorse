@@ -1,0 +1,148 @@
+{
+  "id": "evt_1SIx1AJnTfh0bNQQVOhGljPc",
+  "object": "event",
+  "api_version": "2020-03-02",
+  "created": 1760643560,
+  "data": {
+    "object": {
+      "id": "cs_live_a1sZRMYqyNnY205IWWcrndXNj8OBkUhW9THjWFs8vvQmjoKcvjx0vRtFQ5",
+      "object": "checkout.session",
+      "adaptive_pricing": {
+        "enabled": true
+      },
+      "after_expiration": null,
+      "allow_promotion_codes": null,
+      "amount_subtotal": 100,
+      "amount_total": 100,
+      "automatic_tax": {
+        "enabled": false,
+        "liability": null,
+        "provider": null,
+        "status": null
+      },
+      "billing_address_collection": null,
+      "branding_settings": {
+        "background_color": "#ffffff",
+        "border_style": "rounded",
+        "button_color": "#0074d4",
+        "display_name": "Data On Tap Inc.",
+        "font_family": "default",
+        "icon": {
+          "file": "file_1GAysIJnTfh0bNQQNBwFJfVc",
+          "type": "file"
+        },
+        "logo": {
+          "file": "file_1GAyrqJnTfh0bNQQ3fxQWG5R",
+          "type": "file"
+        }
+      },
+      "cancel_url": "http://1a17dd5a-5a8e-4e99-93a4-e8a95759a35e-00-1szl9vyv57l7f.picard.replit.dev/dashboard",
+      "client_reference_id": null,
+      "client_secret": null,
+      "collected_information": null,
+      "consent": null,
+      "consent_collection": null,
+      "created": 1760643417,
+      "currency": "usd",
+      "currency_conversion": null,
+      "custom_fields": [],
+      "custom_text": {
+        "after_submit": null,
+        "shipping_address": null,
+        "submit": null,
+        "terms_of_service_acceptance": null
+      },
+      "customer": null,
+      "customer_creation": "if_required",
+      "customer_details": {
+        "address": {
+          "city": "Toronto",
+          "country": "CA",
+          "line1": "21 Brock Avenue",
+          "line2": null,
+          "postal_code": "M6K 2K9",
+          "state": "ON"
+        },
+        "business_name": null,
+        "email": "algis.akstinas@gmail.com",
+        "individual_name": null,
+        "name": "Algis Akstinas",
+        "phone": null,
+        "tax_exempt": "none",
+        "tax_ids": []
+      },
+      "customer_email": null,
+      "discounts": [],
+      "expires_at": 1760729817,
+      "invoice": null,
+      "invoice_creation": {
+        "enabled": false,
+        "invoice_data": {
+          "account_tax_ids": null,
+          "custom_fields": null,
+          "description": null,
+          "footer": null,
+          "issuer": null,
+          "metadata": {},
+          "rendering_options": null
+        }
+      },
+      "livemode": true,
+      "locale": null,
+      "metadata": {
+        "user_email": "aakstinas+1144@oxio.io",
+        "oxio_user_id": "20fa02b6-8c92-4386-87e3-26aba5e1046c",
+        "product": "esim_beta",
+        "user_name": "",
+        "firebase_uid": "U9w4s17CUjQYi5X5hJJphNAvHMl2"
+      },
+      "mode": "payment",
+      "origin_context": null,
+      "payment_intent": "pi_3SIx10JnTfh0bNQQ1AAbfEZO",
+      "payment_link": null,
+      "payment_method_collection": "if_required",
+      "payment_method_configuration_details": {
+        "id": "pmc_1PvkEsJnTfh0bNQQPwlP6NBQ",
+        "parent": null
+      },
+      "payment_method_options": {
+        "link": {}
+      },
+      "payment_method_types": [
+        "card",
+        "link"
+      ],
+      "payment_status": "paid",
+      "permissions": null,
+      "phone_number_collection": {
+        "enabled": false
+      },
+      "recovered_from": null,
+      "saved_payment_method_options": null,
+      "setup_intent": null,
+      "shipping": null,
+      "shipping_address_collection": null,
+      "shipping_options": [],
+      "shipping_rate": null,
+      "status": "complete",
+      "submit_type": null,
+      "subscription": null,
+      "success_url": "http://1a17dd5a-5a8e-4e99-93a4-e8a95759a35e-00-1szl9vyv57l7f.picard.replit.dev/esim/success?session_id={CHECKOUT_SESSION_ID}",
+      "total_details": {
+        "amount_discount": 0,
+        "amount_shipping": 0,
+        "amount_tax": 0
+      },
+      "ui_mode": "hosted",
+      "url": null,
+      "wallet_options": null
+    }
+  },
+  "livemode": true,
+  "pending_webhooks": 1,
+  "request": {
+    "id": null,
+    "idempotency_key": null
+  },
+  "type": "checkout.session.completed"
+}

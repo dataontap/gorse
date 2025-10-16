@@ -5663,6 +5663,121 @@ def fix_failed_esim_activation():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/esim/resend-activation-email', methods=['POST'])
+def resend_esim_activation_email():
+    """Resend eSIM activation email to a user"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebase_uid')
+        admin_key = data.get('admin_key')
+        
+        # Simple admin auth check
+        if admin_key != os.environ.get('ADMIN_KEY', 'dotm_admin_2025'):
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+        if not firebase_uid:
+            return jsonify({'success': False, 'error': 'Firebase UID is required'}), 400
+        
+        print(f"📧 Resending eSIM activation email for Firebase UID: {firebase_uid}")
+        
+        # Step 1: Get user details
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, email, display_name, oxio_user_id
+                FROM users
+                WHERE firebase_uid = %s
+            """, (firebase_uid,))
+            user_result = cursor.fetchone()
+            
+            if not user_result:
+                return jsonify({'success': False, 'error': 'User not found'}), 404
+            
+            user_id, user_email, user_name, oxio_user_id = user_result
+            print(f"   User: {user_email}")
+        
+        # Step 2: Get eSIM activation details
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT iccid, line_id, phone_number, activation_url, esim_qr_code, oxio_response, created_at
+                FROM oxio_activations
+                WHERE firebase_uid = %s
+                ORDER BY created_at DESC
+                LIMIT 1
+            """, (firebase_uid,))
+            activation_result = cursor.fetchone()
+            
+            if not activation_result:
+                return jsonify({'success': False, 'error': 'No eSIM activation found for this user'}), 404
+            
+            iccid, line_id, phone_number, activation_url, esim_qr_code, oxio_response, created_at = activation_result
+            
+            # Parse phone number from oxio_response if not directly available
+            if not phone_number and oxio_response:
+                import json
+                try:
+                    oxio_data = json.loads(oxio_response) if isinstance(oxio_response, str) else oxio_response
+                    phone_numbers = oxio_data.get('data', {}).get('phoneNumbers', [])
+                    if phone_numbers and len(phone_numbers) > 0:
+                        phone_number = phone_numbers[0].get('phoneNumber', '')
+                except Exception as e:
+                    print(f"   ⚠️ Could not parse phone number from oxio_response: {e}")
+            
+            print(f"   eSIM Details: ICCID={iccid}, Phone={phone_number}, Line={line_id}")
+        
+        # Step 3: Send activation email using the esim_activation_service
+        try:
+            from esim_activation_service import esim_activation_service
+            
+            # Prepare email data
+            email_data = {
+                'user_email': user_email,
+                'user_name': user_name or user_email.split('@')[0],
+                'phone_number': phone_number or 'Pending',
+                'line_id': line_id,
+                'iccid': iccid,
+                'activation_url': activation_url,
+                'qr_code_url': esim_qr_code,
+                'oxio_user_id': oxio_user_id,
+                'activation_date': created_at.strftime('%Y-%m-%d %H:%M:%S') if created_at else 'Unknown'
+            }
+            
+            # Send the email
+            email_result = esim_activation_service._send_activation_email(email_data)
+            
+            if email_result.get('success'):
+                print(f"   ✅ Activation email sent successfully to {user_email}")
+                return jsonify({
+                    'success': True,
+                    'message': f'Activation email sent successfully to {user_email}',
+                    'details': {
+                        'email': user_email,
+                        'phone_number': phone_number,
+                        'iccid': iccid,
+                        'line_id': line_id
+                    }
+                })
+            else:
+                print(f"   ❌ Failed to send email: {email_result.get('error', 'Unknown error')}")
+                return jsonify({
+                    'success': False,
+                    'error': f"Failed to send email: {email_result.get('error', 'Unknown error')}"
+                }), 500
+                
+        except Exception as e:
+            print(f"   ❌ Error sending activation email: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({'success': False, 'error': f'Email send error: {str(e)}'}), 500
+        
+    except Exception as e:
+        print(f"❌ Error in resend_esim_activation_email: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
     print("\n=== Registered Flask Routes ===")
