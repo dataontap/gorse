@@ -116,11 +116,11 @@ class eSIMActivationService:
             user_data = get_user_by_firebase_uid(firebase_uid)
             if user_data:
                 return {
-                    'user_id': user_data[0],
-                    'email': user_data[1],
-                    'oxio_user_id': user_data[7] if len(user_data) > 7 else None,
-                    'eth_address': user_data[8] if len(user_data) > 8 else None,
-                    'oxio_group_id': user_data[9] if len(user_data) > 9 else None
+                    'user_id': user_data.get('id'),
+                    'email': user_data.get('email'),
+                    'oxio_user_id': user_data.get('oxio_user_id'),
+                    'eth_address': user_data.get('eth_address'),
+                    'oxio_group_id': user_data.get('oxio_group_id')
                 }
 
             # Create new user if not found
