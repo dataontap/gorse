@@ -5536,6 +5536,141 @@ def shopify_sync_inventory():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/admin/fix-failed-esim-activation', methods=['POST'])
+def fix_failed_esim_activation():
+    """Manually complete a failed eSIM activation for a user who paid but didn't get activated"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebase_uid')
+        admin_key = data.get('admin_key')
+        
+        # Simple admin auth check
+        if admin_key != os.environ.get('ADMIN_KEY', 'dotm_admin_2025'):
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+        if not firebase_uid:
+            return jsonify({'success': False, 'error': 'Firebase UID is required'}), 400
+        
+        print(f"🔧 Manual eSIM activation fix requested for Firebase UID: {firebase_uid}")
+        
+        # Step 1: Get user details
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, email, display_name, oxio_user_id, stripe_customer_id
+                FROM users
+                WHERE firebase_uid = %s
+            """, (firebase_uid,))
+            user_result = cursor.fetchone()
+            
+            if not user_result:
+                return jsonify({'success': False, 'error': 'User not found'}), 404
+            
+            user_id, user_email, user_name, oxio_user_id, stripe_customer_id = user_result
+            print(f"   User ID: {user_id}, Email: {user_email}, OXIO User ID: {oxio_user_id}")
+        
+        # Step 2: Check if ICCID is already assigned
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT iccid, lpa_code, line_id, country
+                FROM iccid_inventory
+                WHERE allocated_to_firebase_uid = %s
+                ORDER BY assigned_at DESC
+                LIMIT 1
+            """, (firebase_uid,))
+            iccid_result = cursor.fetchone()
+            
+            if not iccid_result:
+                return jsonify({'success': False, 'error': 'No ICCID assigned to user'}), 404
+            
+            iccid, lpa_code, line_id, country = iccid_result
+            print(f"   Found assigned ICCID: {iccid}")
+        
+        # Step 3: Check if purchase already recorded
+        purchase_exists = False
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT purchaseid FROM purchases
+                WHERE firebaseuid = %s AND stripeproductid = 'esim_beta'
+                LIMIT 1
+            """, (firebase_uid,))
+            if cursor.fetchone():
+                purchase_exists = True
+                print(f"   ✓ Purchase already recorded")
+        
+        # Step 4: Check if activation already exists
+        activation_exists = False
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id FROM oxio_activations
+                WHERE firebase_uid = %s
+                LIMIT 1
+            """, (firebase_uid,))
+            if cursor.fetchone():
+                activation_exists = True
+                print(f"   ✓ Activation record already exists")
+        
+        # Step 5: Record purchase if not exists
+        if not purchase_exists:
+            print(f"   📝 Recording purchase...")
+            from datetime import datetime
+            purchase_id = record_purchase(
+                stripe_id='manual_fix_' + datetime.now().strftime('%Y%m%d%H%M%S'),
+                product_id='esim_beta',
+                price_id='price_1S7Yc6JnTfh0bNQQVeLeprXe',
+                amount=100,  # $1.00
+                user_id=user_id,
+                transaction_id='manual_fix',
+                firebase_uid=firebase_uid,
+                stripe_transaction_id='manual_fix'
+            )
+            print(f"   ✓ Purchase recorded with ID: {purchase_id}")
+        
+        # Step 6: Activate eSIM with OXIO if not already activated
+        if not activation_exists and oxio_user_id:
+            print(f"   🚀 Activating eSIM with OXIO...")
+            try:
+                from esim_activation_service import esim_activation_service
+                
+                activation_result = esim_activation_service.activate_esim_after_payment(
+                    firebase_uid=firebase_uid,
+                    user_email=user_email,
+                    user_name=user_name or user_email.split('@')[0],
+                    stripe_session_id='manual_fix',
+                    purchase_amount=100
+                )
+                
+                if activation_result.get('success'):
+                    print(f"   ✅ eSIM activation completed successfully")
+                else:
+                    print(f"   ⚠️ eSIM activation returned: {activation_result.get('error', 'Unknown error')}")
+                    
+            except Exception as e:
+                print(f"   ❌ Error during activation: {str(e)}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'eSIM activation fix completed',
+            'details': {
+                'user_id': user_id,
+                'email': user_email,
+                'iccid': iccid,
+                'lpa_code': lpa_code,
+                'purchase_recorded': not purchase_exists,
+                'activation_triggered': not activation_exists
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Error in fix_failed_esim_activation: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     # Debug: Print all registered routes to verify OXIO endpoints are available
     print("\n=== Registered Flask Routes ===")
