@@ -670,7 +670,7 @@
             // Update DOT User ID
             const dotUserIDElement = document.getElementById('dotUserID');
             if (dotUserIDElement) {
-                dotUserIDElement.textContent = userData.userId || '';
+                dotUserIDElement.textContent = userData.userId || 'N/A';
             }
 
             // Update OXIO User ID
@@ -759,20 +759,20 @@
         }
 
         function showProfileError(message) {
-            // Update fields to show error state
+            // Update fields to show N/A for missing data
             const dotUserIDElement = document.getElementById('dotUserID');
             if (dotUserIDElement) {
-                dotUserIDElement.textContent = message;
+                dotUserIDElement.textContent = 'N/A';
             }
 
             const oxioUserIDElement = document.getElementById('oxioUserID');
             if (oxioUserIDElement) {
-                oxioUserIDElement.textContent = message;
+                oxioUserIDElement.textContent = 'N/A';
             }
 
             const oxioGroupIDElement = document.getElementById('oxioGroupID');
             if (oxioGroupIDElement) {
-                oxioGroupIDElement.textContent = message;
+                oxioGroupIDElement.textContent = 'N/A';
             }
         }
 

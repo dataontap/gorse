@@ -1291,7 +1291,7 @@ def get_current_user():
                     user = cur.fetchone()
 
                     if user:
-                        return jsonify({
+                        user_data = {
                             'status': 'success',
                             'userId': user[0],
                             'email': user[1],
@@ -1303,7 +1303,9 @@ def get_current_user():
                             'oxioUserId': user[7],
                             'metamaskAddress': user[8] if len(user) > 8 else None, # Correctly index for eth_address
                             'oxioGroupId': user[9] if len(user) > 9 else None # Correctly index for oxio_group_id
-                        })
+                        }
+                        print(f"Returning user data for Firebase UID {firebase_uid}: userId={user[0]}, email={user[1]}")
+                        return jsonify(user_data)
 
                     return jsonify({'error': 'User not found'}), 404
 
