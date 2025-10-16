@@ -57,7 +57,7 @@
                 <p class="signin-text">
                     <a href="/login" class="signin-link">Members Access</a>
                 </p>
-                
+
                 <div class="canada-service">
                     <p style="color: white; font-size: 14px; margin: 20px 0 10px 0;">
                         Connectivity Services for Canadians Everywhere 🇨🇦
@@ -80,7 +80,7 @@
     </div>
 
     <!-- Demo Section -->
-        
+
 
         <!-- Force logout if needed -->
         <script>
@@ -98,6 +98,76 @@
             }
         });
         </script>
+
+        <!-- Confirmation Page Content -->
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
+                    <div class="success-content">
+                        <h2>Payment Confirmed</h2>
+                        <p>Your $1 eSIM purchase has been processed successfully.</p>
+                        <p><strong>Session ID:</strong></p>
+                        <p style="word-break: break-all; font-family: monospace; font-size: 0.9em; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 4px; max-width: 100%; overflow-wrap: break-word;" id="sessionId"></p>
+                        <p><strong>Status:</strong> <span id="activationStatus">OXIO eSIM activation in progress...</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Function to get query parameters
+            function getQueryParams() {
+                const params = {};
+                const queryString = window.location.search;
+                const urlParams = new URLSearchParams(queryString);
+                for (const [key, value] of urlParams.entries()) {
+                    params[key] = value;
+                }
+                return params;
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const params = getQueryParams();
+                const sessionId = params.session_id;
+                const OXIOUserId = params.oxio_user_id;
+                const eSIMInfo = params.esim_info; // Assuming this contains relevant eSIM details
+
+                if (sessionId) {
+                    document.getElementById('sessionId').textContent = sessionId;
+                }
+
+                // Update activation status and potentially fetch more data if needed
+                if (sessionId) {
+                    // Example: Poll for status or fetch updated profile data
+                    // For now, we'll just log and assume the profile page will fetch the latest
+                    console.log("Session ID:", sessionId);
+                    console.log("OXIO User ID:", OXIOUserId);
+                    console.log("eSIM Info:", eSIMInfo);
+
+                    // Directly update the status message if OXIOUserId is available
+                    if (OXIOUserId) {
+                        document.getElementById('activationStatus').textContent = `OXIO activation initiated for User ID: ${OXIOUserId}.`;
+                    }
+                } else {
+                    document.getElementById('activationStatus').textContent = 'OXIO eSIM activation failed: No session ID found.';
+                }
+
+                // Simulate updating profile information - in a real app, this would be more complex
+                // and might involve a call to your backend or directly to OXIO if applicable.
+                // For this example, we'll just log that profile update is supposed to happen.
+                console.log("Attempting to update profile with OXIO UserID and eSIM info...");
+
+                // If the user clicks to go to the profile page, their session should have the updated info.
+                // The backend/app.js script should handle fetching the latest from the database.
+            });
+
+            // Placeholder for the missing function, to prevent errors
+            function rollback_iccid_assignment(error) {
+                console.error("rollback_iccid_assignment called with error:", error);
+                // Implement actual rollback logic here if necessary
+            }
+
+        </script>
 </body>
 
     <!-- Bootstrap JS -->
@@ -111,10 +181,6 @@
                 window.location.href = '/dashboard';
             }
         });
-
-        
-
-
     </script>
 
 </html>

@@ -268,20 +268,194 @@ try:
                             firebase_uid VARCHAR(128) NOT NULL,
                             language VARCHAR(10) NOT NULL,
                             voice_profile VARCHAR(50) NOT NULL,
+                            message_type VARCHAR(50) NOT NULL DEFAULT 'welcome',
                             audio_data BYTEA NOT NULL,
                             content_type VARCHAR(50) DEFAULT 'audio/mpeg',
+                            generation_time_ms INTEGER,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            UNIQUE(firebase_uid, language, voice_profile)
+                            UNIQUE(firebase_uid, language, voice_profile, message_type)
                         );
                         CREATE INDEX IF NOT EXISTS idx_welcome_messages_firebase_uid ON welcome_messages(firebase_uid);
                         CREATE INDEX IF NOT EXISTS idx_welcome_messages_language ON welcome_messages(language);
                         CREATE INDEX IF NOT EXISTS idx_welcome_messages_voice_profile ON welcome_messages(voice_profile);
+                        CREATE INDEX IF NOT EXISTS idx_welcome_messages_message_type ON welcome_messages(message_type);
                     """
                     cur.execute(create_welcome_messages_sql)
                     conn.commit()
                     print("welcome_messages table created successfully")
                 else:
                     print("welcome_messages table already exists")
+
+                # Check if user_message_history table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_message_history')")
+                user_message_history_exists = cur.fetchone()[0]
+
+                if not user_message_history_exists:
+                    print("Creating user_message_history table...")
+                    create_user_message_history_sql = """
+                        CREATE TABLE user_message_history (
+                            id SERIAL PRIMARY KEY,
+                            firebase_uid VARCHAR(128) NOT NULL,
+                            message_type VARCHAR(50) NOT NULL,
+                            language VARCHAR(10) NOT NULL,
+                            voice_profile VARCHAR(50) NOT NULL,
+                            completed BOOLEAN DEFAULT FALSE,
+                            listened_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_user_message_history_firebase_uid ON user_message_history(firebase_uid);
+                        CREATE INDEX IF NOT EXISTS idx_user_message_history_message_type ON user_message_history(message_type);
+                    """
+                    cur.execute(create_user_message_history_sql)
+                    conn.commit()
+                    print("user_message_history table created successfully")
+                else:
+                    print("user_message_history table already exists")
+
+                # Check if oxio_activations table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'oxio_activations')")
+                oxio_activations_exists = cur.fetchone()[0]
+
+                if not oxio_activations_exists:
+                    print("Creating oxio_activations table...")
+                    create_oxio_activations_sql = """
+                        CREATE TABLE oxio_activations (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL,
+                            firebase_uid VARCHAR(128),
+                            purchase_id INTEGER,
+                            product_id VARCHAR(100),
+                            iccid VARCHAR(50),
+                            line_id VARCHAR(100),
+                            phone_number VARCHAR(20),
+                            activation_status VARCHAR(50),
+                            plan_id VARCHAR(100),
+                            group_id VARCHAR(100),
+                            esim_qr_code TEXT,
+                            activation_url TEXT,
+                            activation_code VARCHAR(200),
+                            oxio_response TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_oxio_activations_firebase_uid ON oxio_activations(firebase_uid);
+                        CREATE INDEX IF NOT EXISTS idx_oxio_activations_user_id ON oxio_activations(user_id);
+                        CREATE INDEX IF NOT EXISTS idx_oxio_activations_iccid ON oxio_activations(iccid);
+                    """
+                    cur.execute(create_oxio_activations_sql)
+                    conn.commit()
+                    print("oxio_activations table created successfully")
+                else:
+                    print("oxio_activations table already exists")
+
+
+                # Check if invites table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'invites')")
+                invites_exists = cur.fetchone()[0]
+
+                if not invites_exists:
+                    print("Creating invites table...")
+                    create_invites_sql = """
+                        CREATE TABLE invites (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER,
+                            email VARCHAR(255) NOT NULL,
+                            invitation_status VARCHAR(50) NOT NULL DEFAULT 'pending',
+                            invited_by_user_id INTEGER,
+                            invited_by_firebase_uid VARCHAR(255),
+                            invitation_token VARCHAR(255),
+                            personal_message TEXT,
+                            is_demo_user BOOLEAN DEFAULT FALSE,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '7 days'),
+                            accepted_at TIMESTAMP,
+                            rejected_at TIMESTAMP,
+                            cancelled_at TIMESTAMP
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_invites_email ON invites(email);
+                        CREATE INDEX IF NOT EXISTS idx_invites_token ON invites(invitation_token);
+                        CREATE INDEX IF NOT EXISTS idx_invites_user_id ON invites(user_id);
+                        CREATE INDEX IF NOT EXISTS idx_invites_invited_by_firebase_uid ON invites(invited_by_firebase_uid);
+                    """
+                    cur.execute(create_invites_sql)
+                    conn.commit()
+                    print("invites table created successfully")
+                else:
+                    print("invites table already exists")
+
+                # Check if data_usage_log table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'data_usage_log')")
+                data_usage_log_exists = cur.fetchone()[0]
+
+                if not data_usage_log_exists:
+                    print("Creating data_usage_log table...")
+                    create_data_usage_log_sql = """
+                        CREATE TABLE data_usage_log (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL,
+                            stripe_customer_id VARCHAR(100),
+                            megabytes_used BIGINT NOT NULL,
+                            stripe_event_id VARCHAR(100),
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_data_usage_user_id ON data_usage_log(user_id);
+                        CREATE INDEX IF NOT EXISTS idx_data_usage_stripe_customer_id ON data_usage_log(stripe_customer_id);
+                    """
+                    cur.execute(create_data_usage_log_sql)
+                    conn.commit()
+                    print("data_usage_log table created successfully")
+                else:
+                    print("data_usage_log table already exists")
+
+                # Check if token_price_pings table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'token_price_pings')")
+                token_price_pings_exists = cur.fetchone()[0]
+
+                if not token_price_pings_exists:
+                    print("Creating token_price_pings table...")
+                    create_token_pings_table_sql = """
+                        CREATE TABLE token_price_pings (
+                            id SERIAL PRIMARY KEY,
+                            token_price DECIMAL(18,9) NOT NULL,
+                            request_time_ms INTEGER,
+                            response_time_ms INTEGER,
+                            roundtrip_ms INTEGER,
+                            ping_destination VARCHAR(255),
+                            source VARCHAR(100),
+                            additional_data TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_token_price_pings_created_at ON token_price_pings(created_at);
+                    """
+                    cur.execute(create_token_pings_table_sql)
+                    conn.commit()
+                    print("token_price_pings table created successfully")
+                else:
+                    print("token_price_pings table already exists")
+
+                # Check if user_network_preferences table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_network_preferences')")
+                user_network_preferences_exists = cur.fetchone()[0]
+
+                if not user_network_preferences_exists:
+                    print("Creating user_network_preferences table...")
+                    create_user_network_preferences_sql = """
+                        CREATE TABLE user_network_preferences (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL,
+                            stripe_product_id VARCHAR(100) NOT NULL,
+                            enabled BOOLEAN DEFAULT FALSE,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            UNIQUE(user_id, stripe_product_id)
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_user_network_preferences_user_id ON user_network_preferences(user_id);
+                        CREATE INDEX IF NOT EXISTS idx_user_network_preferences_stripe_product_id ON user_network_preferences(stripe_product_id);
+                    """
+                    cur.execute(create_user_network_preferences_sql)
+                    conn.commit()
+                    print("user_network_preferences table created successfully")
+                else:
+                    print("user_network_preferences table already exists")
 
                 conn.commit()
         else:
@@ -307,9 +481,9 @@ def start_help_session_endpoint():
     """Start a new help session or return existing unresolved ticket"""
     try:
         from help_desk_service import help_desk
-        
+
         data = request.get_json() or {}
-        
+
         user_data = {
             'user_id': data.get('userId'),
             'firebase_uid': data.get('firebaseUid'),
@@ -318,12 +492,12 @@ def start_help_session_endpoint():
             'page_url': data.get('pageUrl', request.referrer),
             'browser_timestamp': data.get('browserTimestamp')
         }
-        
+
         # Check if user already has an active/unresolved ticket
         firebase_uid = user_data.get('firebase_uid')
         if firebase_uid:
             active_session = help_desk.get_active_session(firebase_uid=firebase_uid)
-            
+
             if active_session.get('success'):
                 print(f"User {firebase_uid} already has an open ticket: {active_session.get('jira_ticket', {}).get('key')}")
                 return jsonify({
@@ -334,10 +508,10 @@ def start_help_session_endpoint():
                     'message': 'Existing open ticket found',
                     'existing': True
                 })
-        
+
         # No existing ticket, create a new one
         result = help_desk.start_help_session(user_data)
-        
+
         if result['success']:
             return jsonify({
                 'status': 'success',
@@ -352,11 +526,11 @@ def start_help_session_endpoint():
                 'status': 'error',
                 'message': result.get('error', 'Failed to start help session')
             }), 500
-            
+
     except Exception as e:
         print(f"Error starting help session: {str(e)}")
         return jsonify({
-            'status': 'error', 
+            'status': 'error',
             'message': str(e)
         }), 500
 
@@ -365,26 +539,26 @@ def update_help_context_endpoint():
     """Update JIRA ticket with additional context"""
     try:
         from help_desk_service import help_desk
-        
+
         data = request.get_json() or {}
         session_id = data.get('sessionId')
         category = data.get('category')
         description = data.get('description')
-        
+
         if not session_id:
             return jsonify({
                 'status': 'error',
                 'message': 'Session ID is required'
             }), 400
-        
+
         if not category or not description:
             return jsonify({
                 'status': 'error',
                 'message': 'Category and description are required'
             }), 400
-        
+
         result = help_desk.update_ticket_context(session_id, category, description)
-        
+
         if result['success']:
             return jsonify({
                 'status': 'success',
@@ -395,7 +569,7 @@ def update_help_context_endpoint():
                 'status': 'error',
                 'message': result.get('error', 'Failed to update context')
             }), 500
-            
+
     except Exception as e:
         print(f"Error updating help context: {str(e)}")
         return jsonify({
@@ -408,16 +582,16 @@ def get_user_open_ticket():
     """Get user's open ticket with current JIRA status"""
     try:
         from help_desk_service import help_desk
-        
+
         firebase_uid = request.args.get('firebaseUid')
         if not firebase_uid:
             return jsonify({
                 'status': 'error',
                 'message': 'Firebase UID is required'
             }), 400
-        
+
         result = help_desk.get_active_session(firebase_uid=firebase_uid)
-        
+
         if result.get('success'):
             return jsonify({
                 'status': 'success',
@@ -430,7 +604,7 @@ def get_user_open_ticket():
                 'has_open_ticket': False,
                 'message': 'No open ticket found'
             })
-            
+
     except Exception as e:
         print(f"Error getting user open ticket: {str(e)}")
         return jsonify({
@@ -528,7 +702,7 @@ def oxio_test_sample_activation():
 # Now initialize Flask-RESTX AFTER the OXIO routes are defined
 api = Api(app, version='1.0', title='IMEI API',
     description='Get android phone IMEI API with telephony permissions for eSIM activation',
-    doc='/api', 
+    doc='/api',
     prefix='/api')  # Move all API endpoints under /api path
 
 ns = api.namespace('imei', description='IMEI operations')
@@ -554,8 +728,8 @@ def register_fcm_token():
                         cur.execute("""
                             INSERT INTO fcm_tokens (firebase_uid, fcm_token, platform, updated_at)
                             VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
-                            ON CONFLICT (firebase_uid, platform) 
-                            DO UPDATE SET 
+                            ON CONFLICT (firebase_uid, platform)
+                            DO UPDATE SET
                                 fcm_token = EXCLUDED.fcm_token,
                                 updated_at = CURRENT_TIMESTAMP
                         """, (firebase_uid, token, platform))
@@ -566,8 +740,8 @@ def register_fcm_token():
                         # Check for pending notifications that haven't been delivered
                         cur.execute("""
                             SELECT id, title, body, notification_type, created_at
-                            FROM notifications 
-                            WHERE firebase_uid = %s AND delivered = FALSE 
+                            FROM notifications
+                            WHERE firebase_uid = %s AND delivered = FALSE
                             ORDER BY created_at ASC
                         """, (firebase_uid,))
 
@@ -603,7 +777,7 @@ def register_fcm_token():
 
                                         # Update notification as delivered
                                         cur.execute("""
-                                            UPDATE notifications 
+                                            UPDATE notifications
                                             SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                             WHERE id = %s
                                         """, (str(response), notification_id))
@@ -612,7 +786,7 @@ def register_fcm_token():
                                         print("Firebase Admin SDK not available - marking notification as delivered for demo")
                                         # Mark as delivered even without FCM for demo purposes
                                         cur.execute("""
-                                            UPDATE notifications 
+                                            UPDATE notifications
                                             SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                             WHERE id = %s
                                         """, ("No FCM SDK - demo mode", notification_id))
@@ -621,7 +795,7 @@ def register_fcm_token():
                                     print(f"Error sending pending notification {notification_id}: {str(msg_err)}")
                                     # Still mark as delivered to avoid repeated attempts
                                     cur.execute("""
-                                        UPDATE notifications 
+                                        UPDATE notifications
                                         SET delivered = TRUE, delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                         WHERE id = %s
                                     """, (f"FCM Error: {str(msg_err)}", notification_id))
@@ -674,7 +848,7 @@ def send_notification():
 
                             # Get user's FCM token
                             cur.execute("""
-                                SELECT fcm_token FROM fcm_tokens 
+                                SELECT fcm_token FROM fcm_tokens
                                 WHERE firebase_uid = %s AND platform = 'web'
                                 ORDER BY updated_at DESC LIMIT 1
                             """, (firebase_uid,))
@@ -831,7 +1005,7 @@ def register_firebase_user():
                     else:
                         # Check if oxio_user_id column exists and add it if missing
                         cur.execute("""
-                            SELECT column_name FROM information_schema.columns 
+                            SELECT column_name FROM information_schema.columns
                             WHERE table_name = 'users' AND column_name = 'oxio_user_id'
                         """)
                         oxio_column_exists = cur.fetchone()
@@ -844,7 +1018,7 @@ def register_firebase_user():
 
                         # Check if oxio_group_id column exists and add it if missing
                         cur.execute("""
-                            SELECT column_name FROM information_schema.columns 
+                            SELECT column_name FROM information_schema.columns
                             WHERE table_name = 'users' AND column_name = 'oxio_group_id'
                         """)
                         oxio_group_column_exists = cur.fetchone()
@@ -857,7 +1031,7 @@ def register_firebase_user():
 
                         # Ensure eth_address column exists separately
                         cur.execute("""
-                            SELECT column_name FROM information_schema.columns 
+                            SELECT column_name FROM information_schema.columns
                             WHERE table_name = 'users' AND column_name = 'eth_address'
                         """)
                         eth_column_exists = cur.fetchone()
@@ -880,10 +1054,10 @@ def register_firebase_user():
 
                         # Update user information if needed
                         cur.execute(
-                            """UPDATE users SET 
-                                email = %s, 
-                                display_name = %s, 
-                                photo_url = %s 
+                            """UPDATE users SET
+                                email = %s,
+                                display_name = %s,
+                                photo_url = %s
                             WHERE id = %s""",
                             (email, display_name, photo_url, user_id)
                         )
@@ -953,7 +1127,7 @@ def register_firebase_user():
                                     print(f"Failed to create OXIO group: {group_result.get('message', 'Unknown error')}")
                             else:
                                 # Check if user already exists (error code 6805)
-                                if (oxio_result.get('status_code') == 400 and 
+                                if (oxio_result.get('status_code') == 400 and
                                     oxio_result.get('data', {}).get('code') == 6805):
                                     print(f"OXIO user already exists for {email}, attempting to find existing user ID")
 
@@ -970,9 +1144,9 @@ def register_firebase_user():
                             print(f"Error creating OXIO group/user: {str(oxio_err)}")
 
                         cur.execute(
-                            """INSERT INTO users 
-                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id, oxio_group_id) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s) 
+                            """INSERT INTO users
+                                (email, firebase_uid, display_name, photo_url, eth_address, oxio_user_id, oxio_group_id)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
                             RETURNING id""",
                             (email, firebase_uid, display_name, photo_url, test_account.address, oxio_user_id, oxio_group_id)
                         )
@@ -1001,8 +1175,8 @@ def register_firebase_user():
                                     if conn:
                                         with conn.cursor() as cur:
                                             cur.execute("""
-                                                SELECT fcm_token FROM fcm_tokens 
-                                                WHERE firebase_uid = %s 
+                                                SELECT fcm_token FROM fcm_tokens
+                                                WHERE firebase_uid = %s
                                                 ORDER BY updated_at DESC LIMIT 1
                                             """, (firebase_uid,))
 
@@ -1014,7 +1188,7 @@ def register_firebase_user():
                                             welcome_body = f"Hi {display_name or 'there'}! Your account is ready. Your personalized welcome message is waiting for you!"
 
                                             cur.execute("""
-                                                INSERT INTO notifications 
+                                                INSERT INTO notifications
                                                 (user_id, firebase_uid, title, body, notification_type, delivered)
                                                 VALUES (%s, %s, %s, %s, %s, %s)
                                                 RETURNING id
@@ -1049,7 +1223,7 @@ def register_firebase_user():
 
                                                         # Update notification with FCM response
                                                         cur.execute("""
-                                                            UPDATE notifications 
+                                                            UPDATE notifications
                                                             SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                             WHERE id = %s
                                                         """, (str(response), notification_id))
@@ -1059,7 +1233,7 @@ def register_firebase_user():
                                                     else:
                                                         print("Firebase Admin SDK not available - notification stored in database")
                                                         cur.execute("""
-                                                            UPDATE notifications 
+                                                            UPDATE notifications
                                                             SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                             WHERE id = %s
                                                         """, ("No FCM SDK - demo mode", notification_id))
@@ -1068,7 +1242,7 @@ def register_firebase_user():
                                                 except Exception as msg_err:
                                                     print(f"Error sending welcome message via FCM: {str(msg_err)}")
                                                     cur.execute("""
-                                                        UPDATE notifications 
+                                                        UPDATE notifications
                                                         SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                         WHERE id = %s
                                                     """, (f"FCM Error: {str(msg_err)}", notification_id))
@@ -1076,7 +1250,7 @@ def register_firebase_user():
                                             else:
                                                 print(f"No FCM token found for {firebase_uid} - notification stored for later")
                                                 cur.execute("""
-                                                    UPDATE notifications 
+                                                    UPDATE notifications
                                                     SET delivered_at = CURRENT_TIMESTAMP, fcm_response = %s
                                                     WHERE id = %s
                                                 """, ("No FCM token available", notification_id))
@@ -1224,8 +1398,8 @@ def check_imei_compatibility():
                         is_compatible = capabilities.get('fourG', False) or capabilities.get('fiveG', False)
 
                         cur.execute("""
-                            INSERT INTO compatibility_checks 
-                            (imei, device_make, device_model, device_year, four_g_support, 
+                            INSERT INTO compatibility_checks
+                            (imei, device_make, device_model, device_year, four_g_support,
                              five_g_support, volte_support, wifi_calling_support, is_compatible, search_id)
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """, (
@@ -1264,6 +1438,47 @@ def check_imei_compatibility():
             'error': 'Internal server error',
             'message': 'Unable to process compatibility check'
         }), 500
+
+def get_user_by_firebase_uid(firebase_uid):
+    """Get user information from database by Firebase UID with all OXIO fields"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT id, email, display_name, firebase_uid, stripe_customer_id,
+                               imei, eth_address, oxio_user_id, oxio_group_id
+                        FROM users
+                        WHERE firebase_uid = %s
+                    """, (firebase_uid,))
+
+                    user = cur.fetchone()
+                    if user:
+                        # Parse display_name into first_name and last_name
+                        display_name = user[2] or ''
+                        name_parts = display_name.split(' ', 1) if display_name else []
+                        first_name = name_parts[0] if name_parts else ''
+                        last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+                        print(f"get_user_by_firebase_uid debug: Found user {user[0]} with oxio_user_id: {user[7]}, eth_address: {user[6]}")
+
+                        return {
+                            'id': user[0],
+                            'email': user[1],
+                            'first_name': first_name,
+                            'last_name': last_name,
+                            'display_name': display_name,
+                            'firebase_uid': user[3],
+                            'stripe_customer_id': user[4],
+                            'imei': user[5],
+                            'eth_address': user[6],
+                            'oxio_user_id': user[7],
+                            'oxio_group_id': user[8]
+                        }
+        return None
+    except Exception as e:
+        print(f"Error getting user by Firebase UID: {str(e)}")
+        return None
 
 @app.route('/api/auth/current-user', methods=['GET'])
 @require_auth
@@ -1362,7 +1577,7 @@ def get_member_count():
                     # Check if users table exists
                     cur.execute("""
                         SELECT EXISTS (
-                            SELECT FROM information_schema.tables 
+                            SELECT FROM information_schema.tables
                             WHERE table_name = 'users'
                         )
                     """)
@@ -1450,7 +1665,7 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
                             else:
                                 # Check if new columns exist and add them if needed
                                 cur.execute("""
-                                    SELECT column_name FROM information_schema.columns 
+                                    SELECT column_name FROM information_schema.columns
                                     WHERE table_name = 'purchases'
                                 """)
                                 columns = [row[0] for row in cur.fetchall()]
@@ -1492,9 +1707,9 @@ def record_purchase(stripe_id, product_id, price_id, amount, user_id=None, trans
 
                             # Now insert the purchase record with all tracking information
                             cur.execute(
-                                """INSERT INTO purchases 
-                                   (StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated, StripeTransactionID, FirebaseUID) 
-                                   VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s, %s) 
+                                """INSERT INTO purchases
+                                   (StripeID, StripeProductID, PriceID, TotalAmount, UserID, DateCreated, StripeTransactionID, FirebaseUID)
+                                   VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s, %s)
                                    RETURNING PurchaseID""",
                                 (stripe_id, product_id, price_id, amount, user_id, stripe_transaction_id, firebase_uid)
                             )
@@ -1559,7 +1774,7 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
 
                     # First, deactivate any existing active subscriptions for this user
                     cur.execute("""
-                        UPDATE subscriptions 
+                        UPDATE subscriptions
                         SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
                         WHERE user_id = %s AND status = 'active'
                     """, (user_id,))
@@ -1602,9 +1817,9 @@ def create_subscription(user_id, subscription_type, stripe_subscription_id=None,
 
                     # Calculate validity end date (1 year = 365.25 days exactly for leap years)
                     cur.execute("""
-                        INSERT INTO subscriptions 
-                        (user_id, subscription_type, stripe_subscription_id, start_date, end_date, status, created_at, updated_at) 
-                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
+                        INSERT INTO subscriptions
+                        (user_id, subscription_type, stripe_subscription_id, start_date, end_date, status, created_at, updated_at)
+                        VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + interval '365.25 days', 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                         RETURNING end_date, subscription_id
                     """, (user_id, subscription_type, actual_stripe_subscription_id))
 
@@ -1780,38 +1995,38 @@ def register_device():
     """Register or update a device for the current user"""
     try:
         from firebase_helper import verify_firebase_token
-        
+
         # Verify Firebase token and get UID - NO FALLBACK for security
         decoded_token, error = verify_firebase_token(request)
-        
+
         if error:
             return jsonify({'success': False, 'error': f'Authentication required: {error}'}), 401
-        
+
         firebase_uid = decoded_token.get('uid')
-        
+
         # Get user_id from firebase_uid
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
                     user = cur.fetchone()
-                    
+
                     if not user:
                         return jsonify({'success': False, 'error': 'User not found'}), 404
-                    
+
                     user_id = user[0]
-        
+
         user_agent = request.headers.get('User-Agent', 'unknown')
         ip_address = request.remote_addr
-        
+
         result = register_or_update_device(user_id, firebase_uid, user_agent, ip_address)
-        
+
         if result['success']:
             mark_devices_offline(firebase_uid)
             return jsonify(result)
         else:
             return jsonify(result), 500
-    
+
     except Exception as e:
         print(f"Error in device registration: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1821,32 +2036,32 @@ def get_my_devices():
     """Get all devices for the authenticated user"""
     try:
         from firebase_helper import verify_firebase_token
-        
+
         # Verify Firebase token and get UID - NO FALLBACK for security
         decoded_token, error = verify_firebase_token(request)
-        
+
         if error:
             return jsonify({'success': False, 'error': f'Authentication required: {error}'}), 401
-        
+
         firebase_uid = decoded_token.get('uid')
-        
+
         # Verify user exists
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
                     user = cur.fetchone()
-                    
+
                     if not user:
                         return jsonify({'success': False, 'error': 'User not found'}), 404
-        
+
         result = get_user_devices(firebase_uid)
-        
+
         if result['success']:
             return jsonify(result)
         else:
             return jsonify(result), 500
-    
+
     except Exception as e:
         print(f"Error fetching devices: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1856,35 +2071,35 @@ def sync_device():
     """Update device last_active timestamp"""
     try:
         from firebase_helper import verify_firebase_token
-        
+
         # Verify Firebase token and get UID - NO FALLBACK for security
         decoded_token, error = verify_firebase_token(request)
-        
+
         if error:
             return jsonify({'success': False, 'error': f'Authentication required: {error}'}), 401
-        
+
         firebase_uid = decoded_token.get('uid')
-        
+
         # Get user_id from firebase_uid
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
                     user = cur.fetchone()
-                    
+
                     if not user:
                         return jsonify({'success': False, 'error': 'User not found'}), 404
-                    
+
                     user_id = user[0]
-        
+
         user_agent = request.headers.get('User-Agent', 'unknown')
         ip_address = request.remote_addr
-        
+
         result = register_or_update_device(user_id, firebase_uid, user_agent, ip_address)
         mark_devices_offline(firebase_uid)
-        
+
         return jsonify({'success': True, 'message': 'Device synced'})
-    
+
     except Exception as e:
         print(f"Error syncing device: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1948,14 +2163,14 @@ def save_email_template():
 
                     # Deactivate old templates of this type
                     cur.execute("""
-                        UPDATE email_templates 
-                        SET is_active = FALSE 
+                        UPDATE email_templates
+                        SET is_active = FALSE
                         WHERE template_type = %s
                     """, (template_type,))
 
                     # Insert new template
                     cur.execute("""
-                        INSERT INTO email_templates 
+                        INSERT INTO email_templates
                         (template_type, subject, content, modified_date)
                         VALUES (%s, %s, %s, %s)
                     """, (template_type, subject, content, datetime.now()))
@@ -2007,8 +2222,8 @@ def get_email_template_history():
                 with conn.cursor() as cur:
                     cur.execute("""
                         SELECT template_type, subject, content, modified_date, modified_by
-                        FROM email_templates 
-                        ORDER BY modified_date DESC 
+                        FROM email_templates
+                        ORDER BY modified_date DESC
                         LIMIT 20
                     """)
 
@@ -2039,8 +2254,8 @@ def restore_email_template(version_index):
                 with conn.cursor() as cur:
                     cur.execute("""
                         SELECT template_type, subject, content
-                        FROM email_templates 
-                        ORDER BY modified_date DESC 
+                        FROM email_templates
+                        ORDER BY modified_date DESC
                         LIMIT 20
                     """)
 
@@ -2119,8 +2334,8 @@ def buy_esim():
                 if conn:
                     with conn.cursor() as cur:
                         cur.execute("""
-                            SELECT email, display_name, oxio_user_id 
-                            FROM users 
+                            SELECT email, display_name, oxio_user_id
+                            FROM users
                             WHERE firebase_uid = %s
                         """, (firebase_uid,))
                         result = cur.fetchone()
@@ -2264,6 +2479,9 @@ def create_checkout_session():
             return jsonify({'error': f'No appropriate price found for product {product_id}'}), 400
 
         price_id = prices.data[0].id
+        # The amount is not directly available in the price object without fetching the related product,
+        # but we'll use defaults for now if not needed for session creation.
+        # For specific products like eSIM beta, the price is hardcoded in the route.
 
         # Create a checkout session
         success_url = request.url_root + 'dashboard?session_id={CHECKOUT_SESSION_ID}'
@@ -2361,8 +2579,8 @@ def handle_stripe_webhook():
 
                 # Mark event as being processed (prevents race conditions) with UNIQUE constraint
                 cursor.execute("""
-                    INSERT INTO processed_stripe_events (event_id, event_type) 
-                    VALUES (%s, %s) 
+                    INSERT INTO processed_stripe_events (event_id, event_type)
+                    VALUES (%s, %s)
                     ON CONFLICT (event_id) DO NOTHING
                 """, (event_id, event_type))
 
@@ -2412,6 +2630,7 @@ def handle_stripe_webhook():
                         assigned_iccid = existing_iccid
                     else:
                         # Assign new ICCID to user with atomic locking to prevent race conditions
+                        # Use atomic function for safer assignment
                         assigned_iccid = assign_iccid_to_user_atomic(firebase_uid, user_email)
 
                         if not assigned_iccid:
@@ -2573,7 +2792,7 @@ def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_
             try:
                 user_data = get_user_by_firebase_uid(firebase_uid)
                 if user_data and len(user_data) > 1:
-                    user_email = user_data[1]
+                    user_email = user_data['email']
             except Exception as e:
                 print(f"Could not get user email: {e}")
                 user_email = "user@dotmobile.app"
@@ -2662,22 +2881,36 @@ def send_esim_activation_email(firebase_uid, phone_number, line_id, iccid, esim_
         print(f"Error sending eSIM activation email: {e}")
         return False
 
-def generate_esim_activation_qr(iccid, phone_number, line_id):
-    """Generate QR code for eSIM activation with real implementation"""
+def generate_qr_code(lpa_code, iccid, format='svg'):
+    """
+    Generate QR code for eSIM activation (LPA format)
+
+    Args:
+        lpa_code: The LPA (eSIM Activation Code)
+        iccid: The ICCID of the eSIM
+        format: 'svg' or 'png'
+
+    Returns:
+        Dictionary with QR code data and success status, or error details.
+    """
     try:
         import qrcode
         import base64
         from io import BytesIO
 
-        # Create eSIM activation data (LPA format for eSIM profiles)
-        if iccid:
-            # Use actual ICCID for QR code content - this would contain activation URL
+        # Construct the QR code data string. This format is specific to eSIM provisioning.
+        # The exact structure might vary slightly based on the SM-DP+ server.
+        # This is a common example: LPA:1$SMDP_ADDRESS$ICCID$QR_HASH (QR hash is optional)
+        # Using a placeholder SMDP address for now.
+        if lpa_code and iccid:
+            qr_data = f"LPA:1$api-staging.brandvno.com${iccid}$?esim_activation_code={lpa_code}"
+        elif lpa_code:
+            qr_data = f"LPA:1$api-staging.brandvno.com$None$?esim_activation_code={lpa_code}"
+        elif iccid:
             qr_data = f"LPA:1$api-staging.brandvno.com${iccid}$"
         else:
-            # Fallback QR data with phone info
-            qr_data = f"DOTM-eSIM:Phone:{phone_number}:Line:{line_id}:Activation-Required"
+            return {'success': False, 'error': 'Missing LPA code or ICCID for QR generation'}
 
-        # Generate QR code
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -2687,21 +2920,26 @@ def generate_esim_activation_qr(iccid, phone_number, line_id):
         qr.add_data(qr_data)
         qr.make(fit=True)
 
-        # Create QR code image
-        qr_image = qr.make_image(fill_color="black", back_color="white")
-
-        # Convert to base64 for email embedding
-        buffer = BytesIO()
-        qr_image.save(buffer, format='PNG')
-        buffer.seek(0)
-        qr_base64 = base64.b64encode(buffer.getvalue()).decode()
-
-        print(f"✅ Generated QR code successfully")
-        return qr_base64
+        if format.lower() == 'svg':
+            # Generate SVG QR code
+            qr_svg_data = qr.get_string(fill_color="black", back_color="white")
+            return {'success': True, 'data': qr_svg_data, 'format': 'svg'}
+        elif format.lower() == 'png':
+            # Generate PNG QR code
+            qr_image = qr.make_image(fill_color="black", back_color="white")
+            buffer = BytesIO()
+            qr_image.save(buffer, format='PNG')
+            buffer.seek(0)
+            qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+            qr_data_uri = f"data:image/png;base64,{qr_base64}"
+            return {'success': True, 'data': qr_data_uri, 'format': 'png'}
+        else:
+            return {'success': False, 'error': 'Unsupported QR code format'}
 
     except Exception as e:
         print(f"❌ Error generating QR code: {e}")
-        return None
+        return {'success': False, 'error': str(e)}
+
 
 def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
     """Activate eSIM and OXIO base plan for user after successful payment"""
@@ -2715,20 +2953,21 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                 'message': f'No user found for Firebase UID: {firebase_uid}'
             }
 
-        user_id = user_data[0]
-        user_email = user_data[1] if len(user_data) > 1 else "unknown@example.com"
-        oxio_user_id = user_data[7] if len(user_data) > 7 else None
+        user_id = user_data['id']
+        user_email = user_data['email']
+        oxio_user_id = user_data['oxio_user_id']
 
         print(f"Activating eSIM for user {user_id} ({user_email}) with OXIO user ID: {oxio_user_id}")
 
         # Create OXIO user if not exists
         if not oxio_user_id:
             print("Creating new OXIO user for eSIM activation...")
-            oxio_user_result = oxio_service.create_user({
-                'email': user_email,
-                'firstName': user_data[2] if len(user_data) > 2 else '',
-                'lastName': user_data[3] if len(user_data) > 3 else ''
-            })
+            oxio_user_result = oxio_service.create_oxio_user(
+                first_name=user_data['first_name'],
+                last_name=user_data['last_name'],
+                email=user_email,
+                firebase_uid=firebase_uid
+            )
 
             if oxio_user_result.get('success') and oxio_user_result.get('user_id'):
                 oxio_user_id = oxio_user_result['user_id']
@@ -2795,10 +3034,15 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
             # Generate eSIM activation QR code
             esim_qr_code = None
             try:
-                from qr_generator import generate_esim_activation_qr
-                if iccid and phone_number:
-                    esim_qr_code = generate_esim_activation_qr(iccid, phone_number, line_id)
-                    print(f"Generated eSIM activation QR code")
+                # Generate QR code using the new function
+                qr_response = generate_qr_code(
+                    lpa_code=None,  # Assuming LPA is not directly returned or needed for this generation
+                    iccid=iccid,
+                    format='png' # Request PNG for email attachment
+                )
+                if qr_response.get('success'):
+                    esim_qr_code = qr_response.get('data') # This will be a data URI
+                    print(f"Generated eSIM activation QR code (PNG data URI)")
             except Exception as qr_error:
                 print(f"Could not generate eSIM QR code: {qr_error}")
 
@@ -2823,14 +3067,16 @@ def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
                                         plan_id VARCHAR(100),
                                         group_id VARCHAR(100),
                                         esim_qr_code TEXT,
+                                        activation_url TEXT,
+                                        activation_code VARCHAR(200),
                                         oxio_response TEXT,
                                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                                     )
                                 """)
 
                                 cur.execute("""
-                                    INSERT INTO oxio_activations 
-                                    (user_id, firebase_uid, purchase_id, product_id, iccid, 
+                                    INSERT INTO oxio_activations
+                                    (user_id, firebase_uid, purchase_id, product_id, iccid,
                                      line_id, phone_number, activation_status, plan_id, group_id,
                                      esim_qr_code, oxio_response)
                                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -2933,21 +3179,41 @@ purchase_model = api.model('Purchase', {
 })
 
 def get_user_by_firebase_uid(firebase_uid):
-    """Helper function to get user data by Firebase UID"""
+    """Get user information from database by Firebase UID with all OXIO fields"""
     try:
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    cur.execute(
-                        """SELECT id, email, firebase_uid, stripe_customer_id, display_name, 
-                                  photo_url, imei, oxio_user_id, eth_address, oxio_group_id
-                        FROM users WHERE firebase_uid = %s""",
-                        (firebase_uid,)
-                    )
-                    user_data = cur.fetchone()
-                    if user_data:
-                        print(f"get_user_by_firebase_uid debug: Found user {user_data[0]} with oxio_user_id: {user_data[7]}, eth_address: {user_data[8]}")
-                    return user_data
+                    cur.execute("""
+                        SELECT id, email, display_name, firebase_uid, stripe_customer_id,
+                               imei, eth_address, oxio_user_id, oxio_group_id
+                        FROM users
+                        WHERE firebase_uid = %s
+                    """, (firebase_uid,))
+
+                    user = cur.fetchone()
+                    if user:
+                        # Parse display_name into first_name and last_name
+                        display_name = user[2] or ''
+                        name_parts = display_name.split(' ', 1) if display_name else []
+                        first_name = name_parts[0] if name_parts else ''
+                        last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+                        print(f"get_user_by_firebase_uid debug: Found user {user[0]} with oxio_user_id: {user[7]}, eth_address: {user[6]}")
+
+                        return {
+                            'id': user[0],
+                            'email': user[1],
+                            'first_name': first_name,
+                            'last_name': last_name,
+                            'display_name': display_name,
+                            'firebase_uid': user[3],
+                            'stripe_customer_id': user[4],
+                            'imei': user[5],
+                            'eth_address': user[6],
+                            'oxio_user_id': user[7],
+                            'oxio_group_id': user[8]
+                        }
         return None
     except Exception as e:
         print(f"Error getting user by Firebase UID: {str(e)}")
@@ -2961,10 +3227,10 @@ def get_user_stripe_purchases(stripe_customer_id):
                 with conn.cursor() as cur:
                     # Get purchases linked to Stripe customer
                     cur.execute("""
-                        SELECT SUM(TotalAmount) 
-                        FROM purchases 
+                        SELECT SUM(TotalAmount)
+                        FROM purchases
                         WHERE StripeID IN (
-                            SELECT id FROM stripe_sessions_or_invoices 
+                            SELECT id FROM stripe_sessions_or_invoices
                             WHERE customer_id = %s
                         ) OR UserID = (
                             SELECT id FROM users WHERE stripe_customer_id = %s
@@ -2989,8 +3255,8 @@ def get_user_data_balance():
         if firebase_uid:
             user_data = get_user_by_firebase_uid(firebase_uid)
             if user_data:
-                user_id = user_data[0]  # Get the actual internal user ID (integer)
-                stripe_customer_id = user_data[3]  # Get Stripe customer ID
+                user_id = user_data['id']  # Get the actual internal user ID (integer)
+                stripe_customer_id = user_data['stripe_customer_id']  # Get Stripe customer ID
                 print(f"Found user {user_id} for Firebase UID {firebase_uid} with Stripe customer {stripe_customer_id}")
             else:
                 return jsonify({
@@ -3017,11 +3283,11 @@ def get_user_data_balance():
                     # Get all data-related purchases for this user - using correct column names
                     try:
                         cur.execute("""
-                            SELECT 
+                            SELECT
                                 COALESCE(SUM(CASE WHEN StripeProductID = 'global_data_10gb' THEN TotalAmount ELSE 0 END), 0) as global_data_cents,
                                 COALESCE(SUM(CASE WHEN StripeProductID LIKE '%data%' OR StripeProductID = 'beta_esim_data' THEN TotalAmount ELSE 0 END), 0) as total_data_cents,
                                 COUNT(*) as total_purchases
-                            FROM purchases 
+                            FROM purchases
                             WHERE UserID = %s OR FirebaseUID = %s
                         """, (user_id, firebase_uid))
 
@@ -3057,8 +3323,8 @@ def get_user_data_balance():
 
                     # Get subscription status for additional data allowances
                     cur.execute("""
-                        SELECT subscription_type, end_date 
-                        FROM subscriptions 
+                        SELECT subscription_type, end_date
+                        FROM subscriptions
                         WHERE user_id = %s AND status = 'active' AND end_date > CURRENT_TIMESTAMP
                         ORDER BY end_date DESC LIMIT 1
                     """, (user_id,))
@@ -3123,10 +3389,10 @@ def report_data_usage():
 
         # Get user's Stripe customer ID
         user_data = get_user_by_firebase_uid(firebase_uid)
-        if not user_data or not user_data[3]:  # user_data[3] is stripe_customer_id
+        if not user_data or not user_data['stripe_customer_id']:
             return jsonify({'error': 'No Stripe customer found for user'}), 404
 
-        stripe_customer_id = user_data[3]
+        stripe_customer_id = user_data['stripe_customer_id']
 
         # Import and use metering function
         from stripe_metering import report_data_usage as stripe_report_usage
@@ -3140,10 +3406,10 @@ def report_data_usage():
                 if conn:
                     with conn.cursor() as cur:
                         cur.execute("""
-                            INSERT INTO data_usage_log 
+                            INSERT INTO data_usage_log
                             (user_id, stripe_customer_id, megabytes_used, stripe_event_id, created_at)
                             VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
-                        """, (user_data[0], stripe_customer_id, megabytes_used, result.get('event_id')))
+                        """, (user_data['id'], stripe_customer_id, megabytes_used, result.get('event_id')))
                         conn.commit()
 
             return jsonify({
@@ -3169,10 +3435,10 @@ def get_usage_summary():
 
         # Get user's Stripe customer ID
         user_data = get_user_by_firebase_uid(firebase_uid)
-        if not user_data or not user_data[3]:
+        if not user_data or not user_data['stripe_customer_id']:
             return jsonify({'error': 'No Stripe customer found for user'}), 404
 
-        stripe_customer_id = user_data[3]
+        stripe_customer_id = user_data['stripe_customer_id']
 
         # Import and use metering function
         from stripe_metering import get_customer_usage_summary
@@ -3207,7 +3473,7 @@ def get_subscription_status():
         if firebase_uid:
             user_data = get_user_by_firebase_uid(firebase_uid)
             if user_data:
-                user_id = user_data[0]  # Get the actual internal user ID (integer)
+                user_id = user_data['id']  # Get the actual internal user ID (integer)
                 print(f"Found user {user_id} for Firebase UID {firebase_uid}")
             else:
                 print(f"No user found for Firebase UID {firebase_uid}, using default user_id=1")
@@ -3225,9 +3491,9 @@ def get_subscription_status():
                     # Get the most recent active subscription
                     cur.execute("""
                         SELECT subscription_type, start_date, end_date, status, stripe_subscription_id
-                        FROM subscriptions 
+                        FROM subscriptions
                         WHERE user_id = %s AND status = 'active' AND end_date > CURRENT_TIMESTAMP
-                        ORDER BY end_date DESC 
+                        ORDER BY end_date DESC
                         LIMIT 1
                     """, (user_id,))
 
@@ -3245,9 +3511,9 @@ def get_subscription_status():
                         # Check if user has any expired subscriptions
                         cur.execute("""
                             SELECT subscription_type, end_date
-                            FROM subscriptions 
+                            FROM subscriptions
                             WHERE user_id = %s
-                            ORDER BY end_date DESC 
+                            ORDER BY end_date DESC
                             LIMIT 1
                         """, (user_id,))
 
@@ -3349,7 +3615,7 @@ def record_global_purchase():
         try:
             user_data = get_user_by_firebase_uid(firebase_uid)
             if user_data:
-                user_id = user_data[0]
+                user_id = user_data['id']
                 print(f"Found user_id {user_id} for Firebase UID {firebase_uid}")
         except Exception as lookup_err:
             print(f"Error looking up user by Firebase UID: {str(lookup_err)}")
@@ -3382,10 +3648,10 @@ def record_global_purchase():
                 print(f"Activating OXIO line for Basic Membership purchase by user {user_id}")
 
                 # Get user details for OXIO activation
-                user_email = user_data[1] if len(user_data) > 1 else "unknown@example.com"
+                user_email = user_data['email']
                 # Make sure we get the OXIO user ID (column 7) not the Ethereum address (column 8)
-                oxio_user_id = user_data[7] if len(user_data) > 7 else None
-                eth_address = user_data[8] if len(user_data) > 8 else None
+                oxio_user_id = user_data['oxio_user_id']
+                eth_address = user_data['eth_address']
                 print(f"Debug: Retrieved user data - email: {user_email}, oxio_user_id: {oxio_user_id}, eth_address: {eth_address}")
 
                 # Use environment variable for ICCID or generate a demo one
@@ -3453,20 +3719,17 @@ def record_global_purchase():
 
                                     # Insert activation record
                                     cur.execute("""
-                                        INSERT INTO oxio_activations 
-                                        (user_id, firebase_uid, purchase_id, product_id, iccid, 
+                                        INSERT INTO oxio_activations
+                                        (user_id, firebase_uid, purchase_id, product_id, iccid,
                                          line_id, phone_number, activation_status, oxio_response)
                                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                                    """, (user_id, firebase_uid, purchase_id, product_id, iccid, 
+                                    """, (user_id, firebase_uid, purchase_id, product_id, iccid,
                                           line_id, phone_number, 'activated', str(oxio_result)))
 
                                     conn.commit()
                                     print(f"Stored OXIO activation record for user {user_id}")
                     except Exception as db_err:
                         print(f"Error storing OXIO activation record: {str(db_err)}")
-                else:
-                    print(f"Failed to activate OXIO line: {oxio_result.get('message', 'Unknown error')}")
-
             except Exception as oxio_err:
                 print(f"Error during OXIO line activation: {str(oxio_err)}")
 
@@ -3594,15 +3857,15 @@ class CheckMemberships(Resource):
     def get(self):
         try:
             # Try to get user ID from session (in a real app)
-            user_id = 1  # Default for demo 
+            user_id = 1  # Default for demo
 
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
-                        # Check if user haspurchased any membership products
+                        # Check if user has purchased any membership products
                         cur.execute("""
-                            SELECT StripeProductID 
-                            FROM purchases 
+                            SELECT StripeProductID
+                            FROM purchases
                             WHERE UserID = %s AND StripeProductID IN ('basic_membership', 'full_membership')
                             LIMIT 1
                         """, (user_id,))
@@ -3870,9 +4133,9 @@ def get_user_network_features(firebase_uid):
                 'message': f'User not found for Firebase UID: {firebase_uid}. Please ensure you are logged in.'
             }), 404
 
-        # user_data is a tuple, so we need to access by index
-        user_id = user_data[0]
-        user_email = user_data[1]
+        # user_data is a dictionary, so access by key
+        user_id = user_data['id']
+        user_email = user_data['email']
         print(f"Found user ID: {user_id} for Firebase UID: {firebase_uid}")
 
         # Get all network features from database
@@ -3914,8 +4177,8 @@ def get_user_network_features(firebase_uid):
         oxio_data = {
             'user_id': user_id,
             'email': user_email,
-            'oxio_user_id': user_data[7] if len(user_data) > 7 else None,  # OXIO user ID from user_data tuple
-            'metamask_address': user_data[8] if len(user_data) > 8 else None,  # ETH address from user_data tuple
+            'oxio_user_id': user_data.get('oxio_user_id'),
+            'metamask_address': user_data.get('eth_address'),
             'phone_number': None,
             'line_id': None,
             'iccid': None,
@@ -3951,8 +4214,8 @@ def get_user_network_features(firebase_uid):
                         """)
 
                         cur.execute("""
-                            SELECT stripe_product_id, enabled 
-                            FROM user_network_preferences 
+                            SELECT stripe_product_id, enabled
+                            FROM user_network_preferences
                             WHERE user_id = %s
                         """, (user_id,))
 
@@ -4002,8 +4265,8 @@ def toggle_network_feature(firebase_uid, product_id):
         if not user_data:
             return jsonify({'error': 'User not found'}), 404
 
-        # user_data is a tuple, so we need to access by index
-        user_id = user_data[0]
+        # user_data is a dictionary, so access by key
+        user_id = user_data['id']
 
         # Update user's feature preference
         with get_db_connection() as conn:
@@ -4013,7 +4276,7 @@ def toggle_network_feature(firebase_uid, product_id):
                     INSERT INTO user_network_preferences (user_id, stripe_product_id, enabled)
                     VALUES (%s, %s, %s)
                     ON CONFLICT (user_id, stripe_product_id)
-                    DO UPDATE SET 
+                    DO UPDATE SET
                         enabled = EXCLUDED.enabled,
                         updated_at = CURRENT_TIMESTAMP
                 """, (user_id, product_id, enabled))
@@ -4029,6 +4292,32 @@ def toggle_network_feature(firebase_uid, product_id):
             'status': 'error',
             'message': str(e)
         }), 500
+
+def create_token_pings_table():
+    """Helper function to create token_price_pings table if it doesn't exist"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS token_price_pings (
+                            id SERIAL PRIMARY KEY,
+                            token_price DECIMAL(18,9) NOT NULL,
+                            request_time_ms INTEGER,
+                            response_time_ms INTEGER,
+                            roundtrip_ms INTEGER,
+                            ping_destination VARCHAR(255),
+                            source VARCHAR(100),
+                            additional_data TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_token_price_pings_created_at ON token_price_pings(created_at);
+                    """)
+                    conn.commit()
+                    print("Ensured token_price_pings table exists.")
+    except Exception as e:
+        print(f"Error ensuring token_price_pings table exists: {str(e)}")
+
 
 @app.route('/test-ping-creation', methods=['GET'])
 def test_ping_creation():
@@ -4048,8 +4337,8 @@ def test_ping_creation():
                     roundtrip = 150
 
                     cur.execute(
-                        """INSERT INTO token_price_pings 
-                          (token_price, request_time_ms, response_time_ms, roundtrip_ms, 
+                        """INSERT INTO token_price_pings
+                          (token_price, request_time_ms, response_time_ms, roundtrip_ms,
                            ping_destination, source, additional_data)
                           VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id""",
                         (
@@ -4111,6 +4400,7 @@ def populate_token_pings():
                             additional_data TEXT,
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         );
+                        CREATE INDEX IF NOT EXISTS idx_token_price_pings_created_at ON token_price_pings(created_at);
                         """
                         cur.execute(create_table_sql)
                         conn.commit()
@@ -4150,11 +4440,11 @@ def populate_token_pings():
 
                         # Insert the record
                         cur.execute(
-                            """INSERT INTO token_price_pings 
-                              (token_price, request_time_ms, response_time_ms, roundtrip_ms, 
+                            """INSERT INTO token_price_pings
+                              (token_price, request_time_ms, response_time_ms, roundtrip_ms,
                                ping_destination, source, additional_data, created_at)
                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
-                            (token_price, request_time, response_time, roundtrip, 
+                            (token_price, request_time, response_time, roundtrip,
                              destination, source, additional_data, timestamp)
                         )
 
@@ -4240,13 +4530,13 @@ def fix_user_oxio_data():
                     if firebase_uid:
                         cur.execute("""
                             SELECT id, email, display_name, oxio_user_id, oxio_group_id
-                            FROM users 
+                            FROM users
                             WHERE firebase_uid = %s
                         """, (firebase_uid,))
                     else:
                         cur.execute("""
                             SELECT id, email, display_name, oxio_user_id, oxio_group_id
-                            FROM users 
+                            FROM users
                             WHERE email = %s
                         """, (email,))
 
@@ -4348,8 +4638,8 @@ def create_oxio_user_endpoint():
                 with conn.cursor() as cur:
                     # Get user details
                     cur.execute("""
-                        SELECT id, email, display_name, oxio_user_id 
-                        FROM users 
+                        SELECT id, email, display_name, oxio_user_id
+                        FROM users
                         WHERE firebase_uid = %s
                     """, (firebase_uid,))
                     user_result = cur.fetchone()
@@ -4399,7 +4689,7 @@ def create_oxio_user_endpoint():
                             })
                         else:
                             # Check if user already exists (error code 6805)
-                            if (oxio_result.get('status_code') == 400 and 
+                            if (oxio_result.get('status_code') == 400 and
                                 oxio_result.get('data', {}).get('code') == 6805):
                                 print(f"OXIO user already exists for {email}, attempting to find existing user ID")
 
@@ -4458,17 +4748,17 @@ def get_oxio_activation_status():
         if not user_data:
             return jsonify({'error': 'User not found'}), 404
 
-        user_id = user_data[0]
+        user_id = user_data['id']
 
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     # Get OXIO activation records for this user
                     cur.execute("""
-                        SELECT id, product_id, iccid, line_id, phone_number, 
+                        SELECT id, product_id, iccid, line_id, phone_number,
                                activation_status, oxio_response, created_at
-                        FROM oxio_activations 
-                        WHERE firebase_uid = %s 
+                        FROM oxio_activations
+                        WHERE firebase_uid = %s
                         ORDER BY created_at DESC
                     """, (firebase_uid,))
 
@@ -4521,11 +4811,11 @@ def get_user_notifications():
                 with conn.cursor() as cur:
                     # Get notifications for this user
                     cur.execute("""
-                        SELECT id, title, body, notification_type, audio_url, delivered, read_status, 
+                        SELECT id, title, body, notification_type, audio_url, delivered, read_status,
                                fcm_response, created_at, delivered_at
-                        FROM notifications 
-                        WHERE firebase_uid = %s 
-                        ORDER BY created_at DESC 
+                        FROM notifications
+                        WHERE firebase_uid = %s
+                        ORDER BY created_at DESC
                         LIMIT %s
                     """, (firebase_uid, limit))
 
@@ -4571,14 +4861,14 @@ def mark_notification_read(notification_id):
                     # Update notification as read
                     if firebase_uid:
                         cur.execute("""
-                            UPDATE notifications 
+                            UPDATE notifications
                             SET read_status = TRUE
                             WHERE id = %s AND firebase_uid = %s
                             RETURNING title
                         """, (notification_id, firebase_uid))
                     else:
                         cur.execute("""
-                            UPDATE notifications 
+                            UPDATE notifications
                             SET read_status = TRUE
                             WHERE id = %s
                             RETURNING title
@@ -4606,14 +4896,14 @@ def get_welcome_voices():
     try:
         voice_profiles = elevenlabs_service.get_voice_profiles()
         voices = []
-        
+
         for profile_name, profile_data in voice_profiles.items():
             voices.append({
                 'name': profile_name,
                 'voice_id': profile_data['voice_id'],
                 'description': profile_data['description']
             })
-        
+
         return jsonify({
             'success': True,
             'voices': voices
@@ -4631,10 +4921,10 @@ def generate_welcome_message():
         language = data.get('language', 'en')
         voice_profile = data.get('voice_profile', 'ScienceTeacher')
         requested_type = data.get('message_type')  # Optional override
-        
+
         if not firebase_uid:
             return jsonify({'success': False, 'error': 'Firebase UID required'}), 400
-        
+
         # Determine message type based on user history (if not explicitly requested)
         message_type = requested_type
         if not message_type:
@@ -4643,14 +4933,14 @@ def generate_welcome_message():
                     with conn.cursor() as cur:
                         # Check what message types user has listened to
                         cur.execute("""
-                            SELECT DISTINCT message_type 
-                            FROM user_message_history 
+                            SELECT DISTINCT message_type
+                            FROM user_message_history
                             WHERE firebase_uid = %s AND completed = TRUE
                             ORDER BY message_type
                         """, (firebase_uid,))
-                        
+
                         listened_types = [row[0] for row in cur.fetchall()]
-                        
+
                         # Select next message type
                         if 'welcome' not in listened_types:
                             message_type = 'welcome'
@@ -4658,17 +4948,17 @@ def generate_welcome_message():
                             message_type = 'tip'
                         else:
                             message_type = 'update'
-        
+
         # Check cache first
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                        SELECT id, audio_data, content_type 
-                        FROM welcome_messages 
+                        SELECT id, audio_data, content_type
+                        FROM welcome_messages
                         WHERE firebase_uid = %s AND language = %s AND voice_profile = %s AND message_type = %s
                     """, (firebase_uid, language, voice_profile, message_type))
-                    
+
                     cached = cur.fetchone()
                     if cached:
                         message_id, audio_data, content_type = cached
@@ -4680,31 +4970,31 @@ def generate_welcome_message():
                             'message_type': message_type,
                             'cached': True
                         })
-        
+
         # Generate new message and track generation time
         import time
         start_time = time.time()
-        
+
         result = elevenlabs_service.generate_welcome_message(
             user_name=None,
             language=language,
             voice_profile=voice_profile,
             message_type=message_type
         )
-        
+
         generation_time_ms = int((time.time() - start_time) * 1000)
-        
+
         if result.get('success'):
             # Store in database with generation time and message type
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
                         cur.execute("""
-                            INSERT INTO welcome_messages 
+                            INSERT INTO welcome_messages
                             (firebase_uid, language, voice_profile, audio_data, content_type, generation_time_ms, message_type)
                             VALUES (%s, %s, %s, %s, %s, %s, %s)
-                            ON CONFLICT (firebase_uid, language, voice_profile, message_type) 
-                            DO UPDATE SET audio_data = EXCLUDED.audio_data, 
+                            ON CONFLICT (firebase_uid, language, voice_profile, message_type)
+                            DO UPDATE SET audio_data = EXCLUDED.audio_data,
                                         created_at = CURRENT_TIMESTAMP,
                                         generation_time_ms = EXCLUDED.generation_time_ms
                             RETURNING id
@@ -4717,10 +5007,10 @@ def generate_welcome_message():
                             generation_time_ms,
                             message_type
                         ))
-                        
+
                         message_id = cur.fetchone()[0]
                         conn.commit()
-                        
+
                         return jsonify({
                             'success': True,
                             'audio_url': f'/api/welcome-audio/{message_id}',
@@ -4729,14 +5019,14 @@ def generate_welcome_message():
                             'cached': False,
                             'generation_time_ms': generation_time_ms
                         })
-            
+
             return jsonify({'success': False, 'error': 'Database error'}), 500
         else:
             return jsonify({
                 'success': False,
                 'error': result.get('error', 'Unknown error')
             }), 500
-            
+
     except Exception as e:
         print(f"Error generating welcome message: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -4749,11 +5039,11 @@ def get_welcome_audio(message_id):
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                        SELECT audio_data, content_type 
-                        FROM welcome_messages 
+                        SELECT audio_data, content_type
+                        FROM welcome_messages
                         WHERE id = %s
                     """, (message_id,))
-                    
+
                     result = cur.fetchone()
                     if result:
                         audio_data, content_type = result
@@ -4767,9 +5057,9 @@ def get_welcome_audio(message_id):
                         )
                     else:
                         return jsonify({'error': 'Audio not found'}), 404
-        
+
         return jsonify({'error': 'Database error'}), 500
-        
+
     except Exception as e:
         print(f"Error retrieving welcome audio: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -4785,24 +5075,24 @@ def get_estimated_generation_time():
                     cur.execute("""
                         SELECT AVG(generation_time_ms) as avg_time
                         FROM (
-                            SELECT generation_time_ms 
-                            FROM welcome_messages 
-                            WHERE generation_time_ms IS NOT NULL 
-                            ORDER BY created_at DESC 
+                            SELECT generation_time_ms
+                            FROM welcome_messages
+                            WHERE generation_time_ms IS NOT NULL
+                            ORDER BY created_at DESC
                             LIMIT 10
                         ) recent_messages
                     """)
-                    
+
                     result = cur.fetchone()
                     avg_time = result[0] if result and result[0] else 3000  # Default to 3 seconds
-                    
+
                     return jsonify({
                         'success': True,
                         'estimated_time_ms': int(avg_time)
                     })
-        
+
         return jsonify({'success': False, 'error': 'Database error'}), 500
-        
+
     except Exception as e:
         print(f"Error getting estimated time: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -4817,32 +5107,32 @@ def track_message_listen():
         language = data.get('language', 'en')
         voice_profile = data.get('voice_profile', 'ScienceTeacher')
         completed = data.get('completed', False)
-        
+
         if not firebase_uid:
             return jsonify({'success': False, 'error': 'Firebase UID required'}), 400
-        
+
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     # Insert or update listening record
                     cur.execute("""
-                        INSERT INTO user_message_history 
+                        INSERT INTO user_message_history
                         (firebase_uid, message_type, language, voice_profile, completed, listened_at)
                         VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                         RETURNING id
                     """, (firebase_uid, message_type, language, voice_profile, completed))
-                    
+
                     history_id = cur.fetchone()[0]
                     conn.commit()
-                    
+
                     return jsonify({
                         'success': True,
                         'history_id': history_id,
                         'message': 'Listening tracked successfully'
                     })
-        
+
         return jsonify({'success': False, 'error': 'Database error'}), 500
-        
+
     except Exception as e:
         print(f"Error tracking message listen: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -4864,9 +5154,9 @@ def update_personal_message():
                 with conn.cursor() as cur:
                     # Check if an invite already exists for this Firebase UID
                     cur.execute("""
-                        SELECT id, email FROM invites 
+                        SELECT id, email FROM invites
                         WHERE invited_by_firebase_uid = %s OR email = %s
-                        ORDER BY created_at DESC 
+                        ORDER BY created_at DESC
                         LIMIT 1
                     """, (firebase_uid, email))
 
@@ -4875,8 +5165,8 @@ def update_personal_message():
                     if existing_invite:
                         # Update existing invite
                         cur.execute("""
-                            UPDATE invites 
-                            SET personal_message = %s, 
+                            UPDATE invites
+                            SET personal_message = %s,
                                 updated_at = CURRENT_TIMESTAMP
                             WHERE id = %s
                             RETURNING id
@@ -4894,8 +5184,8 @@ def update_personal_message():
                         user_id = user_result[0] if user_result else None
 
                         cur.execute("""
-                            INSERT INTO invites 
-                            (user_id, email, invitation_token, invited_by_firebase_uid, 
+                            INSERT INTO invites
+                            (user_id, email, invitation_token, invited_by_firebase_uid,
                              personal_message, invitation_status)
                             VALUES (%s, %s, %s, %s, %s, 'draft')
                             RETURNING id
@@ -5138,8 +5428,8 @@ def get_user_assigned_iccid_data(firebase_uid):
                 with conn.cursor() as cur:
                     cur.execute("""
                         SELECT iccid, sim_type, sim_status, country, lpa_code, line_id, allocated_to_firebase_uid, assigned_at
-                        FROM iccid_inventory 
-                        WHERE allocated_to_firebase_uid = %s 
+                        FROM iccid_inventory
+                        WHERE allocated_to_firebase_uid = %s
                           AND status = 'assigned'
                         ORDER BY assigned_at DESC
                         LIMIT 1
@@ -5189,8 +5479,8 @@ def assign_iccid_to_user_atomic(firebase_uid, user_email=None):
                     # Use row-level locking to prevent race conditions
                     cur.execute("""
                         SELECT iccid, sim_type, sim_status, country, lpa_code, line_id
-                        FROM iccid_inventory 
-                        WHERE status = 'available' 
+                        FROM iccid_inventory
+                        WHERE status = 'available'
                           AND allocated_to_firebase_uid IS NULL
                         ORDER BY created_at ASC
                         LIMIT 1
@@ -5207,7 +5497,7 @@ def assign_iccid_to_user_atomic(firebase_uid, user_email=None):
 
                     # Atomically update ICCID record with user assignment
                     cur.execute("""
-                        UPDATE iccid_inventory 
+                        UPDATE iccid_inventory
                         SET allocated_to_firebase_uid = %s,
                             status = 'assigned',
                             assigned_at = CURRENT_TIMESTAMP,
@@ -5265,8 +5555,8 @@ def assign_iccid_to_user(firebase_uid, user_email=None):
                     # Find first available ICCID
                     cur.execute("""
                         SELECT iccid, sim_type, sim_status, country, lpa_code, line_id
-                        FROM iccid_inventory 
-                        WHERE status = 'available' 
+                        FROM iccid_inventory
+                        WHERE status = 'available'
                           AND allocated_to_firebase_uid IS NULL
                         ORDER BY created_at ASC
                         LIMIT 1
@@ -5279,11 +5569,11 @@ def assign_iccid_to_user(firebase_uid, user_email=None):
                         print(f"❌ No available ICCIDs for assignment")
                         return None
 
-                    iccid, sim_type, sim_status, country, lpa_code, line_id = available_iccid
+                    iccid, sim_type,sim_status, country, lpa_code, line_id = available_iccid
 
                     # Update ICCID record with user assignment
                     cur.execute("""
-                        UPDATE iccid_inventory 
+                        UPDATE iccid_inventory
                         SET allocated_to_firebase_uid = %s,
                             status = 'assigned',
                             assigned_at = CURRENT_TIMESTAMP,
@@ -5431,281 +5721,2576 @@ def send_esim_receipt_email(firebase_uid, user_email, user_name, assigned_iccid)
         print(f"Error sending eSIM receipt email: {str(e)}")
         return False
 
+def generate_qr_code(lpa_code, iccid, format='svg'):
+    """
+    Generate QR code for eSIM activation (LPA format)
 
-# ==========================================
-# DATASHARE API ENDPOINTS
-# ==========================================
+    Args:
+        lpa_code: The LPA (eSIM Activation Code)
+        iccid: The ICCID of the eSIM
+        format: 'svg' or 'png'
 
-@app.route('/api/send-invitation', methods=['POST'])
-@require_auth
-def send_datashare_invitation():
-    """Send datashare invitation via email or create demo user"""
+    Returns:
+        Dictionary with QR code data and success status, or error details.
+    """
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        import qrcode
+        import base64
+        from io import BytesIO
 
-        email = data.get('email')
-        personal_message = data.get('message', '')
-        firebase_uid = data.get('firebaseUid')  # Validated by @require_auth decorator
-        is_demo_user = data.get('isDemoUser', False)
+        # Construct the QR code data string. This format is specific to eSIM provisioning.
+        # The exact structure might vary slightly based on the SM-DP+ server.
+        # This is a common example: LPA:1$SMDP_ADDRESS$ICCID$QR_HASH (QR hash is optional)
+        # Using a placeholder SMDP address for now.
+        if lpa_code and iccid:
+            qr_data = f"LPA:1$api-staging.brandvno.com${iccid}$?esim_activation_code={lpa_code}"
+        elif lpa_code:
+            qr_data = f"LPA:1$api-staging.brandvno.com$None$?esim_activation_code={lpa_code}"
+        elif iccid:
+            qr_data = f"LPA:1$api-staging.brandvno.com${iccid}$"
+        else:
+            return {'success': False, 'error': 'Missing LPA code or ICCID for QR generation'}
 
-        if not email or not firebase_uid:
-            return jsonify({'success': False, 'error': 'Email and Firebase UID are required'}), 400
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(qr_data)
+        qr.make(fit=True)
 
-        # Get sender user details
-        sender_user_id = None
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                    result = cur.fetchone()
-                    if result:
-                        sender_user_id = result[0]
+        if format.lower() == 'svg':
+            # Generate SVG QR code
+            qr_svg_data = qr.get_string(fill_color="black", back_color="white")
+            return {'success': True, 'data': qr_svg_data, 'format': 'svg'}
+        elif format.lower() == 'png':
+            # Generate PNG QR code
+            qr_image = qr.make_image(fill_color="black", back_color="white")
+            buffer = BytesIO()
+            qr_image.save(buffer, format='PNG')
+            buffer.seek(0)
+            qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+            qr_data_uri = f"data:image/png;base64,{qr_base64}"
+            return {'success': True, 'data': qr_data_uri, 'format': 'png'}
+        else:
+            return {'success': False, 'error': 'Unsupported QR code format'}
 
-        if not sender_user_id:
-            return jsonify({'success': False, 'error': 'Sender user not found'}), 404
+    except Exception as e:
+        print(f"❌ Error generating QR code: {e}")
+        return {'success': False, 'error': str(e)}
 
-        # Generate invitation token
-        import secrets
-        invitation_token = secrets.token_urlsafe(32)
-        
-        # Generate invitation link
-        invitation_link = f"https://gorse.dotmobile.app/signup?invite={invitation_token}"
 
-        # Store invitation in database
-        with get_db_connection() as conn:
-            if conn:
-                with conn.cursor() as cur:
-                    # Create invites table if it doesn't exist (backup)
-                    cur.execute("""
-                        CREATE TABLE IF NOT EXISTS invites (
-                            id SERIAL PRIMARY KEY,
-                            user_id INTEGER,
-                            email VARCHAR(255) NOT NULL,
-                            invitation_status VARCHAR(50) NOT NULL DEFAULT 'pending',
-                            invited_by_user_id INTEGER,
-                            invited_by_firebase_uid VARCHAR(255),
-                            invitation_token VARCHAR(255),
-                            personal_message TEXT,
-                            is_demo_user BOOLEAN DEFAULT FALSE,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '7 days'),
-                            accepted_at TIMESTAMP,
-                            rejected_at TIMESTAMP,
-                            cancelled_at TIMESTAMP
-                        )
-                    """)
+def activate_esim_for_user(firebase_uid: str, checkout_session) -> dict:
+    """Activate eSIM and OXIO base plan for user after successful payment"""
+    try:
+        # Get user data from Firebase UID
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            return {
+                'success': False,
+                'error': 'User not found',
+                'message': f'No user found for Firebase UID: {firebase_uid}'
+            }
 
-                    # Insert invitation record
-                    cur.execute("""
-                        INSERT INTO invites 
-                        (email, invitation_status, invited_by_user_id, invited_by_firebase_uid, 
-                         invitation_token, personal_message, is_demo_user)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        RETURNING id
-                    """, (email, 'pending', sender_user_id, firebase_uid, invitation_token, 
-                          personal_message, is_demo_user))
-                    
-                    invitation_id = cur.fetchone()[0]
-                    conn.commit()
+        user_id = user_data['id']
+        user_email = user_data['email']
+        oxio_user_id = user_data['oxio_user_id']
 
-        # Send email for real invitations (not demo users)
-        email_sent = False
-        if not is_demo_user:
+        print(f"Activating eSIM for user {user_id} ({user_email}) with OXIO user ID: {oxio_user_id}")
+
+        # Create OXIO user if not exists
+        if not oxio_user_id:
+            print("Creating new OXIO user for eSIM activation...")
+            oxio_user_result = oxio_service.create_oxio_user(
+                first_name=user_data['first_name'],
+                last_name=user_data['last_name'],
+                email=user_email,
+                firebase_uid=firebase_uid
+            )
+
+            if oxio_user_result.get('success') and oxio_user_result.get('user_id'):
+                oxio_user_id = oxio_user_result['user_id']
+
+                # Update user record with OXIO user ID
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            cur.execute("""
+                                UPDATE users SET oxio_user_id = %s WHERE id = %s
+                            """, (oxio_user_id, user_id))
+                            conn.commit()
+                print(f"Created OXIO user: {oxio_user_id}")
+            else:
+                return {
+                    'success': False,
+                    'error': 'OXIO user creation failed',
+                    'message': oxio_user_result.get('message', 'Unknown error')
+                }
+
+        # Activate OXIO line with Basic Membership plan
+        print(f"Activating OXIO line for eSIM Beta user {user_id}")
+
+        # Use enhanced activation with plan ID and group ID for eSIM Beta
+        esim_plan_id = "OXIO_BASIC_MEMBERSHIP_BASEPLANID"  # OXIO base plan ID for $1 beta access
+
+        # Try to get group ID from user data or beta service
+        esim_group_id = None
+        try:
+            from beta_approval_service import BetaApprovalService
+            beta_service = BetaApprovalService()
+            beta_status = beta_service.get_user_beta_status(firebase_uid)
+            esim_group_id = beta_status.get('group_id')
+            print(f"Retrieved group ID from beta service: {esim_group_id}")
+        except Exception as e:
+            print(f"Could not get group ID from beta service: {e}")
+
+        print(f"Activating OXIO line with Plan ID: {esim_plan_id}, Group ID: {esim_group_id}")
+        oxio_result = oxio_service.activate_line(oxio_user_id, plan_id=esim_plan_id, group_id=esim_group_id)
+
+        if oxio_result.get('success'):
+            print(f"Successfully activated OXIO base plan: {oxio_result}")
+
+            # Record the purchase in database
+            purchase_id = record_purchase(
+                stripe_id=checkout_session.get('id'),
+                product_id='esim_beta',
+                price_id=checkout_session.get('price_id', 'price_1S7Yc6JnTfh0bNQQVeLeprXe'),
+                amount=1.00,
+                user_id=user_id,
+                transaction_id=checkout_session.get('payment_intent'),
+                firebase_uid=firebase_uid,
+                stripe_transaction_id=checkout_session.get('payment_intent')
+            )
+
+            # Extract comprehensive eSIM profile information
+            activation_data = oxio_result.get('data', {})
+            phone_number = activation_data.get('phoneNumber') or oxio_result.get('phone_number')
+            line_id = activation_data.get('lineId') or oxio_result.get('line_id')
+            iccid = activation_data.get('iccid') or activation_data.get('sim', {}).get('iccid')
+
+            print(f"eSIM Profile Details extracted successfully")
+
+            # Generate eSIM activation QR code
+            esim_qr_code = None
             try:
-                from email_service import send_email_via_resend
-                
-                subject = "You're invited to join DOTM Datashare!"
-                
+                # Generate QR code using the new function
+                qr_response = generate_qr_code(
+                    lpa_code=None,  # Assuming LPA is not directly returned or needed for this generation
+                    iccid=iccid,
+                    format='png' # Request PNG for email attachment
+                )
+                if qr_response.get('success'):
+                    esim_qr_code = qr_response.get('data') # This will be a data URI
+                    print(f"Generated eSIM activation QR code (PNG data URI)")
+            except Exception as qr_error:
+                print(f"Could not generate eSIM QR code: {qr_error}")
+
+            # Store comprehensive OXIO activation details
+            if phone_number or line_id or iccid:
+                try:
+                    with get_db_connection() as conn:
+                        if conn:
+                            with conn.cursor() as cur:
+                                # Create enhanced oxio_activations table
+                                cur.execute("""
+                                    CREATE TABLE IF NOT EXISTS oxio_activations (
+                                        id SERIAL PRIMARY KEY,
+                                        user_id INTEGER NOT NULL,
+                                        firebase_uid VARCHAR(128),
+                                        purchase_id INTEGER,
+                                        product_id VARCHAR(100),
+                                        iccid VARCHAR(50),
+                                        line_id VARCHAR(100),
+                                        phone_number VARCHAR(20),
+                                        activation_status VARCHAR(50),
+                                        plan_id VARCHAR(100),
+                                        group_id VARCHAR(100),
+                                        esim_qr_code TEXT,
+                                        activation_url TEXT,
+                                        activation_code VARCHAR(200),
+                                        oxio_response TEXT,
+                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                    )
+                                """)
+
+                                cur.execute("""
+                                    INSERT INTO oxio_activations
+                                    (user_id, firebase_uid, purchase_id, product_id, iccid,
+                                     line_id, phone_number, activation_status, plan_id, group_id,
+                                     esim_qr_code, oxio_response)
+                                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                """, (
+                                    user_id, firebase_uid, purchase_id, 'esim_beta', iccid,
+                                    line_id, phone_number, 'activated', esim_plan_id, esim_group_id,
+                                    esim_qr_code, str(oxio_result)
+                                ))
+                                conn.commit()
+                                print(f"Stored comprehensive eSIM activation details for user {user_id}")
+                except Exception as db_error:
+                    print(f"Error storing activation details: {str(db_error)}")
+
+            # Send confirmation email
+            try:
+                from email_service import send_email
+                subject = "🎉 eSIM is Ready!"
+
                 html_body = f"""
                 <html>
-                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; text-align: center;">
-                            <h1>🚀 You're Invited to DOTM Datashare!</h1>
-                            <p>Join the future of global connectivity</p>
-                        </div>
-                        
-                        <div style="padding: 30px 0;">
-                            <p>You've been invited to join DOTM's exclusive datashare network for global connectivity!</p>
-                            
-                            {f'<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;"><strong>Personal message:</strong><br>{personal_message}</div>' if personal_message else ''}
-                            
-                            <h3>🌍 What you'll get:</h3>
-                            <ul style="list-style: none; padding: 0;">
-                                <li style="padding: 8px 0;"><span style="color: #28a745;">✓</span> Global data connectivity in 160+ countries</li>
-                                <li style="padding: 8px 0;"><span style="color: #28a745;">✓</span> eSIM technology for instant activation</li>
-                                <li style="padding: 8px 0;"><span style="color: #28a745;">✓</span> Datashare network benefits</li>
-                                <li style="padding: 8px 0;"><span style="color: #28a745;">✓</span> DOTM token rewards</li>
-                            </ul>
-                            
-                            <div style="text-align: center; margin: 40px 0;">
-                                <a href="{invitation_link}" 
-                                   style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
-                                    Accept Invitation 🚀
-                                </a>
-                            </div>
-                            
-                            <p style="font-size: 14px; color: #666;">This invitation expires in 7 days.</p>
-                        </div>
-                        
-                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-top: 3px solid #667eea;">
-                            <p style="margin: 0; font-size: 12px; color: #666; text-align: center;">
-                                DOTM Platform - Data On Tap Mobile<br>
-                                Global connectivity powered by community<br>
-                                <a href="https://dotmobile.app" style="color: #667eea;">dotmobile.app</a>
-                            </p>
-                        </div>
-                    </div>
+                <body>
+                    <h2>🎉 eSIM Activation Successful!</h2>
+                    <p>Great news! Your $1 eSIM Beta access has been activated.</p>
+
+                    <h3>📱 Your Details:</h3>
+                    <ul>
+                        <li><strong>Phone Number:</strong> {phone_number or 'Assigned by carrier'}</li>
+                        <li><strong>Plan:</strong> OXIO Base Plan (Basic Membership)</li>
+                        <li><strong>Status:</strong> ✅ Active</li>
+                    </ul>
+
+                    <p><strong>Next Steps:</strong></p>
+                    <ol>
+                        <li>Log into your <a href="{request.url_root}dashboard">DOTM Dashboard</a></li>
+                        <li>View your phone number and QR code for eSIM setup</li>
+                        <li>Scan the QR code with your device to activate eSIM</li>
+                    </ol>
+
+                    <p>Welcome to global connectivity!</p>
+                    <br>
+                    <p>Best regards,<br><strong>DOTM Team</strong></p>
                 </body>
                 </html>
                 """
-                
-                email_sent = send_email_via_resend(
-                    to_email=email,
-                    subject=subject,
-                    body="Please view this email in HTML format",
-                    html_body=html_body
-                )
-                
-                print(f"{'✅' if email_sent else '❌'} Invitation email to {email}: {'sent' if email_sent else 'failed'}")
-                
-            except Exception as e:
-                print(f"Error sending invitation email: {str(e)}")
-                email_sent = False
 
-        return jsonify({
-            'success': True,
-            'message': 'Demo user created successfully!' if is_demo_user else 'Invitation sent successfully!',
-            'invitation_id': invitation_id,
-            'email_sent': email_sent,
-            'invitation_link': invitation_link if is_demo_user else None  # Only return link for demo users
-        })
+                send_email(to_email=user_email, subject=subject, body="eSIM activated successfully!", html_body=html_body)
+                print(f"Sent eSIM activation confirmation to {user_email}")
+
+            except Exception as email_error:
+                print(f"Error sending confirmation email: {str(email_error)}")
+
+            return {
+                'success': True,
+                'message': 'eSIM activated successfully',
+                'phone_number': phone_number,
+                'line_id': line_id,
+                'purchase_id': purchase_id
+            }
+        else:
+            return {
+                'success': False,
+                'error': 'OXIO activation failed',
+                'message': oxio_result.get('message', 'Unknown activation error')
+            }
 
     except Exception as e:
-        print(f"Error sending datashare invitation: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        print(f"Error in activate_esim_for_user: {str(e)}")
+        return {
+            'success': False,
+            'error': 'Activation error',
+            'message': str(e)
+        }
 
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
 
-@app.route('/api/invites', methods=['GET'])
-@require_auth
-def get_datashare_invitations():
-    """Get user's datashare invitations"""
+@app.route('/download/audio/<filename>')
+def download_audio(filename):
+    """Force download of audio files with proper headers"""
     try:
-        firebase_uid = request.args.get('firebaseUid')  # Validated by @require_auth decorator
-        limit = int(request.args.get('limit', 50))
-        
-        if not firebase_uid:
-            return jsonify({'success': False, 'error': 'Firebase UID is required'}), 400
+        response = send_from_directory('static/audio', filename, as_attachment=True)
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response.headers['Content-Type'] = 'audio/mpeg'
+        return response
+    except FileNotFoundError:
+        return jsonify({'error': 'Audio file not found'}), 404
 
-        # Get user ID
-        user_id = None
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory('static', 'favicon.ico')
+
+@app.route('/firebase-messaging-sw.js')
+def firebase_service_worker():
+    return send_from_directory('.', 'firebase-messaging-sw.js')
+
+# New API endpoint to record global data purchases
+purchase_model = api.model('Purchase', {
+    'productId': fields.String(required=True, description='Product ID')
+})
+
+# This function `get_user_by_firebase_uid` was already updated in the previous change.
+# No further modification needed here based on the current change.
+
+def get_user_stripe_purchases(stripe_customer_id):
+    """Helper function to get user purchases by Stripe customer ID"""
+    try:
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
-                    result = cur.fetchone()
-                    if result:
-                        user_id = result[0]
+                    # Get purchases linked to Stripe customer
+                    cur.execute("""
+                        SELECT SUM(TotalAmount)
+                        FROM purchases
+                        WHERE StripeID IN (
+                            SELECT id FROM stripe_sessions_or_invoices
+                            WHERE customer_id = %s
+                        ) OR UserID = (
+                            SELECT id FROM users WHERE stripe_customer_id = %s
+                        )
+                    """, (stripe_customer_id, stripe_customer_id))
+                    return cur.fetchone()
+        return None
+    except Exception as e:
+        print(f"Error getting Stripe purchases: {str(e)}")
+        return None
 
-        if not user_id:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
+@app.route('/api/user/data-balance', methods=['GET'])
+def get_user_data_balance():
+    """Get the current data balance for a member"""
+    firebase_uid = request.args.get('firebaseUid')
+    user_id_param = request.args.get('userId')
 
-        # Get invitations sent by this user
-        invitations = []
+    try:
+        user_id = None
+
+        # If Firebase UID is provided, look up the internal user ID
+        if firebase_uid:
+            user_data = get_user_by_firebase_uid(firebase_uid)
+            if user_data:
+                user_id = user_data['id']  # Get the actual internal user ID (integer)
+                stripe_customer_id = user_data['stripe_customer_id']  # Get Stripe customer ID
+                print(f"Found user {user_id} for Firebase UID {firebase_uid} with Stripe customer {stripe_customer_id}")
+            else:
+                return jsonify({
+                    'error': 'User not found for Firebase UID',
+                    'firebaseUid': firebase_uid,
+                    'dataBalance': 0,
+                    'unit': 'GB'
+                }), 404
+        elif user_id_param and user_id_param.isdigit():
+            # If a numeric user ID is provided, use it
+            user_id = int(user_id_param)
+            print(f"Using provided numeric user_id: {user_id}")
+        else:
+            return jsonify({
+                'error': 'Firebase UID or user ID required',
+                'dataBalance': 0,
+                'unit': 'GB'
+            }), 400
+
+        # Get comprehensive purchase data for this user
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get all data-related purchases for this user - using correct column names
+                    try:
+                        cur.execute("""
+                            SELECT
+                                COALESCE(SUM(CASE WHEN StripeProductID = 'global_data_10gb' THEN TotalAmount ELSE 0 END), 0) as global_data_cents,
+                                COALESCE(SUM(CASE WHEN StripeProductID LIKE '%data%' OR StripeProductID = 'beta_esim_data' THEN TotalAmount ELSE 0 END), 0) as total_data_cents,
+                                COUNT(*) as total_purchases
+                            FROM purchases
+                            WHERE UserID = %s OR FirebaseUID = %s
+                        """, (user_id, firebase_uid))
+
+                        result = cur.fetchone()
+                        print(f"Debug: SQL result = {result}")
+
+                        # Safely extract values with proper validation and handle None results
+                        if result and len(result) >= 3:
+                            global_data_cents = int(result[0]) if result[0] is not None else 0
+                            total_data_cents = int(result[1]) if result[1] is not None else 0
+                            total_purchases = int(result[2]) if result[2] is not None else 0
+                        else:
+                            print(f"Invalid SQL result structure: {result}")
+                            global_data_cents = 0
+                            total_data_cents = 0
+                            total_purchases = 0
+                    except Exception as sql_err:
+                        print(f"SQL query error: {sql_err}")
+                        # Set safe defaults when query fails
+                        global_data_cents = 0
+                        total_data_cents = 0
+                        total_purchases = 0
+
+                    # Calculate data balance based on purchases
+                    # 10GB per $10 for global data = 1GB per $1 = 1GB per 100 cents
+                    global_data_gb = global_data_cents / 100.0
+
+                    # For other data products, assume similar rate
+                    other_data_gb = (total_data_cents - global_data_cents) / 100.0
+
+                    # Total data balance
+                    total_data_balance = global_data_gb + other_data_gb
+
+                    # Get subscription status for additional data allowances
+                    cur.execute("""
+                        SELECT subscription_type, end_date
+                        FROM subscriptions
+                        WHERE user_id = %s AND status = 'active' AND end_date > CURRENT_TIMESTAMP
+                        ORDER BY end_date DESC LIMIT 1
+                    """, (user_id,))
+
+                    subscription = cur.fetchone()
+                    subscription_data = 0
+                    if subscription:
+                        subscription_type = subscription[0]
+                        if subscription_type == 'basic_membership':
+                            subscription_data = 5.0  # 5GB for basic
+                        elif subscription_type == 'full_membership':
+                            subscription_data = 50.0  # 50GB for full
+
+                    final_balance = total_data_balance + subscription_data
+
+                    print(f"Data balance calculation: user_id={user_id}, purchases={total_purchases}, "
+                          f"global_data={global_data_gb}GB, other_data={other_data_gb}GB, "
+                          f"subscription={subscription_data}GB, total={final_balance}GB")
+
+                    return jsonify({
+                        'status': 'success',
+                        'userId': user_id,
+                        'firebaseUid': firebase_uid,
+                        'dataBalance': round(final_balance, 2),
+                        'breakdown': {
+                            'purchased_data': round(total_data_balance, 2),
+                            'subscription_data': round(subscription_data, 2),
+                            'total_purchases': total_purchases
+                        },
+                        'unit': 'GB',
+                        'billing_type': 'purchase_and_subscription_based'
+                    })
+
+        return jsonify({
+            'error': 'Database connection failed',
+            'userId': user_id,
+            'firebaseUid': firebase_uid,
+            'dataBalance': 0,
+            'unit': 'GB'
+        }), 500
+
+    except Exception as e:
+        print(f"Error getting user data balance: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'userId': user_id if 'user_id' in locals() else None,
+            'firebaseUid': firebase_uid,
+            'dataBalance': 0,
+            'unit': 'GB'
+        }), 500
+
+@app.route('/api/report-data-usage', methods=['POST'])
+def report_data_usage():
+    """Report actual data usage to Stripe for metering"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid')
+        megabytes_used = data.get('megabytesUsed', 0)
+
+        if not firebase_uid or megabytes_used <= 0:
+            return jsonify({'error': 'Firebase UID and megabytes used are required'}), 400
+
+        # Get user's Stripe customer ID
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data or not user_data['stripe_customer_id']:
+            return jsonify({'error': 'No Stripe customer found for user'}), 404
+
+        stripe_customer_id = user_data['stripe_customer_id']
+
+        # Import and use metering function
+        from stripe_metering import report_data_usage as stripe_report_usage
+
+        # Report usage to Stripe
+        result = stripe_report_usage(stripe_customer_id, megabytes_used)
+
+        if result['success']:
+            # Also log in local database for redundancy
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            INSERT INTO data_usage_log
+                            (user_id, stripe_customer_id, megabytes_used, stripe_event_id, created_at)
+                            VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
+                        """, (user_data['id'], stripe_customer_id, megabytes_used, result.get('event_id')))
+                        conn.commit()
+
+            return jsonify({
+                'status': 'success',
+                'message': 'Data usage reported to Stripe',
+                'megabytes_used': megabytes_used,
+                'stripe_event_id': result.get('event_id')
+            })
+        else:
+            return jsonify({'error': result.get('error')}), 500
+
+    except Exception as e:
+        print(f"Error reporting data usage: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/usage-summary', methods=['GET'])
+def get_usage_summary():
+    """Get usage summary for a user from Stripe metering"""
+    try:
+        firebase_uid = request.args.get('firebaseUid')
+        if not firebase_uid:
+            return jsonify({'error': 'Firebase UID is required'}), 400
+
+        # Get user's Stripe customer ID
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data or not user_data['stripe_customer_id']:
+            return jsonify({'error': 'No Stripe customer found for user'}), 404
+
+        stripe_customer_id = user_data['stripe_customer_id']
+
+        # Import and use metering function
+        from stripe_metering import get_customer_usage_summary
+
+        # Get usage from Stripe
+        result = get_customer_usage_summary(stripe_customer_id)
+
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'usage_summary': result,
+                'billing_note': 'Usage-based billing will be charged monthly'
+            })
+        else:
+            return jsonify({'error': result.get('error')}), 500
+
+    except Exception as e:
+        print(f"Error getting usage summary: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/subscription-status', methods=['GET'])
+def get_subscription_status():
+    """Get current subscription status for a user"""
+    firebase_uid = request.args.get('firebaseUid')
+    user_id_param = request.args.get('userId')
+
+    # Default user_id for fallback
+    user_id = 1
+
+    try:
+        # If Firebase UID is provided, look up the internal user ID
+        if firebase_uid:
+            user_data = get_user_by_firebase_uid(firebase_uid)
+            if user_data:
+                user_id = user_data['id']  # Get the actual internal user ID (integer)
+                print(f"Found user {user_id} for Firebase UID {firebase_uid}")
+            else:
+                print(f"No user found for Firebase UID {firebase_uid}, using default user_id=1")
+        elif user_id_param and user_id_param.isdigit():
+            # If a numeric user ID is provided, use it
+            user_id = int(user_id_param)
+            print(f"Using provided numeric user_id: {user_id}")
+        else:
+            print(f"Invalid or no user identifier provided, using default user_id=1")
+
+        # Get active subscriptions for this user
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get the most recent active subscription
+                    cur.execute("""
+                        SELECT subscription_type, start_date, end_date, status, stripe_subscription_id
+                        FROM subscriptions
+                        WHERE user_id = %s AND status = 'active' AND end_date > CURRENT_TIMESTAMP
+                        ORDER BY end_date DESC
+                        LIMIT 1
+                    """, (user_id,))
+
+                    subscription = cur.fetchone()
+                    if subscription:
+                        return jsonify({
+                            'status': 'active',
+                            'subscription_type': subscription[0],
+                            'start_date': subscription[1].isoformat() if subscription[1] else None,
+                            'end_date': subscription[2].isoformat() if subscription[2] else None,
+                            'stripe_subscription_id': subscription[4],
+                            'user_id': user_id
+                        })
+                    else:
+                        # Check if user has any expired subscriptions
+                        cur.execute("""
+                            SELECT subscription_type, end_date
+                            FROM subscriptions
+                            WHERE user_id = %s
+                            ORDER BY end_date DESC
+                            LIMIT 1
+                        """, (user_id,))
+
+                        expired_sub = cur.fetchone()
+                        if expired_sub:
+                            return jsonify({
+                                'status': 'expired',
+                                'last_subscription_type': expired_sub[0],
+                                'expired_date': expired_sub[1].isoformat() if expired_sub[1] else None,
+                                'user_id': user_id
+                            })
+                        else:
+                            return jsonify({
+                                'status': 'none',
+                                'message': 'No subscriptions found',
+                                'user_id': user_id
+                            })
+
+        return jsonify({
+            'status': 'error',
+            'message': 'Database connection error',
+            'user_id': user_id
+        })
+
+    except Exception as e:
+        print(f"Error getting subscription status: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'user_id': user_id
+        })
+
+@app.route('/api/record-global-purchase', methods=['POST'])
+def record_global_purchase():
+    data = request.get_json()
+    product_id = data.get('productId')
+    firebase_uid = data.get('firebaseUid')  # Get Firebase UID from request
+    print(f"===== RECORDING PURCHASE FOR PRODUCT: {product_id} with Firebase UID: {firebase_uid} =====")
+
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Simple test query
+                    cur.execute("SELECT 1")
+                    test_result = cur.fetchone()
+                    print(f"Database connection test result: {test_result}")
+            else:
+                print("WARNING: Could not get database connection for test")
+    except Exception as test_err:
+        print(f"WARNING: Database connection test failed: {str(test_err)}")
+
+    # Default values in case product info isn't available
+    default_prices = {
+        'global_data_10gb': 1000,  # $10.00
+        'basic_membership': 2400,  # $24.00
+        'full_membership': 6600,   # $66.00
+    }
+    default_price_ids = {
+        'global_data_10gb': 'price_global_10gb',
+        'basic_membership': 'price_basic_membership',
+        'full_membership': 'price_full_membership',
+    }
+
+    # Try to get price from Stripe if available
+    price_id = None
+    amount = None
+
+    try:
+        if stripe.api_key:
+            prices = stripe.Price.list(product=product_id, active=True)
+            if prices and prices.data:
+                price_id = prices.data[0].id
+                amount = prices.data[0].unit_amount
+                print(f"Found Stripe price: {price_id}, amount: {amount}")
+            else:
+                print("No active prices found for this product in Stripe")
+        else:
+            print("Stripe API key not configured, using default prices")
+    except Exception as stripe_err:
+        print(f"Stripe price lookup failed, using defaults: {str(stripe_err)}")
+
+    # Use defaults if Stripe lookup failed
+    if not price_id:
+        price_id = default_price_ids.get(product_id, 'unknown_price_id')
+        print(f"Using default price ID: {price_id}")
+    if not amount:
+        amount = default_prices.get(product_id, 1000)  # Default $10.00
+        print(f"Using default amount: {amount}")
+
+    # Generate a unique transaction ID
+    transaction_id = f"API_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    print(f"Generated transaction ID: {transaction_id}")
+
+    # Get user ID and user data from Firebase UID before recording purchase
+    user_id = None
+    user_data = None
+    if firebase_uid:
+        try:
+            user_data = get_user_by_firebase_uid(firebase_uid)
+            if user_data:
+                user_id = user_data['id']
+                print(f"Found user_id {user_id} for Firebase UID {firebase_uid}")
+        except Exception as lookup_err:
+            print(f"Error looking up user by Firebase UID: {str(lookup_err)}")
+
+    # Record the purchase with Firebase UID and user_id
+    purchase_id = record_purchase(
+        stripe_id=None,  # No stripe id in this case
+        product_id=product_id,
+        price_id=price_id,
+        amount=amount,
+        user_id=user_id,  # Use looked up user_id
+        transaction_id=transaction_id,
+        firebase_uid=firebase_uid,
+        stripe_transaction_id=None  # No Stripe transaction for API purchases
+    )
+
+    # Create subscription for membership products
+    if purchase_id and product_id in ['basic_membership', 'full_membership']:
+        subscription_end_date = create_subscription(
+            user_id=None,  # Will be looked up from Firebase UID
+            subscription_type=product_id,
+            stripe_subscription_id=None,
+            firebase_uid=firebase_uid
+        )
+        print(f"Created subscription for Firebase UID {firebase_uid}, product {product_id}, valid until {subscription_end_date}")
+
+        # Activate OXIO line for Basic Membership purchases
+        if product_id == 'basic_membership' and user_data:
+            try:
+                print(f"Activating OXIO line for Basic Membership purchase by user {user_id}")
+
+                # Get user details for OXIO activation
+                user_email = user_data['email']
+                # Make sure we get the OXIO user ID (column 7) not the Ethereum address (column 8)
+                oxio_user_id = user_data['oxio_user_id']
+                eth_address = user_data['eth_address']
+                print(f"Debug: Retrieved user data - email: {user_email}, oxio_user_id: {oxio_user_id}, eth_address: {eth_address}")
+
+                # Use environment variable for ICCID or generate a demo one
+                iccid = os.environ.get('EUICCID1', f'8910650420001{user_id % 1000000:06d}F')
+
+                # Create OXIO line activation payload
+                oxio_activation_payload = {
+                    "lineType": "LINE_TYPE_MOBILITY",
+                    "sim": {
+                        "simType": "EMBEDDED",
+                        "iccid": iccid
+                    },
+                    "endUser": {
+                        "brandId": "91f70e2e-d7a8-4e9c-afc6-30acc019ed67",
+                        "email": user_email
+                    },
+                    "phoneNumberRequirements": {
+                        "preferredAreaCode": "212"
+                    },
+                    "countryCode": "US",
+                    "activateOnAttach": True
+                }
+
+                # Only add endUserId if we have a valid OXIO user ID (UUID format, not an Ethereum address)
+                if oxio_user_id and oxio_user_id != eth_address and len(oxio_user_id) > 10 and '-' in oxio_user_id:
+                    oxio_activation_payload["endUser"]["endUserId"] = oxio_user_id
+                    print(f"Using valid OXIO user ID: {oxio_user_id}")
+                else:
+                    print(f"No valid OXIO user ID found (oxio_user_id: {oxio_user_id}, eth_address: {eth_address}), using email-based identification")
+
+                print(f"OXIO activation payload: {oxio_activation_payload}")
+
+                # Call OXIO line activation
+                oxio_result = oxio_service.activate_line(oxio_activation_payload)
+
+                if oxio_result.get('success'):
+                    print(f"Successfully activated OXIO line for Basic Membership purchase: {oxio_result}")
+
+                    # Store OXIO activation details in database
+                    try:
+                        with get_db_connection() as conn:
+                            if conn:
+                                with conn.cursor() as cur:
+                                    # Create OXIO activations table if it doesn't exist
+                                    cur.execute("""
+                                        CREATE TABLE IF NOT EXISTS oxio_activations (
+                                            id SERIAL PRIMARY KEY,
+                                            user_id INTEGER NOT NULL,
+                                            firebase_uid VARCHAR(128),
+                                            purchase_id INTEGER,
+                                            product_id VARCHAR(100),
+                                            iccid VARCHAR(50),
+                                            line_id VARCHAR(100),
+                                            phone_number VARCHAR(20),
+                                            activation_status VARCHAR(50),
+                                            plan_id VARCHAR(100),
+                                            group_id VARCHAR(100),
+                                            esim_qr_code TEXT,
+                                            activation_url TEXT,
+                                            activation_code VARCHAR(200),
+                                            oxio_response TEXT,
+                                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                        )
+                                    """)
+
+                                    # Extract details from OXIO response
+                                    oxio_data = oxio_result.get('data', {})
+                                    line_id = oxio_data.get('lineId')
+                                    phone_number = oxio_data.get('phoneNumber')
+
+                                    # Insert activation record
+                                    cur.execute("""
+                                        INSERT INTO oxio_activations
+                                        (user_id, firebase_uid, purchase_id, product_id, iccid,
+                                         line_id, phone_number, activation_status, plan_id, group_id,
+                                         esim_qr_code, oxio_response)
+                                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                    """, (user_id, firebase_uid, purchase_id, product_id, iccid,
+                                          line_id, phone_number, 'activated', esim_plan_id, esim_group_id,
+                                          esim_qr_code, str(oxio_result)))
+
+                                    conn.commit()
+                                    print(f"Stored OXIO activation record for user {user_id}")
+                    except Exception as db_err:
+                        print(f"Error storing OXIO activation record: {str(db_err)}")
+            except Exception as oxio_err:
+                print(f"Error during OXIO line activation: {str(oxio_err)}")
+
+    if purchase_id:
+        print(f"Successfully recorded purchase: {purchase_id} for product: {product_id} with Firebase UID: {firebase_uid}")
+
+        # Award 10.33 DOTM tokens for all marketplace purchases
+        try:
+            if firebase_uid:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            cur.execute("SELECT eth_address FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                            user_result = cur.fetchone()
+                            if user_result and user_result[0]:
+                                user_eth_address = user_result[0]
+                                # Award 10.33% of purchase amount in DOTM tokens
+                                success, tx_hash = ethereum_helper.reward_data_purchase(user_eth_address, amount)
+                                if success:
+                                    print(f"Awarded 10.33% DOTM tokens to {user_eth_address} for marketplace purchase. TX: {tx_hash}")
+                                else:
+                                    print(f"Failed to award marketplace purchase tokens: {tx_hash}")
+        except Exception as token_err:
+            print(f"Error awarding marketplace tokens: {str(token_err)}")
+
+        return {'status': 'success', 'purchaseId': purchase_id}
+    else:
+        print(f"Failed to record purchase for product: {product_id}")
+        # For demo purposes, we'll still create a simulated purchase ID
+        # This ensures the UI updates even if the database issues
+        simulated_purchase_id = f"SIM_{product_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        print(f"Created simulated purchase ID: {simulated_purchase_id}")
+
+        # Try to award 10.33 DOTM tokens even if database recording failed# This time, as the database recording actually failed
+        try:
+            if firebase_uid:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            cur.execute("SELECT eth_address FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                            user_result = cur.fetchone()
+                            if user_result and user_result[0]:
+                                user_eth_address = user_result[0]
+                                # Award 10.33% of purchase amount in DOTM tokens
+                                success, tx_hash = ethereum_helper.reward_data_purchase(user_eth_address, amount)
+                                if success:
+                                    print(f"Awarded 10.33% DOTM tokens to {user_eth_address} for simulated marketplace purchase. TX: {tx_hash}")
+        except Exception as sim_token_err:
+            print(f"Error awarding tokens for simulated purchase: {str(sim_token_err)}")
+
+        return {'status': 'success', 'purchaseId': simulated_purchase_id, 'simulated': True}
+
+
+@app.route('/create-tables', methods=['GET'])
+def create_tables_route():
+    """Endpoint to manually create database tables"""
+    results = {
+        'status': 'error',
+        'message': 'Failed to create tables'
+    }
+
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Create the purchases table
+                    create_purchases_sql = """
+                    CREATE TABLE IF NOT EXISTS purchases (
+                        PurchaseID SERIAL PRIMARY KEY,
+                        StripeID VARCHAR(100),
+                        StripeProductID VARCHAR(100) NOT NULL,
+                        PriceID VARCHAR(100) NOT NULL,
+                        TotalAmount INTEGER NOT NULL,
+                        DateCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UserID INTEGER
+                    );
+
+                    CREATE INDEX IF NOT EXISTS idx_purchases_stripe ON purchases(StripeID);
+                    CREATE INDEX IF NOT EXISTS idx_purchases_product ON purchases(StripeProductID);
+                    """
+                    cur.execute(create_purchases_sql)
+
+                    # Create the users table
+                    create_users_sql = """
+                    CREATE TABLE IF NOT EXISTS users (
+                        UserID SERIAL PRIMARY KEY,
+                        email VARCHAR(255) UNIQUE NOT NULL,
+                        stripe_customer_id VARCHAR(100),
+                        imei VARCHAR(100),
+                        DateCreated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                    """
+                    cur.execute(create_users_sql)
+
+                    # Create the subscriptions table
+                    create_subscriptions_sql = """
+                    CREATE TABLE IF NOT EXISTS subscriptions (
+                        subscription_id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        subscription_type VARCHAR(100) NOT NULL,
+                        stripe_subscription_id VARCHAR(100),
+                        start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        end_date TIMESTAMP NOT NULL,
+                        FOREIGN KEY (user_id) REFERENCES users(UserID)
+                    );
+                    """
+                    cur.execute(create_subscriptions_sql)
+
+
+                    conn.commit()
+                    results = {
+                        'status': 'success',
+                        'message': 'Tables created successfully'
+                    }
+            else:
+                results['message'] = 'Could not get database connection'
+    except Exception as e:
+        results['message'] = f'Error creating tables: {str(e)}'
+
+    return jsonify(results)
+
+
+@api.route('/check-memberships')
+class CheckMemberships(Resource):
+    def get(self):
+        try:
+            # Try to get user ID from session (in a real app)
+            user_id = 1  # Default for demo
+
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Check if user has purchased any membership products
+                        cur.execute("""
+                            SELECT StripeProductID
+                            FROM purchases
+                            WHERE UserID = %s AND StripeProductID IN ('basic_membership', 'full_membership')
+                            LIMIT 1
+                        """, (user_id,))
+
+                        membership = cur.fetchone()
+                        if membership:
+                            return {
+                                'has_membership': True,
+                                'membership_type': membership[0]
+                            }
+
+                return {'has_membership': False}
+        except Exception as e:
+            print(f"Error checking memberships: {str(e)}")
+            return {'has_membership': False, 'error': str(e)}
+
+# Token related endpoints
+token_ns = api.namespace('token', description='DOTM Token operations')
+@token_ns.route('/price')
+class TokenPrice(Resource):
+    def get(self):
+        try:
+            price_data = ethereum_helper.get_token_price_from_etherscan()
+            return price_data
+        except Exception as e:
+            print(f"Error getting token price: {str(e)}")
+            return {'error': str(e), 'price': 100.0}, 500
+
+@token_ns.route('/balance/<string:address>')
+class TokenBalance(Resource):
+    def get(self, address):
+        try:
+            # Use dummy data for demo or if using placeholder "current_user"
+            if address == "current_user":
+                balance = 100.0
+            else:
+                balance = ethereum_helper.get_token_balance(address)
+
+            # Get the latest token price
+            try:
+                price_data = ethereum_helper.get_token_price_from_etherscan()
+                token_price = price_data.get('price', 1.0)
+            except Exception as e:
+                print(f"Using default token price due to error: {str(e)}")
+                token_price = 1.0  # Default fallback
+
+            return {
+                'address': address,
+                'balance': balance,
+                'token_price': token_price,
+                'value_usd': balance * token_price
+            }
+        except Exception as e:
+            print(f"Error getting token balance: {str(e)}")
+            # For demo purposes, return a fallback response instead of an error
+            return {
+                'address': address,
+                'balance': 100.0,
+                'token_price': 1.0,
+                'value_usd': 100.0,
+                'note': 'Demo mode'
+            }
+
+@token_ns.route('/founding-token')
+class FoundingToken(Resource):
+    def post(self):
+        data = request.get_json()
+        address = data.get('address')
+
+        if not address:
+            return {'error': 'Ethereum address is required'}, 400
+
+        try:
+            success, result = ethereum_helper.assign_founding_token(address)
+
+            if success:
+                return {
+                    'status': 'success',
+                    'message': 'Founding member token assigned',
+                    'tx_hash': result,
+                    'address': address,
+                    'amount': '100 DOTM'
+                }
+            else:
+                return {'status': 'error', 'message': result}, 400
+        except Exception as e:
+            print(f"Error assigning founding token: {str(e)}")
+            return {'error': str(e)}, 500
+
+@token_ns.route('/create-test-wallet')
+class CreateTestWallet(Resource):
+    def post(self):
+        """Creates a test wallet and assigns initial tokens"""
+        try:
+            # Create a random wallet
+            from web3 import Web3
+            web3 = Web3()
+            account = web3.eth.account.create()
+
+            # Get user details for tracking
+            user_id = 1  # For demo purposes
+            data = request.get_json() or {}
+            email = data.get('email', 'test@example.com')
+
+            # Store wallet in database
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Check if users table exists
+                        cur.execute(
+                            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')"
+                        )
+                        table_exists = cur.fetchone()[0]
+
+                        if not table_exists:
+                            # Create users table
+                            cur.execute("""
+                                CREATE TABLE users (
+                                    UserID SERIAL PRIMARY KEY,
+                                    email VARCHAR(255),
+                                    stripe_customer_id VARCHAR(100),
+                                    eth_address VARCHAR(42),
+                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                )
+                            """)
+
+                        # Check if user exists
+                        cur.execute("SELECT UserID FROM users WHERE email = %s", (email,))
+                        user = cur.fetchone()
+
+                        if user:
+                            # Update existing user
+                            cur.execute(
+                                "UPDATE users SET eth_address = %s WHERE UserID = %s",
+                                (account.address, user[0])
+                            )
+                            user_id = user[0]
+                        else:
+                            # Create new user
+                            cur.execute(
+                                "INSERT INTO users (email, eth_address) VALUES (%s, %s) RETURNING UserID",
+                                (email, account.address)
+                            )
+                            user_id = cur.fetchone()[0]
+
+                        conn.commit()
+
+            # Assign tokens to the new wallet
+            success, result = ethereum_helper.assign_founding_token(account.address)
+            if not success:
+                return {
+                    'status': 'partial_success',
+                    'wallet': {
+                        'address': account.address,
+                        'private_key': account.key.hex()  # NEVER do this in production
+                    },
+                    'token_error': result
+                }
+
+            return {
+                'status': 'success',
+                'wallet': {
+                    'address': account.address,
+                    'private_key': account.key.hex()  # NEVER do this in production
+                },
+                'tokens': {
+                    'amount': '100 DOTM',
+                    'tx_hash': result
+                },
+                'note': 'IMPORTANT: Save the private key securely. It will not be shown again.'
+            }
+
+        except Exception as e:
+            print(f"Error creating test wallet: {str(e)}")
+            return {'error': str(e)}, 500
+
+@app.route('/update-token-price', methods=['GET'])
+def update_token_price():
+    """Endpoint to manually update token price"""
+    try:
+        price_data = ethereum_helper.get_token_price_from_etherscan()
+        return jsonify({
+            'status': 'success',
+            'message': 'Token price updated',
+            'data': price_data
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/product-rules', methods=['GET'])
+def get_product_rules_api():
+    """Get all product rules"""
+    try:
+        rules = product_rules_helper.get_all_product_rules()
+        return jsonify({
+            'status': 'success',
+            'product_rules': rules
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/product-rules/<product_id>', methods=['GET'])
+def get_single_product_rule(product_id):
+    """Get product rule for specific Stripe product ID"""
+    try:
+        rule = product_rules_helper.get_product_rules(product_id)
+        if rule:
+            return jsonify({
+                'status': 'success',
+                'product_rule': rule
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Product rule not found'
+            }), 404
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/product-rules/<product_id>', methods=['PUT'])
+def update_product_rule(product_id):
+    """Update product rule for specific Stripe product ID"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        success = product_rules_helper.update_product_rules(product_id, **data)
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': 'Product rule updated successfully'
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to update product rule'
+            }), 400
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/network-features/<firebase_uid>', methods=['GET'])
+def get_user_network_features(firebase_uid):
+    """Get network features and their status for a user"""
+    try:
+        print(f"Getting network features for Firebase UID: {firebase_uid}")
+
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            print(f"User not found for Firebase UID: {firebase_uid}")
+            return jsonify({
+                'status': 'error',
+                'message': f'User not found for Firebase UID: {firebase_uid}. Please ensure you are logged in.'
+            }), 404
+
+        # user_data is a dictionary, so access by key
+        user_id = user_data['id']
+        user_email = user_data['email']
+        print(f"Found user ID: {user_id} for Firebase UID: {firebase_uid}")
+
+        # Get all network features from database
+        try:
+            import stripe_network_features
+            features = stripe_network_features.get_network_features()
+            print(f"Loaded {len(features)} network features from stripe_network_features")
+        except Exception as feature_err:
+            print(f"Error loading network features: {str(feature_err)}")
+            # Provide default features if the module fails
+            features = [
+                {
+                    'stripe_product_id': 'network_security_basic',
+                    'feature_name': 'network_security',
+                    'feature_title': 'Network Security',
+                    'description': 'Basic network security features including firewall and threat detection',
+                    'default_enabled': True,
+                    'price_cents': 500
+                },
+                {
+                    'stripe_product_id': 'network_optimization',
+                    'feature_name': 'optimization',
+                    'feature_title': 'Network Optimization',
+                    'description': 'Optimize network performance and reduce latency',
+                    'default_enabled': False,
+                    'price_cents': 300
+                },
+                {
+                    'stripe_product_id': 'network_monitoring',
+                    'feature_name': 'monitoring',
+                    'feature_title': 'Network Monitoring',
+                    'description': 'Real-time network monitoring and analytics',
+                    'default_enabled': False,
+                    'price_cents': 400
+                }
+            ]
+
+        # Get user data from database
+        oxio_data = {
+            'user_id': user_id,
+            'email': user_email,
+            'oxio_user_id': user_data.get('oxio_user_id'),
+            'metamask_address': user_data.get('eth_address'),
+            'phone_number': None,
+            'line_id': None,
+            'iccid': None,
+            'activation_code': None,
+            'plan_name': None,
+            'data_allowance': None,
+            'validity_days': None,
+            'regions': [],
+            'status': 'not_activated',
+            'qr_code': None,
+            'profile_id': None,
+            'subscription_id': None,
+            'last_updated': None
+        }
+
+        # Get user's current preferences
+        user_prefs = {}
+        try:
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Ensure user_network_preferences table exists
+                        cur.execute("""
+                            CREATE TABLE IF NOT EXISTS user_network_preferences (
+                                id SERIAL PRIMARY KEY,
+                                user_id INTEGER NOT NULL,
+                                stripe_product_id VARCHAR(100) NOT NULL,
+                                enabled BOOLEAN DEFAULT FALSE,
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                UNIQUE(user_id, stripe_product_id)
+                            )
+                        """)
+
+                        cur.execute("""
+                            SELECT stripe_product_id, enabled
+                            FROM user_network_preferences
+                            WHERE user_id = %s
+                        """, (user_id,))
+
+                        user_prefs = {row[0]: row[1] for row in cur.fetchall()}
+                        print(f"Found user preferences: {user_prefs}")
+        except Exception as pref_err:
+            print(f"Error getting user preferences: {str(pref_err)}")
+
+        user_features = []
+        for feature in features:
+            # Use user preference if exists, otherwise use default
+            enabled = user_prefs.get(feature['stripe_product_id'], feature.get('default_enabled', False))
+
+            user_features.append({
+                'stripe_product_id': feature['stripe_product_id'],
+                'feature_name': feature['feature_name'],
+                'feature_title': feature['feature_title'],
+                'description': feature['description'],
+                'enabled': enabled,
+                'price_cents': feature.get('price_cents', 0)
+            })
+
+        print(f"Returning {len(user_features)} features for user")
+        return jsonify({
+            'status': 'success',
+            'features': user_features,
+            'user_id': user_id,
+            'firebase_uid': firebase_uid
+        })
+    except Exception as e:
+        print(f"Error in get_user_network_features: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'status': 'error',
+            'message': f'Internal server error: {str(e)}'
+        }), 500
+
+@app.route('/api/network-features/<firebase_uid>/<product_id>', methods=['PUT'])
+def toggle_network_feature(firebase_uid, product_id):
+    """Toggle a network feature for a user"""
+    try:
+        data = request.get_json()
+        enabled = data.get('enabled', False)
+
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            return jsonify({'error': 'User not found'}), 404
+
+        # user_data is a dictionary, so access by key
+        user_id = user_data['id']
+
+        # Update user's feature preference
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Insert or update preference
+                cur.execute("""
+                    INSERT INTO user_network_preferences (user_id, stripe_product_id, enabled)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (user_id, stripe_product_id)
+                    DO UPDATE SET
+                        enabled = EXCLUDED.enabled,
+                        updated_at = CURRENT_TIMESTAMP
+                """, (user_id, product_id, enabled))
+
+                conn.commit()
+
+        return jsonify({
+            'status': 'success',
+            'message': f'Feature {product_id} {"enabled" if enabled else "disabled"}'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+def create_token_pings_table():
+    """Helper function to create token_price_pings table if it doesn't exist"""
+    try:
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                        SELECT id, email, invitation_status, personal_message, 
-                               is_demo_user, created_at, updated_at, expires_at,
-                               accepted_at, rejected_at, cancelled_at
-                        FROM invites 
-                        WHERE invited_by_user_id = %s 
-                        ORDER BY created_at DESC 
-                        LIMIT %s
-                    """, (user_id, limit))
-                    
-                    results = cur.fetchall()
-                    for row in results:
-                        (invite_id, email, status, message, is_demo, created_at, 
-                         updated_at, expires_at, accepted_at, rejected_at, cancelled_at) = row
-                        
-                        invitations.append({
-                            'id': invite_id,
-                            'email': email,
-                            'invitation_status': status,
-                            'personal_message': message,
-                            'is_demo_user': is_demo,
-                            'created_at': created_at.isoformat() if created_at else None,
-                            'updated_at': updated_at.isoformat() if updated_at else None,
-                            'expires_at': expires_at.isoformat() if expires_at else None,
-                            'accepted_at': accepted_at.isoformat() if accepted_at else None,
-                            'rejected_at': rejected_at.isoformat() if rejected_at else None,
-                            'cancelled_at': cancelled_at.isoformat() if cancelled_at else None
+                        CREATE TABLE IF NOT EXISTS token_price_pings (
+                            id SERIAL PRIMARY KEY,
+                            token_price DECIMAL(18,9) NOT NULL,
+                            request_time_ms INTEGER,
+                            response_time_ms INTEGER,
+                            roundtrip_ms INTEGER,
+                            ping_destination VARCHAR(255),
+                            source VARCHAR(100),
+                            additional_data TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_token_price_pings_created_at ON token_price_pings(created_at);
+                    """)
+                    conn.commit()
+                    print("Ensured token_price_pings table exists.")
+    except Exception as e:
+        print(f"Error ensuring token_price_pings table exists: {str(e)}")
+
+
+@app.route('/test-ping-creation', methods=['GET'])
+def test_ping_creation():
+    """Test endpoint to create a single ping record"""
+    try:
+        # Ensure table exists
+        create_token_pings_table()
+
+        # Create a test ping directly
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Insert test ping
+                    token_price = 1.0
+                    request_time = 50
+                    response_time = 100
+                    roundtrip = 150
+
+                    cur.execute(
+                        """INSERT INTO token_price_pings
+                          (token_price, request_time_ms, response_time_ms, roundtrip_ms,
+                           ping_destination, source, additional_data)
+                          VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                        (
+                            token_price,
+                            request_time,
+                            response_time,
+                            roundtrip,
+                            'test endpoint',
+                            'test',
+                            json.dumps({'test': True, 'user_id': 1})
+                        )
+                    )
+                    ping_id = cur.fetchone()[0]
+                    conn.commit()
+
+                    return jsonify({
+                        'status': 'success',
+                        'message': f'Test ping created with ID: {ping_id}',
+                        'ping_id': ping_id
+                    })
+    except Exception as e:
+        print(f"Error creating test ping: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/populate-token-pings', methods=['GET'])
+def populate_token_pings():
+    """Endpoint to generate sample token price pings for testing"""
+    try:
+        # Ensure table exists first
+        create_token_pings_table()
+
+        # Generate 10 sample pings
+        results = []
+
+        # Create the token_price_pings table if it doesn't exist yet
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check if table exists
+                    cur.execute(
+                        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'token_price_pings')"
+                    )
+                    table_exists = cur.fetchone()[0]
+
+                    if not table_exists:
+                        print("Creating token_price_pings table...")
+                        create_table_sql = """
+                        CREATE TABLE token_price_pings (
+                            id SERIAL PRIMARY KEY,
+                            token_price DECIMAL(18,9) NOT NULL,
+                            request_time_ms INTEGER,
+                            response_time_ms INTEGER,
+                            roundtrip_ms INTEGER,
+                            ping_destination VARCHAR(255),
+                            source VARCHAR(100),
+                            additional_data TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        CREATE INDEX IF NOT EXISTS idx_token_price_pings_created_at ON token_price_pings(created_at);
+                        """
+                        cur.execute(create_table_sql)
+                        conn.commit()
+                        print("token_price_pings table created successfully")
+
+                    # Generate sample ping data directly
+                    import json
+                    import random
+                    import time
+                    from datetime import datetime, timedelta
+
+                    print("Inserting sample ping data...")
+
+                    # Insert 20 sample records spanning the last 24 hours
+                    for i in range(20):
+                        # Create varying timestamps over the last 24 hours
+                        hours_ago = random.uniform(0, 24)
+                        timestamp = datetime.now() - timedelta(hours=hours_ago)
+
+                        # Create realistic test data
+                        token_price = 1.0 + (random.random() * 0.2 - 0.1)  # $0.90 to $1.10
+                        request_time = random.randint(20, 200)
+                        response_time = request_time + random.randint(5, 50)
+                        roundtrip = random.randint(40, 300)
+                        source = random.choice(['etherscan', 'development', 'coinmarketcap', 'local'])
+                        destination = 'https://api.etherscan.io/api' if source == 'etherscan' else 'local'
+
+                        # Additional data as JSON
+                        additional_data = json.dumps({
+                            'eth_price': 2500 + (random.random() * 100 - 50),
+                            'timestamp': timestamp.isoformat(),
+                            'sample_data': True,
+                            'network': random.choice(['mainnet', 'testnet']),
+                            'status': 'success',
+                            'user_id': 1  # Using fixed UserID 1 from database
                         })
 
+                        # Insert the record
+                        cur.execute(
+                            """INSERT INTO token_price_pings
+                              (token_price, request_time_ms, response_time_ms, roundtrip_ms,
+                               ping_destination, source, additional_data, created_at)
+                              VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                            (token_price, request_time, response_time, roundtrip,
+                             destination, source, additional_data, timestamp)
+                        )
+
+                        ping_id = cur.fetchone()[0]
+                        results.append({
+                            'id': ping_id,
+                            'price': token_price,
+                            'timestamp': timestamp.isoformat()
+                        })
+
+                    conn.commit()
+                    print(f"Successfully inserted {len(results)} sample pings")
+
+        # Also generate a few real-time pings
+        for i in range(3):
+            price_data = ethereum_helper.get_token_price_from_etherscan()
+            results.append(price_data)
+            # Short delay between pings
+            time.sleep(0.2)
+
         return jsonify({
-            'success': True,
-            'invites': invitations,
-            'count': len(invitations)
+            'status': 'success',
+            'message': f'Generated {len(results)} token price pings',
+            'data': results
         })
+    except Exception as e:
+        print(f"Error populating token pings: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/ethereum-transactions', methods=['GET'])
+def get_ethereum_transactions():
+    user_id = request.args.get('userId')
+    if not user_id:
+        return jsonify({'error': 'User ID required'}), 400
+
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Get user's ETH address
+                cur.execute("SELECT eth_address FROM users WHERE id = %s", (user_id,))
+                result = cur.fetchone()
+
+                if not result or not result[0]:
+                    return jsonify({'transactions': []})
+
+                eth_address = result[0]
+
+                # Get transactions from blockchain (placeholder)
+                transactions = [
+                    {
+                        'hash': '0x1234...abcd',
+                        'amount': '1.33',
+                        'type': 'DOTM Token Purchase',
+                        'date': '2024-06-15',
+                        'status': 'confirmed'
+                    }
+                ]
+
+                return jsonify({'transactions': transactions})
 
     except Exception as e:
-        print(f"Error getting datashare invitations: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        print(f"Error fetching Ethereum transactions: {str(e)}")
+        return jsonify({'transactions': []})
 
-
-@app.route('/api/invites/<int:invite_id>', methods=['DELETE'])
-@require_auth
-def delete_datashare_invitation(invite_id):
-    """Delete a datashare invitation"""
+@app.route('/api/fix-user-oxio-data', methods=['POST'])
+def fix_user_oxio_data():
+    """Fix missing OXIO data for existing users"""
     try:
-        firebase_uid = request.args.get('firebaseUid')  # Validated by @require_auth decorator
-        
-        if not firebase_uid:
-            return jsonify({'success': False, 'error': 'Firebase UID is required'}), 400
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid')
+        email = data.get('email')
 
-        # Get user ID
-        user_id = None
+        if not firebase_uid and not email:
+            return jsonify({'success': False, 'message': 'Firebase UID or email is required'}), 400
+
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    # Get user details
+                    if firebase_uid:
+                        cur.execute("""
+                            SELECT id, email, display_name, oxio_user_id, oxio_group_id
+                            FROM users
+                            WHERE firebase_uid = %s
+                        """, (firebase_uid,))
+                    else:
+                        cur.execute("""
+                            SELECT id, email, display_name, oxio_user_id, oxio_group_id
+                            FROM users
+                            WHERE email = %s
+                        """, (email,))
+
+                    user_result = cur.fetchone()
+
+                    if not user_result:
+                        return jsonify({'success': False, 'message': 'User not found'}), 404
+
+                    user_id, user_email, display_name, existing_oxio_user_id, existing_oxio_group_id = user_result
+
+                    # Try to find existing OXIO user by email
+                    print(f"Attempting to find existing OXIO user for email: {user_email}")
+                    existing_user_result = oxio_service.find_user_by_email(user_email)
+
+                    if existing_user_result.get('success'):
+                        oxio_user_id = existing_user_result.get('oxio_user_id')
+                        print(f"Found existing OXIO user ID: {oxio_user_id}")
+
+                        # Update user with found OXIO user ID
+                        cur.execute(
+                            "UPDATE users SET oxio_user_id = %s WHERE id = %s",
+                            (oxio_user_id, user_id)
+                        )
+                        conn.commit()
+
+                        return jsonify({
+                            'success': True,
+                            'message': 'Successfully linked existing OXIO user',
+                            'user_id': user_id,
+                            'email': user_email,
+                            'oxio_user_id': oxio_user_id,
+                            'firebase_uid': firebase_uid,
+                            'oxio_response': existing_user_result
+                        })
+                    else:
+                        return jsonify({
+                            'success': False,
+                            'message': f'Could not find existing OXIO user: {existing_user_result.get("message", "Unknown error")}',
+                            'user_id': user_id,
+                            'email': user_email,
+                            'firebase_uid': firebase_uid,
+                            'oxio_response': existing_user_result
+                        }), 404
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error in fix user OXIO data endpoint: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/test-esim-activation', methods=['POST'])
+def test_esim_activation_service():
+    """Test the new eSIM activation service"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid', 'test_uid_123')
+        user_email = data.get('email', 'test@example.com')
+        user_name = data.get('name', 'Test User')
+
+        # Import and test the service
+        from esim_activation_service import esim_activation_service
+
+        result = esim_activation_service.activate_esim_after_payment(
+            firebase_uid=firebase_uid,
+            user_email=user_email,
+            user_name=user_name,
+            stripe_session_id="test_session_123",
+            purchase_amount=100
+        )
+
+        return jsonify({
+            'status': 'test_completed',
+            'service_result': result,
+            'test_parameters': {
+                'firebase_uid': firebase_uid,
+                'email': user_email,
+                'name': user_name
+            }
+        })
+
+    except Exception as e:
+        return jsonify({
+            'status': 'test_failed',
+            'error': str(e)
+        }), 500
+
+@app.route('/api/create-oxio-user', methods=['POST'])
+def create_oxio_user_endpoint():
+    """Create an OXIO user for an existing Firebase user"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid')
+
+        if not firebase_uid:
+            return jsonify({'success': False, 'message': 'Firebase UID is required'}), 400
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get user details
+                    cur.execute("""
+                        SELECT id, email, display_name, oxio_user_id
+                        FROM users
+                        WHERE firebase_uid = %s
+                    """, (firebase_uid,))
+                    user_result = cur.fetchone()
+
+                    if not user_result:
+                        return jsonify({'success': False, 'message': 'User not found'}), 404
+
+                    user_id, email, display_name, existing_oxio_user_id = user_result
+
+                    if existing_oxio_user_id:
+                        return jsonify({
+                            'success': True,
+                            'message': 'OXIO user already exists',
+                            'oxio_user_id': existing_oxio_user_id
+                        })
+
+                    # Create OXIO user
+                    try:
+                        print(f"Creating OXIO user for existing Firebase user: {firebase_uid}")
+                        # Parse display_name to get first and last name
+                        name_parts = (display_name or "Anonymous Anonymous").split(' ', 1)
+                        first_name = name_parts[0] if name_parts else "Anonymous"
+                        last_name = name_parts[1] if len(name_parts) > 1 else "Anonymous"
+
+                        oxio_result = oxio_service.create_oxio_user(
+                            first_name=first_name,
+                            last_name=last_name,
+                            email=email,
+                            firebase_uid=firebase_uid
+                        )
+
+                        if oxio_result.get('success'):
+                            oxio_user_id = oxio_result.get('oxio_user_id')
+
+                            # Update user with OXIO user ID
+                            cur.execute(
+                                "UPDATE users SET oxio_user_id = %s WHERE id = %s",
+                                (oxio_user_id, user_id)
+                            )
+                            conn.commit()
+
+                            return jsonify({
+                                'success': True,
+                                'message': 'OXIO user created successfully',
+                                'oxio_user_id': oxio_user_id,
+                                'oxio_response': oxio_result
+                            })
+                        else:
+                            # Check if user already exists (error code 6805)
+                            if (oxio_result.get('status_code') == 400 and
+                                oxio_result.get('data', {}).get('code') == 6805):
+                                print(f"OXIO user already exists for {email}, attempting to find existing user ID")
+
+                                # Try to find existing OXIO user by email
+                                existing_user_result = oxio_service.find_user_by_email(email)
+                                if existing_user_result.get('success'):
+                                    oxio_user_id = existing_user_result.get('oxio_user_id')
+                                    print(f"Found existing OXIO user ID: {oxio_user_id}")
+
+                                    # Update user with found OXIO user ID
+                                    cur.execute(
+                                        "UPDATE users SET oxio_user_id = %s WHERE id = %s",
+                                        (oxio_user_id, user_id)
+                                    )
+                                    conn.commit()
+
+                                    return jsonify({
+                                        'success': True,
+                                        'message': 'Found and linked existing OXIO user',
+                                        'oxio_user_id': oxio_user_id,
+                                        'oxio_response': existing_user_result
+                                    })
+                                else:
+                                    return jsonify({
+                                        'success': False,
+                                        'message': f'OXIO user exists but could not be found: {existing_user_result.get("message", "Unknown error")}',
+                                        'oxio_response': existing_user_result
+                                    }), 500
+                            else:
+                                return jsonify({
+                                    'success': False,
+                                    'message': f'Failed to create OXIO user: {oxio_result.get("message", "Unknown error")}',
+                                    'oxio_response': oxio_result
+                                }), 500
+                    except Exception as oxio_err:
+                        return jsonify({
+                            'success': False,
+                            'message': f'Error creating OXIO user: {str(oxio_err)}'
+                        }), 500
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error in create OXIO user endpoint: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/oxio-activation-status')
+def get_oxio_activation_status():
+    """Get OXIO activation status for a user"""
+    firebase_uid = request.args.get('firebaseUid')
+    if not firebase_uid:
+        return jsonify({'error': 'Firebase UID is required'}), 400
+
+    try:
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            return jsonify({'error': 'User not found'}), 404
+
+        user_id = user_data['id']
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get OXIO activation records for this user
+                    cur.execute("""
+                        SELECT id, product_id, iccid, line_id, phone_number,
+                               activation_status, oxio_response, created_at
+                        FROM oxio_activations
+                        WHERE firebase_uid = %s
+                        ORDER BY created_at DESC
+                    """, (firebase_uid,))
+
+                    activations = cur.fetchall()
+                    activation_list = []
+
+                    for activation in activations:
+                        try:
+                            oxio_response = json.loads(activation[6]) if activation[6] else {}
+                        except:
+                            oxio_response = {}
+
+                        activation_list.append({
+                            'id': activation[0],
+                            'product_id': activation[1],
+                            'iccid': activation[2],
+                            'line_id': activation[3],
+                            'phone_number': activation[4],
+                            'activation_status': activation[5],
+                            'oxio_response': oxio_response,
+                            'created_at': activation[7].isoformat() if activation[7] else None
+                        })
+
+                    return jsonify({
+                        'status': 'success',
+                        'user_id': user_id,
+                        'firebase_uid': firebase_uid,
+                        'activations': activation_list,
+                        'total_activations': len(activation_list)
+                    })
+
+        return jsonify({'error': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error getting OXIO activation status: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/notifications', methods=['GET'])
+def get_user_notifications():
+    """Get notifications for a user"""
+    try:
+        firebase_uid = request.args.get('firebaseUid')
+        limit = int(request.args.get('limit', 50))
+
+        if not firebase_uid:
+            return jsonify({'error': 'Firebase UID is required'}), 400
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get notifications for this user
+                    cur.execute("""
+                        SELECT id, title, body, notification_type, audio_url, delivered, read_status,
+                               fcm_response, created_at, delivered_at
+                        FROM notifications
+                        WHERE firebase_uid = %s
+                        ORDER BY created_at DESC
+                        LIMIT %s
+                    """, (firebase_uid, limit))
+
+                    notifications = cur.fetchall()
+                    notification_list = []
+
+                    for notif in notifications:
+                        notification_list.append({
+                            'id': notif[0],
+                            'title': notif[1],
+                            'body': notif[2],
+                            'type': notif[3],
+                            'audio_url': notif[4],
+                            'delivered': notif[5],
+                            'read': notif[6],
+                            'fcm_response': notif[7],
+                            'created_at': notif[8].isoformat() if notif[8] else None,
+                            'delivered_at': notif[9].isoformat() if notif[9] else None
+                        })
+
+                    return jsonify({
+                        'success': True,
+                        'notifications': notification_list,
+                        'count': len(notification_list),
+                        'firebase_uid': firebase_uid
+                    })
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error getting notifications: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/notifications/<int:notification_id>/read', methods=['POST'])
+def mark_notification_read(notification_id):
+    """Mark a notification as read"""
+    try:
+        firebase_uid = request.json.get('firebaseUid') if request.json else None
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Update notification as read
+                    if firebase_uid:
+                        cur.execute("""
+                            UPDATE notifications
+                            SET read_status = TRUE
+                            WHERE id = %s AND firebase_uid = %s
+                            RETURNING title
+                        """, (notification_id, firebase_uid))
+                    else:
+                        cur.execute("""
+                            UPDATE notifications
+                            SET read_status = TRUE
+                            WHERE id = %s
+                            RETURNING title
+                        """, (notification_id,))
+
                     result = cur.fetchone()
                     if result:
-                        user_id = result[0]
+                        conn.commit()
+                        return jsonify({
+                            'success': True,
+                            'message': f'Notification "{result[0]}" marked as read'
+                        })
+                    else:
+                        return jsonify({'success': False, 'message': 'Notification not found'}), 404
 
-        if not user_id:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
 
-        # Delete invitation (only if it belongs to this user)
+    except Exception as e:
+        print(f"Error marking notification as read: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/welcome-message/voices', methods=['GET'])
+def get_welcome_voices():
+    """Get available voice profiles for welcome messages"""
+    try:
+        voice_profiles = elevenlabs_service.get_voice_profiles()
+        voices = []
+
+        for profile_name, profile_data in voice_profiles.items():
+            voices.append({
+                'name': profile_name,
+                'voice_id': profile_data['voice_id'],
+                'description': profile_data['description']
+            })
+
+        return jsonify({
+            'success': True,
+            'voices': voices
+        })
+    except Exception as e:
+        print(f"Error getting welcome voices: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/welcome-message/generate', methods=['POST'])
+def generate_welcome_message():
+    """Generate message with caching and type selection based on user history"""
+    try:
+        data = request.get_json() or {}
+        firebase_uid = data.get('firebase_uid')
+        language = data.get('language', 'en')
+        voice_profile = data.get('voice_profile', 'ScienceTeacher')
+        requested_type = data.get('message_type')  # Optional override
+
+        if not firebase_uid:
+            return jsonify({'success': False, 'error': 'Firebase UID required'}), 400
+
+        # Determine message type based on user history (if not explicitly requested)
+        message_type = requested_type
+        if not message_type:
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        # Check what message types user has listened to
+                        cur.execute("""
+                            SELECT DISTINCT message_type
+                            FROM user_message_history
+                            WHERE firebase_uid = %s AND completed = TRUE
+                            ORDER BY message_type
+                        """, (firebase_uid,))
+
+                        listened_types = [row[0] for row in cur.fetchall()]
+
+                        # Select next message type
+                        if 'welcome' not in listened_types:
+                            message_type = 'welcome'
+                        elif 'tip' not in listened_types:
+                            message_type = 'tip'
+                        else:
+                            message_type = 'update'
+
+        # Check cache first
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                        DELETE FROM invites 
-                        WHERE id = %s AND invited_by_user_id = %s
-                        RETURNING id
-                    """, (invite_id, user_id))
-                    
-                    deleted = cur.fetchone()
-                    conn.commit()
-                    
-                    if not deleted:
-                        return jsonify({'success': False, 'error': 'Invitation not found or not authorized'}), 404
+                        SELECT id, audio_data, content_type
+                        FROM welcome_messages
+                        WHERE firebase_uid = %s AND language = %s AND voice_profile = %s AND message_type = %s
+                    """, (firebase_uid, language, voice_profile, message_type))
 
-        return jsonify({
-            'success': True,
-            'message': 'Invitation deleted successfully'
-        })
+                    cached = cur.fetchone()
+                    if cached:
+                        message_id, audio_data, content_type = cached
+                        # Return cached audio URL
+                        return jsonify({
+                            'success': True,
+                            'audio_url': f'/api/welcome-audio/{message_id}',
+                            'message_id': message_id,
+                            'message_type': message_type,
+                            'cached': True
+                        })
+
+        # Generate new message and track generation time
+        import time
+        start_time = time.time()
+
+        result = elevenlabs_service.generate_welcome_message(
+            user_name=None,
+            language=language,
+            voice_profile=voice_profile,
+            message_type=message_type
+        )
+
+        generation_time_ms = int((time.time() - start_time) * 1000)
+
+        if result.get('success'):
+            # Store in database with generation time and message type
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            INSERT INTO welcome_messages
+                            (firebase_uid, language, voice_profile, audio_data, content_type, generation_time_ms, message_type)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (firebase_uid, language, voice_profile, message_type)
+                            DO UPDATE SET audio_data = EXCLUDED.audio_data,
+                                        created_at = CURRENT_TIMESTAMP,
+                                        generation_time_ms = EXCLUDED.generation_time_ms
+                            RETURNING id
+                        """, (
+                            firebase_uid,
+                            language,
+                            voice_profile,
+                            result['audio_data'],
+                            result['content_type'],
+                            generation_time_ms,
+                            message_type
+                        ))
+
+                        message_id = cur.fetchone()[0]
+                        conn.commit()
+
+                        return jsonify({
+                            'success': True,
+                            'audio_url': f'/api/welcome-audio/{message_id}',
+                            'message_id': message_id,
+                            'message_type': message_type,
+                            'cached': False,
+                            'generation_time_ms': generation_time_ms
+                        })
+
+            return jsonify({'success': False, 'error': 'Database error'}), 500
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Unknown error')
+            }), 500
 
     except Exception as e:
-        print(f"Error deleting datashare invitation: {str(e)}")
+        print(f"Error generating welcome message: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/welcome-audio/<int:message_id>', methods=['GET'])
+def get_welcome_audio(message_id):
+    """Retrieve cached welcome audio"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT audio_data, content_type
+                        FROM welcome_messages
+                        WHERE id = %s
+                    """, (message_id,))
+
+                    result = cur.fetchone()
+                    if result:
+                        audio_data, content_type = result
+                        return Response(
+                            audio_data,
+                            mimetype=content_type,
+                            headers={
+                                'Cache-Control': 'public, max-age=3600',
+                                'Content-Disposition': f'inline; filename="welcome_{message_id}.mp3"'
+                            }
+                        )
+                    else:
+                        return jsonify({'error': 'Audio not found'}), 404
+
+        return jsonify({'error': 'Database error'}), 500
+
+    except Exception as e:
+        print(f"Error retrieving welcome audio: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/welcome-message/estimated-time', methods=['GET'])
+def get_estimated_generation_time():
+    """Get estimated generation time based on recent messages"""
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get average generation time from last 10 generated messages
+                    cur.execute("""
+                        SELECT AVG(generation_time_ms) as avg_time
+                        FROM (
+                            SELECT generation_time_ms
+                            FROM welcome_messages
+                            WHERE generation_time_ms IS NOT NULL
+                            ORDER BY created_at DESC
+                            LIMIT 10
+                        ) recent_messages
+                    """)
+
+                    result = cur.fetchone()
+                    avg_time = result[0] if result and result[0] else 3000  # Default to 3 seconds
+
+                    return jsonify({
+                        'success': True,
+                        'estimated_time_ms': int(avg_time)
+                    })
+
+        return jsonify({'success': False, 'error': 'Database error'}), 500
+
+    except Exception as e:
+        print(f"Error getting estimated time: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/welcome-message/track-listen', methods=['POST'])
+def track_message_listen():
+    """Track when a user listens to a message"""
+    try:
+        data = request.get_json() or {}
+        firebase_uid = data.get('firebase_uid')
+        message_type = data.get('message_type', 'welcome')
+        language = data.get('language', 'en')
+        voice_profile = data.get('voice_profile', 'ScienceTeacher')
+        completed = data.get('completed', False)
+
+        if not firebase_uid:
+            return jsonify({'success': False, 'error': 'Firebase UID required'}), 400
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Insert or update listening record
+                    cur.execute("""
+                        INSERT INTO user_message_history
+                        (firebase_uid, message_type, language, voice_profile, completed, listened_at)
+                        VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                        RETURNING id
+                    """, (firebase_uid, message_type, language, voice_profile, completed))
+
+                    history_id = cur.fetchone()[0]
+                    conn.commit()
+
+                    return jsonify({
+                        'success': True,
+                        'history_id': history_id,
+                        'message': 'Listening tracked successfully'
+                    })
+
+        return jsonify({'success': False, 'error': 'Database error'}), 500
+
+    except Exception as e:
+        print(f"Error tracking message listen: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/update-personal-message', methods=['POST'])
+def update_personal_message():
+    """Update or create a personal message for a specific Firebase UID"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebase_uid')
+        email = data.get('email', 'Unknown Email')
+        personal_message = data.get('personal_message', '')
+
+        if not firebase_uid:
+            return jsonify({'success': False, 'message': 'Firebase UID is required'}), 400
+
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Check if an invite already exists for this Firebase UID
+                    cur.execute("""
+                        SELECT id, email FROM invites
+                        WHERE invited_by_firebase_uid = %s OR email = %s
+                        ORDER BY created_at DESC
+                        LIMIT 1
+                    """, (firebase_uid, email))
+
+                    existing_invite = cur.fetchone()
+
+                    if existing_invite:
+                        # Update existing invite
+                        cur.execute("""
+                            UPDATE invites
+                            SET personal_message = %s,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE id = %s
+                            RETURNING id
+                        """, (personal_message, existing_invite[0]))
+                        updated_id = cur.fetchone()[0]
+                        action = 'updated'
+                    else:
+                        # Create new invite record with the custom message
+                        import secrets
+                        invitation_token = secrets.token_urlsafe(32)
+
+                        # Try to get user ID by Firebase UID
+                        cur.execute("SELECT id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                        user_result = cur.fetchone()
+                        user_id = user_result[0] if user_result else None
+
+                        cur.execute("""
+                            INSERT INTO invites
+                            (user_id, email, invitation_token, invited_by_firebase_uid,
+                             personal_message, invitation_status)
+                            VALUES (%s, %s, %s, %s, %s, 'draft')
+                            RETURNING id
+                        """, (user_id, email, invitation_token, firebase_uid, personal_message))
+                        updated_id = cur.fetchone()[0]
+                        action = 'created'
+
+                    conn.commit()
+
+                    return jsonify({
+                        'success': True,
+                        'message': f'Personal message {action} successfully',
+                        'invite_id': updated_id,
+                        'firebase_uid': firebase_uid
+                    })
+
+        return jsonify({'success': False, 'message': 'Database connection error'}), 500
+
+    except Exception as e:
+        print(f"Error updating personal message: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# Import MCP server functions at the top level
+try:
+    from mcp_server import SERVICES_CATALOG, calculate_total_costs
+    MCP_AVAILABLE = True
+except ImportError:
+    MCP_AVAILABLE = False
+    SERVICES_CATALOG = {}
+
+# MCP Server Routes for Service Catalog and Pricing
+@app.route('/mcp')
+def mcp_server():
+    """MCP server endpoint for service catalog and pricing"""
+    if MCP_AVAILABLE:
+        # Import the function here to avoid circular imports
+        with mcp_app.app_context():
+            from mcp_server import mcp_server as mcp_server_func
+            return mcp_server_func()
+    else:
+        return jsonify({
+            "error": "MCP server not available",
+            "message": "Service catalog endpoint is currently unavailable"
+        }), 503
+
+@app.route('/mcp/api')
+def mcp_api():
+    """JSON API endpoint for programmatic access to service catalog"""
+    if MCP_AVAILABLE:
+        from mcp_server import mcp_api as mcp_api_func
+        return mcp_api_func()
+    else:
+        return jsonify({
+            "error": "MCP API not available",
+            "fallback_services": {
+                "basic_membership": {"price_usd": 24.00, "type": "annual"},
+                "full_membership": {"price_usd": 66.00, "type": "annual"},
+                "global_data_10gb": {"price_usd": 10.00, "type": "one_time"}
+            }
+        })
+
+@app.route('/mcp/service/<service_id>')
+def mcp_service_detail(service_id):
+    """MCP service detail endpoint"""
+    if MCP_AVAILABLE:
+        from mcp_server import mcp_service_detail as mcp_service_detail_func
+        return mcp_service_detail_func(service_id)
+    else:
+        return jsonify({"error": "Service detail endpoint not available"}), 503
+
+@app.route('/mcp/calculate')
+def mcp_pricing_calculator():
+    """MCP pricing calculator endpoint"""
+    if MCP_AVAILABLE:
+        from mcp_server import mcp_pricing_calculator as mcp_pricing_calculator_func
+        return mcp_pricing_calculator_func()
+    else:
+        return jsonify({"error": "Pricing calculator not available"}), 503
+
+# Beta Approval System API Endpoints
+@app.route('/api/beta-request', methods=['POST'])
+def submit_beta_request():
+    """Submit a beta access request"""
+    try:
+        from beta_approval_service import BetaApprovalService
+
+        data = request.get_json()
+        # Support both parameter formats from frontend
+        firebase_uid = data.get('firebaseUid') or data.get('firebase_uid')
+        user_email = data.get('email')
+        user_name = data.get('name')
+
+        if not firebase_uid:
+            return jsonify({
+                'success': False,
+                'message': 'Firebase UID is required',
+                'error': 'Missing firebaseUid parameter'
+            }), 400
+
+        # Get user email from database if not provided
+        if not user_email:
+            try:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cursor:
+                            cursor.execute("SELECT email FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                            user_data = cursor.fetchone()
+                            if user_data:
+                                user_email = user_data[0]
+            except Exception as e:
+                print(f"Error getting user email: {str(e)}")
+
+        if not user_email:
+            return jsonify({
+                'success': False,
+                'message': 'User not found. Please sign up first.',
+                'error': 'Cannot find user email for firebaseUid'
+            }), 400
+
+        beta_service = BetaApprovalService()
+        result = beta_service.submit_beta_request(user_email, firebase_uid, user_name)
+
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            # Ensure error response has message field
+            if 'message' not in result and 'error' in result:
+                result['message'] = result['error']
+            return jsonify(result), 400
+
+    except Exception as e:
+        print(f"Error in submit_beta_request: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Server error: {str(e)}',
+            'error': str(e)
+        }), 500
+
+@app.route('/api/beta-approve/<request_id>')
+def approve_beta_request(request_id):
+    """Approve a beta request (admin endpoint)"""
+    try:
+        from beta_approval_service import BetaApprovalService
+
+        beta_service = BetaApprovalService()
+        result = beta_service.approve_beta_request(request_id)
+
+        if result['success']:
+            return f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px; background: #f0f8ff;">
+                <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h1 style="color: #4CAF50; text-align: center;">✅ Beta Request Approved!</h1>
+                    <p><strong>Request ID:</strong> {request_id}</p>
+                    <p><strong>Phone Number Assigned:</strong> {result.get('phone_number')}</p>
+                    <p><strong>OXIO User ID:</strong> {result.get('oxio_user_id')}</p>
+                    <p><strong>Group ID:</strong> {result.get('group_id')}</p>
+                    <p style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 5px;">
+                        The user has been notified via email and can now access beta features.
+                    </p>
+                </div>
+            </body>
+            </html>
+            """
+        else:
+            return f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px; background: #fff5f5;">
+                <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h1 style="color: #f44336; text-align: center;">❌ Approval Failed</h1>
+                    <p><strong>Request ID:</strong> {request_id}</p>
+                    <p><strong>Error:</strong> {result.get('error', 'Unknown error')}</p>
+                    <p><strong>Message:</strong> {result.get('message', 'No additional details')}</p>
+                </div>
+            </body>
+            </html>
+            """, 400
+
+    except Exception as e:
+        print(f"Error in approve_beta_request: {str(e)}")
+        return f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; padding: 20px; background: #fff5f5;">
+            <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h1 style="color: #f44336; text-align: center;">❌ System Error</h1>
+                <p><strong>Request ID:</strong> {request_id}</p>
+                <p><strong>Error:</strong> {str(e)}</p>
+            </div>
+        </body>
+        </html>
+        """, 500
+
+@app.route('/api/beta-reject/<request_id>')
+def reject_beta_request(request_id):
+    """Reject a beta request (admin endpoint)"""
+    try:
+        from beta_approval_service import BetaApprovalService
+
+        # Get optional reason from query parameter
+        reason = request.args.get('reason', 'Not specified')
+
+        beta_service = BetaApprovalService()
+        result = beta_service.reject_beta_request(request_id, reason)
+
+        if result['success']:
+            return f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px; background: #fff8e1;">
+                <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h1 style="color: #ff9800; text-align: center;">⚠️ Beta Request Rejected</h1>
+                    <p><strong>Request ID:</strong> {request_id}</p>
+                    <p><strong>Reason:</strong> {reason}</p>
+                    <p style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 5px;">
+                        The user has been notified via email about the rejection.
+                    </p>
+                </div>
+            </body>
+            </html>
+            """
+        else:
+            return f"Error rejecting beta request: {result.get('message', 'Unknown error')}", 500
+
+    except Exception as e:
+        print(f"Error in reject_beta_request: {str(e)}")
+        return f"Error processing request: {str(e)}", 500
+
+# Add the new endpoint definition here
+@app.route('/api/user-esim-details', methods=['GET'])
+def get_user_esim_details():
+    """Get user's eSIM activation details including ICCID and OXIO data"""
+    firebase_uid = request.args.get('firebaseUid')
+    if not firebase_uid:
+        return jsonify({'error': 'Firebase UID is required'}), 400
+
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get assigned ICCID
+                    cur.execute("""
+                        SELECT iccid, lpa_code, status, assigned_at, country
+                        FROM iccid_inventory
+                        WHERE allocated_to_firebase_uid = %s
+                          AND status = 'assigned'
+                        ORDER BY assigned_at DESC
+                    """, (firebase_uid,))
+
+                    iccid_data = cur.fetchall()
+
+                    # Get OXIO activation details
+                    cur.execute("""
+                        SELECT iccid, line_id, phone_number, activation_status,
+                               esim_qr_code, activation_url, activation_code, created_at
+                        FROM oxio_activations
+                        WHERE firebase_uid = %s
+                        ORDER BY created_at DESC
+                    """, (firebase_uid,))
+
+                    activation_data = cur.fetchall()
+
+                    esims = []
+                    for activation in activation_data:
+                        esims.append({
+                            'iccid': activation[0],
+                            'line_id': activation[1],
+                            'phone_number': activation[2],
+                            'activation_status': activation[3],
+                            'qr_code': activation[4],
+                            'activation_url': activation[5],
+                            'activation_code': activation[6],
+                            'created_at': activation[7].isoformat() if activation[7] else None
+                        })
+
+                    return jsonify({
+                        'success': True,
+                        'esims': esims,
+                        'iccid_inventory': [
+                            {
+                                'iccid': i[0],
+                                'lpa_code': i[1],
+                                'status': i[2],
+                                'assigned_at': i[3].isoformat() if i[3] else None,
+                                'country': i[4]
+                            } for i in iccid_data
+                        ]
+                    })
+
+        return jsonify({'error': 'Database connection error'}), 500
+    except Exception as e:
+        print(f"Error getting eSIM details: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user-phone-numbers', methods=['GET'])
+def get_user_phone_numbers():
+    """Get user's beta phone numbers with QR codes - ADMIN ONLY"""
+    pass # Placeholder for admin functionality
 
 # Shopify API endpoints
 @app.route('/api/shopify/test-connection', methods=['GET'])
@@ -5757,7 +8342,7 @@ def shopify_sync_products():
     """Sync products from Shopify to marketplace"""
     try:
         result = shopify_service.get_products(limit=250)
-        
+
         if result['success']:
             # Here you would sync to your marketplace database
             # For now, just return the count
@@ -5768,7 +8353,7 @@ def shopify_sync_products():
             })
         else:
             return jsonify(result), 500
-            
+
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -5779,7 +8364,7 @@ def shopify_sync_inventory():
     try:
         # Get all products and sync inventory levels
         result = shopify_service.get_products(limit=250)
-        
+
         if result['success']:
             return jsonify({
                 'success': True,
@@ -5787,7 +8372,7 @@ def shopify_sync_inventory():
             })
         else:
             return jsonify(result), 500
-            
+
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
