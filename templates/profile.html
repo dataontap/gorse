@@ -232,18 +232,18 @@
 
                     <!-- eSIM Details Section -->
                     <div class="esim-section mb-4">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h4><i class="fas fa-sim-card"></i> My eSIMs</h4>
+                        <div class="card" style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px);">
+                            <div class="card-header d-flex justify-content-between align-items-center" style="background: transparent; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                                <h4 style="color: var(--text-primary); margin: 0;"><i class="fas fa-sim-card"></i> My eSIMs</h4>
                                 <button class="btn btn-sm btn-outline-primary" onclick="loadESIMDetails()">
                                     <i class="fas fa-refresh"></i> Refresh
                                 </button>
                             </div>
-                            <div class="card-body">
-                                <div id="esimLoading" class="text-center" style="display: none;">
+                            <div class="card-body" style="background: transparent;">
+                                <div id="esimLoading" class="text-center" style="display: none; color: var(--text-primary);">
                                     <i class="fas fa-spinner fa-spin"></i> Loading eSIM details...
                                 </div>
-                                <div id="esimNoData" class="text-center text-muted" style="display: none;">
+                                <div id="esimNoData" class="text-center text-muted" style="display: none; color: var(--text-secondary);">
                                     <i class="fas fa-sim-card"></i><br>
                                     No eSIMs found. <a href="/buy/esim">Purchase your first eSIM for $1</a>
                                 </div>

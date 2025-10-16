@@ -1214,7 +1214,8 @@ body.light-mode {
 /* Dark mode content boxes - make transparent */
 .dark-mode .dashboard-content,
 .dark-mode .onboarding-content,
-.dark-mode .floating-note {
+.dark-mode .floating-note,
+.dark-mode .card {
     background: rgba(255, 255, 255, 0.05) !important;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1223,13 +1224,15 @@ body.light-mode {
 /* Ensure text is visible in dark mode content boxes */
 .dark-mode .dashboard-content *,
 .dark-mode .onboarding-content *,
-.dark-mode .floating-note * {
+.dark-mode .floating-note *,
+.dark-mode .card * {
     color: #ffffff !important;
 }
 
 .dark-mode .dashboard-content a,
 .dark-mode .onboarding-content a,
-.dark-mode .floating-note a {
+.dark-mode .floating-note a,
+.dark-mode .card a {
     color: #66a3ff !important;
 }
 
@@ -1238,7 +1241,26 @@ body.light-mode {
 .dark-mode .dashboard-content h3,
 .dark-mode .dashboard-content h4,
 .dark-mode .dashboard-content h5,
-.dark-mode .dashboard-content h6 {
+.dark-mode .dashboard-content h6,
+.dark-mode .card h1,
+.dark-mode .card h2,
+.dark-mode .card h3,
+.dark-mode .card h4,
+.dark-mode .card h5,
+.dark-mode .card h6 {
+    color: #ffffff !important;
+}
+
+/* Dark mode card headers */
+.dark-mode .card-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+/* Dark mode card body */
+.dark-mode .card-body {
+    background: transparent !important;
     color: #ffffff !important;
 }
 
