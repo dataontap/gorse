@@ -527,7 +527,7 @@ class eSIMActivationService:
                 'line_id': esim_data.get('line_id', 'System assigned'),
                 'iccid': esim_data.get('iccid', 'Available in dashboard'),
                 'activation_date': datetime.now().strftime('%B %d, %Y at %I:%M %p'),
-                'qr_code_url': esim_data.get('qr_code', ''),
+                'qr_code': 'cid:esim-qr-code',
                 'activation_url': esim_data.get('activation_url', ''),
                 'oxio_user_id': oxio_user_id
             }
@@ -537,11 +537,26 @@ class eSIMActivationService:
                 subject = subject.replace(f"{{{{{key}}}}}", str(value))
                 html_body = html_body.replace(f"{{{{{key}}}}}", str(value))
 
+            # Prepare QR code attachment
+            attachments = []
+            qr_code_base64 = esim_data.get('qr_code', '')
+            if qr_code_base64:
+                # Remove data URL prefix if present
+                if qr_code_base64.startswith('data:image'):
+                    qr_code_base64 = qr_code_base64.split(',', 1)[1] if ',' in qr_code_base64 else qr_code_base64
+                
+                attachments.append({
+                    'filename': 'esim-qr-code.png',
+                    'content': qr_code_base64,
+                    'content_id': 'esim-qr-code'
+                })
+
             result = send_email(
                 to_email=user_email,
                 subject=subject,
                 body="eSIM activation complete - check HTML version for details",
-                html_body=html_body
+                html_body=html_body,
+                attachments=attachments if attachments else None
             )
 
             print(f"📧 Sent eSIM activation email to {user_email}")

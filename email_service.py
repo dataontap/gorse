@@ -4,10 +4,17 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
 
-def send_email_via_resend(to_email: str, subject: str, body: str, html_body: Optional[str] = None) -> bool:
+def send_email_via_resend(to_email: str, subject: str, body: str, html_body: Optional[str] = None, attachments: Optional[list] = None) -> bool:
     """
     Send an email using Resend API - preferred method for reliable delivery
     Returns True if successful, False otherwise
+    
+    Args:
+        to_email: Recipient email address
+        subject: Email subject
+        body: Plain text body
+        html_body: HTML body (optional)
+        attachments: List of attachment dicts with 'filename' and 'content' (base64 string)
     """
     try:
         import resend
@@ -38,6 +45,10 @@ def send_email_via_resend(to_email: str, subject: str, body: str, html_body: Opt
             params["html"] = email_content
         else:
             params["text"] = email_content
+        
+        # Add attachments if provided
+        if attachments:
+            params["attachments"] = attachments
             
         response = resend.Emails.send(params)
         
@@ -109,14 +120,21 @@ def send_email_via_smtp(to_email: str, subject: str, body: str, html_body: Optio
         print(f"Failed to send email via SMTP to {to_email}: {str(e)}")
         return False
 
-def send_email(to_email: str, subject: str, body: str, html_body: Optional[str] = None) -> bool:
+def send_email(to_email: str, subject: str, body: str, html_body: Optional[str] = None, attachments: Optional[list] = None) -> bool:
     """
     Send an email using the best available method
     Priority: 1) Resend API, 2) SMTP fallback
     Returns True if successful, False otherwise
+    
+    Args:
+        to_email: Recipient email address
+        subject: Email subject
+        body: Plain text body
+        html_body: HTML body (optional)
+        attachments: List of attachment dicts with 'filename' and 'content' (base64 string)
     """
     # Try Resend first (preferred method)
-    if send_email_via_resend(to_email, subject, body, html_body):
+    if send_email_via_resend(to_email, subject, body, html_body, attachments):
         return True
     
     # Fall back to SMTP if Resend fails
