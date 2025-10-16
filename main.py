@@ -5730,14 +5730,14 @@ def resend_esim_activation_email():
         try:
             from esim_activation_service import esim_activation_service
             
-            # Prepare eSIM data dictionary
+            # Prepare eSIM data dictionary (keys must match _send_activation_email expectations)
             esim_data = {
                 'phone_number': phone_number or 'Pending',
                 'line_id': line_id,
                 'iccid': iccid,
                 'activation_url': activation_url,
-                'qr_code_url': esim_qr_code,
-                'activation_date': created_at.strftime('%Y-%m-%d %H:%M:%S') if created_at else 'Unknown'
+                'qr_code': esim_qr_code,  # Use 'qr_code' not 'qr_code_url'
+                'activation_date': created_at.strftime('%B %d, %Y at %I:%M %p') if created_at else 'Unknown'
             }
             
             # Send the email with correct parameters
