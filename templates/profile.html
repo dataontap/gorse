@@ -808,57 +808,15 @@
         }
 
         function loadOxioDataWithUID(firebaseUid) {
-            try {
-                console.log('Loading OXIO data with Firebase UID:', firebaseUid);
-
-                // If no UID provided, try to get it from auth state
-                if (!firebaseUid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
-                    firebaseUid = firebase.auth().currentUser.uid;
-                    console.log('Retrieved Firebase UID from auth state:', firebaseUid);
-                }
-
-                if (!firebaseUid) {
-                    console.log('No Firebase UID available for OXIO data');
-                    displayNoOxioData();
-                    return;
-                }
-
-                // Load data from local database instead of direct OXIO API
-                fetch(`/api/auth/current-user?firebaseUid=${firebaseUid}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(userData => {
-                        console.log('User data loaded from database:', userData);
-                        
-                        // Format data to match expected structure
-                        const oxioData = {
-                            status: 'success',
-                            oxio_data: {
-                                oxio_user_id: userData.oxio_user_id || null,
-                                oxio_group_id: userData.oxio_group_id || null,
-                                email: userData.email || null,
-                                status: userData.oxio_user_id ? 'active' : 'pending',
-                                iccid: userData.iccid || null,
-                                line_id: userData.line_id || null,
-                                phone_number: userData.phone_number || null,
-                                regions: []
-                            }
-                        };
-                        
-                        displayOxioData(oxioData);
-                    })
-                    .catch(error => {
-                        console.error('Error loading user data:', error);
-                        // Don't show error - just display N/A values
-                        displayNoOxioData();
-                    });
-            } catch (error) {
-                console.error('Error in loadOxioDataWithUID:', error);
-                displayNoOxioData();
+            // This function is now deprecated - data is loaded by loadUserDataFromAPI() and loadESIMDetails()
+            // Just display a simple status message
+            const container = document.getElementById('oxioContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="address-card p-3 mb-3">
+                        <p class="text-muted mb-0"><i class="fas fa-check-circle text-success"></i> Service information loaded from database</p>
+                    </div>
+                `;
             }
         }
 
@@ -1664,18 +1622,9 @@
         }
 
         async function loadAssignedICCID() {
-            if (typeof firebase === 'undefined' || !firebase.auth || !firebase.auth().currentUser) {
-                console.log('Firebase not available or user not authenticated');
-                return;
-            }
-
-            const currentUser = firebase.auth().currentUser;
-            try {
-                const idToken = await currentUser.getIdToken();
-                const response = await fetch(`/api/user-assigned-iccid?firebaseUid=${currentUser.uid}`, {
-                    headers: {
-                        'Authorization': `Bearer ${idToken}`,
-                        'Content-Type': 'application/json'
+            // This function is deprecated - eSIM data is now loaded by loadESIMDetails()
+            console.log('loadAssignedICCID() is deprecated, use loadESIMDetails() instead');
+            return;
                     }
                 });
 
