@@ -2503,6 +2503,26 @@ def create_checkout_session():
                 customer_id = customer.id
             customer_params['customer'] = customer_id
 
+        # Get user email and name from database for eSIM activation
+        user_email = email
+        user_name = None
+        if firebase_uid:
+            try:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            cur.execute("""
+                                SELECT email, display_name
+                                FROM users
+                                WHERE firebase_uid = %s
+                            """, (firebase_uid,))
+                            result = cur.fetchone()
+                            if result:
+                                user_email = result[0] if not user_email else user_email
+                                user_name = result[1]
+            except Exception as db_error:
+                print(f"Error getting user data for checkout metadata: {db_error}")
+
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -2514,7 +2534,10 @@ def create_checkout_session():
             cancel_url=cancel_url,
             metadata={
                 'product_id': product_id,
+                'product': product_id,  # Add 'product' field for webhook compatibility
                 'firebase_uid': firebase_uid,
+                'user_email': user_email or '',  # Add for eSIM activation
+                'user_name': user_name or '',    # Add for eSIM activation
                 'subscription_type': 'yearly' if is_subscription else 'one_time'
             },
             **customer_params  # Add customer ID if available
