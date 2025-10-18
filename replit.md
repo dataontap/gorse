@@ -20,7 +20,7 @@ Firebase handles user authentication via Firebase Admin SDK for server-side toke
 
 ### Payment & Billing Architecture
 
-Stripe is fully integrated for subscription management, one-time purchases, and product catalog management, supporting dynamic pricing and multi-currency transactions.
+Stripe is fully integrated for subscription management, one-time purchases, and product catalog management, supporting dynamic pricing and multi-currency transactions. All purchases are automatically recorded in the Purchases table via the Stripe webhook handler and displayed in the Dashboard's "Recent Purchases" section. The `/api/user-purchases` endpoint provides purchase history retrieval with formatted product names and amounts.
 
 ### Connectivity Services
 
