@@ -1369,6 +1369,74 @@
                     // Load invites when page loads
                     loadInvitesList();
 
+        // Load and display user purchases
+        function loadUserPurchases() {
+            const firebaseUid = getFirebaseUID();
+            if (!firebaseUid) {
+                console.log('No Firebase UID available for loading purchases');
+                return;
+            }
+
+            fetch(`/api/user-purchases?firebaseUid=${firebaseUid}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.purchases) {
+                        displayPurchases(data.purchases);
+                    } else {
+                        console.error('Failed to load purchases:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading purchases:', error);
+                });
+        }
+
+        function displayPurchases(purchases) {
+            const purchaseList = document.getElementById('purchaseList');
+            
+            if (!purchaseList) {
+                console.error('Purchase list element not found');
+                return;
+            }
+
+            // Clear existing content
+            purchaseList.innerHTML = '';
+
+            if (purchases.length === 0) {
+                purchaseList.innerHTML = '<div class="purchase-empty-state">No purchases yet</div>';
+                return;
+            }
+
+            // Create purchase items
+            purchases.forEach(purchase => {
+                const purchaseItem = document.createElement('div');
+                purchaseItem.className = 'purchase-item';
+                
+                // Format date
+                const purchaseDate = new Date(purchase.date);
+                const formattedDate = purchaseDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+
+                purchaseItem.innerHTML = `
+                    <div class="purchase-info">
+                        <div class="purchase-name">${purchase.product_name}</div>
+                        <div class="purchase-date">${formattedDate}</div>
+                    </div>
+                    <div class="purchase-amount">${purchase.amount_formatted}</div>
+                `;
+
+                purchaseList.appendChild(purchaseItem);
+            });
+        }
+
+        // Load purchases when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserPurchases();
+        });
+
         // Add event listener for resend eSIM button
         document.addEventListener('DOMContentLoaded', function() {
             const resendBtn = document.getElementById('resendEsimBtn');

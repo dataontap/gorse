@@ -1994,9 +1994,22 @@ body.light-mode {
 .purchase-item {
     display: flex;
     justify-content: space-between;
-    padding: 10px 0;
+    align-items: center;
+    padding: 12px 0;
     border-bottom: 1px solid #eee;
     text-align: left;
+    position: relative;
+}
+
+.purchase-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.purchase-name {
+    font-weight: 500;
+    color: #333;
 }
 
 .purchase-empty-state {
@@ -2007,21 +2020,14 @@ body.light-mode {
 
 .purchase-date {
     color: #888;
-    font-size: 0.9em;
+    font-size: 0.85em;
 }
 
 .purchase-amount {
     font-weight: bold;
     text-align: right;
-}
-
-.purchase-item {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 10px 0;
-    border-bottom: 1px solid #eee;
-    position: relative;
+    color: #28a745;
+    white-space: nowrap;
 }
 
 /* Wallet Styling */

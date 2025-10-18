@@ -3499,6 +3499,83 @@ def get_subscription_status():
             'user_id': user_id
         })
 
+@app.route('/api/user-purchases', methods=['GET'])
+def get_user_purchases():
+    """Get purchase history for a user"""
+    firebase_uid = request.args.get('firebaseUid')
+    
+    if not firebase_uid:
+        return jsonify({'error': 'Firebase UID is required'}), 400
+    
+    try:
+        # Get user data to find the user_id
+        user_data = get_user_by_firebase_uid(firebase_uid)
+        if not user_data:
+            return jsonify({'error': 'User not found'}), 404
+        
+        user_id = user_data['id']
+        
+        # Fetch purchases from database
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT 
+                            purchaseid,
+                            stripeid,
+                            stripeproductid,
+                            priceid,
+                            totalamount,
+                            datecreated,
+                            stripetransactionid
+                        FROM purchases
+                        WHERE userid = %s
+                        ORDER BY datecreated DESC
+                        LIMIT 50
+                    """, (user_id,))
+                    
+                    purchases = cur.fetchall()
+                    
+                    # Format purchases for JSON response
+                    purchase_list = []
+                    for purchase in purchases:
+                        # Map product IDs to friendly names
+                        product_name_map = {
+                            'esim_beta': 'eSIM Beta',
+                            'global_data_10gb': 'Global Data 10GB',
+                            'basic_membership': 'Basic Membership',
+                            'full_membership': 'Full Membership',
+                            'metal_card': 'Metal Card',
+                            'beta_tester': 'Beta Tester'
+                        }
+                        
+                        product_id = purchase[2]
+                        product_name = product_name_map.get(product_id, product_id)
+                        
+                        purchase_list.append({
+                            'purchase_id': purchase[0],
+                            'stripe_id': purchase[1],
+                            'product_id': product_id,
+                            'product_name': product_name,
+                            'price_id': purchase[3],
+                            'amount': purchase[4],  # Amount in cents
+                            'amount_formatted': f"${purchase[4] / 100:.2f}",
+                            'date': purchase[5].isoformat() if purchase[5] else None,
+                            'transaction_id': purchase[6]
+                        })
+                    
+                    return jsonify({
+                        'success': True,
+                        'purchases': purchase_list,
+                        'count': len(purchase_list)
+                    })
+            else:
+                return jsonify({'error': 'Database connection failed'}), 500
+                
+    except Exception as e:
+        print(f"Error fetching user purchases: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/record-global-purchase', methods=['POST'])
 def record_global_purchase():
     data = request.get_json()
