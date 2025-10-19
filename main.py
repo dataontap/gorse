@@ -5698,8 +5698,64 @@ def get_user_esim_details():
 
 @app.route('/api/user-phone-numbers', methods=['GET'])
 def get_user_phone_numbers():
-    """Get user's beta phone numbers with QR codes - ADMIN ONLY"""
-    pass # Placeholder for admin functionality
+    """Get user's eSIM phone numbers with QR codes and activation details"""
+    firebase_uid = request.args.get('firebase_uid')
+    
+    if not firebase_uid:
+        return jsonify({'error': 'firebase_uid parameter required'}), 400
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Get all eSIM activations for this user with ICCID inventory details
+            cursor.execute("""
+                SELECT 
+                    o.phone_number,
+                    o.iccid,
+                    o.activation_code,
+                    o.line_id,
+                    o.activation_status,
+                    o.created_at,
+                    o.esim_qr_code,
+                    i.lpa_code,
+                    i.country,
+                    i.status as inventory_status
+                FROM oxio_activations o
+                LEFT JOIN iccid_inventory i ON o.iccid = i.iccid
+                WHERE o.firebase_uid = %s
+                ORDER BY o.created_at DESC
+            """, (firebase_uid,))
+            
+            rows = cursor.fetchall()
+            
+            if not rows:
+                return jsonify({'phone_numbers': []})
+            
+            phone_numbers = []
+            for row in rows:
+                phone_numbers.append({
+                    'phone_number': row[0],
+                    'iccid': row[1],
+                    'activation_code': row[2],
+                    'lpa_code': row[7],  # LPA code from inventory
+                    'line_id': row[3],
+                    'status': row[4],
+                    'country': row[8],
+                    'activated_at': row[5].isoformat() if row[5] else None,
+                    'qr_code': row[6]  # Base64 QR code
+                })
+            
+            return jsonify({
+                'success': True,
+                'phone_numbers': phone_numbers
+            })
+            
+    except Exception as e:
+        print(f"Error fetching user phone numbers: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 # Shopify API endpoints
 @app.route('/api/shopify/test-connection', methods=['GET'])
