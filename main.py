@@ -2550,6 +2550,71 @@ def create_checkout_session():
         print(f"Error creating checkout session: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+def get_user_assigned_iccid_data(firebase_uid):
+    """Check if user already has an assigned ICCID from inventory"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT iccid, lpa_code, country, line_id, assigned_at 
+                FROM iccid_inventory 
+                WHERE allocated_to_firebase_uid = %s AND status = 'assigned'
+                ORDER BY assigned_at DESC 
+                LIMIT 1
+            """, (firebase_uid,))
+            result = cursor.fetchone()
+            
+            if result:
+                return {
+                    'iccid': result[0],
+                    'lpa_code': result[1],
+                    'country': result[2],
+                    'line_id': result[3],
+                    'assigned_at': result[4]
+                }
+            return None
+    except Exception as e:
+        print(f"Error checking user assigned ICCID: {e}")
+        return None
+
+def assign_iccid_to_user_atomic(firebase_uid, user_email):
+    """Atomically assign an available ICCID to user from inventory"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Use SELECT FOR UPDATE to lock the row and prevent race conditions
+            cursor.execute("""
+                UPDATE iccid_inventory
+                SET status = 'assigned',
+                    allocated_to_firebase_uid = %s,
+                    assigned_to = %s,
+                    assigned_at = NOW()
+                WHERE id = (
+                    SELECT id FROM iccid_inventory
+                    WHERE status = 'available'
+                    ORDER BY id
+                    LIMIT 1
+                    FOR UPDATE SKIP LOCKED
+                )
+                RETURNING iccid, lpa_code, country, line_id
+            """, (firebase_uid, user_email))
+            
+            result = cursor.fetchone()
+            conn.commit()
+            
+            if result:
+                return {
+                    'iccid': result[0],
+                    'lpa_code': result[1],
+                    'country': result[2],
+                    'line_id': result[3]
+                }
+            return None
+    except Exception as e:
+        print(f"Error assigning ICCID to user: {e}")
+        return None
+
 @app.route('/stripe/webhook/7f3a9b2c8d1e4f5a6b7c8d9e0f1a2b3c', methods=['POST'])
 def handle_stripe_webhook():
     """Handle Stripe webhook events, especially payment success"""
@@ -2654,17 +2719,17 @@ def handle_stripe_webhook():
                         assigned_iccid = existing_iccid
                     else:
                         # Assign new ICCID to user with atomic locking to prevent race conditions
-                        # Use atomic function for safer assignment
                         assigned_iccid = assign_iccid_to_user_atomic(firebase_uid, user_email)
 
                         if not assigned_iccid:
                             print(f"❌ No available ICCIDs for user {firebase_uid}")
-                            return jsonify({'error': 'No available eSIMs'}), 500
+                            return jsonify({'error': 'No available eSIMs in inventory'}), 500
 
                         print(f"✅ Assigned new ICCID {assigned_iccid['iccid']} to user {firebase_uid}")
+                    
                     total_amount = session.get('amount_total', 100)  # Default $1.00 in cents
 
-                    print(f"🎯 eSIM activation parameters: Firebase UID={firebase_uid}, Email={user_email}, Amount=${total_amount/100:.2f}")
+                    print(f"🎯 eSIM activation parameters: Firebase UID={firebase_uid}, Email={user_email}, Amount=${total_amount/100:.2f}, ICCID={assigned_iccid['iccid']}")
 
                     if not firebase_uid or not user_email:
                         print(f"❌ Missing required parameters for eSIM activation")
@@ -2681,20 +2746,9 @@ def handle_stripe_webhook():
 
                     if activation_result.get('success'):
                         print(f"✅ eSIM activation service completed successfully")
-
-                        # Step 2: Send enhanced receipt email with ICCID and QR codes
-                        print(f"📧 Sending receipt email with assigned ICCID: {assigned_iccid['iccid']}")
-                        email_result = send_esim_receipt_email(
-                            firebase_uid=firebase_uid,
-                            user_email=user_email,
-                            user_name=user_name,
-                            assigned_iccid=assigned_iccid
-                        )
-
-                        if email_result:
-                            print(f"✅ Receipt email sent with QR codes")
-                        else:
-                            print(f"⚠️ Receipt email sending failed")
+                        
+                        # The activation service already sends the confirmation email
+                        # No need to send a separate receipt email here
 
                         # Record the purchase in database
                         purchase_id = record_purchase(
