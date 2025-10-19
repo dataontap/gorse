@@ -5511,56 +5511,100 @@ def get_user_esim_details():
                     if not activation_data and not iccid_data:
                         print(f"📡 No local eSIM data found for {firebase_uid}, attempting OXIO sync...")
                         
-                        # Get user's OXIO user ID
+                        # Get user's OXIO user ID and details
                         cur.execute("""
-                            SELECT oxio_user_id, email
+                            SELECT oxio_user_id, email, display_name, oxio_group_id, id
                             FROM users
                             WHERE firebase_uid = %s
                         """, (firebase_uid,))
                         
                         user_row = cur.fetchone()
                         
-                        if user_row and user_row[0]:
+                        if user_row:
                             oxio_user_id = user_row[0]
                             user_email = user_row[1]
+                            display_name = user_row[2]
+                            oxio_group_id = user_row[3]
+                            user_id = user_row[4]
                             
-                            print(f"🔍 Found OXIO User ID: {oxio_user_id} for {user_email}")
+                            # If no OXIO user ID, create one
+                            if not oxio_user_id:
+                                print(f"🆕 No OXIO User ID found, creating OXIO user for {user_email}...")
+                                
+                                from oxio_service import OXIOService
+                                oxio_service = OXIOService()
+                                
+                                # Parse display name
+                                name_parts = (display_name or user_email.split('@')[0]).split(' ', 1)
+                                first_name = name_parts[0]
+                                last_name = name_parts[1] if len(name_parts) > 1 else ""
+                                
+                                # Create OXIO user
+                                oxio_result = oxio_service.create_oxio_user(
+                                    first_name=first_name,
+                                    last_name=last_name,
+                                    email=user_email,
+                                    firebase_uid=firebase_uid,
+                                    oxio_group_id=oxio_group_id
+                                )
+                                
+                                if oxio_result.get('success'):
+                                    oxio_user_id = oxio_result['data'].get('endUserId')
+                                    
+                                    # Update users table with new OXIO user ID
+                                    cur.execute("""
+                                        UPDATE users
+                                        SET oxio_user_id = %s
+                                        WHERE firebase_uid = %s
+                                    """, (oxio_user_id, firebase_uid))
+                                    conn.commit()
+                                    
+                                    print(f"✅ Created OXIO User ID: {oxio_user_id}")
+                                else:
+                                    print(f"❌ Failed to create OXIO user: {oxio_result.get('error', 'Unknown error')}")
+                                    oxio_user_id = None
                             
-                            # Import and use sync service
-                            from esim_sync_service import sync_oxio_lines_for_user
-                            
-                            sync_result = sync_oxio_lines_for_user(firebase_uid, oxio_user_id, conn)
-                            
-                            if sync_result.get('success') and sync_result.get('lines_synced', 0) > 0:
-                                print(f"✅ Synced {sync_result['lines_synced']} lines from OXIO")
-                                data_recovered = True
+                            # Now attempt to sync lines if we have an OXIO user ID
+                            if oxio_user_id:
+                                print(f"🔍 Syncing lines for OXIO User ID: {oxio_user_id} ({user_email})")
                                 
-                                # Re-query local database after sync
-                                cur.execute("""
-                                    SELECT iccid, lpa_code, status, assigned_at, country
-                                    FROM iccid_inventory
-                                    WHERE allocated_to_firebase_uid = %s
-                                      AND status = 'assigned'
-                                    ORDER BY assigned_at DESC
-                                """, (firebase_uid,))
+                                # Import and use sync service
+                                from esim_sync_service import sync_oxio_lines_for_user
                                 
-                                iccid_data = cur.fetchall()
+                                sync_result = sync_oxio_lines_for_user(firebase_uid, oxio_user_id, conn)
                                 
-                                cur.execute("""
-                                    SELECT iccid, line_id, phone_number, activation_status,
-                                           esim_qr_code, activation_url, activation_code, created_at
-                                    FROM oxio_activations
-                                    WHERE firebase_uid = %s
-                                    ORDER BY created_at DESC
-                                """, (firebase_uid,))
-                                
-                                activation_data = cur.fetchall()
-                            elif sync_result.get('user_should_purchase'):
-                                print(f"ℹ️  No lines found in OXIO - user needs to purchase")
+                                if sync_result.get('success') and sync_result.get('lines_synced', 0) > 0:
+                                    print(f"✅ Synced {sync_result['lines_synced']} lines from OXIO")
+                                    data_recovered = True
+                                    
+                                    # Re-query local database after sync
+                                    cur.execute("""
+                                        SELECT iccid, lpa_code, status, assigned_at, country
+                                        FROM iccid_inventory
+                                        WHERE allocated_to_firebase_uid = %s
+                                          AND status = 'assigned'
+                                        ORDER BY assigned_at DESC
+                                    """, (firebase_uid,))
+                                    
+                                    iccid_data = cur.fetchall()
+                                    
+                                    cur.execute("""
+                                        SELECT iccid, line_id, phone_number, activation_status,
+                                               esim_qr_code, activation_url, activation_code, created_at
+                                        FROM oxio_activations
+                                        WHERE firebase_uid = %s
+                                        ORDER BY created_at DESC
+                                    """, (firebase_uid,))
+                                    
+                                    activation_data = cur.fetchall()
+                                elif sync_result.get('user_should_purchase'):
+                                    print(f"ℹ️  No lines found in OXIO - user needs to purchase")
+                                else:
+                                    print(f"⚠️  OXIO sync failed: {sync_result.get('error', 'Unknown error')}")
                             else:
-                                print(f"⚠️  OXIO sync failed: {sync_result.get('error', 'Unknown error')}")
+                                print(f"⚠️  Cannot sync without OXIO User ID")
                         else:
-                            print(f"⚠️  No OXIO User ID found for Firebase UID {firebase_uid}")
+                            print(f"⚠️  User not found in database for Firebase UID {firebase_uid}")
 
                     esims = []
                     for activation in activation_data:
