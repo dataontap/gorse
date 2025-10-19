@@ -2431,15 +2431,15 @@ def esim_success():
                 <h3>Payment Confirmed</h3>
                 <p>Your $1 eSIM purchase has been processed successfully.</p>
                 <p><strong>Session ID:</strong><br><span class="session-id">{session_id or 'N/A'}</span></p>
-                <p><strong>Status:</strong> OXIO eSIM activation in progress...</p>
+                <p><strong>Status:</strong> Sending eSIM...</p>
             </div>
 
             <div class="next-steps">
                 <h3>What's Next?</h3>
-                <p>🔄 Your eSIM is being activated automatically with OXIO</p>
-                <p>📧 You'll receive activation details and QR code via email</p>
-                <p>📱 Follow the setup instructions to activate your eSIM</p>
-                <p>🌍 Enjoy global connectivity with DOT Mobile!</p>
+                <p>📡 Your eSIM is being activated automatically on our network.</p>
+                <p>📧 You will receive your activated eSIM details and QR code via email.</p>
+                <p>📱 Download and install it onto your phone or other compatible device.</p>
+                <p>🌍 Enjoy global connectivity with dotmobile and accumulate DOTM tokens</p>
             </div>
 
             <div style="text-align: center; margin-top: 30px;">
