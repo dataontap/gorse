@@ -2416,6 +2416,7 @@ def esim_success():
             .success {{ color: #22c55e; font-size: 48px; text-align: center; margin-bottom: 20px; }}
             h1 {{ color: #333; text-align: center; margin-bottom: 30px; }}
             .details {{ background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+            .session-id {{ word-break: break-all; font-family: monospace; font-size: 0.9em; color: #555; }}
             .next-steps {{ background: #e3f2fd; padding: 20px; border-radius: 8px; border-left: 4px solid #2196f3; }}
             .btn {{ display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 10px 5px; }}
             .btn:hover {{ background: #0056b3; }}
@@ -2429,7 +2430,7 @@ def esim_success():
             <div class="details">
                 <h3>Payment Confirmed</h3>
                 <p>Your $1 eSIM purchase has been processed successfully.</p>
-                <p><strong>Session ID:</strong> {session_id or 'N/A'}</p>
+                <p><strong>Session ID:</strong><br><span class="session-id">{session_id or 'N/A'}</span></p>
                 <p><strong>Status:</strong> OXIO eSIM activation in progress...</p>
             </div>
 
