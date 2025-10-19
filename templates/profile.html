@@ -389,6 +389,11 @@
     </div>
     <div class="container" style="padding-top: 60px;">
         <div class="dashboard-content">
+            <!-- Member Badge - moved above Profile heading -->
+            <div class="mb-2 text-center">
+                <span class="founding-shield" id="memberBadge" style="display: inline-block; padding: 0.5rem 1rem; background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; border-radius: 20px; font-weight: bold;">⭐ Member</span>
+            </div>
+            
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-user-circle"></i> Profile</h2>
                 <a href="/dashboard" class="btn-close" aria-label="Close"></a>
@@ -397,8 +402,8 @@
                 <div class="user-info mb-4">
                     <div class="email-container">
                         <div class="user-info-header">
-                            <span class="user-name" id="profileUserName">John Doe <span class="founding-shield">Founding Member</span></span>
-                            <span class="user-email" id="profileUserEmail">john@example.com</span>
+                            <div class="user-name" id="profileUserName" style="display: block; margin-bottom: 0.5rem;">John Doe</div>
+                            <div class="user-email" id="profileUserEmail" style="display: block;">john@example.com</div>
                         </div>
                         <div class="user-ids mt-3">
                             <div class="row">
@@ -804,15 +809,24 @@
                                 emailElement.textContent = firebaseUser.email;
                             }
 
-                            // Update display name
+                            // Update display name (badge is separate now)
                             const nameElement = document.getElementById('profileUserName');
                             if (nameElement) {
                                 const displayName = firebaseUser.displayName || firebaseUser.email.split('@')[0];
-                                nameElement.innerHTML = `${displayName} <span class="founding-shield">Member</span>`;
+                                nameElement.textContent = displayName;
+                            }
+                            
+                            // Update member badge
+                            const badgeElement = document.getElementById('memberBadge');
+                            if (badgeElement) {
+                                badgeElement.textContent = '⭐ Member';
                             }
 
                             // Load additional user data from our API
                             loadUserDataFromAPI(firebaseUser.uid);
+
+                            // Load eSIM details with phone number and QR codes
+                            loadESIMDetails();
 
                             // Load OXIO data with Firebase UID
                             loadOxioDataWithUID(firebaseUser.uid);
@@ -854,12 +868,18 @@
                 }
             }
 
-            // Update display name and founder status
+            // Update display name (badge is separate now)
             const nameElement = document.getElementById('profileUserName');
             if (nameElement && userData.email) {
                 const displayName = userData.displayName || userData.email.split('@')[0];
-                const founderBadge = userData.founderStatus === 'Y' ? 'Founding Member' : 'Member';
-                nameElement.innerHTML = `${displayName} <span class="founding-shield">${founderBadge}</span>`;
+                nameElement.textContent = displayName;
+            }
+            
+            // Update member badge based on founder status
+            const badgeElement = document.getElementById('memberBadge');
+            if (badgeElement && userData.email) {
+                const founderBadge = userData.founderStatus === 'Y' ? '⭐ Founding Member' : '⭐ Member';
+                badgeElement.textContent = founderBadge;
             }
 
             // Update Firebase UID
@@ -895,6 +915,8 @@
             const oxioUserIDCopyBtn = document.getElementById('oxioUserIDCopyBtn');
             if (oxioUserIDElement) {
                 const oxioUserId = userData.oxioUserId || 'N/A';
+                console.log('🔍 OXIO User ID from API:', oxioUserId);
+                console.log('📦 Full userData object:', userData);
                 oxioUserIDElement.textContent = oxioUserId;
                 if (oxioUserIDCopyBtn) {
                     oxioUserIDCopyBtn.style.display = (oxioUserId && oxioUserId !== 'N/A') ? 'inline-block' : 'none';
