@@ -1481,14 +1481,11 @@ def get_user_by_firebase_uid(firebase_uid):
         return None
 
 @app.route('/api/auth/current-user', methods=['GET'])
-@require_auth
 def get_current_user():
-    """Get current user data from database using Firebase UID - NOW AUTHENTICATED"""
+    """Get current user data from database using Firebase UID"""
     firebase_uid = request.args.get('firebaseUid')
     if not firebase_uid:
         return jsonify({'error': 'Firebase UID is required'}), 400
-
-    # The require_auth decorator already validates the Firebase UID exists in database
 
     try:
         with get_db_connection() as conn:
