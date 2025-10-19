@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>dot.</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
@@ -34,8 +36,10 @@
 
         .copy-btn {
             font-size: 0.8em;
-            padding: 2px 6px;
+            padding: 6px 10px;
             margin-left: 5px;
+            min-width: 44px;
+            min-height: 44px;
         }
 
         .text-break {
@@ -101,6 +105,204 @@
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+
+        /* Mobile-responsive styles */
+        @media (max-width: 768px) {
+            /* Container and padding adjustments */
+            .container {
+                padding-left: 15px !important;
+                padding-right: 15px !important;
+                padding-top: 70px !important;
+            }
+
+            /* Profile header */
+            .dashboard-content h2 {
+                font-size: 1.5rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            /* User info section */
+            .user-info {
+                margin-bottom: 1.5rem !important;
+            }
+
+            .user-name {
+                font-size: 1.2rem !important;
+                display: block;
+                margin-bottom: 0.5rem;
+            }
+
+            .user-email {
+                font-size: 0.95rem !important;
+            }
+
+            .founding-shield {
+                display: block !important;
+                margin-top: 0.5rem !important;
+                font-size: 0.75rem !important;
+            }
+
+            /* User IDs grid - stack vertically on mobile */
+            .user-ids .row {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+
+            .user-ids .col-md-6 {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                margin-bottom: 1rem;
+            }
+
+            .user-ids p {
+                font-size: 0.95rem !important;
+                padding: 0.75rem 0 !important;
+            }
+
+            .user-ids strong {
+                font-size: 1rem !important;
+            }
+
+            /* Monospace text - make more readable */
+            .font-monospace {
+                font-size: 0.85rem !important;
+                word-break: break-all;
+                line-height: 1.4;
+            }
+
+            /* Copy buttons - make larger and easier to tap */
+            .copy-btn {
+                font-size: 0.9rem !important;
+                padding: 6px 10px !important;
+                margin-left: 8px !important;
+                min-width: 44px !important;
+                min-height: 44px !important;
+            }
+
+            /* Section headings */
+            .section-container h5,
+            .section-container h4 {
+                font-size: 1.1rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            /* Cards and sections */
+            .section-container {
+                margin-bottom: 1.5rem !important;
+                padding: 1rem !important;
+            }
+
+            .address-card {
+                min-height: auto !important;
+                padding: 1rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            /* Buttons - make touch-friendly */
+            .btn {
+                min-height: 44px;
+                font-size: 1rem !important;
+                padding: 0.5rem 1rem !important;
+            }
+
+            .btn-sm {
+                min-height: 38px;
+                font-size: 0.9rem !important;
+            }
+
+            /* Badge adjustments */
+            .badge-secondary {
+                font-size: 0.85rem !important;
+                padding: 0.35rem 0.65rem !important;
+            }
+
+            /* eSIM and service sections */
+            .esim-card,
+            .service-card {
+                padding: 1rem !important;
+                margin-bottom: 1rem !important;
+            }
+
+            /* Info grid items */
+            .info-grid p {
+                font-size: 0.95rem !important;
+                padding: 0.75rem 0 !important;
+            }
+
+            /* Status badges - make more prominent */
+            .service-status-badge {
+                font-size: 0.85rem !important;
+                padding: 0.6rem 1rem !important;
+                display: block;
+                text-align: center;
+                margin-top: 0.5rem;
+            }
+
+            /* Refresh button */
+            .btn-refresh {
+                width: 100%;
+                margin-top: 1rem;
+            }
+
+            /* Modal content on mobile */
+            .esim-qr-content {
+                padding: 20px !important;
+                max-width: 95% !important;
+            }
+
+            .esim-qr-content h3 {
+                font-size: 1.3rem !important;
+            }
+
+            .esim-qr-content p {
+                font-size: 0.95rem !important;
+            }
+
+            /* Close button - make larger */
+            .btn-close {
+                min-width: 44px !important;
+                min-height: 44px !important;
+                padding: 1rem !important;
+            }
+
+            /* Address content */
+            .address-content {
+                margin-right: 10px !important;
+            }
+
+            /* Edit icons - larger touch targets */
+            .fas.fa-edit {
+                font-size: 1.4em !important;
+                padding: 12px !important;
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            /* Button groups - stack on mobile */
+            .btn-group {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .btn-group .btn {
+                width: 100%;
+                margin: 0 !important;
+            }
+
+            /* Subscription cards */
+            .subscription-card {
+                padding: 1rem !important;
+            }
+
+            .subscription-card h6 {
+                font-size: 1rem !important;
+            }
+
+            .subscription-card p {
+                font-size: 0.9rem !important;
+            }
         }
 
     </style>
