@@ -61,6 +61,9 @@ class eSIMActivationService:
             # Step 3: OXIO Groups disabled - continue without group ID to prevent webhook failures
             oxio_group_id = None  # Groups excluded entirely from activation flow
 
+            # Step 3.5: Update users table with OXIO user ID for profile display
+            self._update_user_oxio_data(firebase_uid, oxio_user_id, oxio_group_id)
+
             # Step 4: Activate eSIM line with proper payload structure
             activation_result = self._activate_esim_line(oxio_user_id)
             if not activation_result.get('success'):
