@@ -5475,7 +5475,7 @@ def reject_beta_request(request_id):
 # Add the new endpoint definition here
 @app.route('/api/user-esim-details', methods=['GET'])
 def get_user_esim_details():
-    """Get user's eSIM activation details including ICCID and OXIO data"""
+    """Get user's eSIM activation details including ICCID and OXIO data with fallback sync"""
     firebase_uid = request.args.get('firebaseUid')
     if not firebase_uid:
         return jsonify({'error': 'Firebase UID is required'}), 400
@@ -5506,6 +5506,62 @@ def get_user_esim_details():
 
                     activation_data = cur.fetchall()
 
+                    # FALLBACK: If no local data, try to sync from OXIO
+                    data_recovered = False
+                    if not activation_data and not iccid_data:
+                        print(f"📡 No local eSIM data found for {firebase_uid}, attempting OXIO sync...")
+                        
+                        # Get user's OXIO user ID
+                        cur.execute("""
+                            SELECT oxio_user_id, email
+                            FROM users
+                            WHERE firebase_uid = %s
+                        """, (firebase_uid,))
+                        
+                        user_row = cur.fetchone()
+                        
+                        if user_row and user_row[0]:
+                            oxio_user_id = user_row[0]
+                            user_email = user_row[1]
+                            
+                            print(f"🔍 Found OXIO User ID: {oxio_user_id} for {user_email}")
+                            
+                            # Import and use sync service
+                            from esim_sync_service import sync_oxio_lines_for_user
+                            
+                            sync_result = sync_oxio_lines_for_user(firebase_uid, oxio_user_id, conn)
+                            
+                            if sync_result.get('success') and sync_result.get('lines_synced', 0) > 0:
+                                print(f"✅ Synced {sync_result['lines_synced']} lines from OXIO")
+                                data_recovered = True
+                                
+                                # Re-query local database after sync
+                                cur.execute("""
+                                    SELECT iccid, lpa_code, status, assigned_at, country
+                                    FROM iccid_inventory
+                                    WHERE allocated_to_firebase_uid = %s
+                                      AND status = 'assigned'
+                                    ORDER BY assigned_at DESC
+                                """, (firebase_uid,))
+                                
+                                iccid_data = cur.fetchall()
+                                
+                                cur.execute("""
+                                    SELECT iccid, line_id, phone_number, activation_status,
+                                           esim_qr_code, activation_url, activation_code, created_at
+                                    FROM oxio_activations
+                                    WHERE firebase_uid = %s
+                                    ORDER BY created_at DESC
+                                """, (firebase_uid,))
+                                
+                                activation_data = cur.fetchall()
+                            elif sync_result.get('user_should_purchase'):
+                                print(f"ℹ️  No lines found in OXIO - user needs to purchase")
+                            else:
+                                print(f"⚠️  OXIO sync failed: {sync_result.get('error', 'Unknown error')}")
+                        else:
+                            print(f"⚠️  No OXIO User ID found for Firebase UID {firebase_uid}")
+
                     esims = []
                     for activation in activation_data:
                         esims.append({
@@ -5530,12 +5586,15 @@ def get_user_esim_details():
                                 'assigned_at': i[3].isoformat() if i[3] else None,
                                 'country': i[4]
                             } for i in iccid_data
-                        ]
+                        ],
+                        'data_recovered_from_oxio': data_recovered
                     })
 
         return jsonify({'error': 'Database connection error'}), 500
     except Exception as e:
         print(f"Error getting eSIM details: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/user-phone-numbers', methods=['GET'])
