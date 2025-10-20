@@ -420,7 +420,7 @@
             <div class="mb-2 text-center">
                 <span class="founding-shield" id="memberBadge" style="display: inline-block; padding: 0.5rem 1rem; background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; border-radius: 20px; font-weight: bold;">⭐ Member</span>
             </div>
-            
+
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-user-circle"></i> Profile</h2>
                 <a href="/dashboard" class="btn-close" aria-label="Close"></a>
@@ -847,7 +847,7 @@
                                 const displayName = firebaseUser.displayName || firebaseUser.email.split('@')[0];
                                 nameElement.textContent = displayName;
                             }
-                            
+
                             // Update member badge
                             const badgeElement = document.getElementById('memberBadge');
                             if (badgeElement) {
@@ -906,7 +906,7 @@
                 const displayName = userData.displayName || userData.email.split('@')[0];
                 nameElement.textContent = displayName;
             }
-            
+
             // Update member badge based on founder status
             const badgeElement = document.getElementById('memberBadge');
             if (badgeElement && userData.email) {
@@ -928,7 +928,7 @@
             if (dotUserIDElement) {
                 const dotUserId = userData.userId;
                 console.log('Setting DOT User ID element to:', dotUserId);
-                
+
                 if (dotUserId && dotUserId !== 'N/A' && dotUserId !== null && dotUserId !== undefined) {
                     dotUserIDElement.textContent = dotUserId;
                     if (dotUserIDCopyBtn) {
@@ -2134,110 +2134,182 @@
         function loadBetaPhoneNumbers(firebaseUid) {
             if (!firebaseUid) {
                 console.log('No Firebase UID provided for beta phone numbers');
-                displayNoBetaAccess();
+                displayBetaAccessInfo('Authentication required to check beta phone numbers.');
                 return;
             }
 
             try {
                 console.log('Loading beta phone numbers for UID:', firebaseUid);
 
-                fetch(`/api/user-phone-numbers?firebase_uid=${firebaseUid}`)
+                fetch(`/api/user-phone-numbers?firebase_uid=${encodeURIComponent(firebaseUid)}`)
                     .then(response => {
-                        console.log('Beta phone numbers response status:', response.status);
-                        if (response.status === 403) {
-                            // User doesn't have beta access
-                            displayBetaRequestOption(firebaseUid);
-                            return null;
-                        }
                         if (!response.ok) {
+                            // If 403, it means the user is not authorized for beta phone numbers
+                            if (response.status === 403) {
+                                console.log('User not authorized for beta phone numbers.');
+                                displayBetaAccessInfo('You do not have access to beta phone numbers.');
+                                return null; // Indicate no data to process
+                            }
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         return response.json();
                     })
                     .then(data => {
-                        if (data) {
+                        if (data && data.success && data.phone_numbers && data.phone_numbers.length > 0) {
                             console.log('Beta phone numbers loaded successfully:', data);
-                            displayBetaPhoneNumbers(data);
+                            displayBetaPhoneNumbers(data.phone_numbers);
+                        } else {
+                            console.log('No active beta phone numbers found for the user.');
+                            // Check if user has requested beta access but it's pending or rejected
+                            checkBetaRequestStatus(firebaseUid);
                         }
                     })
                     .catch(error => {
                         console.error('Error loading beta phone numbers:', error);
-                        // Check if user can request beta access
-                        checkBetaStatus(firebaseUid);
+                        // If fetching fails, assume no access or an error occurred
+                        displayBetaAccessInfo('Error checking beta phone number status.');
                     });
             } catch (error) {
-                console.error('Error in loadBetaPhoneNumbers:', error);
-                displayNoBetaAccess();
+                console.error('Exception in loadBetaPhoneNumbers:', error);
+                displayBetaAccessInfo('An unexpected error occurred.');
             }
         }
 
-        function checkBetaStatus(firebaseUid) {
-            fetch(`/api/beta-status?firebase_uid=${firebaseUid}`)
+        function checkBetaRequestStatus(firebaseUid) {
+            fetch(`/api/beta-request-status?firebase_uid=${encodeURIComponent(firebaseUid)}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Beta status:', data);
+                    console.log('Beta request status:', data);
                     if (data.has_request) {
                         if (data.status === 'pending') {
-                            displayBetaPending();
+                            displayBetaPendingStatus();
                         } else if (data.status === 'rejected') {
-                            displayBetaRejected();
+                            displayBetaRejectedStatus();
                         } else {
-                            displayBetaRequestOption(firebaseUid);
+                            // If request exists but status is unclear or active, prompt to request again or show info
+                            displayBetaAccessInfo('Your beta access is pending or already active. Contact support if you have issues.');
                         }
                     } else {
+                        // No request found, prompt to request access
                         displayBetaRequestOption(firebaseUid);
                     }
                 })
                 .catch(error => {
-                    console.error('Error checking beta status:', error);
-                    displayBetaRequestOption(firebaseUid);
+                    console.error('Error checking beta request status:', error);
+                    displayBetaRequestOption(firebaseUid); // Default to showing request option if status check fails
                 });
         }
 
-        function displayBetaPhoneNumbers(data) {
+        function displayBetaPhoneNumbers(phoneNumbers) {
             const container = document.getElementById('betaPhoneContainer');
+            if (!container) return;
 
-            if (data.success && data.phone_numbers && data.phone_numbers.length > 0) {
-                const phoneNumber = data.phone_numbers[0];
-                const approvedDate = new Date(phoneNumber.approved_at).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                });
+            let html = '';
+            phoneNumbers.forEach((phoneInfo, index) => {
+                const phoneNumber = phoneInfo.phone_number;
+                const phoneData = parsePhoneNumberInfo(phoneNumber);
+                const qrCode = phoneInfo.qr_code;
+                const lpaCode = phoneInfo.lpa_code; // Assuming LPA code is also available
 
-                container.innerHTML = `
-                    <div class="address-card p-3 mb-3" style="border-left: 4px solid #4CAF50;">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="address-content">
-                                <h4><i class="fas fa-mobile-alt"></i> ${phoneNumber.number}</h4>
-                                <p><strong>Group ID:</strong> ${phoneNumber.group_id}</p>
-                                <p><strong>OXIO User ID:</strong> ${phoneNumber.oxio_user_id}</p>
-                                <p class="text-success">Beta access approved on ${approvedDate}</p>
-                                <div class="mt-3">
-                                    <button class="btn btn-outline-primary btn-sm me-2" onclick="showQRCode('${phoneNumber.qr_codes.simple_qr}', 'Phone Number QR')">
-                                        <i class="fas fa-qrcode"></i> Phone QR
-                                    </button>
-                                    <button class="btn btn-outline-info btn-sm" onclick="showQRCode('${phoneNumber.qr_codes.resin_qr}', 'RESIN Data QR')">
-                                        <i class="fas fa-qrcode"></i> RESIN QR
-                                    </button>
-                                </div>
+                html += `
+                    <div class="address-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 style="color: #00FFFF; margin: 0;">
+                                <i class="fas fa-mobile-alt"></i> Beta Phone Number
+                            </h5>
+                            <span class="service-status-badge" style="background: #4CAF50; color: white;">ACTIVE</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center justify-content-center mb-3">
+                                <i class="fas fa-mobile-alt me-3" style="font-size: 2rem; color: #17a2b8;"></i>
+                                <span class="badge bg-success">ACTIVE</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="phone-number-value d-inline-block" id="betaPhoneNumber">${phoneData.formatted}</div>
+                                <button class="btn btn-sm btn-outline-secondary copy-btn ms-2" onclick="copyBetaPhoneNumber()" title="Copy Phone Number">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Add paragraph break here -->
+                        <p></p> 
+
+                        <div class="row mt-3">
+                            <div class="col-md-12 text-center">
+                                ${qrCode ? `
+                                <button type="button" class="btn btn-primary btn-sm" onclick="showQRCode('${qrCode}', 'eSIM Activation QR Code')">
+                                    <i class="fas fa-qrcode"></i> Scan the eSIM QR code to activate your cellular service
+                                </button>
+                                ` : '<p class="text-muted">eSIM QR code not yet available.</p>'}
                             </div>
                         </div>
                     </div>
                 `;
-            } else {
-                displayNoBetaAccess();
-            }
+            });
+
+            container.innerHTML = html;
+        }
+
+        function displayBetaAccessInfo(message) {
+            const container = document.getElementById('betaPhoneContainer');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="text-align: center; color: #CCCCFF; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                    <p><i class="fas fa-info-circle me-2"></i> ${message}</p>
+                    <p style="margin-top: 15px;">
+                        <a href="/buy/esim" class="btn btn-outline-primary btn-sm">Get eSIM Beta Access</a>
+                    </p>
+                </div>
+            `;
+        }
+
+        function displayBetaPendingStatus() {
+            const container = document.getElementById('betaPhoneContainer');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="border-left: 4px solid #ff9800;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="address-content">
+                            <h4><i class="fas fa-clock"></i> Beta Request Pending</h4>
+                            <p>Your beta access request is under review. We'll notify you via email once approved.</p>
+                            <p class="text-muted">Processing typically takes 1-2 business days.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayBetaRejectedStatus() {
+            const container = document.getElementById('betaPhoneContainer');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="address-card p-3 mb-3" style="border-left: 4px solid #f44336;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="address-content">
+                            <h4><i class="fas fa-times-circle"></i> Beta Request Not Approved</h4>
+                            <p>Your beta access request was not approved at this time.</p>
+                            <p>You can apply again in the future as we expand our beta program.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         function displayBetaRequestOption(firebaseUid) {
             const container = document.getElementById('betaPhoneContainer');
+            if (!container) return;
+
             container.innerHTML = `
                 <div class="address-card p-3 mb-3" style="border-left: 4px solid #2196F3;">
-                    <div class="d-flex justify-content-between align-items-start">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div class="address-content">
                             <h4>Beta Access Available</h4>
-                            <p>Request access to beta features and get your own phone number with OXIO activation</p>
+                            <p>Request access to beta features and get your own phone number with OXIO activation.</p>
                             <button class="btn btn-primary btn-sm" onclick="requestBetaAccess('${firebaseUid}')">
                                 <i class="fas fa-paper-plane"></i> Request Beta Access
                             </button>
@@ -2247,52 +2319,7 @@
             `;
         }
 
-        function displayBetaPending() {
-            const container = document.getElementById('betaPhoneContainer');
-            container.innerHTML = `
-                <div class="address-card p-3 mb-3" style="border-left: 4px solid #ff9800;">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="address-content">
-                            <h4><i class="fas fa-clock"></i> Beta Request Pending</h4>
-                            <p>Your beta access request is under review. We'll notify you via email once it's approved.</p>
-                            <p class="text-muted">Processing typically takes 1-2 business days.</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function displayBetaRejected() {
-            const container = document.getElementById('betaPhoneContainer');
-            container.innerHTML = `
-                <div class="address-card p-3 mb-3" style="border-left: 4px solid #f44336;">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="address-content">
-                            <h4><i class="fas fa-times-circle"></i> Beta Request Not Approved</h4>
-                            <p>Your beta access request was not approved at this time.</p>
-                            <p>You can apply again in the future as we continue to expand our beta program.</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function displayNoBetaAccess() {
-            const container = document.getElementById('betaPhoneContainer');
-            container.innerHTML = `
-                <div class="address-card p-3 mb-3" style="border-left: 4px solid #6c757d;">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="address-content">
-                            <h4>Beta Program</h4>
-                            <p>Beta access is currently not available</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
         function requestBetaAccess(firebaseUid) {
-            // Get current user info from Firebase
             const currentUser = firebase.auth().currentUser;
             if (!currentUser) {
                 alert('Please log in to request beta access');
@@ -2305,7 +2332,6 @@
                 name: currentUser.displayName || currentUser.email.split('@')[0]
             };
 
-            // Show loading state
             const container = document.getElementById('betaPhoneContainer');
             container.innerHTML = `
                 <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
@@ -2315,16 +2341,14 @@
 
             fetch('/api/beta-request', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestData)
             })
             .then(response => response.json())
             .then(data => {
                 console.log('Beta request response:', data);
                 if (data.success) {
-                    displayBetaPending();
+                    displayBetaPendingStatus();
                     alert('Beta access request submitted successfully! You will receive an email notification once approved.');
                 } else {
                     alert('Error submitting beta request: ' + (data.error || 'Unknown error'));
@@ -2339,7 +2363,6 @@
         }
 
         function showQRCode(qrDataUrl, title) {
-            // Create modal
             const modal = document.createElement('div');
             modal.className = 'esim-qr-modal';
             modal.innerHTML = `
@@ -2347,39 +2370,26 @@
                     <h3>${title}</h3>
                     <img src="${qrDataUrl}" alt="${title}" style="max-width: 300px; max-height: 300px;">
                     <p style="margin-top: 15px;">
-                        <button class="btn btn-secondary" onclick="this.closest('.esim-qr-modal').remove()">Close</button>
+                        <button class="btn btn-secondary" onclick="this.parentElement.parentElement.remove()">Close</button>
                     </p>
                 </div>
             `;
-
-            // Close on click outside
             modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    modal.remove();
-                }
+                if (e.target === modal) modal.remove();
             });
-
             document.body.appendChild(modal);
         }
 
         function toggleQRCode(event) {
             event.stopPropagation();
             const popup = document.getElementById('qrCodePopup');
-
             if (popup.style.display === 'block') {
                 popup.style.display = 'none';
             } else {
                 popup.style.display = 'block';
-
-                // Generate QR code if it doesn't exist yet
                 if (!document.querySelector('#qrcode canvas')) {
                     new QRCode(document.getElementById("qrcode"), {
-                        text: "https://gorse.dotmobile.app",
-                        width: 150,
-                        height: 150,
-                        colorDark: "#333333",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.H
+                        text: "https://gorse.dotmobile.app", width: 150, height: 150, colorDark: "#333333", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
                     });
                 }
             }
@@ -2387,23 +2397,19 @@
 
         function loadBetaPhoneNumbers(firebaseUid) {
             console.log('Loading beta phone numbers for:', firebaseUid);
-
             if (!firebaseUid) {
                 console.error('No Firebase UID provided for beta phone numbers');
                 displayBetaPhoneError('Authentication required');
                 return;
             }
 
-            // Call the existing API endpoint
             fetch(`/api/user-phone-numbers?firebase_uid=${encodeURIComponent(firebaseUid)}`)
                 .then(response => response.json())
                 .then(data => {
                     console.log('Beta phone numbers response:', data);
-
                     if (data.success && data.phone_numbers && data.phone_numbers.length > 0) {
                         displayBetaPhoneNumbers(data.phone_numbers);
                     } else {
-                        // Check if user has purchased eSIM beta but not yet activated
                         displayBetaPhoneInfo('No active eSIM found. Purchase eSIM Beta access to get your phone number.');
                     }
                 })
@@ -2413,106 +2419,42 @@
                 });
         }
 
-        // Phone number area code parsing function
         function parsePhoneNumberInfo(phoneNumber) {
             if (!phoneNumber || phoneNumber === 'Not assigned' || phoneNumber === 'Activating...') {
-                return {
-                    fullNumber: phoneNumber,
-                    formatted: phoneNumber,
-                    areaCode: null,
-                    areaInfo: 'Not available',
-                    countryCode: null
-                };
+                return { fullNumber: phoneNumber, formatted: phoneNumber, areaCode: null, areaInfo: 'Not available', countryCode: null };
             }
-
-            // Clean the phone number
             const cleaned = phoneNumber.replace(/[+\-\s\(\)]/g, '');
-
             if (cleaned.length >= 10) {
                 let countryCode, areaCode, localNumber, areaInfo, formatted;
-
                 if (cleaned.startsWith('1') && cleaned.length === 11) {
-                    // North American number
-                    countryCode = '1';
-                    areaCode = cleaned.slice(1, 4);
-                    localNumber = cleaned.slice(4);
-
-                    // Area code information database
+                    countryCode = '1'; areaCode = cleaned.slice(1, 4); localNumber = cleaned.slice(4);
                     const areaCodeInfo = {
-                        '416': 'Toronto, ON (Downtown)',
-                        '647': 'Toronto, ON (Overlay)', 
-                        '437': 'Toronto, ON (Overlay)',
-                        '905': 'Greater Toronto Area, ON',
-                        '289': 'Greater Toronto Area, ON (Overlay)',
-                        '365': 'Greater Toronto Area, ON (Overlay)',
-                        '514': 'Montreal, QC',
-                        '438': 'Montreal, QC (Overlay)',
-                        '604': 'Vancouver, BC (Metro)',
-                        '778': 'Vancouver, BC (Overlay)',
-                        '236': 'Vancouver, BC (Overlay)',
-                        '403': 'Calgary, AB',
-                        '587': 'Alberta (Overlay)',
-                        '780': 'Edmonton, AB',
-                        '825': 'Alberta (Overlay)',
-                        '204': 'Manitoba',
-                        '431': 'Manitoba (Overlay)',
-                        '306': 'Saskatchewan',
-                        '639': 'Saskatchewan (Overlay)',  
-                        '902': 'Nova Scotia/PEI',
-                        '782': 'Nova Scotia/PEI (Overlay)',
-                        '506': 'New Brunswick',
-                        '709': 'Newfoundland and Labrador',
-                        '879': 'Newfoundland and Labrador (Overlay)',
+                        '416': 'Toronto, ON (Downtown)', '647': 'Toronto, ON (Overlay)', '437': 'Toronto, ON (Overlay)',
+                        '905': 'Greater Toronto Area, ON', '289': 'Greater Toronto Area, ON (Overlay)', '365': 'Greater Toronto Area, ON (Overlay)',
+                        '514': 'Montreal, QC', '438': 'Montreal, QC (Overlay)',
+                        '604': 'Vancouver, BC (Metro)', '778': 'Vancouver, BC (Overlay)', '236': 'Vancouver, BC (Overlay)',
+                        '403': 'Calgary, AB', '587': 'Alberta (Overlay)', '780': 'Edmonton, AB', '825': 'Alberta (Overlay)',
+                        '204': 'Manitoba', '431': 'Manitoba (Overlay)', '306': 'Saskatchewan', '639': 'Saskatchewan (Overlay)',
+                        '902': 'Nova Scotia/PEI', '782': 'Nova Scotia/PEI (Overlay)', '506': 'New Brunswick',
+                        '709': 'Newfoundland and Labrador', '879': 'Newfoundland and Labrador (Overlay)',
                         '867': 'Yukon/NWT/Nunavut',
-                        '212': 'New York, NY (Manhattan)',
-                        '646': 'New York, NY (Manhattan Overlay)',
-                        '917': 'New York, NY (Manhattan Overlay)', 
-                        '718': 'New York, NY (Brooklyn/Queens/Bronx/Staten Island)',
-                        '347': 'New York, NY (Brooklyn/Queens/Bronx/Staten Island Overlay)',
-                        '929': 'New York, NY (Brooklyn/Queens/Bronx/Staten Island Overlay)',
-                        '310': 'Los Angeles, CA (West LA/Beverly Hills/Santa Monica)',
-                        '323': 'Los Angeles, CA (Central LA)',
-                        '213': 'Los Angeles, CA (Downtown)',
-                        '424': 'Los Angeles, CA (West LA Overlay)',
-                        '747': 'Los Angeles, CA (San Fernando Valley Overlay)',
-                        '818': 'Los Angeles, CA (San Fernando Valley)',
-                        '415': 'San Francisco, CA',
-                        '628': 'San Francisco, CA (Overlay)', 
-                        '650': 'San Francisco Bay Area, CA (Peninsula)',
-                        '408': 'San Jose, CA (Silicon Valley)',
-                        '669': 'San Jose, CA (Silicon Valley Overlay)',
-                        '510': 'Oakland/Berkeley, CA (East Bay)',
-                        '341': 'Oakland/Berkeley, CA (East Bay Overlay)'
+                        '212': 'New York, NY (Manhattan)', '646': 'New York, NY (Manhattan Overlay)', '917': 'New York, NY (Manhattan Overlay)',
+                        '718': 'New York, NY (Brooklyn/Queens/Bronx/Staten Island)', '347': 'New York, NY (Brooklyn/Queens/Bronx/Staten Island Overlay)', '929': 'New York, NY (Brooklyn/Queens/Bronx/Staten Island Overlay)',
+                        '310': 'Los Angeles, CA (West LA/Beverly Hills/Santa Monica)', '323': 'Los Angeles, CA (Central LA)', '213': 'Los Angeles, CA (Downtown)', '424': 'Los Angeles, CA (West LA Overlay)', '747': 'Los Angeles, CA (San Fernando Valley Overlay)', '818': 'Los Angeles, CA (San Fernando Valley)',
+                        '415': 'San Francisco, CA', '628': 'San Francisco, CA (Overlay)', '650': 'San Francisco Bay Area, CA (Peninsula)',
+                        '408': 'San Jose, CA (Silicon Valley)', '669': 'San Jose, CA (Silicon Valley Overlay)',
+                        '510': 'Oakland/Berkeley, CA (East Bay)', '341': 'Oakland/Berkeley, CA (East Bay Overlay)'
                     };
-
                     areaInfo = areaCodeInfo[areaCode] || `Area Code ${areaCode} (North America)`;
                     formatted = `+1 (${areaCode}) ${localNumber.slice(0,3)}-${localNumber.slice(3)}`;
-
                 } else if (cleaned.length >= 10) {
-                    // International number
-                    countryCode = cleaned.slice(0, 2);
-                    areaCode = cleaned.slice(2, 5);
-                    localNumber = cleaned.slice(5);
+                    countryCode = cleaned.slice(0, 2); areaCode = cleaned.slice(2, 5); localNumber = cleaned.slice(5);
                     areaInfo = `International (+${countryCode})`;
                     formatted = `+${countryCode} ${areaCode} ${localNumber}`;
                 }
-
-                return {
-                    fullNumber: phoneNumber,
-                    formatted: formatted || phoneNumber,
-                    areaCode: areaCode,
-                    areaInfo: areaInfo,
-                    countryCode: countryCode
-                };
+                return { fullNumber: phoneNumber, formatted: formatted || phoneNumber, areaCode: areaCode, areaInfo: areaInfo, countryCode: countryCode };
             }
-
-            return {
-                fullNumber: phoneNumber,
-                formatted: phoneNumber,
-                areaCode: null,
-                areaInfo: 'Invalid format',
-                countryCode: null
-            };
+            return { fullNumber: phoneNumber, formatted: phoneNumber, areaCode: null, areaInfo: 'Invalid format', countryCode: null };
         }
 
         function displayBetaPhoneNumbers(phoneNumbers) {
@@ -2520,63 +2462,58 @@
             if (!container) return;
 
             let html = '';
-
             phoneNumbers.forEach((phoneInfo, index) => {
                 const phoneNumber = phoneInfo.phone_number;
                 const phoneData = parsePhoneNumberInfo(phoneNumber);
                 const qrCode = phoneInfo.qr_code;
-                const lpaCode = phoneInfo.lpa_code;
 
                 html += `
                     <div class="address-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px;">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 style="color: #00FFFF; margin: 0;">
-                                <i class="fas fa-mobile-alt"></i> Phone Number
+                                <i class="fas fa-mobile-alt"></i> Beta Phone Number
                             </h5>
-                            <span class="service-status-badge" style="background: #4CAF50; color: white;">Active</span>
+                            <span class="service-status-badge" style="background: #4CAF50; color: white;">ACTIVE</span>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-12">
-                                <p><strong>Phone Number:</strong><br>
-                                    <span class="text-break font-monospace" style="font-size: 1.2em; color: #00FFFF;">${phoneData.formatted}</span>
-                                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyToClipboard('${phoneNumber}')" title="Copy Phone Number">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </p>
-                                ${phoneData.areaCode ? `
-                                <p><strong>Area Code:</strong><br>
-                                    <span class="badge badge-secondary me-2">${phoneData.areaCode}</span>
-                                    <small class="text-muted">${phoneData.areaInfo}</small>
-                                </p>` : ''}
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center justify-content-center mb-3">
+                                <i class="fas fa-mobile-alt me-3" style="font-size: 2rem; color: #17a2b8;"></i>
+                                <span class="badge bg-success">ACTIVE</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="phone-number-value d-inline-block" id="betaPhoneNumber">${phoneData.formatted}</div>
+                                <button class="btn btn-sm btn-outline-secondary copy-btn ms-2" onclick="copyBetaPhoneNumber()" title="Copy Phone Number">
+                                    <i class="fas fa-copy"></i>
+                                </button>
                             </div>
                         </div>
+                        
+                        <p></p> 
 
                         <div class="row mt-3">
-                            <div class="col-md-12">
+                            <div class="col-md-12 text-center">
                                 ${qrCode ? `
                                 <button type="button" class="btn btn-primary btn-sm" onclick="showQRCode('${qrCode}', 'eSIM Activation QR Code')">
                                     <i class="fas fa-qrcode"></i> Scan the eSIM QR code to activate your cellular service
                                 </button>
-                                ` : ''}
+                                ` : '<p class="text-muted">eSIM QR code not yet available.</p>'}
                             </div>
                         </div>
                     </div>
                 `;
             });
-
             container.innerHTML = html;
         }
 
         function displayBetaPhoneInfo(message) {
             const container = document.getElementById('betaPhoneContainer');
             if (!container) return;
-
             container.innerHTML = `
                 <div class="address-card p-3 mb-3" style="text-align: center; color: #CCCCFF; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;">
-                    <p><i class="fas fa-mobile-alt"></i> ${message}</p>
+                    <p><i class="fas fa-info-circle me-2"></i> ${message}</p>
                     <p style="margin-top: 15px;">
-                        <a href="/" class="btn btn-outline-primary btn-sm">Get eSIM Beta Access</a>
+                        <a href="/buy/esim" class="btn btn-outline-primary btn-sm">Get eSIM Beta Access</a>
                     </p>
                 </div>
             `;
@@ -2585,7 +2522,6 @@
         function displayBetaPhoneError(error) {
             const container = document.getElementById('betaPhoneContainer');
             if (!container) return;
-
             container.innerHTML = `
                 <div class="address-card p-3 mb-3" style="text-align: center; color: #ff6b6b;">
                     <p>Error loading phone numbers: ${error}</p>
@@ -2594,19 +2530,18 @@
         }
 
         function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(function() {
-                // Simple feedback - could be enhanced with a toast notification
-                console.log('Copied to clipboard:', text);
-            }).catch(function(err) {
-                console.error('Could not copy text: ', err);
-            });
+            navigator.clipboard.writeText(text).then(function() { console.log('Copied to clipboard:', text); }).catch(function(err) { console.error('Could not copy text: ', err); });
+        }
+        
+        function copyBetaPhoneNumber() {
+             const betaPhoneNumberElement = document.getElementById('betaPhoneNumber');
+             if (betaPhoneNumberElement) {
+                 copyToClipboard(betaPhoneNumberElement.textContent);
+             }
         }
 
-        function generateRandomLinkCode() {
-            return Math.random().toString(36).substring(2, 12);
-        }
+        function generateRandomLinkCode() { return Math.random().toString(36).substring(2, 12); }
 
-        // Load eSIM details function
         function loadESIMDetails() {
             const user = auth.currentUser;
             if (!user) return;
@@ -2615,18 +2550,13 @@
             const noDataEl = document.getElementById('esimNoData');
             const detailsEl = document.getElementById('esimDetails');
 
-            // Show loading state
-            loadingEl.style.display = 'block';
-            noDataEl.style.display = 'none';
-            detailsEl.style.display = 'none';
+            loadingEl.style.display = 'block'; noDataEl.style.display = 'none'; detailsEl.style.display = 'none';
 
             fetch(`/api/user-esim-details?firebaseUid=${user.uid}`)
                 .then(response => response.json())
                 .then(data => {
                     loadingEl.style.display = 'none';
-
                     if (data.success && data.esims && data.esims.length > 0) {
-                        // Display eSIM details
                         detailsEl.innerHTML = data.esims.map(esim => `
                             <div class="card mb-3">
                                 <div class="card-body">
@@ -2661,10 +2591,7 @@
                             </div>
                         `).join('');
                         detailsEl.style.display = 'block';
-                    } else {
-                        // No eSIMs found
-                        noDataEl.style.display = 'block';
-                    }
+                    } else { noDataEl.style.display = 'block'; }
                 })
                 .catch(error => {
                     console.error('Error loading eSIM details:', error);
@@ -2674,7 +2601,6 @@
                 });
         }
 
-        // Show QR code in modal
         function showQRModal(qrCode, title) {
             const modal = document.createElement('div');
             modal.className = 'esim-qr-modal';
@@ -2689,23 +2615,17 @@
                             class="btn btn-secondary mt-3">Close</button>
                 </div>
             `;
+            modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
             document.body.appendChild(modal);
         }
 
-        // Auto-load eSIM details when page loads
         auth.onAuthStateChanged((user) => {
-            if (user) {
-                setTimeout(() => {
-                    loadESIMDetails();
-                }, 1000);
-            }
+            if (user) { setTimeout(() => { loadESIMDetails(); }, 1000); }
         });
 
-        // Close QR code popup when clicking outside
         document.addEventListener('click', function(e) {
             const popup = document.getElementById('qrCodePopup');
             const icon = document.querySelector('.qr-code-icon');
-
             if (popup && popup.style.display === 'block' && !popup.contains(e.target) && e.target !== icon) {
                 popup.style.display = 'none';
             }
