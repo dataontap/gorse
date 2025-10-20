@@ -452,6 +452,8 @@
                                     No eSIM assigned yet.<br>
                                     <a href="/buy/esim">Purchase your first eSIM for $1</a>
                                 </div>
+                                <!-- New section for Beta eSIM -->
+                                <div id="betaEsimCard" style="display: none;"></div>
                                 <div id="esimDetails" style="display: none;">
                                     <!-- eSIM details will be loaded here -->
                                 </div>
@@ -2900,81 +2902,76 @@
         function generateRandomLinkCode() { return Math.random().toString(36).substring(2, 12); }
 
         function loadESIMDetails() {
-            const user = auth.currentUser;
-            if (!user) return;
+            // Load Beta eSIM information from user data
+            const firebaseUid = firebase.auth().currentUser?.uid;
+            if (!firebaseUid) {
+                console.log('No Firebase user available for eSIM details');
+                return;
+            }
 
-            const loadingEl = document.getElementById('esimLoading');
-            const noDataEl = document.getElementById('esimNoData');
-            const detailsEl = document.getElementById('esimDetails');
+            // Show loading state
+            const loadingDiv = document.getElementById('esimLoading');
+            const noDataDiv = document.getElementById('esimNoData');
+            const betaEsimCard = document.getElementById('betaEsimCard');
 
-            loadingEl.style.display = 'block'; noDataEl.style.display = 'none'; detailsEl.style.display = 'none';
+            if (loadingDiv) loadingDiv.style.display = 'block';
+            if (noDataDiv) noDataDiv.style.display = 'none';
+            if (betaEsimCard) betaEsimCard.style.display = 'none';
 
-            fetch(`/api/user-esim-details?firebaseUid=${user.uid}`)
+            // Fetch user's phone numbers for Beta eSIM
+            fetch(`/api/user-phone-numbers?firebase_uid=${encodeURIComponent(firebaseUid)}`)
                 .then(response => response.json())
                 .then(data => {
-                    loadingEl.style.display = 'none';
-                    if (data.success && data.esims && data.esims.length > 0) {
-                        detailsEl.innerHTML = data.esims.map(esim => `
-                            <div class="card mb-3">
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h5><i class="fas fa-phone"></i> ${esim.phone_number ? parsePhoneNumberInfo(esim.phone_number).formatted : 'Activating...'}</h5>
-                                            ${esim.phone_number && parsePhoneNumberInfo(esim.phone_number).areaCode ? `
-                                            <p class="text-muted small mb-2">
-                                                <i class="fas fa-map-marker-alt me-1"></i>
-                                                Area ${parsePhoneNumberInfo(esim.phone_number).areaCode}: ${parsePhoneNumberInfo(esim.phone_number).areaInfo}
-                                            </p>` : ''}
-                                            <p><strong>ICCID:</strong> <code>${esim.iccid || 'N/A'}</code></p>
-                                            <p><strong>Status:</strong> 
-                                                <span class="badge ${esim.activation_status === 'activated' || esim.status === 'active' ? 'badge-success' : 'badge-warning'}">
-                                                    ${esim.activation_status || esim.status || 'Pending'}
-                                                </span>
-                                            </p>
-                                            <p><strong>Activated:</strong> ${esim.created_at ? new Date(esim.created_at).toLocaleDateString() : 'Pending'}</p>
-                                        </div>
-                                        <div class="col-md-6 text-center">
-                                            ${esim.qr_code ? `
-                                                <h6>eSIM QR Code</h6>
-                                                <img src="data:image/png;base64,${esim.qr_code}" 
-                                                     alt="eSIM QR Code" 
-                                                     style="width: 150px; height: 150px; border: 1px solid #ddd; border-radius: 8px;"
-                                                     onclick="showQRModal('${esim.qr_code}', '${esim.phone_number || 'eSIM'}')">
-                                                <p class="text-muted small">Click to enlarge</p>
-                                            ` : '<p class="text-muted">QR Code generating...</p>'}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('');
-                        detailsEl.style.display = 'block';
-                    } else { noDataEl.style.display = 'block'; }
+                    if (loadingDiv) loadingDiv.style.display = 'none';
+
+                    if (data.success && data.phone_numbers && data.phone_numbers.length > 0) {
+                        displayBetaEsimCard(data.phone_numbers[0]);
+                    } else {
+                        if (noDataDiv) noDataDiv.style.display = 'block';
+                    }
                 })
                 .catch(error => {
                     console.error('Error loading eSIM details:', error);
-                    loadingEl.style.display = 'none';
-                    noDataEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i><br>Error loading eSIM details';
-                    noDataEl.style.display = 'block';
+                    if (loadingDiv) loadingDiv.style.display = 'none';
+                    if (noDataDiv) noDataDiv.style.display = 'block';
                 });
         }
 
-        function showQRModal(qrCode, title) {
-            const modal = document.createElement('div');
-            modal.className = 'esim-qr-modal';
-            modal.innerHTML = `
-                <div class="esim-qr-content">
-                    <h3>${title} eSIM QR Code</h3>
-                    <img src="data:image/png;base64,${qrCode}" 
-                         alt="eSIM QR Code" 
-                         style="max-width: 300px; max-height: 300px;">
-                    <p>Scan this QR code to add the eSIM to your device</p>
-                    <button onclick="this.parentElement.parentElement.remove()" 
-                            class="btn btn-secondary mt-3">Close</button>
+        function displayBetaEsimCard(esimData) {
+            const betaEsimCard = document.getElementById('betaEsimCard');
+            if (!betaEsimCard) return;
+
+            const phoneNumber = esimData.phone_number || 'Not assigned';
+            const phoneData = parsePhoneNumberInfo(phoneNumber);
+            const qrCode = esimData.qr_code || '';
+            const lpaCode = esimData.lpa_code || '';
+            const activatedDate = esimData.activated_at ? new Date(esimData.activated_at) : new Date();
+            const formattedDate = activatedDate.toLocaleDateString('en-US', { 
+                month: '2-digit', 
+                day: '2-digit', 
+                year: 'numeric' 
+            }).replace(/\//g, '');
+
+            betaEsimCard.innerHTML = `
+                <div class="address-card phone-number-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px; cursor: pointer;" 
+                     onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode}', '${phoneData.areaInfo}', '${qrCode}', '${lpaCode}')">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">
+                                <i class="fas fa-sim-card me-2"></i>Beta eSIM
+                            </div>
+                            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                                Date Bought: ${formattedDate}
+                            </div>
+                        </div>
+                        <span class="badge" style="background-color: #28a745; color: white; padding: 0.5rem 1rem; font-size: 0.9rem;">ACTIVE</span>
+                    </div>
                 </div>
             `;
-            modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
-            document.body.appendChild(modal);
+
+            betaEsimCard.style.display = 'block';
         }
+
 
         auth.onAuthStateChanged((user) => {
             if (user) { setTimeout(() => { loadESIMDetails(); }, 1000); }
