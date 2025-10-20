@@ -579,7 +579,7 @@
                     <h3 class="mb-3"><i class="fas fa-mobile-alt"></i> Phone Numbers</h3>
                     <div id="betaPhoneContainer">
                         <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
-                            <p>Loading beta access information...</p>
+                            <p>Loading phone number information...</p>
                         </div>
                     </div>
                 </div>
@@ -2575,28 +2575,28 @@
 
                 html += `
                     <div class="address-card phone-number-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px;">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="mb-0">Phone Number</h5>
+                        <div class="phone-number-header">
+                            <div class="phone-number-title">
+                                <i class="fas fa-mobile-alt" style="font-size: 1.2rem;"></i>
+                                <h5 class="mb-0">Phone Number</h5>
+                            </div>
+                            <span class="badge" style="background-color: #28a745; color: white; padding: 0.5rem 1rem; font-size: 0.9rem;">ACTIVE</span>
                         </div>
-                        <div class="mt-2">
-                            <i class="fas fa-mobile-alt me-2"></i>
-                            <span class="badge" style="background-color: #28a745; color: white; margin-left: 8px;">ACTIVE</span>
-                        </div>
-                        <div class="phone-number-value mt-2">
+                        <div class="phone-number-value">
                             ${phoneData.formatted}
                         </div>
                         ${phoneData.area_code_info ? `
-                            <div class="area-code-info mt-2 text-muted">
+                            <div class="area-code-info">
                                 <i class="fas fa-map-marker-alt me-1"></i>
                                 ${phoneData.area_code_info}
                             </div>
                         ` : ''}
-                        <div class="mt-3 text-center">
+                        <div class="phone-qr-button">
                             ${qrCode ? `
-                            <button type="button" class="btn btn-primary btn-sm" onclick="showQRCode('${qrCode}', 'eSIM Activation QR Code')">
-                                <i class="fas fa-qrcode"></i> Scan the eSIM QR code to activate your cellular service
+                            <button type="button" class="btn btn-primary w-100" onclick="showQRCode('${qrCode}', 'eSIM Activation QR Code')" style="padding: 0.75rem; font-size: 1rem;">
+                                <i class="fas fa-qrcode me-2"></i>Scan the eSIM QR code to activate your cellular service
                             </button>
-                            ` : '<p class="text-muted">eSIM QR code not yet available.</p>'}
+                            ` : '<p class="text-muted text-center mb-0">eSIM QR code not yet available.</p>'}
                         </div>
                     </div>
                 `;

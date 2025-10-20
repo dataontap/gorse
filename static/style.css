@@ -2811,7 +2811,6 @@ cursor: pointer;
 
 .confirmation-drawer.show {
     bottom: 0;
-    display: block;
 }
 
 .drawer-content {
@@ -4253,3 +4252,57 @@ input:checked + .toggle-slider:before {
         min-width: 0;
     }
 }
+
+/* Phone number section styling */
+        .phone-number-card {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .phone-number-card .card-body {
+            padding: 1rem;
+        }
+
+        .phone-number-card p {
+            margin-bottom: 0.5rem;
+            word-break: break-word;
+        }
+
+        .phone-number-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .phone-number-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .phone-number-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .area-code-info {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .phone-qr-button {
+            margin-top: 1rem;
+            width: 100%;
+        }
