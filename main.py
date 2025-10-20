@@ -143,7 +143,7 @@ try:
                     status_column_exists = cur.fetchone()
 
                     if not status_column_exists:
-                        print("Adding missing status column to beta_testers table...")
+                        print("Adding status column to beta_testers table...")
                         cur.execute("ALTER TABLE beta_testers ADD COLUMN status VARCHAR(50) DEFAULT 'not_enrolled'")
                         conn.commit()
                         print("Status column added successfully")
@@ -2553,14 +2553,14 @@ def get_user_assigned_iccid_data(firebase_uid):
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT iccid, lpa_code, country, line_id, assigned_at 
-                FROM iccid_inventory 
+                SELECT iccid, lpa_code, country, line_id, assigned_at
+                FROM iccid_inventory
                 WHERE allocated_to_firebase_uid = %s AND status = 'assigned'
-                ORDER BY assigned_at DESC 
+                ORDER BY assigned_at DESC
                 LIMIT 1
             """, (firebase_uid,))
             result = cursor.fetchone()
-            
+
             if result:
                 return {
                     'iccid': result[0],
@@ -2579,7 +2579,7 @@ def assign_iccid_to_user_atomic(firebase_uid, user_email):
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            
+
             # Use SELECT FOR UPDATE to lock the row and prevent race conditions
             cursor.execute("""
                 UPDATE iccid_inventory
@@ -2596,10 +2596,10 @@ def assign_iccid_to_user_atomic(firebase_uid, user_email):
                 )
                 RETURNING iccid, lpa_code, country, line_id
             """, (firebase_uid, user_email))
-            
+
             result = cursor.fetchone()
             conn.commit()
-            
+
             if result:
                 return {
                     'iccid': result[0],
@@ -2723,7 +2723,7 @@ def handle_stripe_webhook():
                             return jsonify({'error': 'No available eSIMs in inventory'}), 500
 
                         print(f"✅ Assigned new ICCID {assigned_iccid['iccid']} to user {firebase_uid}")
-                    
+
                     total_amount = session.get('amount_total', 100)  # Default $1.00 in cents
 
                     print(f"🎯 eSIM activation parameters: Firebase UID={firebase_uid}, Email={user_email}, Amount=${total_amount/100:.2f}, ICCID={assigned_iccid['iccid']}")
@@ -2743,7 +2743,7 @@ def handle_stripe_webhook():
 
                     if activation_result.get('success'):
                         print(f"✅ eSIM activation service completed successfully")
-                        
+
                         # The activation service already sends the confirmation email
                         # No need to send a separate receipt email here
 
@@ -3578,24 +3578,24 @@ def get_subscription_status():
 def get_user_purchases():
     """Get purchase history for a user"""
     firebase_uid = request.args.get('firebaseUid')
-    
+
     if not firebase_uid:
         return jsonify({'error': 'Firebase UID is required'}), 400
-    
+
     try:
         # Get user data to find the user_id
         user_data = get_user_by_firebase_uid(firebase_uid)
         if not user_data:
             return jsonify({'error': 'User not found'}), 404
-        
+
         user_id = user_data['id']
-        
+
         # Fetch purchases from database
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                        SELECT 
+                        SELECT
                             purchaseid,
                             stripeid,
                             stripeproductid,
@@ -3608,9 +3608,9 @@ def get_user_purchases():
                         ORDER BY datecreated DESC
                         LIMIT 50
                     """, (user_id,))
-                    
+
                     purchases = cur.fetchall()
-                    
+
                     # Format purchases for JSON response
                     purchase_list = []
                     for purchase in purchases:
@@ -3623,10 +3623,10 @@ def get_user_purchases():
                             'metal_card': 'Metal Card',
                             'beta_tester': 'Beta Tester'
                         }
-                        
+
                         product_id = purchase[2]
                         product_name = product_name_map.get(product_id, product_id)
-                        
+
                         purchase_list.append({
                             'purchase_id': purchase[0],
                             'stripe_id': purchase[1],
@@ -3638,7 +3638,7 @@ def get_user_purchases():
                             'date': purchase[5].isoformat() if purchase[5] else None,
                             'transaction_id': purchase[6]
                         })
-                    
+
                     return jsonify({
                         'success': True,
                         'purchases': purchase_list,
@@ -3646,7 +3646,7 @@ def get_user_purchases():
                     })
             else:
                 return jsonify({'error': 'Database connection failed'}), 500
-                
+
     except Exception as e:
         print(f"Error fetching user purchases: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -5496,11 +5496,8 @@ def reject_beta_request(request_id):
     try:
         from beta_approval_service import BetaApprovalService
 
-        # Get optional reason from query parameter
-        reason = request.args.get('reason', 'Not specified')
-
         beta_service = BetaApprovalService()
-        result = beta_service.reject_beta_request(request_id, reason)
+        result = beta_service.reject_beta_request(request_id, reason=request.args.get('reason'))
 
         if result['success']:
             return f"""
@@ -5509,7 +5506,7 @@ def reject_beta_request(request_id):
                 <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                     <h1 style="color: #ff9800; text-align: center;">⚠️ Beta Request Rejected</h1>
                     <p><strong>Request ID:</strong> {request_id}</p>
-                    <p><strong>Reason:</strong> {reason}</p>
+                    <p><strong>Reason:</strong> {request.args.get('reason', 'Not specified')}</p>
                     <p style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 5px;">
                         The user has been notified via email about the rejection.
                     </p>
@@ -5562,35 +5559,35 @@ def get_user_esim_details():
                     data_recovered = False
                     if not activation_data and not iccid_data:
                         print(f"📡 No local eSIM data found for {firebase_uid}, attempting OXIO sync...")
-                        
+
                         # Get user's OXIO user ID and details
                         cur.execute("""
                             SELECT oxio_user_id, email, display_name, oxio_group_id, id
                             FROM users
                             WHERE firebase_uid = %s
                         """, (firebase_uid,))
-                        
+
                         user_row = cur.fetchone()
-                        
+
                         if user_row:
                             oxio_user_id = user_row[0]
                             user_email = user_row[1]
                             display_name = user_row[2]
                             oxio_group_id = user_row[3]
                             user_id = user_row[4]
-                            
+
                             # If no OXIO user ID, create one
                             if not oxio_user_id:
                                 print(f"🆕 No OXIO User ID found, creating OXIO user for {user_email}...")
-                                
+
                                 from oxio_service import OXIOService
                                 oxio_service = OXIOService()
-                                
+
                                 # Parse display name
                                 name_parts = (display_name or user_email.split('@')[0]).split(' ', 1)
                                 first_name = name_parts[0]
                                 last_name = name_parts[1] if len(name_parts) > 1 else ""
-                                
+
                                 # Create OXIO user
                                 oxio_result = oxio_service.create_oxio_user(
                                     first_name=first_name,
@@ -5599,10 +5596,10 @@ def get_user_esim_details():
                                     firebase_uid=firebase_uid,
                                     oxio_group_id=oxio_group_id
                                 )
-                                
+
                                 if oxio_result.get('success'):
                                     oxio_user_id = oxio_result['data'].get('endUserId')
-                                    
+
                                     # Update users table with new OXIO user ID
                                     cur.execute("""
                                         UPDATE users
@@ -5610,25 +5607,25 @@ def get_user_esim_details():
                                         WHERE firebase_uid = %s
                                     """, (oxio_user_id, firebase_uid))
                                     conn.commit()
-                                    
+
                                     print(f"✅ Created OXIO User ID: {oxio_user_id}")
                                 else:
                                     print(f"❌ Failed to create OXIO user: {oxio_result.get('error', 'Unknown error')}")
                                     oxio_user_id = None
-                            
+
                             # Now attempt to sync lines if we have an OXIO user ID
                             if oxio_user_id:
                                 print(f"🔍 Syncing lines for OXIO User ID: {oxio_user_id} ({user_email})")
-                                
+
                                 # Import and use sync service
                                 from esim_sync_service import sync_oxio_lines_for_user
-                                
+
                                 sync_result = sync_oxio_lines_for_user(firebase_uid, oxio_user_id, conn)
-                                
+
                                 if sync_result.get('success') and sync_result.get('lines_synced', 0) > 0:
                                     print(f"✅ Synced {sync_result['lines_synced']} lines from OXIO")
                                     data_recovered = True
-                                    
+
                                     # Re-query local database after sync
                                     cur.execute("""
                                         SELECT iccid, lpa_code, status, assigned_at, country
@@ -5637,9 +5634,9 @@ def get_user_esim_details():
                                           AND status = 'assigned'
                                         ORDER BY assigned_at DESC
                                     """, (firebase_uid,))
-                                    
+
                                     iccid_data = cur.fetchall()
-                                    
+
                                     cur.execute("""
                                         SELECT iccid, line_id, phone_number, activation_status,
                                                esim_qr_code, activation_url, activation_code, created_at
@@ -5647,7 +5644,7 @@ def get_user_esim_details():
                                         WHERE firebase_uid = %s
                                         ORDER BY created_at DESC
                                     """, (firebase_uid,))
-                                    
+
                                     activation_data = cur.fetchall()
                                 elif sync_result.get('user_should_purchase'):
                                     print(f"ℹ️  No lines found in OXIO - user needs to purchase")
@@ -5697,17 +5694,17 @@ def get_user_esim_details():
 def get_user_phone_numbers():
     """Get user's eSIM phone numbers with QR codes and activation details"""
     firebase_uid = request.args.get('firebase_uid')
-    
+
     if not firebase_uid:
         return jsonify({'error': 'firebase_uid parameter required'}), 400
-    
+
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            
+
             # Get all eSIM activations for this user with ICCID inventory details
             cursor.execute("""
-                SELECT 
+                SELECT
                     o.phone_number,
                     o.iccid,
                     o.activation_code,
@@ -5723,12 +5720,12 @@ def get_user_phone_numbers():
                 WHERE o.firebase_uid = %s
                 ORDER BY o.created_at DESC
             """, (firebase_uid,))
-            
+
             rows = cursor.fetchall()
-            
+
             if not rows:
                 return jsonify({'phone_numbers': []})
-            
+
             phone_numbers = []
             for row in rows:
                 phone_numbers.append({
@@ -5742,12 +5739,12 @@ def get_user_phone_numbers():
                     'activated_at': row[5].isoformat() if row[5] else None,
                     'qr_code': row[6]  # Base64 QR code
                 })
-            
+
             return jsonify({
                 'success': True,
                 'phone_numbers': phone_numbers
             })
-            
+
     except Exception as e:
         print(f"Error fetching user phone numbers: {e}")
         import traceback
@@ -5757,80 +5754,144 @@ def get_user_phone_numbers():
 # User Address Management Endpoints
 @app.route('/api/user/addresses', methods=['GET'])
 def get_user_addresses():
-    """Get user's billing and mailing addresses"""
-    firebase_uid = request.args.get('firebase_uid')
-    
+    """Get user addresses (billing, mailing, and broadband)"""
+    firebase_uid = request.args.get('firebaseUid')
     if not firebase_uid:
-        return jsonify({'error': 'firebase_uid parameter required'}), 400
-    
+        return jsonify({'error': 'Firebase UID is required'}), 400
+
     try:
         with get_db_connection() as conn:
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                SELECT billing_address, mailing_address
-                FROM users
-                WHERE firebase_uid = %s
-            """, (firebase_uid,))
-            
-            row = cursor.fetchone()
-            
-            if not row:
-                return jsonify({'error': 'User not found'}), 404
-            
-            return jsonify({
-                'success': True,
-                'billing_address': row[0],
-                'mailing_address': row[1]
-            })
-            
+            if conn:
+                with conn.cursor() as cur:
+                    # Check if addresses table exists
+                    cur.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables
+                            WHERE table_name = 'user_addresses'
+                        )
+                    """)
+                    table_exists = cur.fetchone()[0]
+
+                    if not table_exists:
+                        # Create addresses table with broadband support
+                        cur.execute("""
+                            CREATE TABLE user_addresses (
+                                id SERIAL PRIMARY KEY,
+                                firebase_uid VARCHAR(128) NOT NULL,
+                                billing_address JSONB,
+                                mailing_address JSONB,
+                                broadband_address JSONB,
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                UNIQUE(firebase_uid)
+                            )
+                        """)
+                        conn.commit()
+                    else:
+                        # Check if broadband_address column exists and add it if missing
+                        cur.execute("""
+                            SELECT column_name FROM information_schema.columns
+                            WHERE table_name = 'user_addresses' AND column_name = 'broadband_address'
+                        """)
+                        broadband_column_exists = cur.fetchone()
+
+                        if not broadband_column_exists:
+                            print("Adding broadband_address column to user_addresses table...")
+                            cur.execute("ALTER TABLE user_addresses ADD COLUMN broadband_address JSONB")
+                            conn.commit()
+                            print("Broadband address column added successfully")
+
+                    # Get user addresses
+                    cur.execute("""
+                        SELECT billing_address, mailing_address, broadband_address
+                        FROM user_addresses
+                        WHERE firebase_uid = %s
+                    """, (firebase_uid,))
+
+                    result = cur.fetchone()
+                    if result:
+                        return jsonify({
+                            'success': True,
+                            'addresses': {
+                                'billing_address': result[0],
+                                'mailing_address': result[1],
+                                'broadband_address': result[2]
+                            }
+                        })
+                    else:
+                        return jsonify({
+                            'success': True,
+                            'addresses': {
+                                'billing_address': None,
+                                'mailing_address': None,
+                                'broadband_address': None
+                            }
+                        })
+
+        return jsonify({'error': 'Database connection error'}), 500
     except Exception as e:
-        print(f"Error fetching user addresses: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"Error getting user addresses: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/user/addresses', methods=['POST'])
 def save_user_addresses():
-    """Save user's billing and mailing addresses"""
-    data = request.get_json()
-    firebase_uid = data.get('firebase_uid')
-    billing_address = data.get('billing_address')
-    mailing_address = data.get('mailing_address')
-    
-    if not firebase_uid:
-        return jsonify({'error': 'firebase_uid is required'}), 400
-    
+    """Save user addresses (billing, mailing, or broadband)"""
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    firebase_uid = data.get('firebaseUid')
+    address_type = data.get('addressType')  # 'billing', 'mailing', or 'broadband'
+    address = data.get('address')
+
+    if not firebase_uid or not address_type or not address:
+        return jsonify({'error': 'Firebase UID, address type, and address are required'}), 400
+
+    if address_type not in ['billing', 'mailing', 'broadband']:
+        return jsonify({'error': 'Invalid address type'}), 400
+
     try:
         with get_db_connection() as conn:
-            cursor = conn.cursor()
-            
-            # Update user addresses
-            cursor.execute("""
-                UPDATE users
-                SET billing_address = %s, mailing_address = %s
-                WHERE firebase_uid = %s
-                RETURNING id
-            """, (json.dumps(billing_address) if billing_address else None, 
-                  json.dumps(mailing_address) if mailing_address else None,
-                  firebase_uid))
-            
-            result = cursor.fetchone()
-            
-            if not result:
-                return jsonify({'error': 'User not found'}), 404
-            
-            conn.commit()
-            
-            return jsonify({
-                'success': True,
-                'message': 'Addresses saved successfully'
-            })
-            
+            if conn:
+                with conn.cursor() as cur:
+                    # Upsert address
+                    if address_type == 'billing':
+                        cur.execute("""
+                            INSERT INTO user_addresses (firebase_uid, billing_address, updated_at)
+                            VALUES (%s, %s, CURRENT_TIMESTAMP)
+                            ON CONFLICT (firebase_uid)
+                            DO UPDATE SET
+                                billing_address = EXCLUDED.billing_address,
+                                updated_at = CURRENT_TIMESTAMP
+                        """, (firebase_uid, json.dumps(address)))
+                    elif address_type == 'mailing':
+                        cur.execute("""
+                            INSERT INTO user_addresses (firebase_uid, mailing_address, updated_at)
+                            VALUES (%s, %s, CURRENT_TIMESTAMP)
+                            ON CONFLICT (firebase_uid)
+                            DO UPDATE SET
+                                mailing_address = EXCLUDED.mailing_address,
+                                updated_at = CURRENT_TIMESTAMP
+                        """, (firebase_uid, json.dumps(address)))
+                    else:  # broadband
+                        cur.execute("""
+                            INSERT INTO user_addresses (firebase_uid, broadband_address, updated_at)
+                            VALUES (%s, %s, CURRENT_TIMESTAMP)
+                            ON CONFLICT (firebase_uid)
+                            DO UPDATE SET
+                                broadband_address = EXCLUDED.broadband_address,
+                                updated_at = CURRENT_TIMESTAMP
+                        """, (firebase_uid, json.dumps(address)))
+
+                    conn.commit()
+                    return jsonify({
+                        'success': True,
+                        'message': f'{address_type.capitalize()} address saved successfully'
+                    })
+
+        return jsonify({'error': 'Database connection error'}), 500
     except Exception as e:
-        print(f"Error saving user addresses: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"Error saving user address: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # Shopify API endpoints
@@ -5925,16 +5986,16 @@ def fix_failed_esim_activation():
         data = request.get_json()
         firebase_uid = data.get('firebase_uid')
         admin_key = data.get('admin_key')
-        
+
         # Simple admin auth check
         if admin_key != os.environ.get('ADMIN_KEY', 'dotm_admin_2025'):
             return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-        
+
         if not firebase_uid:
             return jsonify({'success': False, 'error': 'Firebase UID is required'}), 400
-        
+
         print(f"🔧 Manual eSIM activation fix requested for Firebase UID: {firebase_uid}")
-        
+
         # Step 1: Get user details
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -5944,13 +6005,13 @@ def fix_failed_esim_activation():
                 WHERE firebase_uid = %s
             """, (firebase_uid,))
             user_result = cursor.fetchone()
-            
+
             if not user_result:
                 return jsonify({'success': False, 'error': 'User not found'}), 404
-            
+
             user_id, user_email, user_name, oxio_user_id, stripe_customer_id = user_result
             print(f"   User ID: {user_id}, Email: {user_email}, OXIO User ID: {oxio_user_id}")
-        
+
         # Step 2: Check if ICCID is already assigned
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -5962,13 +6023,13 @@ def fix_failed_esim_activation():
                 LIMIT 1
             """, (firebase_uid,))
             iccid_result = cursor.fetchone()
-            
+
             if not iccid_result:
                 return jsonify({'success': False, 'error': 'No ICCID assigned to user'}), 404
-            
+
             iccid, lpa_code, line_id, country = iccid_result
             print(f"   Found assigned ICCID: {iccid}")
-        
+
         # Step 3: Check if purchase already recorded
         purchase_exists = False
         with get_db_connection() as conn:
@@ -5981,7 +6042,7 @@ def fix_failed_esim_activation():
             if cursor.fetchone():
                 purchase_exists = True
                 print(f"   ✓ Purchase already recorded")
-        
+
         # Step 4: Check if activation already exists
         activation_exists = False
         with get_db_connection() as conn:
@@ -5994,7 +6055,7 @@ def fix_failed_esim_activation():
             if cursor.fetchone():
                 activation_exists = True
                 print(f"   ✓ Activation record already exists")
-        
+
         # Step 5: Record purchase if not exists
         if not purchase_exists:
             print(f"   📝 Recording purchase...")
@@ -6010,13 +6071,13 @@ def fix_failed_esim_activation():
                 stripe_transaction_id='manual_fix'
             )
             print(f"   ✓ Purchase recorded with ID: {purchase_id}")
-        
+
         # Step 6: Activate eSIM with OXIO if not already activated
         if not activation_exists and oxio_user_id:
             print(f"   🚀 Activating eSIM with OXIO...")
             try:
                 from esim_activation_service import esim_activation_service
-                
+
                 activation_result = esim_activation_service.activate_esim_after_payment(
                     firebase_uid=firebase_uid,
                     user_email=user_email,
@@ -6024,15 +6085,15 @@ def fix_failed_esim_activation():
                     stripe_session_id='manual_fix',
                     purchase_amount=100
                 )
-                
+
                 if activation_result.get('success'):
                     print(f"   ✅ eSIM activation completed successfully")
                 else:
                     print(f"   ⚠️ eSIM activation returned: {activation_result.get('error', 'Unknown error')}")
-                    
+
             except Exception as e:
                 print(f"   ❌ Error during activation: {str(e)}")
-        
+
         return jsonify({
             'success': True,
             'message': 'eSIM activation fix completed',
@@ -6045,7 +6106,7 @@ def fix_failed_esim_activation():
                 'activation_triggered': not activation_exists
             }
         })
-        
+
     except Exception as e:
         print(f"❌ Error in fix_failed_esim_activation: {str(e)}")
         import traceback
@@ -6060,16 +6121,16 @@ def resend_esim_activation_email():
         data = request.get_json()
         firebase_uid = data.get('firebase_uid')
         admin_key = data.get('admin_key')
-        
+
         # Simple admin auth check
         if admin_key != os.environ.get('ADMIN_KEY', 'dotm_admin_2025'):
             return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-        
+
         if not firebase_uid:
             return jsonify({'success': False, 'error': 'Firebase UID is required'}), 400
-        
+
         print(f"📧 Resending eSIM activation email for Firebase UID: {firebase_uid}")
-        
+
         # Step 1: Get user details
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -6079,13 +6140,13 @@ def resend_esim_activation_email():
                 WHERE firebase_uid = %s
             """, (firebase_uid,))
             user_result = cursor.fetchone()
-            
+
             if not user_result:
                 return jsonify({'success': False, 'error': 'User not found'}), 404
-            
+
             user_id, user_email, user_name, oxio_user_id = user_result
             print(f"   User: {user_email}")
-        
+
         # Step 2: Get eSIM activation details
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -6097,12 +6158,12 @@ def resend_esim_activation_email():
                 LIMIT 1
             """, (firebase_uid,))
             activation_result = cursor.fetchone()
-            
+
             if not activation_result:
                 return jsonify({'success': False, 'error': 'No eSIM activation found for this user'}), 404
-            
+
             iccid, line_id, phone_number, activation_url, esim_qr_code, oxio_response, created_at = activation_result
-            
+
             # Parse phone number from oxio_response if not directly available
             if not phone_number and oxio_response:
                 import json
@@ -6113,13 +6174,13 @@ def resend_esim_activation_email():
                         phone_number = phone_numbers[0].get('phoneNumber', '')
                 except Exception as e:
                     print(f"   ⚠️ Could not parse phone number from oxio_response: {e}")
-            
+
             print(f"   eSIM Details: ICCID={iccid}, Phone={phone_number}, Line={line_id}")
-        
+
         # Step 3: Send activation email using the esim_activation_service
         try:
             from esim_activation_service import esim_activation_service
-            
+
             # Prepare eSIM data dictionary (keys must match _send_activation_email expectations)
             esim_data = {
                 'phone_number': phone_number or 'Pending',
@@ -6129,7 +6190,7 @@ def resend_esim_activation_email():
                 'qr_code': esim_qr_code,  # Use 'qr_code' not 'qr_code_url'
                 'activation_date': created_at.strftime('%B %d, %Y at %I:%M %p') if created_at else 'Unknown'
             }
-            
+
             # Send the email with correct parameters
             email_result = esim_activation_service._send_activation_email(
                 user_email=user_email,
@@ -6137,7 +6198,7 @@ def resend_esim_activation_email():
                 esim_data=esim_data,
                 oxio_user_id=oxio_user_id
             )
-            
+
             if email_result:
                 print(f"   ✅ Activation email sent successfully to {user_email}")
                 return jsonify({
@@ -6156,13 +6217,13 @@ def resend_esim_activation_email():
                     'success': False,
                     'error': 'Failed to send activation email'
                 }), 500
-                
+
         except Exception as e:
             print(f"   ❌ Error sending activation email: {str(e)}")
             import traceback
             traceback.print_exc()
             return jsonify({'success': False, 'error': f'Email send error: {str(e)}'}), 500
-        
+
     except Exception as e:
         print(f"❌ Error in resend_esim_activation_email: {str(e)}")
         import traceback

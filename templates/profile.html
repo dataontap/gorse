@@ -508,10 +508,10 @@
                                                         <span class="text-break font-monospace bg-light p-2 rounded d-inline-block" id="assignedICCID">-</span>
                                                         <button class="btn btn-sm btn-outline-secondary copy-btn ms-1" onclick="copyAssignedICCID()" title="Copy ICCID"><i class="fas fa-copy"></i></button>
                                                     </p>
-                                                    <p><strong>Status:</strong> 
+                                                    <p><strong>Status:</strong>
                                                         <span class="badge" id="iccidStatus">-</span>
                                                     </p>
-                                                    <p><strong>Country:</strong> 
+                                                    <p><strong>Country:</strong>
                                                         <span id="iccidCountry">-</span>
                                                     </p>
                                                     <p><strong>LPA Activation Code:</strong><br>
@@ -708,46 +708,62 @@
 
                 <div class="address-section mb-4">
                     <h3 class="mb-3"><i class="fas fa-wifi"></i> Broadband</h3>
-                    <div class="address-card p-3 mb-3">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="address-content">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-broadcast-tower me-2" style="color: #666;"></i>
-                                    <span style="color: #666;">Wireless</span>
+                    <div id="broadbandAddressDisplay" style="display: none;">
+                        <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="address-content" id="broadbandAddressContent">
+                                    <!-- Broadband address will be displayed here -->
                                 </div>
-                                <p>456 Gladstone Avenue</p>
-                                <p>Toronto, ON M6H 3H9</p>
-                                <p>Canada</p>
+                                <i class="fas fa-edit edit-icon" onclick="editBroadbandAddress()" style="cursor: pointer;"></i>
                             </div>
-                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)"></i>
                         </div>
                     </div>
-                    <div class="address-card p-3">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="address-content">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-network-wired me-2" style="color: #666;"></i>
-                                    <span style="color: #666;">Fiber</span>
-                                </div>
-                                <p>321 Front Street West</p>
-                                <p>Toronto, ON M5V 2T6</p>
-                                <p>Canada</p>
-                            </div>
-                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)"></i>
-                        </div>
+                    <div id="broadbandAddressEmpty" style="display: none;">
+                        <button class="btn btn-outline-primary" onclick="showBroadbandAddressForm()">
+                            <i class="fas fa-plus"></i> Add Broadband Address
+                        </button>
                     </div>
-                    <div class="address-card p-3">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="address-content">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-satellite-dish me-2" style="color: #666;"></i>
-                                    <span style="color: #666;">Satellite</span>
+                    <div id="broadbandAddressForm" style="display: none; margin-top: 15px;">
+                        <div class="address-card p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label>Street Address</label>
+                                    <input type="text" class="form-control" id="broadbandStreet" placeholder="123 Broadband Way" required>
                                 </div>
-                                <p>1222 North Lasso Lake</p>
-                                <p>Lake of Bays, ON</p>
-                                <p>Canada</p>
+                                <div class="col-md-4 mb-3">
+                                    <label>Unit/Apt</label>
+                                    <input type="text" class="form-control" id="broadbandUnit" placeholder="Unit 101">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>City</label>
+                                    <input type="text" class="form-control" id="broadbandCity" placeholder="Metropolis" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label>Province/State</label>
+                                    <input type="text" class="form-control" id="broadbandProvince" placeholder="ON" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label>Postal Code</label>
+                                    <input type="text" class="form-control" id="broadbandPostal" placeholder="M5V 2T6" required>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label>Country</label>
+                                    <select class="form-control" id="broadbandCountry" required>
+                                        <option value="Canada">Canada</option>
+                                        <option value="United States">United States</option>
+                                        <option value="Mexico">Mexico</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <button class="btn btn-primary" onclick="saveBroadbandAddress()">
+                                        <i class="fas fa-save"></i> Save Broadband Address
+                                    </button>
+                                    <button class="btn btn-secondary ml-2" onclick="cancelBroadbandAddressForm()">
+                                        Cancel
+                                    </button>
+                                </div>
                             </div>
-                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)"></i>
                         </div>
                     </div>
                 </div>
@@ -774,6 +790,17 @@
     <script src="/static/app.js"></script>
     <script src="/static/global-audio-player.js"></script>
     <script>
+        // Helper function to get Firebase UID
+        function getFirebaseUID() {
+            // Check if Firebase is initialized and user is logged in
+            if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                return firebase.auth().currentUser.uid;
+            }
+            // Fallback to checking localStorage for cached user data
+            const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            return cachedUser?.uid || null;
+        }
+
         // Listen for Firebase auth state changes - PRIMARY auth handler for profile
         document.addEventListener('firebaseAuthStateChanged', function(event) {
             const { isSignedIn, firebaseUser, userData } = event.detail;
@@ -1207,17 +1234,17 @@
                 if (refreshBtn) refreshBtn.style.display = 'block';
 
                 // Check if user has real line data (not demo)
-                const hasRealLineData = oxioData.line_id && oxioData.line_id !== 'Not assigned' && 
+                const hasRealLineData = oxioData.line_id && oxioData.line_id !== 'Not assigned' &&
                                        oxioData.phone_number && oxioData.phone_number !== 'Not assigned';
 
                 // Determine if this is demo data or real data
-                const isDemoUser = oxioData.email && oxioData.email.includes('demo') || 
-                                  oxioData.status === 'demo' || 
+                const isDemoUser = oxioData.email && oxioData.email.includes('demo') ||
+                                  oxioData.status === 'demo' ||
                                   !hasRealLineData;
 
                 // Format regions
-                const regionsText = oxioData.regions && oxioData.regions.length > 0 
-                    ? oxioData.regions.join(', ') 
+                const regionsText = oxioData.regions && oxioData.regions.length > 0
+                    ? oxioData.regions.join(', ')
                     : 'Not specified';
 
                 // Status badge color
@@ -1463,7 +1490,7 @@
             const container = document.getElementById('oxioContainer');
 
             // Check if this is a "user not created" error or status indicates missing OXIO user
-            if ((error && error.includes('OXIO user not created')) || 
+            if ((error && error.includes('OXIO user not created')) ||
                 (error && error.includes('oxio_user_not_created'))) {
                 container.innerHTML = `
                     <div class="address-card p-3 mb-3">
@@ -2155,10 +2182,10 @@
             if (data.status === 'active') {
                 const subscriptionName = getSubscriptionDisplayName(data.subscription_type);
                 const price = getSubscriptionPrice(data.subscription_type);
-                const endDate = new Date(data.end_date).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                const endDate = new Date(data.end_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
                 });
 
                 container.innerHTML = `
@@ -2175,10 +2202,10 @@
                 `;
             } else if (data.status === 'expired') {
                 const subscriptionName = getSubscriptionDisplayName(data.last_subscription_type);
-                const expiredDate = new Date(data.expired_date).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                const expiredDate = new Date(data.expired_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
                 });
 
                 container.innerHTML = `
@@ -2513,7 +2540,7 @@
                     <h3>${title}</h3>
                     <img src="data:image/png;base64,${qrDataUrl}" alt="${title}" style="max-width: 300px; max-height: 300px;">
                     <p>Scan this QR code to add the eSIM to your device</p>
-                    <button onclick="this.parentElement.parentElement.remove()" 
+                    <button onclick="this.parentElement.parentElement.remove()"
                             class="btn btn-secondary mt-3">Close</button>
                 </div>
             `;
@@ -2667,62 +2694,82 @@
         // Address Management Functions
         let currentBillingAddress = null;
         let currentMailingAddress = null;
+        let currentBroadbandAddress = null; // Added for broadband address
+
+        function formatAddress(address) {
+            const unitStr = address.unit ? `, ${address.unit}` : '';
+            return `
+                <p>${address.street}${unitStr}</p>
+                <p>${address.city}, ${address.province} ${address.postal}</p>
+                <p>${address.country}</p>
+            `;
+        }
 
         function loadUserAddresses() {
-            if (!firebase.auth().currentUser) return;
-            const user = firebase.auth().currentUser;
+            const firebaseUid = getFirebaseUID();
+            if (!firebaseUid) return;
 
-            fetch(`/api/user/addresses?firebase_uid=${user.uid}`)
+            fetch(`/api/user/addresses?firebaseUid=${firebaseUid}`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success) {
-                        currentBillingAddress = data.billing_address;
-                        currentMailingAddress = data.mailing_address;
-
-                        if (currentBillingAddress) {
-                            displayBillingAddress(currentBillingAddress);
-                        } else {
-                            document.getElementById('billingAddressEmpty').style.display = 'block';
-                        }
-
-                        if (currentMailingAddress) {
-                            displayMailingAddress(currentMailingAddress);
-                        } else {
-                            document.getElementById('mailingAddressEmpty').style.display = 'block';
-                        }
+                    if (data.success && data.addresses) {
+                        displayUserAddresses(data.addresses);
+                    } else {
+                        // If no addresses found, ensure empty states are shown
+                        document.getElementById('billingAddressDisplay').style.display = 'none';
+                        document.getElementById('billingAddressEmpty').style.display = 'block';
+                        document.getElementById('mailingAddressDisplay').style.display = 'none';
+                        document.getElementById('mailingAddressEmpty').style.display = 'block';
+                        document.getElementById('broadbandAddressDisplay').style.display = 'none';
+                        document.getElementById('broadbandAddressEmpty').style.display = 'block';
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading addresses:', error);
+                    console.error('Error loading user addresses:', error);
+                    // Show empty states on error
+                    document.getElementById('billingAddressDisplay').style.display = 'none';
                     document.getElementById('billingAddressEmpty').style.display = 'block';
+                    document.getElementById('mailingAddressDisplay').style.display = 'none';
                     document.getElementById('mailingAddressEmpty').style.display = 'block';
+                    document.getElementById('broadbandAddressDisplay').style.display = 'none';
+                    document.getElementById('broadbandAddressEmpty').style.display = 'block';
                 });
         }
 
-        function displayBillingAddress(address) {
-            const content = document.getElementById('billingAddressContent');
-            const unitStr = address.unit ? `, ${address.unit}` : '';
-            content.innerHTML = `
-                <p>${address.street}${unitStr}</p>
-                <p>${address.city}, ${address.province} ${address.postal}</p>
-                <p>${address.country}</p>
-            `;
-            document.getElementById('billingAddressDisplay').style.display = 'block';
-            document.getElementById('billingAddressEmpty').style.display = 'none';
-            document.getElementById('billingAddressForm').style.display = 'none';
-        }
+        function displayUserAddresses(addresses) {
+            currentBillingAddress = addresses.billing_address;
+            currentMailingAddress = addresses.mailing_address;
+            currentBroadbandAddress = addresses.broadband_address; // Store broadband address
 
-        function displayMailingAddress(address) {
-            const content = document.getElementById('mailingAddressContent');
-            const unitStr = address.unit ? `, ${address.unit}` : '';
-            content.innerHTML = `
-                <p>${address.street}${unitStr}</p>
-                <p>${address.city}, ${address.province} ${address.postal}</p>
-                <p>${address.country}</p>
-            `;
-            document.getElementById('mailingAddressDisplay').style.display = 'block';
-            document.getElementById('mailingAddressEmpty').style.display = 'none';
-            document.getElementById('mailingAddressForm').style.display = 'none';
+            // Display billing address
+            if (currentBillingAddress) {
+                document.getElementById('billingAddressDisplay').style.display = 'block';
+                document.getElementById('billingAddressEmpty').style.display = 'none';
+                document.getElementById('billingAddressContent').innerHTML = formatAddress(currentBillingAddress);
+            } else {
+                document.getElementById('billingAddressDisplay').style.display = 'none';
+                document.getElementById('billingAddressEmpty').style.display = 'block';
+            }
+
+            // Display mailing address
+            if (currentMailingAddress) {
+                document.getElementById('mailingAddressDisplay').style.display = 'block';
+                document.getElementById('mailingAddressEmpty').style.display = 'none';
+                document.getElementById('mailingAddressContent').innerHTML = formatAddress(currentMailingAddress);
+            } else {
+                document.getElementById('mailingAddressDisplay').style.display = 'none';
+                document.getElementById('mailingAddressEmpty').style.display = 'block';
+            }
+
+            // Display broadband address
+            if (currentBroadbandAddress) {
+                document.getElementById('broadbandAddressDisplay').style.display = 'block';
+                document.getElementById('broadbandAddressEmpty').style.display = 'none';
+                document.getElementById('broadbandAddressContent').innerHTML = formatAddress(currentBroadbandAddress);
+            } else {
+                document.getElementById('broadbandAddressDisplay').style.display = 'none';
+                document.getElementById('broadbandAddressEmpty').style.display = 'block';
+            }
         }
 
         function showBillingAddressForm() {
@@ -2731,7 +2778,6 @@
         }
 
         function editBillingAddress() {
-            // Pre-fill form with current address
             if (currentBillingAddress) {
                 document.getElementById('billingStreet').value = currentBillingAddress.street || '';
                 document.getElementById('billingUnit').value = currentBillingAddress.unit || '';
@@ -2754,9 +2800,6 @@
         }
 
         function saveBillingAddress() {
-            if (!firebase.auth().currentUser) return;
-            const user = firebase.auth().currentUser;
-
             const address = {
                 street: document.getElementById('billingStreet').value,
                 unit: document.getElementById('billingUnit').value,
@@ -2766,9 +2809,14 @@
                 country: document.getElementById('billingCountry').value
             };
 
-            // Validate required fields
             if (!address.street || !address.city || !address.province || !address.postal) {
                 alert('Please fill in all required fields');
+                return;
+            }
+
+            const firebaseUid = getFirebaseUID();
+            if (!firebaseUid) {
+                alert('Please sign in to save addresses');
                 return;
             }
 
@@ -2776,9 +2824,10 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    firebase_uid: user.uid,
+                    firebase_uid: firebaseUid,
                     billing_address: address,
-                    mailing_address: currentMailingAddress
+                    mailing_address: currentMailingAddress,
+                    broadband_address: currentBroadbandAddress
                 })
             })
             .then(response => response.json())
@@ -2802,7 +2851,6 @@
         }
 
         function editMailingAddress() {
-            // Pre-fill form with current address
             if (currentMailingAddress) {
                 document.getElementById('mailingStreet').value = currentMailingAddress.street || '';
                 document.getElementById('mailingUnit').value = currentMailingAddress.unit || '';
@@ -2813,11 +2861,14 @@
             }
             document.getElementById('mailingAddressDisplay').style.display = 'none';
             document.getElementById('mailingAddressForm').style.display = 'block';
+            // Ensure checkbox state is correct
+            const checkbox = document.getElementById('sameAsBilling');
+            if (checkbox) checkbox.checked = false;
+            toggleSameAsBilling(); // Reset field states
         }
 
         function cancelMailingAddressForm() {
             document.getElementById('mailingAddressForm').style.display = 'none';
-            document.getElementById('sameAsBilling').checked = false;
             if (currentMailingAddress) {
                 document.getElementById('mailingAddressDisplay').style.display = 'block';
             } else {
@@ -2826,11 +2877,10 @@
         }
 
         function toggleSameAsBilling() {
-            const checkbox = document.getElementById('sameAsBilling');
+            const sameAsBilling = document.getElementById('sameAsBilling').checked;
             const mailingFields = ['mailingStreet', 'mailingUnit', 'mailingCity', 'mailingProvince', 'mailingPostal', 'mailingCountry'];
 
-            if (checkbox.checked) {
-                // Copy billing to mailing and disable fields
+            if (sameAsBilling) {
                 if (currentBillingAddress) {
                     document.getElementById('mailingStreet').value = currentBillingAddress.street || '';
                     document.getElementById('mailingUnit').value = currentBillingAddress.unit || '';
@@ -2845,21 +2895,20 @@
                     });
                 } else {
                     alert('Please save a billing address first');
-                    checkbox.checked = false;
+                    document.getElementById('sameAsBilling').checked = false;
                 }
             } else {
-                // Enable fields
+                // Clear and enable fields if not same as billing
                 mailingFields.forEach(field => {
                     document.getElementById(field).readOnly = false;
                     document.getElementById(field).style.backgroundColor = '';
                 });
+                // Optionally clear fields if needed, or keep user input
+                // document.getElementById('mailingStreet').value = ''; ... etc.
             }
         }
 
         function saveMailingAddress() {
-            if (!firebase.auth().currentUser) return;
-            const user = firebase.auth().currentUser;
-
             const address = {
                 street: document.getElementById('mailingStreet').value,
                 unit: document.getElementById('mailingUnit').value,
@@ -2869,9 +2918,14 @@
                 country: document.getElementById('mailingCountry').value
             };
 
-            // Validate required fields
             if (!address.street || !address.city || !address.province || !address.postal) {
                 alert('Please fill in all required fields');
+                return;
+            }
+
+            const firebaseUid = getFirebaseUID();
+            if (!firebaseUid) {
+                alert('Please sign in to save addresses');
                 return;
             }
 
@@ -2879,9 +2933,10 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    firebase_uid: user.uid,
+                    firebase_uid: firebaseUid,
                     billing_address: currentBillingAddress,
-                    mailing_address: address
+                    mailing_address: address,
+                    broadband_address: currentBroadbandAddress
                 })
             })
             .then(response => response.json())
@@ -2899,7 +2954,87 @@
             });
         }
 
-        function generateRandomLinkCode() { return Math.random().toString(36).substring(2, 12); }
+        // Broadband Address Functions
+        function showBroadbandAddressForm() {
+            document.getElementById('broadbandAddressEmpty').style.display = 'none';
+            document.getElementById('broadbandAddressForm').style.display = 'block';
+        }
+
+        function editBroadbandAddress() {
+            document.getElementById('broadbandAddressDisplay').style.display = 'none';
+            document.getElementById('broadbandAddressForm').style.display = 'block';
+
+            if (currentBroadbandAddress) {
+                document.getElementById('broadbandStreet').value = currentBroadbandAddress.street || '';
+                document.getElementById('broadbandUnit').value = currentBroadbandAddress.unit || '';
+                document.getElementById('broadbandCity').value = currentBroadbandAddress.city || '';
+                document.getElementById('broadbandProvince').value = currentBroadbandAddress.province || '';
+                document.getElementById('broadbandPostal').value = currentBroadbandAddress.postal || '';
+                document.getElementById('broadbandCountry').value = currentBroadbandAddress.country || 'Canada';
+            }
+        }
+
+        function saveBroadbandAddress() {
+            const address = {
+                street: document.getElementById('broadbandStreet').value,
+                unit: document.getElementById('broadbandUnit').value,
+                city: document.getElementById('broadbandCity').value,
+                province: document.getElementById('broadbandProvince').value,
+                postal: document.getElementById('broadbandPostal').value,
+                country: document.getElementById('broadbandCountry').value
+            };
+
+            if (!address.street || !address.city || !address.province || !address.postal || !address.country) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const firebaseUid = getFirebaseUID();
+            if (!firebaseUid) {
+                alert('Please sign in to save addresses');
+                return;
+            }
+
+            fetch('/api/user/addresses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    firebaseUid: firebaseUid,
+                    billing_address: currentBillingAddress,
+                    mailing_address: currentMailingAddress,
+                    broadband_address: address
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentBroadbandAddress = address; // Update current broadband address
+                    displayUserAddresses({ // Re-display all addresses to reflect the change
+                        billing_address: currentBillingAddress,
+                        mailing_address: currentMailingAddress,
+                        broadband_address: currentBroadbandAddress
+                    });
+                    document.getElementById('broadbandAddressForm').style.display = 'none'; // Hide form
+                } else {
+                    alert('Error saving address: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error saving broadband address:', error);
+                alert('Error saving address. Please try again.');
+            });
+        }
+
+        function cancelBroadbandAddressForm() {
+            document.getElementById('broadbandAddressForm').style.display = 'none';
+            if (currentBroadbandAddress) {
+                document.getElementById('broadbandAddressDisplay').style.display = 'block';
+            } else {
+                document.getElementById('broadbandAddressEmpty').style.display = 'block';
+            }
+        }
 
         function loadESIMDetails() {
             // Load Beta eSIM information from user data
@@ -2946,14 +3081,14 @@
             const qrCode = esimData.qr_code || '';
             const lpaCode = esimData.lpa_code || '';
             const activatedDate = esimData.activated_at ? new Date(esimData.activated_at) : new Date();
-            const formattedDate = activatedDate.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+            const formattedDate = activatedDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             });
 
             betaEsimCard.innerHTML = `
-                <div class="address-card phone-number-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px; cursor: pointer;" 
+                <div class="address-card phone-number-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px; cursor: pointer;"
                      onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode}', '${phoneData.areaInfo}', '${qrCode}', '${lpaCode}')">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
