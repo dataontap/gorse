@@ -2947,10 +2947,10 @@
             const lpaCode = esimData.lpa_code || '';
             const activatedDate = esimData.activated_at ? new Date(esimData.activated_at) : new Date();
             const formattedDate = activatedDate.toLocaleDateString('en-US', { 
-                month: '2-digit', 
-                day: '2-digit', 
-                year: 'numeric' 
-            }).replace(/\//g, '');
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
 
             betaEsimCard.innerHTML = `
                 <div class="address-card phone-number-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px; cursor: pointer;" 
