@@ -585,27 +585,133 @@
                 </div>
 
                 <div class="address-section mb-4">
-                    <h3 class="mb-3"><i class="fas fa-shipping-fast"></i> Shipping Address</h3>
-                    <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="address-content">
-                                <p>123 John Street, Unit 45</p>
-                                <p>Toronto, ON M5V 2T6</p>
-                                <p>Canada</p>
+                    <h3 class="mb-3"><i class="fas fa-file-invoice"></i> Billing Address</h3>
+                    <div id="billingAddressDisplay" style="display: none;">
+                        <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="address-content" id="billingAddressContent">
+                                    <!-- Billing address will be displayed here -->
+                                </div>
+                                <i class="fas fa-edit edit-icon" onclick="editBillingAddress()" style="cursor: pointer;"></i>
                             </div>
-                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)"></i>
                         </div>
                     </div>
-
-                    <h3 class="mb-3"><i class="fas fa-file-invoice"></i> Billing Address</h3>
-                    <div class="address-card p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="address-content">
-                                <p>789 Dufferin Street</p>
-                                <p>Toronto, ON M6H 4B2</p>
-                                <p>Canada</p>
+                    <div id="billingAddressEmpty" style="display: none;">
+                        <button class="btn btn-outline-primary" onclick="showBillingAddressForm()">
+                            <i class="fas fa-plus"></i> Add Billing Address
+                        </button>
+                    </div>
+                    <div id="billingAddressForm" style="display: none; margin-top: 15px;">
+                        <div class="address-card p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label>Street Address</label>
+                                    <input type="text" class="form-control" id="billingStreet" placeholder="123 Main Street" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label>Unit/Apt</label>
+                                    <input type="text" class="form-control" id="billingUnit" placeholder="Unit 45">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>City</label>
+                                    <input type="text" class="form-control" id="billingCity" placeholder="Toronto" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label>Province/State</label>
+                                    <input type="text" class="form-control" id="billingProvince" placeholder="ON" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label>Postal Code</label>
+                                    <input type="text" class="form-control" id="billingPostal" placeholder="M5V 2T6" required>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label>Country</label>
+                                    <select class="form-control" id="billingCountry" required>
+                                        <option value="Canada">Canada</option>
+                                        <option value="United States">United States</option>
+                                        <option value="Mexico">Mexico</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <button class="btn btn-primary" onclick="saveBillingAddress()">
+                                        <i class="fas fa-save"></i> Save Billing Address
+                                    </button>
+                                    <button class="btn btn-secondary ml-2" onclick="cancelBillingAddressForm()">
+                                        Cancel
+                                    </button>
+                                </div>
                             </div>
-                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="address-section mb-4">
+                    <h3 class="mb-3"><i class="fas fa-shipping-fast"></i> Mailing Address</h3>
+                    <div id="mailingAddressDisplay" style="display: none;">
+                        <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="address-content" id="mailingAddressContent">
+                                    <!-- Mailing address will be displayed here -->
+                                </div>
+                                <i class="fas fa-edit edit-icon" onclick="editMailingAddress()" style="cursor: pointer;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="mailingAddressEmpty" style="display: none;">
+                        <button class="btn btn-outline-primary" onclick="showMailingAddressForm()">
+                            <i class="fas fa-plus"></i> Add Mailing Address
+                        </button>
+                    </div>
+                    <div id="mailingAddressForm" style="display: none; margin-top: 15px;">
+                        <div class="address-card p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="sameAsBilling" onchange="toggleSameAsBilling()">
+                                        <label class="form-check-label" for="sameAsBilling">
+                                            Same as Billing Address
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-8 mb-3">
+                                    <label>Street Address</label>
+                                    <input type="text" class="form-control" id="mailingStreet" placeholder="123 Main Street" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label>Unit/Apt</label>
+                                    <input type="text" class="form-control" id="mailingUnit" placeholder="Unit 45">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>City</label>
+                                    <input type="text" class="form-control" id="mailingCity" placeholder="Toronto" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label>Province/State</label>
+                                    <input type="text" class="form-control" id="mailingProvince" placeholder="ON" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label>Postal Code</label>
+                                    <input type="text" class="form-control" id="mailingPostal" placeholder="M5V 2T6" required>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label>Country</label>
+                                    <select class="form-control" id="mailingCountry" required>
+                                        <option value="Canada">Canada</option>
+                                        <option value="United States">United States</option>
+                                        <option value="Mexico">Mexico</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <button class="btn btn-primary" onclick="saveMailingAddress()">
+                                        <i class="fas fa-save"></i> Save Mailing Address
+                                    </button>
+                                    <button class="btn btn-secondary ml-2" onclick="cancelMailingAddressForm()">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -817,6 +923,9 @@
                     // Load additional user data from our API (in background)
                     loadUserDataFromAPI(currentUser.uid);
 
+                    // Load user addresses
+                    loadUserAddresses();
+
                     // Load OXIO data with Firebase UID
                     loadOxioDataWithUID(currentUser.uid);
 
@@ -856,6 +965,9 @@
 
                             // Load additional user data from our API
                             loadUserDataFromAPI(firebaseUser.uid);
+
+                            // Load user addresses
+                            loadUserAddresses();
 
                             // Load eSIM details with phone number and QR codes
                             loadESIMDetails();
@@ -2538,6 +2650,241 @@
              if (betaPhoneNumberElement) {
                  copyToClipboard(betaPhoneNumberElement.textContent);
              }
+        }
+
+        // Address Management Functions
+        let currentBillingAddress = null;
+        let currentMailingAddress = null;
+
+        function loadUserAddresses() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            fetch(`/api/user/addresses?firebase_uid=${user.uid}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentBillingAddress = data.billing_address;
+                        currentMailingAddress = data.mailing_address;
+
+                        if (currentBillingAddress) {
+                            displayBillingAddress(currentBillingAddress);
+                        } else {
+                            document.getElementById('billingAddressEmpty').style.display = 'block';
+                        }
+
+                        if (currentMailingAddress) {
+                            displayMailingAddress(currentMailingAddress);
+                        } else {
+                            document.getElementById('mailingAddressEmpty').style.display = 'block';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading addresses:', error);
+                    document.getElementById('billingAddressEmpty').style.display = 'block';
+                    document.getElementById('mailingAddressEmpty').style.display = 'block';
+                });
+        }
+
+        function displayBillingAddress(address) {
+            const content = document.getElementById('billingAddressContent');
+            const unitStr = address.unit ? `, ${address.unit}` : '';
+            content.innerHTML = `
+                <p>${address.street}${unitStr}</p>
+                <p>${address.city}, ${address.province} ${address.postal}</p>
+                <p>${address.country}</p>
+            `;
+            document.getElementById('billingAddressDisplay').style.display = 'block';
+            document.getElementById('billingAddressEmpty').style.display = 'none';
+            document.getElementById('billingAddressForm').style.display = 'none';
+        }
+
+        function displayMailingAddress(address) {
+            const content = document.getElementById('mailingAddressContent');
+            const unitStr = address.unit ? `, ${address.unit}` : '';
+            content.innerHTML = `
+                <p>${address.street}${unitStr}</p>
+                <p>${address.city}, ${address.province} ${address.postal}</p>
+                <p>${address.country}</p>
+            `;
+            document.getElementById('mailingAddressDisplay').style.display = 'block';
+            document.getElementById('mailingAddressEmpty').style.display = 'none';
+            document.getElementById('mailingAddressForm').style.display = 'none';
+        }
+
+        function showBillingAddressForm() {
+            document.getElementById('billingAddressForm').style.display = 'block';
+            document.getElementById('billingAddressEmpty').style.display = 'none';
+        }
+
+        function editBillingAddress() {
+            // Pre-fill form with current address
+            if (currentBillingAddress) {
+                document.getElementById('billingStreet').value = currentBillingAddress.street || '';
+                document.getElementById('billingUnit').value = currentBillingAddress.unit || '';
+                document.getElementById('billingCity').value = currentBillingAddress.city || '';
+                document.getElementById('billingProvince').value = currentBillingAddress.province || '';
+                document.getElementById('billingPostal').value = currentBillingAddress.postal || '';
+                document.getElementById('billingCountry').value = currentBillingAddress.country || 'Canada';
+            }
+            document.getElementById('billingAddressDisplay').style.display = 'none';
+            document.getElementById('billingAddressForm').style.display = 'block';
+        }
+
+        function cancelBillingAddressForm() {
+            document.getElementById('billingAddressForm').style.display = 'none';
+            if (currentBillingAddress) {
+                document.getElementById('billingAddressDisplay').style.display = 'block';
+            } else {
+                document.getElementById('billingAddressEmpty').style.display = 'block';
+            }
+        }
+
+        function saveBillingAddress() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const address = {
+                street: document.getElementById('billingStreet').value,
+                unit: document.getElementById('billingUnit').value,
+                city: document.getElementById('billingCity').value,
+                province: document.getElementById('billingProvince').value,
+                postal: document.getElementById('billingPostal').value,
+                country: document.getElementById('billingCountry').value
+            };
+
+            // Validate required fields
+            if (!address.street || !address.city || !address.province || !address.postal) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            fetch('/api/user/addresses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    firebase_uid: user.uid,
+                    billing_address: address,
+                    mailing_address: currentMailingAddress
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentBillingAddress = address;
+                    displayBillingAddress(address);
+                } else {
+                    alert('Error saving address: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving address:', error);
+                alert('Error saving address');
+            });
+        }
+
+        function showMailingAddressForm() {
+            document.getElementById('mailingAddressForm').style.display = 'block';
+            document.getElementById('mailingAddressEmpty').style.display = 'none';
+        }
+
+        function editMailingAddress() {
+            // Pre-fill form with current address
+            if (currentMailingAddress) {
+                document.getElementById('mailingStreet').value = currentMailingAddress.street || '';
+                document.getElementById('mailingUnit').value = currentMailingAddress.unit || '';
+                document.getElementById('mailingCity').value = currentMailingAddress.city || '';
+                document.getElementById('mailingProvince').value = currentMailingAddress.province || '';
+                document.getElementById('mailingPostal').value = currentMailingAddress.postal || '';
+                document.getElementById('mailingCountry').value = currentMailingAddress.country || 'Canada';
+            }
+            document.getElementById('mailingAddressDisplay').style.display = 'none';
+            document.getElementById('mailingAddressForm').style.display = 'block';
+        }
+
+        function cancelMailingAddressForm() {
+            document.getElementById('mailingAddressForm').style.display = 'none';
+            document.getElementById('sameAsBilling').checked = false;
+            if (currentMailingAddress) {
+                document.getElementById('mailingAddressDisplay').style.display = 'block';
+            } else {
+                document.getElementById('mailingAddressEmpty').style.display = 'block';
+            }
+        }
+
+        function toggleSameAsBilling() {
+            const checkbox = document.getElementById('sameAsBilling');
+            const mailingFields = ['mailingStreet', 'mailingUnit', 'mailingCity', 'mailingProvince', 'mailingPostal', 'mailingCountry'];
+            
+            if (checkbox.checked) {
+                // Copy billing to mailing and disable fields
+                if (currentBillingAddress) {
+                    document.getElementById('mailingStreet').value = currentBillingAddress.street || '';
+                    document.getElementById('mailingUnit').value = currentBillingAddress.unit || '';
+                    document.getElementById('mailingCity').value = currentBillingAddress.city || '';
+                    document.getElementById('mailingProvince').value = currentBillingAddress.province || '';
+                    document.getElementById('mailingPostal').value = currentBillingAddress.postal || '';
+                    document.getElementById('mailingCountry').value = currentBillingAddress.country || 'Canada';
+                    
+                    mailingFields.forEach(field => {
+                        document.getElementById(field).readOnly = true;
+                        document.getElementById(field).style.backgroundColor = 'rgba(200, 200, 200, 0.2)';
+                    });
+                } else {
+                    alert('Please save a billing address first');
+                    checkbox.checked = false;
+                }
+            } else {
+                // Enable fields
+                mailingFields.forEach(field => {
+                    document.getElementById(field).readOnly = false;
+                    document.getElementById(field).style.backgroundColor = '';
+                });
+            }
+        }
+
+        function saveMailingAddress() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const address = {
+                street: document.getElementById('mailingStreet').value,
+                unit: document.getElementById('mailingUnit').value,
+                city: document.getElementById('mailingCity').value,
+                province: document.getElementById('mailingProvince').value,
+                postal: document.getElementById('mailingPostal').value,
+                country: document.getElementById('mailingCountry').value
+            };
+
+            // Validate required fields
+            if (!address.street || !address.city || !address.province || !address.postal) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            fetch('/api/user/addresses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    firebase_uid: user.uid,
+                    billing_address: currentBillingAddress,
+                    mailing_address: address
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentMailingAddress = address;
+                    displayMailingAddress(address);
+                } else {
+                    alert('Error saving address: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving address:', error);
+                alert('Error saving address');
+            });
         }
 
         function generateRandomLinkCode() { return Math.random().toString(36).substring(2, 12); }
