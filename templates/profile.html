@@ -2365,7 +2365,7 @@
                             </div>
                         ` : ''}
                         <div class="phone-qr-button">
-                            <button type="button" class="btn btn-primary w-100" onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode}', '${phoneData.areaInfo}', '${qrCode || ''}', '${lpaCode || ''}')" style="padding: 0.75rem; font-size: 1rem;">
+                            <button type="button" class="btn btn-primary w-100" onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode || ''}', '${phoneData.areaInfo || ''}', '${qrCode || ''}', '${lpaCode || ''}')" style="padding: 0.75rem; font-size: 1rem;">
                                 <i class="fas fa-info-circle me-2"></i> View Phone Number Options
                             </button>
                         </div>
@@ -2486,7 +2486,7 @@
             });
         }
 
-        function showPhoneNumberPopup(phoneNumber, areaCode, areaInfo, carrier, lpaCode, qrCode) {
+        function showPhoneNumberPopup(formattedNumber, areaCode, areaInfo, qrCode, lpaCode) {
             const popup = document.getElementById('phoneNumberPopup');
             const popupContent = document.getElementById('popupContent');
 
@@ -2497,9 +2497,14 @@
 
             popupContent.innerHTML = `
                 <div style="text-align: center;">
-                    <h5 style="color: var(--text-primary);"><i class="fas fa-phone"></i> ${phoneNumber}</h5>
-                    <p><strong>Area Code:</strong> ${areaCode} (${areaInfo})</p>
-                    <p><strong>Carrier:</strong> ${carrier}</p>
+                    <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
+                        <i class="fas fa-phone"></i> ${formattedNumber}
+                    </h5>
+                    ${areaCode ? `
+                        <p style="margin-bottom: 1.5rem;">
+                            <strong>Area Code:</strong> ${areaCode} (${areaInfo})
+                        </p>
+                    ` : ''}
                     ${qrCode ? `
                         <div style="margin-top: 20px;">
                             <h6>eSIM QR Code:</h6>
@@ -2517,6 +2522,11 @@
                             </button>
                         </div>
                     ` : ''}
+                    <div style="margin-top: 1.5rem;">
+                        <button class="btn btn-outline-warning" onclick="handleChangeNumber()">
+                            <i class="fas fa-exchange-alt"></i> Change Number
+                        </button>
+                    </div>
                 </div>
             `;
 
@@ -2530,10 +2540,13 @@
         function handleChangeNumber() {
             const popupContent = document.getElementById('popupContent');
             popupContent.innerHTML = `
-                <p>We are working on this feature. It will be available soon.</p>
-                <p><strong>Coming Soon</strong></p>
+                <div style="text-align: center;">
+                    <h5 style="color: var(--text-primary);">Change Phone Number</h5>
+                    <p>We are working on this feature. It will be available soon.</p>
+                    <p><strong>Coming Soon</strong></p>
+                    <button class="btn btn-secondary mt-3" onclick="hidePhoneNumberPopup()">Close</button>
+                </div>
             `;
-            // Optionally, you can re-enable the close button or add a delay before closing
         }
 
         function showQRCode(qrDataUrl, title) {
