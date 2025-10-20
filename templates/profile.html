@@ -717,69 +717,47 @@
                 </div>
 
                 <div class="address-section mb-4">
-                    <h3 class="mb-3"><i class="fas fa-network-wired"></i> Other Services</h3>
-                    <div id="fiberAddressDisplay" style="display: none;">
-                        <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="address-content">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="fas fa-network-wired me-2" style="color: #666;"></i>
-                                        <span style="color: #666;">Fiber Address</span>
-                                    </div>
-                                    <div id="fiberAddressContent">
-                                        <!-- Fiber address will be displayed here -->
-                                    </div>
+                    <h3 class="mb-3"><i class="fas fa-wifi"></i> Home Broadband</h3>
+                    <div class="address-card p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-broadcast-tower me-2" style="color: #666;"></i>
+                                    <span style="color: #666;">Wireless</span>
                                 </div>
-                                <i class="fas fa-edit edit-icon" onclick="editFiberAddress()" style="cursor: pointer;"></i>
+                                <p>456 Gladstone Avenue</p>
+                                <p>Toronto, ON M6H 3H9</p>
+                                <p>Canada</p>
                             </div>
+                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)"></i>
                         </div>
                     </div>
-                    <div id="fiberAddressEmpty">
-                        <button class="btn btn-outline-primary" onclick="showFiberAddressForm()">
-                            <i class="fas fa-plus"></i> Add Broadband
-                        </button>
-                    </div>
-                    <div id="fiberAddressForm" style="display: none; margin-top: 15px;">
-                        <div class="address-card p-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
-                            <div class="row">
-                                <div class="col-md-8 mb-3">
-                                    <label>Street Address</label>
-                                    <input type="text" class="form-control" id="fiberStreet" placeholder="123 Main Street" required>
+                    <div class="address-card p-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-network-wired me-2" style="color: #666;"></i>
+                                    <span style="color: #666;">Fiber</span>
                                 </div>
-                                <div class="col-md-4 mb-3">
-                                    <label>Unit/Apt</label>
-                                    <input type="text" class="form-control" id="fiberUnit" placeholder="Unit 45">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label>City</label>
-                                    <input type="text" class="form-control" id="fiberCity" placeholder="Toronto" required>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <label>Province/State</label>
-                                    <input type="text" class="form-control" id="fiberProvince" placeholder="ON" required>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <label>Postal Code</label>
-                                    <input type="text" class="form-control" id="fiberPostal" placeholder="M5V 2T6" required>
-                                </div>
-                                <div class="col-md-12 mb-3">
-                                    <label>Country</label>
-                                    <select class="form-control" id="fiberCountry" required>
-                                        <option value="Canada">Canada</option>
-                                        <option value="United States">United States</option>
-                                        <option value="Mexico">Mexico</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-12">
-                                    <button class="btn btn-primary" onclick="saveFiberAddress()">
-                                        <i class="fas fa-save"></i> Save Fiber Address
-                                    </button>
-                                    <button class="btn btn-secondary ml-2" onclick="cancelFiberAddressForm()">
-                                        Cancel
-                                    </button>
-                                </div>
+                                <p>321 Front Street West</p>
+                                <p>Toronto, ON M5V 2T6</p>
+                                <p>Canada</p>
                             </div>
+                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)"></i>
+                        </div>
+                    </div>
+                    <div class="address-card p-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="address-content">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-satellite-dish me-2" style="color: #666;"></i>
+                                    <span style="color: #666;">Satellite</span>
+                                </div>
+                                <p>1222 North Lasso Lake</p>
+                                <p>Lake of Bays, ON</p>
+                                <p>Canada</p>
+                            </div>
+                            <i class="fas fa-edit edit-icon" onclick="editAddress(this)"></i>
                         </div>
                     </div>
                 </div>
@@ -2497,142 +2475,6 @@
                 <div class="esim-qr-content">
                     <h3>${title}</h3>
                     <img src="${qrDataUrl}" alt="${title}" style="max-width: 300px; max-height: 300px;">
-
-
-        // Fiber Address Management Functions
-        function showFiberAddressForm() {
-            document.getElementById('fiberAddressEmpty').style.display = 'none';
-            document.getElementById('fiberAddressForm').style.display = 'block';
-        }
-
-        function cancelFiberAddressForm() {
-            document.getElementById('fiberAddressForm').style.display = 'none';
-            const displaySection = document.getElementById('fiberAddressDisplay');
-            if (displaySection.style.display === 'block') {
-                // Already has an address saved
-                return;
-            }
-            document.getElementById('fiberAddressEmpty').style.display = 'block';
-        }
-
-        function editFiberAddress() {
-            const firebaseUid = getFirebaseUID();
-            if (!firebaseUid) {
-                alert('Please sign in to edit your fiber address.');
-                return;
-            }
-
-            // Load current address into form
-            fetch(`/api/user/addresses?firebase_uid=${firebaseUid}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.addresses.fiber_address) {
-                        const addr = data.addresses.fiber_address;
-                        document.getElementById('fiberStreet').value = addr.street || '';
-                        document.getElementById('fiberUnit').value = addr.unit || '';
-                        document.getElementById('fiberCity').value = addr.city || '';
-                        document.getElementById('fiberProvince').value = addr.province || '';
-                        document.getElementById('fiberPostal').value = addr.postal || '';
-                        document.getElementById('fiberCountry').value = addr.country || 'Canada';
-                    }
-                    
-                    document.getElementById('fiberAddressDisplay').style.display = 'none';
-                    document.getElementById('fiberAddressForm').style.display = 'block';
-                })
-                .catch(error => {
-                    console.error('Error loading fiber address:', error);
-                    document.getElementById('fiberAddressDisplay').style.display = 'none';
-                    document.getElementById('fiberAddressForm').style.display = 'block';
-                });
-        }
-
-        function saveFiberAddress() {
-            const firebaseUid = getFirebaseUID();
-            if (!firebaseUid) {
-                alert('Please sign in to save your fiber address.');
-                return;
-            }
-
-            const fiberAddress = {
-                street: document.getElementById('fiberStreet').value,
-                unit: document.getElementById('fiberUnit').value,
-                city: document.getElementById('fiberCity').value,
-                province: document.getElementById('fiberProvince').value,
-                postal: document.getElementById('fiberPostal').value,
-                country: document.getElementById('fiberCountry').value
-            };
-
-            if (!fiberAddress.street || !fiberAddress.city || !fiberAddress.province || !fiberAddress.postal) {
-                alert('Please fill in all required fields.');
-                return;
-            }
-
-            fetch('/api/user/addresses', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    firebase_uid: firebaseUid,
-                    fiber_address: fiberAddress
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Fiber address saved successfully!');
-                    displayFiberAddress(fiberAddress);
-                    document.getElementById('fiberAddressForm').style.display = 'none';
-                } else {
-                    alert('Error saving fiber address: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Error saving fiber address:', error);
-                alert('Error saving fiber address. Please try again.');
-            });
-        }
-
-        function displayFiberAddress(address) {
-            const contentDiv = document.getElementById('fiberAddressContent');
-            contentDiv.innerHTML = `
-                <p>${address.street}${address.unit ? ', ' + address.unit : ''}</p>
-                <p>${address.city}, ${address.province} ${address.postal}</p>
-                <p>${address.country}</p>
-            `;
-            document.getElementById('fiberAddressDisplay').style.display = 'block';
-            document.getElementById('fiberAddressEmpty').style.display = 'none';
-        }
-
-        // Load fiber address on page load
-        function loadFiberAddress() {
-            const firebaseUid = getFirebaseUID();
-            if (!firebaseUid) return;
-
-            fetch(`/api/user/addresses?firebase_uid=${firebaseUid}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.addresses.fiber_address) {
-                        displayFiberAddress(data.addresses.fiber_address);
-                    } else {
-                        document.getElementById('fiberAddressEmpty').style.display = 'block';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading fiber address:', error);
-                    document.getElementById('fiberAddressEmpty').style.display = 'block';
-                });
-        }
-
-        // Call loadFiberAddress when page loads
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-            firebase.auth().onAuthStateChanged(function(user) {
-                if (user) {
-                    setTimeout(loadFiberAddress, 500);
-                }
-            });
-        }
-
                     <p style="margin-top: 15px;">
                         <button class="btn btn-secondary" onclick="this.parentElement.parentElement.remove()">Close</button>
                     </p>
