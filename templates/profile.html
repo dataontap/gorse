@@ -1022,7 +1022,7 @@
             // Update member badge based on founder status
             const badgeElement = document.getElementById('memberBadge');
             if (badgeElement && userData.email) {
-                const founderBadge = userData.founderStatus === 'Y' ? '⭐ Founding Member' : '⭐ Member';
+                const founderBadge = userData.founderStatus === 'Y' ? '★ Founding Member' : '★ Member';
                 badgeElement.textContent = founderBadge;
             }
 
@@ -1477,7 +1477,7 @@
                                         <i class="fas fa-plus"></i> Create OXIO User
                                     </button>
                                     <button class="btn btn-sm btn-secondary" onclick="refreshOxioData()">
-                                        <i class="fas fa-sync"></i> Refresh
+                                        <i class="fas fa-sync"></i> Check Status
                                     </button>
                                 </div>
                             </div>
@@ -2344,7 +2344,7 @@
                                 </button>
                             </div>
                         </div>
-                        
+
                         <!-- Add paragraph break here -->
                         <p></p> 
 
@@ -2481,9 +2481,9 @@
                 <div class="esim-qr-content">
                     <h3>${title}</h3>
                     <img src="${qrDataUrl}" alt="${title}" style="max-width: 300px; max-height: 300px;">
-                    <p style="margin-top: 15px;">
-                        <button class="btn btn-secondary" onclick="this.parentElement.parentElement.remove()">Close</button>
-                    </p>
+                    <p>Scan this QR code to add the eSIM to your device</p>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            class="btn btn-secondary mt-3">Close</button>
                 </div>
             `;
             modal.addEventListener('click', function(e) {
@@ -2495,15 +2495,9 @@
         function toggleQRCode(event) {
             event.stopPropagation();
             const popup = document.getElementById('qrCodePopup');
-            if (popup.style.display === 'block') {
+            const icon = document.querySelector('.qr-code-icon');
+            if (popup && popup.style.display === 'block' && !popup.contains(e.target) && e.target !== icon) {
                 popup.style.display = 'none';
-            } else {
-                popup.style.display = 'block';
-                if (!document.querySelector('#qrcode canvas')) {
-                    new QRCode(document.getElementById("qrcode"), {
-                        text: "https://gorse.dotmobile.app", width: 150, height: 150, colorDark: "#333333", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
-                    });
-                }
             }
         }
 
@@ -2600,7 +2594,7 @@
                                 </button>
                             </div>
                         </div>
-                        
+
                         <p></p> 
 
                         <div class="row mt-3">
@@ -2644,7 +2638,7 @@
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(function() { console.log('Copied to clipboard:', text); }).catch(function(err) { console.error('Could not copy text: ', err); });
         }
-        
+
         function copyBetaPhoneNumber() {
              const betaPhoneNumberElement = document.getElementById('betaPhoneNumber');
              if (betaPhoneNumberElement) {
@@ -2816,7 +2810,7 @@
         function toggleSameAsBilling() {
             const checkbox = document.getElementById('sameAsBilling');
             const mailingFields = ['mailingStreet', 'mailingUnit', 'mailingCity', 'mailingProvince', 'mailingPostal', 'mailingCountry'];
-            
+
             if (checkbox.checked) {
                 // Copy billing to mailing and disable fields
                 if (currentBillingAddress) {
@@ -2826,7 +2820,7 @@
                     document.getElementById('mailingProvince').value = currentBillingAddress.province || '';
                     document.getElementById('mailingPostal').value = currentBillingAddress.postal || '';
                     document.getElementById('mailingCountry').value = currentBillingAddress.country || 'Canada';
-                    
+
                     mailingFields.forEach(field => {
                         document.getElementById(field).readOnly = true;
                         document.getElementById(field).style.backgroundColor = 'rgba(200, 200, 200, 0.2)';
