@@ -1470,7 +1470,7 @@
                                         <i class="fas fa-plus"></i> Create OXIO User
                                     </button>
                                     <button class="btn btn-sm btn-secondary" onclick="refreshOxioData()">
-                                        <i class="fas fa-sync"></i> Refresh
+                                        <i class="fas fa-sync"></i> Check Status
                                     </button>
                                 </div>
                             </div>
@@ -2324,7 +2324,7 @@
                             </h5>
                             <span class="badge" style="background-color: #28a745; color: white;">ACTIVE</span>
                         </div>
-                        <div class="phone-number-value mt-2">
+                        <div class="phone-number-value mt-2" style="display: none;">
                             ${phoneData.formatted}
                         </div>
                         ${phoneData.area_code_info ? `
@@ -2464,9 +2464,9 @@
                 <div class="esim-qr-content">
                     <h3>${title}</h3>
                     <img src="${qrDataUrl}" alt="${title}" style="max-width: 300px; max-height: 300px;">
-                    <p style="margin-top: 15px;">
-                        <button class="btn btn-secondary" onclick="this.parentElement.parentElement.remove()">Close</button>
-                    </p>
+                    <p>Scan this QR code to add the eSIM to your device</p>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            class="btn btn-secondary mt-3">Close</button>
                 </div>
             `;
             modal.addEventListener('click', function(e) {
