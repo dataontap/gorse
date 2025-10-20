@@ -2657,8 +2657,8 @@
         let currentMailingAddress = null;
 
         function loadUserAddresses() {
-            const user = auth.currentUser;
-            if (!user) return;
+            if (!firebase.auth().currentUser) return;
+            const user = firebase.auth().currentUser;
 
             fetch(`/api/user/addresses?firebase_uid=${user.uid}`)
                 .then(response => response.json())
@@ -2742,8 +2742,8 @@
         }
 
         function saveBillingAddress() {
-            const user = auth.currentUser;
-            if (!user) return;
+            if (!firebase.auth().currentUser) return;
+            const user = firebase.auth().currentUser;
 
             const address = {
                 street: document.getElementById('billingStreet').value,
@@ -2845,8 +2845,8 @@
         }
 
         function saveMailingAddress() {
-            const user = auth.currentUser;
-            if (!user) return;
+            if (!firebase.auth().currentUser) return;
+            const user = firebase.auth().currentUser;
 
             const address = {
                 street: document.getElementById('mailingStreet').value,
