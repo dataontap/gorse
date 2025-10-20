@@ -2559,14 +2559,10 @@
                 html += `
                     <div class="address-card phone-number-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px;">
                         <div class="phone-number-header">
-                            <div class="phone-number-title">
-                                <i class="fas fa-mobile-alt" style="font-size: 1.2rem;"></i>
-                                <h5 class="mb-0">Phone Number</h5>
+                            <div class="phone-number-value" style="font-size: 1.5rem; font-weight: 600;">
+                                ${phoneData.formatted}
                             </div>
                             <span class="badge" style="background-color: #28a745; color: white; padding: 0.5rem 1rem; font-size: 0.9rem;">ACTIVE</span>
-                        </div>
-                        <div class="phone-number-value">
-                            ${phoneData.formatted}
                         </div>
                         ${phoneData.area_code_info ? `
                             <div class="area-code-info">
