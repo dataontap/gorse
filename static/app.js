@@ -698,7 +698,7 @@ function sendInvitation() {
     }
 
     const firebaseUid = getFirebaseUID();
-    
+
     if (!firebaseUid) {
         alert('Please sign in first to send invitations. Your session may have expired.');
         return;
@@ -749,7 +749,7 @@ function sendInvitation() {
 
 function createDemoUser() {
     const firebaseUid = getFirebaseUID();
-    
+
     if (!firebaseUid) {
         alert('Please sign in first to create demo users. Your session may have expired.');
         return;
@@ -986,15 +986,15 @@ function editUserCard(element) {
 function removeUserCard(element) {
     const userCard = element.closest('.user-card');
     const inviteId = userCard?.getAttribute('data-invite-id');
-    
+
     if (!inviteId) {
         console.error('No invite ID found on card');
         return;
     }
-    
+
     if (userCard && confirm('Are you sure you want to remove this user?')) {
         const firebaseUid = getFirebaseUID();
-        
+
         if (!firebaseUid) {
             alert('Please sign in to remove users. Your session may have expired.');
             return;
@@ -1491,7 +1491,7 @@ function sendInvitation() {
     }
 
     const firebaseUid = getFirebaseUID();
-    
+
     if (!firebaseUid) {
         alert('Please sign in first to send invitations. Your session may have expired.');
         return;
@@ -1542,7 +1542,7 @@ function sendInvitation() {
 
 function createDemoUser() {
     const firebaseUid = getFirebaseUID();
-    
+
     if (!firebaseUid) {
         alert('Please sign in first to create demo users. Your session may have expired.');
         return;
@@ -1779,15 +1779,15 @@ function editUserCard(element) {
 function removeUserCard(element) {
     const userCard = element.closest('.user-card');
     const inviteId = userCard?.getAttribute('data-invite-id');
-    
+
     if (!inviteId) {
         console.error('No invite ID found on card');
         return;
     }
-    
+
     if (userCard && confirm('Are you sure you want to remove this user?')) {
         const firebaseUid = getFirebaseUID();
-        
+
         if (!firebaseUid) {
             alert('Please sign in to remove users. Your session may have expired.');
             return;
@@ -2284,7 +2284,7 @@ function sendInvitation() {
     }
 
     const firebaseUid = getFirebaseUID();
-    
+
     if (!firebaseUid) {
         alert('Please sign in first to send invitations. Your session may have expired.');
         return;
@@ -2335,7 +2335,7 @@ function sendInvitation() {
 
 function createDemoUser() {
     const firebaseUid = getFirebaseUID();
-    
+
     if (!firebaseUid) {
         alert('Please sign in first to create demo users. Your session may have expired.');
         return;
@@ -2572,15 +2572,1601 @@ function editUserCard(element) {
 function removeUserCard(element) {
     const userCard = element.closest('.user-card');
     const inviteId = userCard?.getAttribute('data-invite-id');
-    
+
     if (!inviteId) {
         console.error('No invite ID found on card');
         return;
     }
-    
+
     if (userCard && confirm('Are you sure you want to remove this user?')) {
         const firebaseUid = getFirebaseUID();
-        
+
+        if (!firebaseUid) {
+            alert('Please sign in to remove users. Your session may have expired.');
+            return;
+        }
+
+        // Animate removal
+        userCard.style.transition = 'all 0.3s ease';
+        userCard.style.transform = 'translateX(100%)';
+        userCard.style.opacity = '0';
+
+        // Delete from database
+        fetch(`/api/invites/${inviteId}?firebaseUid=${firebaseUid}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                setTimeout(() => {
+                    userCard.remove();
+                    toggleSortControls();
+
+                    // Update user count
+                    const userCards = document.querySelectorAll('.accepted-user');
+                    const userCountElement = document.querySelector('.user-count');
+                    if (userCountElement) {
+                        userCountElement.textContent = userCards.length;
+                    }
+                }, 300);
+            } else {
+                // Revert animation if delete failed
+                userCard.style.transform = '';
+                userCard.style.opacity = '1';
+                alert('Error removing user: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error removing user:', error);
+            // Revert animation if delete failed
+            userCard.style.transform = '';
+            userCard.style.opacity = '1';
+            alert('Error removing user. Please try again.');
+        });
+    }
+}
+
+// Toggle user pause function
+function toggleUserPause(element) {
+    const card = element.closest('.user-card');
+    const icon = element;
+    const pauseDuration = card.querySelector('.pause-duration');
+
+    if (icon.classList.contains('fa-pause')) {
+        // Currently active, pause it
+        icon.classList.remove('fa-pause');
+        icon.classList.add('fa-play');
+        icon.title = 'Resume data sharing';
+        card.classList.add('paused');
+        pauseDuration.style.display = 'inline';
+
+        // Store the pause timestamp
+        const pauseTime = Date.now();
+        card.setAttribute('data-pause-time', pauseTime);
+        pauseDuration.textContent = 'Paused just now';
+
+        // Start updating the pause duration
+        updatePauseDuration(card);
+    } else {
+        // Currently paused, resume it
+        icon.classList.remove('fa-play');
+        icon.classList.add('fa-pause');
+        icon.title = 'Temporarily pause data share for this user';
+        card.classList.remove('paused');
+        pauseDuration.style.display = 'none';
+        card.removeAttribute('data-pause-time');
+    }
+}
+
+// Function to update pause duration display
+function updatePauseDuration(card) {
+    const pauseDuration = card.querySelector('.pause-duration');
+    const pauseTime = parseInt(card.getAttribute('data-pause-time'));
+
+    if (!pauseTime || !card.classList.contains('paused')) {
+        return; // Stop if card is no longer paused
+    }
+
+    const now = Date.now();
+    const secondsElapsed = Math.floor((now - pauseTime) / 1000);
+
+    let durationText;
+    if (secondsElapsed < 60) {
+        if (secondsElapsed < 5) {
+            durationText = 'Paused just now';
+        } else {
+            durationText = `Paused ${secondsElapsed} seconds ago`;
+        }
+    } else {
+        const minutesElapsed = Math.floor(secondsElapsed / 60);
+        const remainingSeconds = secondsElapsed % 60;
+
+        if (minutesElapsed === 1 && remainingSeconds === 0) {
+            durationText = 'Paused 1 minute ago';
+        } else if (remainingSeconds === 0) {
+            durationText = `Paused ${minutesElapsed} minutes ago`;
+        } else if (minutesElapsed === 1) {
+            durationText = `Paused 1 minute ${remainingSeconds} seconds ago`;
+        } else {
+            durationText = `Paused ${minutesElapsed} minutes ${remainingSeconds} seconds ago`;
+        }
+    }
+
+    pauseDuration.textContent = durationText;
+
+    // Schedule next update in 10 seconds
+    setTimeout(() => updatePauseDuration(card), 10000);
+}
+
+function createUserCard(invite) {
+    // Generate random data for demo users
+    const isDemo = invite.email.includes('example.com');
+    const dataPercentage = Math.floor(Math.random() * 100) + 1;
+    const timePercentage = Math.floor(Math.random() * 100) + 1;
+    const dollarAmount = Math.floor(Math.random() * 25) + 1;
+    const scoreNumber = Math.floor(Math.random() * 10) + 1;
+
+    // Truncate email after 16 characters
+    const truncatedEmail = invite.email.length > 16 ? invite.email.substring(0, 16) + '...' : invite.email;
+
+    const userCard = document.createElement('div');
+    userCard.className = 'dashboard-content user-card accepted-user';
+    userCard.setAttribute('data-invite-id', invite.id);
+    userCard.setAttribute('data-data-percentage', dataPercentage);
+    userCard.setAttribute('data-time-percentage', timePercentage);
+    userCard.setAttribute('data-dollar-amount', dollarAmount);
+    userCard.setAttribute('data-score', scoreNumber);
+
+    userCard.innerHTML = `
+        <div class="user-info-header">
+            <div class="user-name">Datashare User ${invite.id}</div>
+            <div class="header-icons">
+                <div class="edit-icon" onclick="editUserCard(this)" title="Edit user">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="remove-icon" onclick="removeUserCard(this)" title="Remove user">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+        </div>
+        <div class="email-container">
+            <div class="user-email">${truncatedEmail}</div>
+            <div class="timestamp">Active Member since ${formatDate(invite.created_at)}</div>
+        </div>
+
+        <div class="data-usage">
+            <div class="usage-metrics">
+                <div class="metric" data-metric="data">
+                    <div class="usage_label"><i class="fas fa-database"></i> Data</div>
+                    <div class="usage-amount">${dataPercentage}%</div>
+                </div>
+                <div class="metric" data-metric="time">
+                    <div class="usage-label"><i class="fas fa-clock"></i> Time</div>
+                    <div class="usage-amount">${timePercentage}%</div>
+                </div>
+                <div class="metric" data-metric="cost">
+                    <div class="usage-label"><i class="fas fa-dollar-sign"></i> Cost</div>
+                    <div class="usage-amount">$${dollarAmount}</div>
+                </div>
+                <div class="metric" data-metric="score">
+                    <div class="usage-label"><i class="fas fa-star"></i> Score</div>
+                    <div class="usage-amount">${scoreNumber}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-actions">
+            <i class="fas fa-pause pause-play-icon" title="Temporarily pause data share for this user" onclick="toggleUserPause(this)"></i>
+            <span class="pause-duration" style="display: none;"></span>
+        </div>
+    `;
+
+    return userCard;
+}
+
+// Initialize pause duration updates for any existing paused users on page load
+function initializePauseDurationUpdates() {
+    const pausedCards = document.querySelectorAll('.user-card.paused[data-pause-time]');
+    pausedCards.forEach(card => {        updatePauseDuration(card);
+    });
+}
+
+// Call this when the page loads to handle any existing paused users
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('App.js loaded successfully');
+
+    // Initialize theme based on localStorage or default to dark
+    const savedTheme = localStorage.getItem('darkMode');
+    const isDarkMode = savedTheme === null ? true : savedTheme === 'true';
+    toggleTheme(isDarkMode);
+
+    // Load DOTM balance if wallet is connected
+    loadDOTMBalance();
+
+    // Add event listeners for theme toggles
+    const darkToggle = document.getElementById('darkModeToggle');
+    const lightToggle = document.getElementById('lightModeToggle');
+
+    if (darkToggle) {
+        darkToggle.addEventListener('click', function() {
+            toggleTheme(true);
+        });
+    }
+
+    if (lightToggle) {
+        lightToggle.addEventListener('click', function() {
+            toggleTheme(false);
+        });
+    }
+
+    // Initialize add user functionality with popup
+    const addUserBtn = document.getElementById('addUserBtn');
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            showAddUserPopup();
+        });
+    }
+
+    // Initialize chart toggle functionality
+    document.querySelectorAll('.insight-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleChart(this);
+        });
+    });
+
+    // Use event delegation for all interactive elements
+    document.addEventListener('click', function(e) {
+        // Handle logout functionality
+        if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
+            e.preventDefault();
+            console.log('Logout button clicked');
+
+            // Clear storage first
+            localStorage.clear();
+
+            // Try multiple logout methods
+            if (window.firebaseAuth && window.firebaseAuth.signOut) {
+                window.firebaseAuth.signOut();
+            } else if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().signOut().then(() => {
+                    window.location.href = '/?logout=true';
+                }).catch((error) => {
+                    console.error('Logout error:', error);
+                    window.location.href = '/?logout=true';
+                });
+            } else {
+                // Fallback: redirect with logout parameter
+                window.location.href = '/?logout=true';
+            }
+            return;
+        }
+
+        // Close popup
+        if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
+            hideAddUserPopup();
+            return;
+        }
+
+        // Handle invite anyone button
+        if (e.target.id === 'inviteAnyoneBtn') {
+            e.preventDefault();
+            showInviteForm();
+            return;
+        }
+
+        // Handle demo user button
+        if (e.target.id === 'demoUserBtn') {
+            e.preventDefault();
+            createDemoUser();
+            return;
+        }
+
+        // Handle send invitation button
+        if (e.target.id === 'sendInvitationBtn') {
+            e.preventDefault();
+            sendInvitation();
+            return;
+        }
+
+        // Handle cancel invitation button
+        if (e.target.id === 'cancelInviteBtn') {
+            e.preventDefault();
+            hideAddUserPopup();
+            return;
+        }
+    });
+
+    // Add event delegation for confirmation drawer buttons
+    document.addEventListener('click', function(e) {
+        // Handle buy buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 20, 'global_data_10gb');
+        }
+
+        // Handle subscribe buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 24, 'basic_membership');
+        }
+
+        // Handle drawer cancel/confirm buttons
+        if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            hideConfirmationDrawer();
+        }
+
+        if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            confirmPurchase();
+        }
+    });
+
+    // Initialize beta enrollment functionality
+    const betaEnrollBtn = document.getElementById('betaEnrollBtn');
+    if (betaEnrollBtn) {
+        betaEnrollBtn.addEventListener('click', handleBetaEnrollment);
+        checkBetaStatus(); // Check current status on page load
+    }
+
+    // Handle help toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+            showHelpModal();
+        }
+    });
+
+    // Initialize settings toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'settingsToggle' || e.target.closest('#settingsToggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu) {
+                // Toggle settings submenu visibility
+                if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
+                    settingsSubmenu.style.display = 'block';
+                } else {
+                    settingsSubmenu.style.display = 'none';
+                }
+            }
+        }
+
+        // Handle language selector changes
+        if (e.target.id === 'languageSelect') {
+            const selectedLanguage = e.target.value;
+            if (typeof setLanguage === 'function') {
+                setLanguage(selectedLanguage);
+            }
+        }
+
+        // Close settings submenu when clicking outside
+        if (!e.target.closest('#settingsToggle') && !e.target.closest('.settings-submenu')) {
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu && settingsSubmenu.style.display === 'block') {
+                settingsSubmenu.style.display = 'none';
+            }
+        }
+    });
+
+    // Load invites if on dashboard page
+    if (window.location.pathname === '/dashboard') {
+        setTimeout(() => {
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList();
+            }
+        }, 1000);
+    }
+
+    // Initialize carousel functionality
+    initializeCarousel();
+});
+
+// Add User Popup Functions
+function showAddUserPopup() {
+    console.log('showAddUserPopup called');
+
+    // Remove existing popup if any
+    hideAddUserPopup();
+
+    const popup = document.createElement('div');
+    popup.id = 'addUserPopup';
+    popup.className = 'popup-overlay';
+    popup.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: rgba(0, 0, 0, 0.7) !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        z-index: 999999 !important;
+        opacity: 1 !important;
+    `;
+
+    popup.innerHTML = `
+        <div class="popup-content" style="z-index: 999999; position: relative;">
+            <div class="popup-header">
+                <h3>Add New Datashare User</h3>
+                <button class="popup-close" onclick="hideAddUserPopup()">&times;</button>
+            </div>
+            <div class="popup-body">
+                <div class="invitation-options">
+                    <button class="invite-option-btn" id="inviteAnyoneBtn">
+                        <i class="fas fa-envelope"></i>
+                        <span>Invite Anyone</span>
+                        <small>Send invitation via email for a start</small>
+                    </button>
+                    <button class="invite-option-btn" id="demoUserBtn">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Demo User</span>
+                        <small>Create sample user instantly</small>
+                    </button>
+                </div>
+                <div id="inviteFormContainer"></div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+    console.log('Popup added to body:', popup);
+
+    // Force show with timeout
+    setTimeout(() => {
+        popup.classList.add('show');
+        popup.style.opacity = '1';
+    }, 10);
+
+    // Add event listeners
+    document.getElementById('inviteAnyoneBtn').addEventListener('click', showInviteForm);
+    document.getElementById('demoUserBtn').addEventListener('click', createDemoUser);
+}
+
+function hideAddUserPopup() {
+    console.log('hideAddUserPopup called');
+    const popup = document.getElementById('addUserPopup');
+    if (popup) {
+        popup.style.opacity = '0';
+        setTimeout(() => {
+            popup.remove();
+        }, 300);
+    }
+}
+
+function showInviteForm() {
+    const container = document.getElementById('inviteFormContainer');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="invite-form">
+            <h4>Send Invitation</h4>
+            <div class="form-group">
+                <label for="inviteEmail">Email Address</label>
+                <input type="email" id="inviteEmail" placeholder="Enter email address" required>
+            </div>
+            <div class="form-group">
+                <label for="inviteMessage">Personal Message (Optional)</label>
+                <textarea id="inviteMessage" placeholder="Add a personal message..." rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" id="cancelInviteBtn">Cancel</button>
+                <button class="btn-primary" id="sendInvitationBtn">Send Invitation</button>
+            </div>
+        </div>
+    `;
+
+    // Add event listeners for form buttons
+    document.getElementById('cancelInviteBtn').addEventListener('click', hideAddUserPopup);
+    document.getElementById('sendInvitationBtn').addEventListener('click', sendInvitation);
+}
+
+function sendInvitation() {
+    const email = document.getElementById('inviteEmail')?.value;
+    const message = document.getElementById('inviteMessage')?.value || '';
+
+    if (!email) {
+        alert('Please enter an email address');
+        return;
+    }
+
+    const firebaseUid = getFirebaseUID();
+
+    if (!firebaseUid) {
+        alert('Please sign in first to send invitations. Your session may have expired.');
+        return;
+    }
+
+    // Disable button during processing
+    const sendBtn = document.getElementById('sendInvitationBtn');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending...';
+    }
+
+    fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: email,
+            message: message,
+            firebaseUid: firebaseUid,
+            isDemoUser: false
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Invitation sent successfully!');
+            hideAddUserPopup();
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList(); // Refresh the invites list
+            }
+        } else {
+            alert('Error sending invitation: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error sending invitation:', error);
+        alert('Error sending invitation. Please try again.');
+    })
+    .finally(() => {
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send Invitation';
+        }
+    });
+}
+
+function createDemoUser() {
+    const firebaseUid = getFirebaseUID();
+
+    if (!firebaseUid) {
+        alert('Please sign in first to create demo users. Your session may have expired.');
+        return;
+    }
+
+    const timestamp = Date.now();
+    const demoEmail = `demo${timestamp}@example.com`;
+
+    fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: demoEmail,
+            message: 'Demo user created automatically',
+            firebaseUid: firebaseUid,
+            isDemoUser: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Demo user created successfully!');
+            hideAddUserPopup();
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList(); // Refresh the invites list
+            }
+        } else {
+            alert('Error creating demo user: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error creating demo user:', error);
+        alert('Error creating demo user. Please try again.');
+    });
+}
+
+// Invites List Functions
+function loadInvitesList() {
+    const firebaseUid = getFirebaseUID();
+    if (!firebaseUid) return;
+
+    fetch(`/api/invites?firebaseUid=${firebaseUid}&limit=10`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayInvites(data.invites);
+        } else {
+            console.error('Error loading invites:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading invites:', error);
+    });
+}
+
+function displayInvites(invites) {
+    const invitationsSection = document.getElementById('recentInvitationsSection');
+    const invitationsList = document.getElementById('invitationsList');
+    const acceptedUsersContainer = document.getElementById('acceptedUsersContainer');
+
+    if (!invitationsList) return;
+
+    // Clear existing content
+    invitationsList.innerHTML = '';
+    if (acceptedUsersContainer) {
+        acceptedUsersContainer.innerHTML = '';
+    }
+
+    if (!invites || invites.length === 0) {
+        invitationsList.innerHTML = '<p class="no-invites">No invitations sent yet</p>';
+        if (invitationsSection) {
+            invitationsSection.style.display = 'none';
+        }
+        toggleSortControls();
+        return;
+    }
+
+    // Show the invitations section
+    if (invitationsSection) {
+        invitationsSection.style.display = 'block';
+    }
+
+    // Separate accepted and pending invitations
+    // Demo users (example.com) should always be treated as accepted
+    const acceptedInvites = invites.filter(invite => 
+        invite.invitation_status === 'invite_accepted' || invite.email.includes('example.com')
+    );
+    const pendingInvites = invites.filter(invite => 
+        invite.invitation_status !== 'invite_accepted' && !invite.email.includes('example.com')
+    );
+
+    // Display accepted invitations as user cards
+    if (acceptedInvites.length > 0 && acceptedUsersContainer) {
+        acceptedInvites.forEach(invite => {
+            const userCard = createUserCard(invite);
+            acceptedUsersContainer.appendChild(userCard);
+        });
+
+        // Update user count
+        const userCountElement = document.querySelector('.user-count');
+        if (userCountElement) {
+            userCountElement.textContent = acceptedInvites.length;
+        }
+
+        // Show/hide sort controls based on number of cards
+        toggleSortControls();
+        initializeSorting();
+    }
+
+    // Display pending invitations in the invitations list
+    pendingInvites.forEach(invite => {
+        const inviteItem = createInviteItem(invite);
+        invitationsList.appendChild(inviteItem);
+    });
+
+    if (pendingInvites.length === 0) {
+        invitationsList.innerHTML = '<p class="no-pending-invites">No pending invitations</p>';
+    }
+}
+
+// Toggle sort controls visibility
+function toggleSortControls() {
+    const userCards = document.querySelectorAll('.accepted-user');
+    const sortContainer = document.querySelector('.sort-container .sort-controls');
+
+    if (userCards.length >= 2) {
+        if (sortContainer) {
+            sortContainer.style.display = 'flex';
+        }
+    } else {
+        if (sortContainer) {
+            sortContainer.style.display = 'none';
+        }
+    }
+}
+
+// Initialize sorting functionality
+function initializeSorting() {
+    const sortSelect = document.querySelector('.sort-select');
+    const sortIcons = document.querySelectorAll('.sort-icon');
+
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const activeIcon = document.querySelector('.sort-icon.active');
+            if (activeIcon) {
+                performSort();
+            }
+        });
+    }
+
+    sortIcons.forEach(icon => {
+        icon.addEventListener('click', function() {
+            // Remove active class from all icons
+            sortIcons.forEach(i => i.classList.remove('active'));
+            // Add active class to clicked icon
+            this.classList.add('active');
+            performSort();
+        });
+    });
+}
+
+// Perform sorting with animation
+function performSort() {
+    const sortSelect = document.querySelector('.sort-select');
+    const activeIcon = document.querySelector('.sort-icon.active');
+    const userCards = Array.from(document.querySelectorAll('.accepted-user'));
+
+    if (!sortSelect || !activeIcon || userCards.length < 2) return;
+
+    const sortBy = sortSelect.value;
+    const sortDirection = activeIcon.dataset.sort;
+
+    // Add sorting class to cards for animation
+    userCards.forEach(card => {
+        card.classList.add('sorting');
+    });
+
+    // Sort the cards array
+    userCards.sort((a, b) => {
+        let valueA, valueB;
+
+        switch(sortBy) {
+            case 'percentage':
+                valueA = parseInt(a.getAttribute('data-data-percentage'));
+                valueB = parseInt(b.getAttribute('data-data-percentage'));
+                break;
+            case 'screentime':
+                valueA = parseInt(a.getAttribute('data-time-percentage'));
+                valueB = parseInt(b.getAttribute('data-time-percentage'));
+                break;
+            case 'dollars':
+                valueA = parseInt(a.getAttribute('data-dollar-amount'));
+                valueB = parseInt(b.getAttribute('data-dollar-amount'));
+                break;
+            default:
+                valueA = parseInt(a.getAttribute('data-score'));
+                valueB = parseInt(b.getAttribute('data-score'));
+        }
+
+        if (sortDirection === 'asc' || sortDirection === 'oldest') {
+            return valueA - valueB;
+        } else {
+            return valueB - valueA;
+        }
+    });
+
+    // Apply animation classes
+    userCards.forEach((card, index) => {
+        if (index % 2 === 0) {
+            card.classList.add('sorting-up');
+        } else {
+            card.classList.add('sorting-down');
+        }
+    });
+
+    // Re-append cards in sorted order after animation
+    setTimeout(() => {
+        const container = document.getElementById('acceptedUsersContainer');
+        userCards.forEach(card => {
+            container.appendChild(card);
+            card.classList.remove('sorting', 'sorting-up', 'sorting-down');
+        });
+    }, 600);
+}
+
+// Edit user card function (placeholder for future functionality)
+function editUserCard(element) {
+    alert('Edit user functionality coming soon!');
+}
+
+// Remove user card function
+function removeUserCard(element) {
+    const userCard = element.closest('.user-card');
+    const inviteId = userCard?.getAttribute('data-invite-id');
+
+    if (!inviteId) {
+        console.error('No invite ID found on card');
+        return;
+    }
+
+    if (userCard && confirm('Are you sure you want to remove this user?')) {
+        const firebaseUid = getFirebaseUID();
+
+        if (!firebaseUid) {
+            alert('Please sign in to remove users. Your session may have expired.');
+            return;
+        }
+
+        // Animate removal
+        userCard.style.transition = 'all 0.3s ease';
+        userCard.style.transform = 'translateX(100%)';
+        userCard.style.opacity = '0';
+
+        // Delete from database
+        fetch(`/api/invites/${inviteId}?firebaseUid=${firebaseUid}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                setTimeout(() => {
+                    userCard.remove();
+                    toggleSortControls();
+
+                    // Update user count
+                    const userCards = document.querySelectorAll('.accepted-user');
+                    const userCountElement = document.querySelector('.user-count');
+                    if (userCountElement) {
+                        userCountElement.textContent = userCards.length;
+                    }
+                }, 300);
+            } else {
+                // Revert animation if delete failed
+                userCard.style.transform = '';
+                userCard.style.opacity = '1';
+                alert('Error removing user: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error removing user:', error);
+            // Revert animation if delete failed
+            userCard.style.transform = '';
+            userCard.style.opacity = '1';
+            alert('Error removing user. Please try again.');
+        });
+    }
+}
+
+// Toggle user pause function
+function toggleUserPause(element) {
+    const card = element.closest('.user-card');
+    const icon = element;
+    const pauseDuration = card.querySelector('.pause-duration');
+
+    if (icon.classList.contains('fa-pause')) {
+        // Currently active, pause it
+        icon.classList.remove('fa-pause');
+        icon.classList.add('fa-play');
+        icon.title = 'Resume data sharing';
+        card.classList.add('paused');
+        pauseDuration.style.display = 'inline';
+
+        // Store the pause timestamp
+        const pauseTime = Date.now();
+        card.setAttribute('data-pause-time', pauseTime);
+        pauseDuration.textContent = 'Paused just now';
+
+        // Start updating the pause duration
+        updatePauseDuration(card);
+    } else {
+        // Currently paused, resume it
+        icon.classList.remove('fa-play');
+        icon.classList.add('fa-pause');
+        icon.title = 'Temporarily pause data share for this user';
+        card.classList.remove('paused');
+        pauseDuration.style.display = 'none';
+        card.removeAttribute('data-pause-time');
+    }
+}
+
+// Function to update pause duration display
+function updatePauseDuration(card) {
+    const pauseDuration = card.querySelector('.pause-duration');
+    const pauseTime = parseInt(card.getAttribute('data-pause-time'));
+
+    if (!pauseTime || !card.classList.contains('paused')) {
+        return; // Stop if card is no longer paused
+    }
+
+    const now = Date.now();
+    const secondsElapsed = Math.floor((now - pauseTime) / 1000);
+
+    let durationText;
+    if (secondsElapsed < 60) {
+        if (secondsElapsed < 5) {
+            durationText = 'Paused just now';
+        } else {
+            durationText = `Paused ${secondsElapsed} seconds ago`;
+        }
+    } else {
+        const minutesElapsed = Math.floor(secondsElapsed / 60);
+        const remainingSeconds = secondsElapsed % 60;
+
+        if (minutesElapsed === 1 && remainingSeconds === 0) {
+            durationText = 'Paused 1 minute ago';
+        } else if (remainingSeconds === 0) {
+            durationText = `Paused ${minutesElapsed} minutes ago`;
+        } else if (minutesElapsed === 1) {
+            durationText = `Paused 1 minute ${remainingSeconds} seconds ago`;
+        } else {
+            durationText = `Paused ${minutesElapsed} minutes ${remainingSeconds} seconds ago`;
+        }
+    }
+
+    pauseDuration.textContent = durationText;
+
+    // Schedule next update in 10 seconds
+    setTimeout(() => updatePauseDuration(card), 10000);
+}
+
+function createUserCard(invite) {
+    // Generate random data for demo users
+    const isDemo = invite.email.includes('example.com');
+    const dataPercentage = Math.floor(Math.random() * 100) + 1;
+    const timePercentage = Math.floor(Math.random() * 100) + 1;
+    const dollarAmount = Math.floor(Math.random() * 25) + 1;
+    const scoreNumber = Math.floor(Math.random() * 10) + 1;
+
+    // Truncate email after 16 characters
+    const truncatedEmail = invite.email.length > 16 ? invite.email.substring(0, 16) + '...' : invite.email;
+
+    const userCard = document.createElement('div');
+    userCard.className = 'dashboard-content user-card accepted-user';
+    userCard.setAttribute('data-invite-id', invite.id);
+    userCard.setAttribute('data-data-percentage', dataPercentage);
+    userCard.setAttribute('data-time-percentage', timePercentage);
+    userCard.setAttribute('data-dollar-amount', dollarAmount);
+    userCard.setAttribute('data-score', scoreNumber);
+
+    userCard.innerHTML = `
+        <div class="user-info-header">
+            <div class="user-name">Datashare User ${invite.id}</div>
+            <div class="header-icons">
+                <div class="edit-icon" onclick="editUserCard(this)" title="Edit user">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="remove-icon" onclick="removeUserCard(this)" title="Remove user">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+        </div>
+        <div class="email-container">
+            <div class="user-email">${truncatedEmail}</div>
+            <div class="timestamp">Active Member since ${formatDate(invite.created_at)}</div>
+        </div>
+
+        <div class="data-usage">
+            <div class="usage-metrics">
+                <div class="metric" data-metric="data">
+                    <div class="usage_label"><i class="fas fa-database"></i> Data</div>
+                    <div class="usage-amount">${dataPercentage}%</div>
+                </div>
+                <div class="metric" data-metric="time">
+                    <div class="usage-label"><i class="fas fa-clock"></i> Time</div>
+                    <div class="usage-amount">${timePercentage}%</div>
+                </div>
+                <div class="metric" data-metric="cost">
+                    <div class="usage-label"><i class="fas fa-dollar-sign"></i> Cost</div>
+                    <div class="usage-amount">$${dollarAmount}</div>
+                </div>
+                <div class="metric" data-metric="score">
+                    <div class="usage-label"><i class="fas fa-star"></i> Score</div>
+                    <div class="usage-amount">${scoreNumber}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-actions">
+            <i class="fas fa-pause pause-play-icon" title="Temporarily pause data share for this user" onclick="toggleUserPause(this)"></i>
+            <span class="pause-duration" style="display: none;"></span>
+        </div>
+    `;
+
+    return userCard;
+}
+
+// Initialize pause duration updates for any existing paused users on page load
+function initializePauseDurationUpdates() {
+    const pausedCards = document.querySelectorAll('.user-card.paused[data-pause-time]');
+    pausedCards.forEach(card => {        updatePauseDuration(card);
+    });
+}
+
+// Call this when the page loads to handle any existing paused users
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('App.js loaded successfully');
+
+    // Initialize theme based on localStorage or default to dark
+    const savedTheme = localStorage.getItem('darkMode');
+    const isDarkMode = savedTheme === null ? true : savedTheme === 'true';
+    toggleTheme(isDarkMode);
+
+    // Load DOTM balance if wallet is connected
+    loadDOTMBalance();
+
+    // Add event listeners for theme toggles
+    const darkToggle = document.getElementById('darkModeToggle');
+    const lightToggle = document.getElementById('lightModeToggle');
+
+    if (darkToggle) {
+        darkToggle.addEventListener('click', function() {
+            toggleTheme(true);
+        });
+    }
+
+    if (lightToggle) {
+        lightToggle.addEventListener('click', function() {
+            toggleTheme(false);
+        });
+    }
+
+    // Initialize add user functionality with popup
+    const addUserBtn = document.getElementById('addUserBtn');
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            showAddUserPopup();
+        });
+    }
+
+    // Initialize chart toggle functionality
+    document.querySelectorAll('.insight-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleChart(this);
+        });
+    });
+
+    // Use event delegation for all interactive elements
+    document.addEventListener('click', function(e) {
+        // Handle logout functionality
+        if (e.target.id === 'logoutBtn' || e.target.closest('#logoutBtn')) {
+            e.preventDefault();
+            console.log('Logout button clicked');
+
+            // Clear storage first
+            localStorage.clear();
+
+            // Try multiple logout methods
+            if (window.firebaseAuth && window.firebaseAuth.signOut) {
+                window.firebaseAuth.signOut();
+            } else if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().signOut().then(() => {
+                    window.location.href = '/?logout=true';
+                }).catch((error) => {
+                    console.error('Logout error:', error);
+                    window.location.href = '/?logout=true';
+                });
+            } else {
+                // Fallback: redirect with logout parameter
+                window.location.href = '/?logout=true';
+            }
+            return;
+        }
+
+        // Close popup
+        if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('popup-close')) {
+            hideAddUserPopup();
+            return;
+        }
+
+        // Handle invite anyone button
+        if (e.target.id === 'inviteAnyoneBtn') {
+            e.preventDefault();
+            showInviteForm();
+            return;
+        }
+
+        // Handle demo user button
+        if (e.target.id === 'demoUserBtn') {
+            e.preventDefault();
+            createDemoUser();
+            return;
+        }
+
+        // Handle send invitation button
+        if (e.target.id === 'sendInvitationBtn') {
+            e.preventDefault();
+            sendInvitation();
+            return;
+        }
+
+        // Handle cancel invitation button
+        if (e.target.id === 'cancelInviteBtn') {
+            e.preventDefault();
+            hideAddUserPopup();
+            return;
+        }
+    });
+
+    // Add event delegation for confirmation drawer buttons
+    document.addEventListener('click', function(e) {
+        // Handle buy buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Buy') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 20, 'global_data_10gb');
+        }
+
+        // Handle subscribe buttons
+        if (e.target.classList.contains('btn-primary') && e.target.textContent === 'Subscribe') {
+            e.preventDefault();
+            showConfirmationDrawer(10, 24, 'basic_membership');
+        }
+
+        // Handle drawer cancel/confirm buttons
+        if (e.target.textContent === 'Cancel' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            hideConfirmationDrawer();
+        }
+
+        if (e.target.textContent === 'Confirm' && e.target.closest('.confirmation-drawer')) {
+            e.preventDefault();
+            confirmPurchase();
+        }
+    });
+
+    // Initialize beta enrollment functionality
+    const betaEnrollBtn = document.getElementById('betaEnrollBtn');
+    if (betaEnrollBtn) {
+        betaEnrollBtn.addEventListener('click', handleBetaEnrollment);
+        checkBetaStatus(); // Check current status on page load
+    }
+
+    // Handle help toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'helpToggle' || e.target.closest('#helpToggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+            showHelpModal();
+        }
+    });
+
+    // Initialize settings toggle functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'settingsToggle' || e.target.closest('#settingsToggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu) {
+                // Toggle settings submenu visibility
+                if (settingsSubmenu.style.display === 'none' || settingsSubmenu.style.display === '') {
+                    settingsSubmenu.style.display = 'block';
+                } else {
+                    settingsSubmenu.style.display = 'none';
+                }
+            }
+        }
+
+        // Handle language selector changes
+        if (e.target.id === 'languageSelect') {
+            const selectedLanguage = e.target.value;
+            if (typeof setLanguage === 'function') {
+                setLanguage(selectedLanguage);
+            }
+        }
+
+        // Close settings submenu when clicking outside
+        if (!e.target.closest('#settingsToggle') && !e.target.closest('.settings-submenu')) {
+            const settingsSubmenu = document.querySelector('.settings-submenu');
+            if (settingsSubmenu && settingsSubmenu.style.display === 'block') {
+                settingsSubmenu.style.display = 'none';
+            }
+        }
+    });
+
+    // Load invites if on dashboard page
+    if (window.location.pathname === '/dashboard') {
+        setTimeout(() => {
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList();
+            }
+        }, 1000);
+    }
+
+    // Initialize carousel functionality
+    initializeCarousel();
+});
+
+// Add User Popup Functions
+function showAddUserPopup() {
+    console.log('showAddUserPopup called');
+
+    // Remove existing popup if any
+    hideAddUserPopup();
+
+    const popup = document.createElement('div');
+    popup.id = 'addUserPopup';
+    popup.className = 'popup-overlay';
+    popup.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: rgba(0, 0, 0, 0.7) !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        z-index: 999999 !important;
+        opacity: 1 !important;
+    `;
+
+    popup.innerHTML = `
+        <div class="popup-content" style="z-index: 999999; position: relative;">
+            <div class="popup-header">
+                <h3>Add New Datashare User</h3>
+                <button class="popup-close" onclick="hideAddUserPopup()">&times;</button>
+            </div>
+            <div class="popup-body">
+                <div class="invitation-options">
+                    <button class="invite-option-btn" id="inviteAnyoneBtn">
+                        <i class="fas fa-envelope"></i>
+                        <span>Invite Anyone</span>
+                        <small>Send invitation via email for a start</small>
+                    </button>
+                    <button class="invite-option-btn" id="demoUserBtn">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Demo User</span>
+                        <small>Create sample user instantly</small>
+                    </button>
+                </div>
+                <div id="inviteFormContainer"></div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+    console.log('Popup added to body:', popup);
+
+    // Force show with timeout
+    setTimeout(() => {
+        popup.classList.add('show');
+        popup.style.opacity = '1';
+    }, 10);
+
+    // Add event listeners
+    document.getElementById('inviteAnyoneBtn').addEventListener('click', showInviteForm);
+    document.getElementById('demoUserBtn').addEventListener('click', createDemoUser);
+}
+
+function hideAddUserPopup() {
+    console.log('hideAddUserPopup called');
+    const popup = document.getElementById('addUserPopup');
+    if (popup) {
+        popup.style.opacity = '0';
+        setTimeout(() => {
+            popup.remove();
+        }, 300);
+    }
+}
+
+function showInviteForm() {
+    const container = document.getElementById('inviteFormContainer');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="invite-form">
+            <h4>Send Invitation</h4>
+            <div class="form-group">
+                <label for="inviteEmail">Email Address</label>
+                <input type="email" id="inviteEmail" placeholder="Enter email address" required>
+            </div>
+            <div class="form-group">
+                <label for="inviteMessage">Personal Message (Optional)</label>
+                <textarea id="inviteMessage" placeholder="Add a personal message..." rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" id="cancelInviteBtn">Cancel</button>
+                <button class="btn-primary" id="sendInvitationBtn">Send Invitation</button>
+            </div>
+        </div>
+    `;
+
+    // Add event listeners for form buttons
+    document.getElementById('cancelInviteBtn').addEventListener('click', hideAddUserPopup);
+    document.getElementById('sendInvitationBtn').addEventListener('click', sendInvitation);
+}
+
+function sendInvitation() {
+    const email = document.getElementById('inviteEmail')?.value;
+    const message = document.getElementById('inviteMessage')?.value || '';
+
+    if (!email) {
+        alert('Please enter an email address');
+        return;
+    }
+
+    const firebaseUid = getFirebaseUID();
+
+    if (!firebaseUid) {
+        alert('Please sign in first to send invitations. Your session may have expired.');
+        return;
+    }
+
+    // Disable button during processing
+    const sendBtn = document.getElementById('sendInvitationBtn');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending...';
+    }
+
+    fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: email,
+            message: message,
+            firebaseUid: firebaseUid,
+            isDemoUser: false
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Invitation sent successfully!');
+            hideAddUserPopup();
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList(); // Refresh the invites list
+            }
+        } else {
+            alert('Error sending invitation: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error sending invitation:', error);
+        alert('Error sending invitation. Please try again.');
+    })
+    .finally(() => {
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send Invitation';
+        }
+    });
+}
+
+function createDemoUser() {
+    const firebaseUid = getFirebaseUID();
+
+    if (!firebaseUid) {
+        alert('Please sign in first to create demo users. Your session may have expired.');
+        return;
+    }
+
+    const timestamp = Date.now();
+    const demoEmail = `demo${timestamp}@example.com`;
+
+    fetch('/api/send-invitation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: demoEmail,
+            message: 'Demo user created automatically',
+            firebaseUid: firebaseUid,
+            isDemoUser: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Demo user created successfully!');
+            hideAddUserPopup();
+            if (typeof loadInvitesList === 'function') {
+                loadInvitesList(); // Refresh the invites list
+            }
+        } else {
+            alert('Error creating demo user: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error creating demo user:', error);
+        alert('Error creating demo user. Please try again.');
+    });
+}
+
+// Invites List Functions
+function loadInvitesList() {
+    const firebaseUid = getFirebaseUID();
+    if (!firebaseUid) return;
+
+    fetch(`/api/invites?firebaseUid=${firebaseUid}&limit=10`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayInvites(data.invites);
+        } else {
+            console.error('Error loading invites:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading invites:', error);
+    });
+}
+
+function displayInvites(invites) {
+    const invitationsSection = document.getElementById('recentInvitationsSection');
+    const invitationsList = document.getElementById('invitationsList');
+    const acceptedUsersContainer = document.getElementById('acceptedUsersContainer');
+
+    if (!invitationsList) return;
+
+    // Clear existing content
+    invitationsList.innerHTML = '';
+    if (acceptedUsersContainer) {
+        acceptedUsersContainer.innerHTML = '';
+    }
+
+    if (!invites || invites.length === 0) {
+        invitationsList.innerHTML = '<p class="no-invites">No invitations sent yet</p>';
+        if (invitationsSection) {
+            invitationsSection.style.display = 'none';
+        }
+        toggleSortControls();
+        return;
+    }
+
+    // Show the invitations section
+    if (invitationsSection) {
+        invitationsSection.style.display = 'block';
+    }
+
+    // Separate accepted and pending invitations
+    // Demo users (example.com) should always be treated as accepted
+    const acceptedInvites = invites.filter(invite => 
+        invite.invitation_status === 'invite_accepted' || invite.email.includes('example.com')
+    );
+    const pendingInvites = invites.filter(invite => 
+        invite.invitation_status !== 'invite_accepted' && !invite.email.includes('example.com')
+    );
+
+    // Display accepted invitations as user cards
+    if (acceptedInvites.length > 0 && acceptedUsersContainer) {
+        acceptedInvites.forEach(invite => {
+            const userCard = createUserCard(invite);
+            acceptedUsersContainer.appendChild(userCard);
+        });
+
+        // Update user count
+        const userCountElement = document.querySelector('.user-count');
+        if (userCountElement) {
+            userCountElement.textContent = acceptedInvites.length;
+        }
+
+        // Show/hide sort controls based on number of cards
+        toggleSortControls();
+        initializeSorting();
+    }
+
+    // Display pending invitations in the invitations list
+    pendingInvites.forEach(invite => {
+        const inviteItem = createInviteItem(invite);
+        invitationsList.appendChild(inviteItem);
+    });
+
+    if (pendingInvites.length === 0) {
+        invitationsList.innerHTML = '<p class="no-pending-invites">No pending invitations</p>';
+    }
+}
+
+// Toggle sort controls visibility
+function toggleSortControls() {
+    const userCards = document.querySelectorAll('.accepted-user');
+    const sortContainer = document.querySelector('.sort-container .sort-controls');
+
+    if (userCards.length >= 2) {
+        if (sortContainer) {
+            sortContainer.style.display = 'flex';
+        }
+    } else {
+        if (sortContainer) {
+            sortContainer.style.display = 'none';
+        }
+    }
+}
+
+// Initialize sorting functionality
+function initializeSorting() {
+    const sortSelect = document.querySelector('.sort-select');
+    const sortIcons = document.querySelectorAll('.sort-icon');
+
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const activeIcon = document.querySelector('.sort-icon.active');
+            if (activeIcon) {
+                performSort();
+            }
+        });
+    }
+
+    sortIcons.forEach(icon => {
+        icon.addEventListener('click', function() {
+            // Remove active class from all icons
+            sortIcons.forEach(i => i.classList.remove('active'));
+            // Add active class to clicked icon
+            this.classList.add('active');
+            performSort();
+        });
+    });
+}
+
+// Perform sorting with animation
+function performSort() {
+    const sortSelect = document.querySelector('.sort-select');
+    const activeIcon = document.querySelector('.sort-icon.active');
+    const userCards = Array.from(document.querySelectorAll('.accepted-user'));
+
+    if (!sortSelect || !activeIcon || userCards.length < 2) return;
+
+    const sortBy = sortSelect.value;
+    const sortDirection = activeIcon.dataset.sort;
+
+    // Add sorting class to cards for animation
+    userCards.forEach(card => {
+        card.classList.add('sorting');
+    });
+
+    // Sort the cards array
+    userCards.sort((a, b) => {
+        let valueA, valueB;
+
+        switch(sortBy) {
+            case 'percentage':
+                valueA = parseInt(a.getAttribute('data-data-percentage'));
+                valueB = parseInt(b.getAttribute('data-data-percentage'));
+                break;
+            case 'screentime':
+                valueA = parseInt(a.getAttribute('data-time-percentage'));
+                valueB = parseInt(b.getAttribute('data-time-percentage'));
+                break;
+            case 'dollars':
+                valueA = parseInt(a.getAttribute('data-dollar-amount'));
+                valueB = parseInt(b.getAttribute('data-dollar-amount'));
+                break;
+            default:
+                valueA = parseInt(a.getAttribute('data-score'));
+                valueB = parseInt(b.getAttribute('data-score'));
+        }
+
+        if (sortDirection === 'asc' || sortDirection === 'oldest') {
+            return valueA - valueB;
+        } else {
+            return valueB - valueA;
+        }
+    });
+
+    // Apply animation classes
+    userCards.forEach((card, index) => {
+        if (index % 2 === 0) {
+            card.classList.add('sorting-up');
+        } else {
+            card.classList.add('sorting-down');
+        }
+    });
+
+    // Re-append cards in sorted order after animation
+    setTimeout(() => {
+        const container = document.getElementById('acceptedUsersContainer');
+        userCards.forEach(card => {
+            container.appendChild(card);
+            card.classList.remove('sorting', 'sorting-up', 'sorting-down');
+        });
+    }, 600);
+}
+
+// Edit user card function (placeholder for future functionality)
+function editUserCard(element) {
+    alert('Edit user functionality coming soon!');
+}
+
+// Remove user card function
+function removeUserCard(element) {
+    const userCard = element.closest('.user-card');
+    const inviteId = userCard?.getAttribute('data-invite-id');
+
+    if (!inviteId) {
+        console.error('No invite ID found on card');
+        return;
+    }
+
+    if (userCard && confirm('Are you sure you want to remove this user?')) {
+        const firebaseUid = getFirebaseUID();
+
         if (!firebaseUid) {
             alert('Please sign in to remove users. Your session may have expired.');
             return;
