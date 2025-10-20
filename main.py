@@ -5754,6 +5754,85 @@ def get_user_phone_numbers():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# User Address Management Endpoints
+@app.route('/api/user/addresses', methods=['GET'])
+def get_user_addresses():
+    """Get user's billing and mailing addresses"""
+    firebase_uid = request.args.get('firebase_uid')
+    
+    if not firebase_uid:
+        return jsonify({'error': 'firebase_uid parameter required'}), 400
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT billing_address, mailing_address
+                FROM users
+                WHERE firebase_uid = %s
+            """, (firebase_uid,))
+            
+            row = cursor.fetchone()
+            
+            if not row:
+                return jsonify({'error': 'User not found'}), 404
+            
+            return jsonify({
+                'success': True,
+                'billing_address': row[0],
+                'mailing_address': row[1]
+            })
+            
+    except Exception as e:
+        print(f"Error fetching user addresses: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user/addresses', methods=['POST'])
+def save_user_addresses():
+    """Save user's billing and mailing addresses"""
+    data = request.get_json()
+    firebase_uid = data.get('firebase_uid')
+    billing_address = data.get('billing_address')
+    mailing_address = data.get('mailing_address')
+    
+    if not firebase_uid:
+        return jsonify({'error': 'firebase_uid is required'}), 400
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Update user addresses
+            cursor.execute("""
+                UPDATE users
+                SET billing_address = %s, mailing_address = %s
+                WHERE firebase_uid = %s
+                RETURNING id
+            """, (json.dumps(billing_address) if billing_address else None, 
+                  json.dumps(mailing_address) if mailing_address else None,
+                  firebase_uid))
+            
+            result = cursor.fetchone()
+            
+            if not result:
+                return jsonify({'error': 'User not found'}), 404
+            
+            conn.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Addresses saved successfully'
+            })
+            
+    except Exception as e:
+        print(f"Error saving user addresses: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 # Shopify API endpoints
 @app.route('/api/shopify/test-connection', methods=['GET'])
 def shopify_test_connection():
