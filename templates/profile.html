@@ -514,7 +514,7 @@
                                         <div class="card-body">
                                             <div class="row">
                                                 <div class="col-md-8">
-                                                    <p><strong>ICCID Number:</strong><br>
+                                                    <p><strong>ICCID:</strong><br>
                                                         <span class="text-break font-monospace bg-light p-2 rounded d-inline-block" id="assignedICCID">-</span>
                                                         <button class="btn btn-sm btn-outline-secondary copy-btn ms-1" onclick="copyAssignedICCID()" title="Copy ICCID"><i class="fas fa-copy"></i></button>
                                                     </p>
@@ -576,7 +576,7 @@
                 </div>
 
                 <div class="address-section mb-4">
-                    <h3 class="mb-3"><i class="fas fa-mobile-alt"></i> Beta Phone Numbers</h3>
+                    <h3 class="mb-3"><i class="fas fa-mobile-alt"></i> Phone Numbers</h3>
                     <div id="betaPhoneContainer">
                         <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
                             <p>Loading beta access information...</p>
@@ -1022,7 +1022,7 @@
             // Update member badge based on founder status
             const badgeElement = document.getElementById('memberBadge');
             if (badgeElement && userData.email) {
-                const founderBadge = userData.founderStatus === 'Y' ? '★ Founding Member' : '★ Member';
+                const founderBadge = userData.founderStatus === 'Y' ? '⭐ Founding Member' : '⭐ Member';
                 badgeElement.textContent = founderBadge;
             }
 
@@ -1477,7 +1477,7 @@
                                         <i class="fas fa-plus"></i> Create OXIO User
                                     </button>
                                     <button class="btn btn-sm btn-secondary" onclick="refreshOxioData()">
-                                        <i class="fas fa-sync"></i> Check Status
+                                        <i class="fas fa-sync"></i> Refresh
                                     </button>
                                 </div>
                             </div>
@@ -2324,38 +2324,32 @@
                 const lpaCode = phoneInfo.lpa_code; // Assuming LPA code is also available
 
                 html += `
-                    <div class="address-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 style="color: #00FFFF; margin: 0;">
-                                <i class="fas fa-mobile-alt"></i> Beta Phone Number
+                    <div class="address-card phone-number-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">
+                                <i class="fas fa-mobile-alt me-2"></i>Phone Number
                             </h5>
-                            <span class="service-status-badge" style="background: #4CAF50; color: white;">ACTIVE</span>
+                            <span class="badge" style="background-color: #28a745; color: white;">ACTIVE</span>
                         </div>
-
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center justify-content-center mb-3">
-                                <i class="fas fa-mobile-alt me-3" style="font-size: 2rem; color: #17a2b8;"></i>
-                                <span class="badge bg-success">ACTIVE</span>
-                            </div>
-                            <div class="text-center">
-                                <div class="phone-number-value d-inline-block" id="betaPhoneNumber">${phoneData.formatted}</div>
-                                <button class="btn btn-sm btn-outline-secondary copy-btn ms-2" onclick="copyBetaPhoneNumber()" title="Copy Phone Number">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            </div>
+                        <div class="mt-2">
+                            <i class="fas fa-mobile-alt me-2"></i>
+                            <span class="badge" style="background-color: #28a745; color: white; margin-left: 8px;">ACTIVE</span>
                         </div>
-
-                        <!-- Add paragraph break here -->
-                        <p></p> 
-
-                        <div class="row mt-3">
-                            <div class="col-md-12 text-center">
-                                ${qrCode ? `
-                                <button type="button" class="btn btn-primary btn-sm" onclick="showQRCode('${qrCode}', 'eSIM Activation QR Code')">
-                                    <i class="fas fa-qrcode"></i> Scan the eSIM QR code to activate your cellular service
-                                </button>
-                                ` : '<p class="text-muted">eSIM QR code not yet available.</p>'}
+                        <div class="phone-number-value mt-2">
+                            ${phoneData.formatted}
+                        </div>
+                        ${phoneData.area_code_info ? `
+                            <div class="area-code-info mt-2 text-muted">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                ${phoneData.area_code_info}
                             </div>
+                        ` : ''}
+                        <div class="mt-3 text-center">
+                            ${qrCode ? `
+                            <button type="button" class="btn btn-primary btn-sm" onclick="showQRCode('${qrCode}', 'eSIM Activation QR Code')">
+                                <i class="fas fa-qrcode"></i> Scan the eSIM QR code to activate your cellular service
+                            </button>
+                            ` : '<p class="text-muted">eSIM QR code not yet available.</p>'}
                         </div>
                     </div>
                 `;
@@ -2481,9 +2475,9 @@
                 <div class="esim-qr-content">
                     <h3>${title}</h3>
                     <img src="${qrDataUrl}" alt="${title}" style="max-width: 300px; max-height: 300px;">
-                    <p>Scan this QR code to add the eSIM to your device</p>
-                    <button onclick="this.parentElement.parentElement.remove()" 
-                            class="btn btn-secondary mt-3">Close</button>
+                    <p style="margin-top: 15px;">
+                        <button class="btn btn-secondary" onclick="this.parentElement.parentElement.remove()">Close</button>
+                    </p>
                 </div>
             `;
             modal.addEventListener('click', function(e) {
@@ -2495,9 +2489,15 @@
         function toggleQRCode(event) {
             event.stopPropagation();
             const popup = document.getElementById('qrCodePopup');
-            const icon = document.querySelector('.qr-code-icon');
-            if (popup && popup.style.display === 'block' && !popup.contains(e.target) && e.target !== icon) {
+            if (popup.style.display === 'block') {
                 popup.style.display = 'none';
+            } else {
+                popup.style.display = 'block';
+                if (!document.querySelector('#qrcode canvas')) {
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: "https://gorse.dotmobile.app", width: 150, height: 150, colorDark: "#333333", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
             }
         }
 
@@ -2574,37 +2574,29 @@
                 const qrCode = phoneInfo.qr_code;
 
                 html += `
-                    <div class="address-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 style="color: #00FFFF; margin: 0;">
-                                <i class="fas fa-mobile-alt"></i> Beta Phone Number
-                            </h5>
-                            <span class="service-status-badge" style="background: #4CAF50; color: white;">ACTIVE</span>
+                    <div class="address-card phone-number-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">Phone Number</h5>
                         </div>
-
-                        <div class="mb-3">
-                            <div class="d-flex align-items-center justify-content-center mb-3">
-                                <i class="fas fa-mobile-alt me-3" style="font-size: 2rem; color: #17a2b8;"></i>
-                                <span class="badge bg-success">ACTIVE</span>
-                            </div>
-                            <div class="text-center">
-                                <div class="phone-number-value d-inline-block" id="betaPhoneNumber">${phoneData.formatted}</div>
-                                <button class="btn btn-sm btn-outline-secondary copy-btn ms-2" onclick="copyBetaPhoneNumber()" title="Copy Phone Number">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            </div>
+                        <div class="mt-2">
+                            <i class="fas fa-mobile-alt me-2"></i>
+                            <span class="badge" style="background-color: #28a745; color: white; margin-left: 8px;">ACTIVE</span>
                         </div>
-
-                        <p></p> 
-
-                        <div class="row mt-3">
-                            <div class="col-md-12 text-center">
-                                ${qrCode ? `
-                                <button type="button" class="btn btn-primary btn-sm" onclick="showQRCode('${qrCode}', 'eSIM Activation QR Code')">
-                                    <i class="fas fa-qrcode"></i> Scan the eSIM QR code to activate your cellular service
-                                </button>
-                                ` : '<p class="text-muted">eSIM QR code not yet available.</p>'}
+                        <div class="phone-number-value mt-2">
+                            ${phoneData.formatted}
+                        </div>
+                        ${phoneData.area_code_info ? `
+                            <div class="area-code-info mt-2 text-muted">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                ${phoneData.area_code_info}
                             </div>
+                        ` : ''}
+                        <div class="mt-3 text-center">
+                            ${qrCode ? `
+                            <button type="button" class="btn btn-primary btn-sm" onclick="showQRCode('${qrCode}', 'eSIM Activation QR Code')">
+                                <i class="fas fa-qrcode"></i> Scan the eSIM QR code to activate your cellular service
+                            </button>
+                            ` : '<p class="text-muted">eSIM QR code not yet available.</p>'}
                         </div>
                     </div>
                 `;
