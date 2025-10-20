@@ -546,10 +546,7 @@
                 </div>
 
                 <div class="address-section mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3><i class="fas fa-mobile-alt"></i> Wireless Services</h3>
-                        <i class="fas fa-sync-alt refresh-icon" onclick="refreshOxioData()" title="Refresh OXIO data" style="cursor: pointer; color: #007bff; display: none;" id="oxioRefreshBtn"></i>
-                    </div>
+                    <h3 class="mb-3"><i class="fas fa-mobile-alt"></i> Wireless Services</h3>
                     <div id="oxioContainer">
                         <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
                             <p>Loading OXIO information...</p>
@@ -1716,7 +1713,7 @@
             });
         }
 
-        function showQRCode(qrData) {
+        function showQRCode(qrData, title) {
             try {
                 // Create modal for QR code display
                 const modal = document.createElement('div');
@@ -2489,34 +2486,40 @@
             });
         }
 
-        function showPhoneNumberPopup(phoneNumber, areaCode, areaInfo, qrCode, lpaCode) {
+        function showPhoneNumberPopup(phoneNumber, areaCode, areaInfo, carrier, lpaCode, qrCode) {
             const popup = document.getElementById('phoneNumberPopup');
             const popupContent = document.getElementById('popupContent');
 
+            if (!popup || !popupContent) {
+                console.error('Phone number popup elements not found');
+                return;
+            }
+
             popupContent.innerHTML = `
-                <p><strong>Phone Number:</strong> ${phoneNumber}</p>
-                ${areaCode ? `<p><strong>Area Code:</strong> ${areaCode} (${areaInfo})</p>` : ''}
-                ${qrCode ? `
-                    <div class="mt-3">
-                        <button class="btn btn-primary btn-sm me-2" onclick="showQRCode('${qrCode}', 'eSIM Activation QR Code')">
-                            <i class="fas fa-qrcode me-2"></i> Scan eSIM QR
-                        </button>
-                    </div>
-                ` : ''}
-                ${lpaCode ? `
-                    <div class="mt-3">
-                         <p><strong>LPA Code:</strong> <span class="font-monospace">${lpaCode}</span></p>
-                         <button class="btn btn-outline-secondary btn-sm" onclick="copyToClipboard('${lpaCode}', 'LPA Code')">
-                             <i class="fas fa-copy"></i> Copy LPA Code
-                         </button>
-                    </div>
-                ` : ''}
-                <div class="mt-3">
-                    <button class="btn btn-success btn-sm" onclick="handleChangeNumber()">
-                        <i class="fas fa-exchange-alt"></i> Change Number
-                    </button>
+                <div style="text-align: center;">
+                    <h5 style="color: var(--text-primary);"><i class="fas fa-phone"></i> ${phoneNumber}</h5>
+                    <p><strong>Area Code:</strong> ${areaCode} (${areaInfo})</p>
+                    <p><strong>Carrier:</strong> ${carrier}</p>
+                    ${qrCode ? `
+                        <div style="margin-top: 20px;">
+                            <h6>eSIM QR Code:</h6>
+                            <img src="data:image/png;base64,${qrCode}" alt="eSIM QR Code" style="max-width: 250px; margin: 10px auto; display: block; border: 2px solid rgba(0, 255, 255, 0.3); border-radius: 8px; padding: 10px; background: white;">
+                        </div>
+                    ` : ''}
+                    ${lpaCode ? `
+                        <div style="margin-top: 20px;">
+                            <h6>eSIM Activation Code (LPA):</h6>
+                            <div style="background: rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 5px; word-break: break-all; font-family: monospace; font-size: 0.85rem;">
+                                ${lpaCode}
+                            </div>
+                            <button class="btn btn-sm btn-outline-secondary mt-2" onclick="copyToClipboard('${lpaCode}', 'LPA Code')">
+                                <i class="fas fa-copy"></i> Copy LPA Code
+                            </button>
+                        </div>
+                    ` : ''}
                 </div>
             `;
+
             popup.style.display = 'flex';
         }
 
@@ -2648,7 +2651,7 @@
                             </div>
                         ` : ''}
                         <div class="phone-qr-button">
-                            <button type="button" class="btn btn-primary w-100" onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode}', '${phoneData.areaInfo}', '${qrCode || ''}', '${lpaCode || ''}')" style="padding: 0.75rem; font-size: 1rem;">
+                            <button type="button" class="btn btn-primary w-100" onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode}', '${phoneData.areaInfo}', '${phoneData.carrier || 'Beta Network'}', '${lpaCode || ''}', '${qrCode || ''}')" style="padding: 0.75rem; font-size: 1rem;">
                                 <i class="fas fa-info-circle me-2"></i> View Phone Number Options
                             </button>
                         </div>
@@ -2835,7 +2838,12 @@
             .then(data => {
                 if (data.success) {
                     currentBillingAddress = address;
-                    displayBillingAddress(address);
+                    displayUserAddresses({ // Re-display all addresses to reflect the change
+                        billing_address: currentBillingAddress,
+                        mailing_address: currentMailingAddress,
+                        broadband_address: currentBroadbandAddress
+                    });
+                    document.getElementById('billingAddressForm').style.display = 'none'; // Hide form
                 } else {
                     alert('Error saving address: ' + data.error);
                 }
@@ -2944,7 +2952,12 @@
             .then(data => {
                 if (data.success) {
                     currentMailingAddress = address;
-                    displayMailingAddress(address);
+                    displayUserAddresses({ // Re-display all addresses to reflect the change
+                        billing_address: currentBillingAddress,
+                        mailing_address: currentMailingAddress,
+                        broadband_address: currentBroadbandAddress
+                    });
+                    document.getElementById('mailingAddressForm').style.display = 'none'; // Hide form
                 } else {
                     alert('Error saving address: ' + data.error);
                 }
@@ -3088,19 +3101,18 @@
                 day: 'numeric'
             });
 
+            // Create Beta eSIM card that's clickable
             betaEsimCard.innerHTML = `
                 <div class="address-card phone-number-card p-3 mb-3" style="background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 8px; cursor: pointer;"
-                     onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode}', '${phoneData.areaInfo}', '${qrCode}', '${lpaCode}')">
-                    <div class="d-flex justify-content-between align-items-start">
+                     onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode}', '${phoneData.areaInfo}', '${phoneData.carrier || 'Beta Network'}', '${lpaCode}', '${qrCode}')">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">
-                                <i class="fas fa-sim-card me-2"></i>Beta eSIM
-                            </div>
-                            <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
-                                Date Bought: ${formattedDate}
-                            </div>
+                            <h6 style="margin: 0; color: rgba(0, 255, 255, 1);"><i class="fas fa-sim-card"></i> Beta eSIM</h6>
+                            <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: var(--text-secondary);">Purchased: ${formattedDate}</p>
                         </div>
-                        <span class="badge" style="background-color: #28a745; color: white; padding: 0.5rem 1rem; font-size: 0.9rem;">ACTIVE</span>
+                        <div>
+                            <span class="badge bg-success">ACTIVE</span>
+                        </div>
                     </div>
                 </div>
             `;
