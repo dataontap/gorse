@@ -504,6 +504,9 @@
                                         <div class="card-body">
                                             <div class="row">
                                                 <div class="col-md-8">
+                                                    <p><strong>Phone Number:</strong><br>
+                                                        <span class="text-break font-weight-bold" style="font-size: 1.1rem;">+1 (929) 654-7725</span>
+                                                    </p>
                                                     <p><strong>ICCID:</strong><br>
                                                         <span class="text-break font-monospace bg-light p-2 rounded d-inline-block" id="assignedICCID">-</span>
                                                         <button class="btn btn-sm btn-outline-secondary copy-btn ms-1" onclick="copyAssignedICCID()" title="Copy ICCID"><i class="fas fa-copy"></i></button>
@@ -2479,15 +2482,9 @@
         function toggleQRCode(event) {
             event.stopPropagation();
             const popup = document.getElementById('qrCodePopup');
-            if (popup.style.display === 'block') {
+            const icon = document.querySelector('.qr-code-icon');
+            if (popup && popup.style.display === 'block' && !popup.contains(e.target) && e.target !== icon) {
                 popup.style.display = 'none';
-            } else {
-                popup.style.display = 'block';
-                if (!document.querySelector('#qrcode canvas')) {
-                    new QRCode(document.getElementById("qrcode"), {
-                        text: "https://gorse.dotmobile.app", width: 150, height: 150, colorDark: "#333333", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
-                    });
-                }
             }
         }
 
