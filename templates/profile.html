@@ -552,12 +552,6 @@
                             <p>Loading OXIO information...</p>
                         </div>
                     </div>
-                    <!-- Added section for Network Services -->
-                    <div id="networkServicesContainer">
-                        <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
-                            <p>Loading network services...</p>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="address-section mb-4">
@@ -970,7 +964,6 @@
 
                     // Load beta phone numbers with Firebase UID
                     loadBetaPhoneNumbers(currentUser.uid);
-
                 } else {
                     // Set up auth state listener for future changes
                     firebase.auth().onAuthStateChanged(function(firebaseUser) {
@@ -2372,7 +2365,7 @@
                             </div>
                         ` : ''}
                         <div class="phone-qr-button">
-                            <button type="button" class="btn btn-primary w-100" onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode || ''}', '${phoneData.areaInfo || ''}', '${phoneData.carrier || 'Beta Network'}', '${lpaCode || ''}', '${qrCode || ''}')" style="padding: 0.75rem; font-size: 1rem;">
+                            <button type="button" class="btn btn-primary w-100" onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode || ''}', '${phoneData.areaInfo || ''}', '${qrCode || ''}', '${lpaCode || ''}')" style="padding: 0.75rem; font-size: 1rem;">
                                 <i class="fas fa-info-circle me-2"></i> View Phone Number Options
                             </button>
                         </div>
@@ -2493,7 +2486,7 @@
             });
         }
 
-        function showPhoneNumberPopup(formattedNumber, areaCode, areaInfo, carrier, lpaCode, qrCode) {
+        function showPhoneNumberPopup(formattedNumber, areaCode, areaInfo, qrCode, lpaCode) {
             const popup = document.getElementById('phoneNumberPopup');
             const popupContent = document.getElementById('popupContent');
 
@@ -2512,7 +2505,6 @@
                             <strong>Area Code:</strong> ${areaCode} (${areaInfo})
                         </p>
                     ` : ''}
-                     <p><strong>Carrier:</strong> ${carrier}</p>
                     ${qrCode ? `
                         <div style="margin-top: 20px;">
                             <h6>eSIM QR Code:</h6>
@@ -3153,99 +3145,6 @@
                 popup.style.display = 'none';
             }
         });
-
-        // New function to load and display network services subscriptions
-        async function loadNetworkServices(firebaseUid) {
-            const container = document.getElementById('networkServicesContainer');
-
-            if (!container) {
-                console.log('Network services container not found');
-                return;
-            }
-
-            try {
-                console.log('Loading network services for:', firebaseUid);
-                // Fetch network service data for the user
-                const response = await fetch(`/api/network-features/${firebaseUid}`);
-                const data = await response.json();
-
-                if (data.status === 'success' && data.features && data.features.length > 0) {
-                    // Filter for enabled services
-                    const enabledFeatures = data.features.filter(f => f.enabled);
-
-                    if (enabledFeatures.length === 0) {
-                        // Display message if no services are enabled
-                        container.innerHTML = `
-                            <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
-                                <p class="text-muted mb-0">
-                                    <i class="fas fa-info-circle"></i> No network services enabled. 
-                                    <a href="/network">Browse available services</a>
-                                </p>
-                            </div>
-                        `;
-                        return;
-                    }
-
-                    // Build HTML for enabled services
-                    let html = `
-                        <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
-                            <h5 class="mb-3"><i class="fas fa-network-wired"></i> Active Network Services</h5>
-                            <div class="row">
-                    `;
-
-                    enabledFeatures.forEach(feature => {
-                        // Determine price display
-                        const priceText = feature.price_cents === 0 ? 'Free' : `$${(feature.price_cents / 100).toFixed(2)}/mo`;
-                        html += `
-                            <div class="col-md-6 mb-3">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-check-circle text-success me-2"></i>
-                                    <div>
-                                        <strong>${feature.feature_title || feature.feature_name}</strong>
-                                        <br>
-                                        <small class="text-muted">${priceText}</small>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-
-                    html += `
-                            </div>
-                            <div class="text-end mt-2">
-                                <small class="text-muted">${enabledFeatures.length} service${enabledFeatures.length !== 1 ? 's' : ''} active</small>
-                            </div>
-                        </div>
-                    `;
-
-                    container.innerHTML = html;
-                } else {
-                    // Display message if no services are configured at all
-                    container.innerHTML = `
-                        <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
-                            <p class="text-muted mb-0">
-                                <i class="fas fa-info-circle"></i> No network services configured. 
-                                <a href="/network">Explore network services</a>
-                            </p>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error loading network services:', error);
-                // Display error message if loading fails
-                container.innerHTML = `
-                    <div class="address-card p-3 mb-3" style="background: rgba(255, 193, 7, 0.1); border-radius: 8px;">
-                        <p class="text-warning mb-0">
-                            <i class="fas fa-exclamation-triangle"></i> Unable to load network services
-                        </p>
-                    </div>
-                `;
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check authentication status first
-            checkAuthenticationAndLoadFeatures();
-</script>
+    </script>
 </body>
 </html>
