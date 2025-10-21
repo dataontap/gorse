@@ -3765,24 +3765,26 @@ def get_user_phone_numbers():
                     row = cur.fetchone()
                     
                     if row:
-                        phone_data = {
-                            'success': True,
+                        phone_numbers = [{
                             'phone_number': row[0],
                             'line_id': row[1],
                             'iccid': row[2],
                             'activation_url': row[3],
-                            'activation_code': row[4],
+                            'lpa_code': row[4],
                             'qr_code': row[5],
                             'plan_name': row[6].replace('_', ' ').title() if row[6] else 'eSIM Plan',
                             'status': row[7] or 'active',
-                            'activation_date': row[8].isoformat() if row[8] else None
-                        }
-                        return jsonify(phone_data)
+                            'activated_at': row[8].isoformat() if row[8] else None
+                        }]
+                        return jsonify({
+                            'success': True,
+                            'phone_numbers': phone_numbers
+                        })
                     else:
                         return jsonify({
-                            'success': False,
-                            'message': 'No phone number found'
-                        }), 404
+                            'success': True,
+                            'phone_numbers': []
+                        })
         
         return jsonify({
             'success': False,
