@@ -551,6 +551,38 @@
 
                 <div class="address-section mb-4">
                     <h3 class="mb-3"><i class="fas fa-mobile-alt"></i> Wireless Services</h3>
+
+                    <!-- Network Services Overview -->
+                    <div class="card mb-3" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div class="card-header d-flex justify-content-between align-items-center" style="background: transparent; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                            <h5 style="color: var(--text-primary); margin: 0;"><i class="fas fa-network-wired"></i> Network Services</h5>
+                            <a href="/network" class="btn btn-sm btn-primary">
+                                <i class="fas fa-cog"></i> Manage Services
+                            </a>
+                        </div>
+                        <div class="card-body" style="background: transparent;">
+                            <div id="networkServicesLoading" class="text-center" style="color: var(--text-primary);">
+                                <i class="fas fa-spinner fa-spin"></i> Loading network services...
+                            </div>
+                            <div id="networkServicesContent" style="display: none;">
+                                <div id="activeServicesList">
+                                    <!-- Active services will be loaded here -->
+                                </div>
+                                <div id="noActiveServices" style="display: none; text-align: center; color: var(--text-secondary); padding: 2rem;">
+                                    <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                                    <p>No network services are currently active.</p>
+                                    <a href="/network" class="btn btn-outline-primary btn-sm">Browse Available Services</a>
+                                </div>
+                            </div>
+                            <div id="networkServicesError" style="display: none; text-align: center; color: var(--text-secondary); padding: 2rem;">
+                                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                                <p>Unable to load network services.</p>
+                                <button onclick="loadNetworkServicesOverview()" class="btn btn-outline-secondary btn-sm">Retry</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OXIO Service Information -->
                     <div id="oxioContainer">
                         <div class="address-card p-3 mb-3" style="text-align: center; color: var(--text-secondary);">
                             <p>Loading OXIO information...</p>
@@ -813,6 +845,7 @@
                 console.log('Profile: User authenticated, loading profile data for:', firebaseUser.uid);
                 // Load all user-specific data only after authentication is confirmed
                 loadFirebaseUserData();
+                loadNetworkServicesOverview(); // Load network services overview
             } else {
                 console.log('Profile: No authenticated user, redirecting to login');
                 window.location.href = '/login';
@@ -969,57 +1002,9 @@
                     // Load beta phone numbers with Firebase UID
                     loadBetaPhoneNumbers(currentUser.uid);
                 } else {
-                    // Set up auth state listener for future changes
-                    firebase.auth().onAuthStateChanged(function(firebaseUser) {
-                        if (firebaseUser) {
-                            console.log('Auth state changed - Firebase user:', firebaseUser.email);
-                            console.log('Firebase UID:', firebaseUser.uid);
-
-                            // Update email
-                            const emailElement = document.getElementById('profileUserEmail');
-                            if (emailElement) {
-                                emailElement.textContent = firebaseUser.email;
-                            }
-
-                            // Update display name (badge is separate now)
-                            const nameElement = document.getElementById('profileUserName');
-                            if (nameElement) {
-                                const displayName = firebaseUser.displayName || firebaseUser.email.split('@')[0];
-                                nameElement.textContent = displayName;
-                            }
-
-                            // Update member badge
-                            const badgeElement = document.getElementById('memberBadge');
-                            if (badgeElement) {
-                                badgeElement.textContent = '⭐ Member';
-                            }
-
-                            // Load additional user data from our API
-                            loadUserDataFromAPI(firebaseUser.uid);
-
-                            // Load user addresses
-                            loadUserAddresses();
-
-                            // Load eSIM details with phone number and QR codes
-                            loadESIMDetails();
-
-                            // Load OXIO data with Firebase UID
-                            loadOxioDataWithUID(firebaseUser.uid);
-
-                            // Load assigned ICCID data with QR codes
-                            loadAssignedICCID();
-
-                            // Load subscription data with Firebase UID
-                            loadSubscriptionDataWithUID(firebaseUser.uid);
-
-                            // Load beta phone numbers with Firebase UID
-                            loadBetaPhoneNumbers(firebaseUser.uid);
-                        } else {
-                            // No authenticated user found, redirect to login
-                            console.log('No authenticated user found, redirecting to login');
-                            window.location.href = '/login';
-                        }
-                    });
+                    // No authenticated user found, redirect to login
+                    console.log('No authenticated user found, redirecting to login');
+                    window.location.href = '/login';
                 }
 
             } catch (error) {
@@ -3137,9 +3122,113 @@
             betaEsimCard.style.display = 'block';
         }
 
+        function loadNetworkServicesOverview() {
+            const networkServicesLoading = document.getElementById('networkServicesLoading');
+            const networkServicesContent = document.getElementById('networkServicesContent');
+            const networkServicesError = document.getElementById('networkServicesError');
+            const activeServicesList = document.getElementById('activeServicesList');
+            const noActiveServices = document.getElementById('noActiveServices');
+
+            // Show loading indicator
+            if (networkServicesLoading) networkServicesLoading.style.display = 'block';
+            if (networkServicesContent) networkServicesContent.style.display = 'none';
+            if (networkServicesError) networkServicesError.style.display = 'none';
+            if (activeServicesList) activeServicesList.innerHTML = ''; // Clear previous content
+            if (noActiveServices) noActiveServices.style.display = 'none';
+
+            // Get current Firebase UID
+            const firebaseUid = getFirebaseUID();
+            if (!firebaseUid) {
+                console.log('No Firebase UID available for network services overview');
+                if (networkServicesLoading) networkServicesLoading.style.display = 'none';
+                if (networkServicesError) {
+                    networkServicesError.style.display = 'block';
+                    networkServicesError.querySelector('p').textContent = 'Please log in to view network services.';
+                }
+                return;
+            }
+
+            // Fetch active network services
+            fetch(`/api/network/services?firebaseUid=${firebaseUid}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (networkServicesLoading) networkServicesLoading.style.display = 'none';
+
+                    if (data.success && data.services && data.services.length > 0) {
+                        console.log('Network services loaded:', data.services);
+                        displayActiveNetworkServices(data.services);
+                        if (networkServicesContent) networkServicesContent.style.display = 'block';
+                    } else if (data.success && (!data.services || data.services.length === 0)) {
+                        console.log('No active network services found.');
+                        if (noActiveServices) noActiveServices.style.display = 'block';
+                        if (networkServicesContent) networkServicesContent.style.display = 'block';
+                    } else {
+                        console.error('Failed to load network services:', data.message);
+                        if (networkServicesError) networkServicesError.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching network services:', error);
+                    if (networkServicesLoading) networkServicesLoading.style.display = 'none';
+                    if (networkServicesError) networkServicesError.style.display = 'block';
+                });
+        }
+
+        function displayActiveNetworkServices(services) {
+            const activeServicesList = document.getElementById('activeServicesList');
+            if (!activeServicesList) return;
+
+            let html = '';
+            services.forEach(service => {
+                const statusBadgeClass = getServiceStatusBadgeClass(service.status);
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom" style="border-color: rgba(255, 255, 255, 0.1);">
+                        <div>
+                            <i class="fas ${getServiceIcon(service.type)} me-2"></i>
+                            <strong>${service.name}</strong>
+                            <span class="badge ms-2 ${statusBadgeClass}">${service.status.toUpperCase()}</span>
+                        </div>
+                        <div>
+                            <small class="me-2 text-muted">Valid until: ${new Date(service.expiry_date).toLocaleDateString()}</small>
+                            <a href="/network" class="btn btn-sm btn-outline-primary"><i class="fas fa-cog"></i> Manage</a>
+                        </div>
+                    </div>
+                `;
+            });
+            activeServicesList.innerHTML = html;
+        }
+
+        function getServiceStatusBadgeClass(status) {
+            switch(status) {
+                case 'active': return 'bg-success';
+                case 'pending': return 'bg-warning';
+                case 'inactive': return 'bg-secondary';
+                case 'error': return 'bg-danger';
+                default: return 'bg-info';
+            }
+        }
+
+        function getServiceIcon(serviceType) {
+            switch(serviceType) {
+                case 'data': return 'fa-database';
+                case 'voice': return 'fa-phone';
+                case 'sms': return 'fa-sms';
+                case '5g': return 'fa-wave-square';
+                default: return 'fa-wifi';
+            }
+        }
 
         auth.onAuthStateChanged((user) => {
-            if (user) { setTimeout(() => { loadESIMDetails(); }, 1000); }
+            if (user) {
+                setTimeout(() => { loadESIMDetails(); }, 1000);
+                // Load network services overview when user is authenticated
+                loadNetworkServicesOverview();
+            }
         });
 
         document.addEventListener('click', function(e) {
