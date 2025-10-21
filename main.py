@@ -3703,13 +3703,13 @@ def get_user_network_services():
                     for row in cur.fetchall():
                         services.append({
                             'service_id': row[0],
-                            'service_name': row[1],
+                            'name': row[2] or row[1],
                             'service_title': row[2],
                             'description': row[3],
                             'status': 'active',
-                            'service_type': 'network',
+                            'type': 'network',
                             'price': row[5] / 100 if row[5] else 0,
-                            'expiry_date': None  # Network services don't expire
+                            'expiry_date': '2099-12-31'
                         })
 
                     return jsonify({
