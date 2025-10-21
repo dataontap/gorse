@@ -3931,63 +3931,6 @@ def reject_beta_request(request_id):
         print(f"Error in reject_beta_request: {str(e)}")
         return f"Error processing request: {str(e)}", 500
 
-# Import MCP server functions at the top level
-try:
-    from mcp_server import SERVICES_CATALOG, calculate_total_costs
-    MCP_AVAILABLE = True
-except ImportError:
-    MCP_AVAILABLE = False
-    SERVICES_CATALOG = {}
-
-# MCP Server Routes for Service Catalog and Pricing
-@app.route('/mcp')
-def mcp_server():
-    """MCP server endpoint for service catalog and pricing"""
-    if MCP_AVAILABLE:
-        # Import the function here to avoid circular imports
-        with mcp_app.app_context():
-            from mcp_server import mcp_server as mcp_server_func
-            return mcp_server_func()
-    else:
-        return jsonify({
-            "error": "MCP server not available",
-            "message": "Service catalog endpoint is currently unavailable"
-        }), 503
-
-@app.route('/mcp/api')
-def mcp_api():
-    """JSON API endpoint for programmatic access to service catalog"""
-    if MCP_AVAILABLE:
-        from mcp_server import mcp_api as mcp_api_func
-        return mcp_api_func()
-    else:
-        return jsonify({
-            "error": "MCP API not available",
-            "fallback_services": {
-                "basic_membership": {"price_usd": 24.00, "type": "annual"},
-                "full_membership": {"price_usd": 66.00, "type": "annual"},
-                "global_data_10gb": {"price_usd": 10.00, "type": "one_time"}
-            }
-        })
-
-@app.route('/mcp/service/<service_id>')
-def mcp_service_detail(service_id):
-    """MCP service detail endpoint"""
-    if MCP_AVAILABLE:
-        from mcp_server import mcp_service_detail as mcp_service_detail_func
-        return mcp_service_detail_func(service_id)
-    else:
-        return jsonify({"error": "Service detail endpoint not available"}), 503
-
-@app.route('/mcp/calculate')
-def mcp_pricing_calculator():
-    """MCP pricing calculator endpoint"""
-    if MCP_AVAILABLE:
-        from mcp_server import mcp_pricing_calculator as mcp_pricing_calculator_func
-        return mcp_pricing_calculator_func()
-    else:
-        return jsonify({"error": "Pricing calculator not available"}), 503
-
 # User Address Management Endpoints
 @app.route('/api/user/addresses', methods=['GET'])
 def get_user_addresses():
