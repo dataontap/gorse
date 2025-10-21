@@ -3229,7 +3229,10 @@
 
         auth.onAuthStateChanged((user) => {
             if (user) {
-                setTimeout(() => { loadESIMDetails(); }, 1000);
+                setTimeout(() => { 
+                    loadESIMDetails();
+                    refreshOxioData();
+                }, 1000);
                 // Load network services overview when user is authenticated
                 loadNetworkServicesOverview();
             }
