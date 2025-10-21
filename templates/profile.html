@@ -417,12 +417,14 @@
     </div>
     <div class="container" style="padding-top: 60px;">
         <div class="dashboard-content">
-            <div class="d-flex justify-content-between align-items-start mb-4">
+            <!-- Member Badge - moved above Profile heading -->
+            <div class="mb-2 text-center">
+                <span class="founding-shield" id="memberBadge" style="display: inline-block; padding: 0.5rem 1rem; background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; border-radius: 20px; font-weight: bold;">⭐ Member</span>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-user-circle"></i> Profile</h2>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="founding-shield" id="memberBadge" style="display: inline-block; padding: 0.5rem 1rem; background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; border-radius: 20px; font-weight: bold;">⭐ Member</span>
-                    <a href="/dashboard" class="btn-close" aria-label="Close"></a>
-                </div>
+                <a href="/dashboard" class="btn-close" aria-label="Close"></a>
             </div>
             <div class="profile-details">
                 <div class="user-info mb-4">
@@ -446,15 +448,15 @@
                                 <div id="esimLoading" class="text-center" style="display: none; color: var(--text-primary);">
                                     <i class="fas fa-spinner fa-spin"></i> Loading eSIM details...
                                 </div>
+                                <div id="esimNoData" class="text-center mb-4" style="display: none; color: var(--text-secondary); padding: 2rem;">
+                                    <i class="fas fa-sim-card" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i><br>
+                                    <p style="margin: 1rem 0;">No eSIM assigned yet.</p>
+                                    <a href="/buy/esim" class="btn btn-primary" style="margin-top: 0.5rem;">Purchase your first eSIM for $1</a>
+                                </div>
                                 <!-- New section for Beta eSIM -->
                                 <div id="betaEsimCard" style="display: none;"></div>
                                 <div id="esimDetails" style="display: none;">
                                     <!-- eSIM details will be loaded here -->
-                                </div>
-                                <div id="esimNoData" class="text-center" style="display: none; color: var(--text-secondary); padding: 2rem; margin-top: 1rem;">
-                                    <i class="fas fa-sim-card" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i><br>
-                                    <p style="margin: 1rem 0;">No eSIM assigned yet.</p>
-                                    <a href="/buy/esim" class="btn btn-primary" style="margin-top: 0.5rem;">Purchase your first eSIM for $1</a>
                                 </div>
                             </div>
                         </div>
