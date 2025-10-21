@@ -593,8 +593,12 @@
                 <div class="address-section mb-4">
                     <h3 class="mb-3"><i class="fas fa-sync"></i> Subscriptions</h3>
                     <div id="subscriptionContainer">
-                        <div class="address-card p-3 mb-3" style="text-align: center; color: #666;">
-                            <p>Loading subscription information...</p>
+                        <div class="address-card p-3 mb-3" style="background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="address-content" id="billingAddressContent">
+                                    <!-- Subscription information will be displayed here -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2475,7 +2479,7 @@
             });
         }
 
-        function showPhoneNumberPopup(formattedNumber, areaCode, areaInfo, qrCode, lpaCode) {
+        function showPhoneNumberPopup(formattedNumber, areaCode, areaInfo, carrier, lpaCode, qrCode) {
             const popup = document.getElementById('phoneNumberPopup');
             const popupContent = document.getElementById('popupContent');
 
@@ -2653,7 +2657,7 @@
                             </div>
                         ` : ''}
                         <div class="phone-qr-button">
-                            <button type="button" class="btn btn-primary w-100" onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode}', '${phoneData.areaInfo}', '${phoneData.carrier || 'Beta Network'}', '${lpaCode || ''}', '${qrCode || ''}')" style="padding: 0.75rem; font-size: 1rem;">
+                            <button type="button" class="btn btn-primary w-100" onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode}', '${phoneData.areaInfo}', '${phoneData.carrier || 'Beta Network'}', '${lpaCode}', '${qrCode}')" style="padding: 0.75rem; font-size: 1rem;">
                                 <i class="fas fa-info-circle me-2"></i> View Phone Number Options
                             </button>
                         </div>
