@@ -971,8 +971,6 @@
                     // Load beta phone numbers with Firebase UID
                     loadBetaPhoneNumbers(currentUser.uid);
 
-                    // Load network services subscriptions
-                    loadNetworkServices(currentUser.uid);
                 } else {
                     // Set up auth state listener for future changes
                     firebase.auth().onAuthStateChanged(function(firebaseUser) {
@@ -1019,9 +1017,6 @@
 
                             // Load beta phone numbers with Firebase UID
                             loadBetaPhoneNumbers(firebaseUser.uid);
-
-                            // Load network services subscriptions
-                            loadNetworkServices(firebaseUser.uid);
                         } else {
                             // No authenticated user found, redirect to login
                             console.log('No authenticated user found, redirecting to login');
@@ -2377,7 +2372,7 @@
                             </div>
                         ` : ''}
                         <div class="phone-qr-button">
-                            <button type="button" class="btn btn-primary w-100" onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode || ''}', '${phoneData.areaInfo || ''}', '${qrCode || ''}', '${lpaCode || ''}')" style="padding: 0.75rem; font-size: 1rem;">
+                            <button type="button" class="btn btn-primary w-100" onclick="showPhoneNumberPopup('${phoneData.formatted}', '${phoneData.areaCode || ''}', '${phoneData.areaInfo || ''}', '${phoneData.carrier || 'Beta Network'}', '${lpaCode || ''}', '${qrCode || ''}')" style="padding: 0.75rem; font-size: 1rem;">
                                 <i class="fas fa-info-circle me-2"></i> View Phone Number Options
                             </button>
                         </div>
@@ -3158,7 +3153,7 @@
                 popup.style.display = 'none';
             }
         });
-        
+
         // New function to load and display network services subscriptions
         async function loadNetworkServices(firebaseUid) {
             const container = document.getElementById('networkServicesContainer');
