@@ -3730,6 +3730,72 @@ def get_user_network_services():
             'message': str(e)
         }), 500
 
+@app.route('/api/user-phone-numbers', methods=['GET'])
+def get_user_phone_numbers():
+    """Get user's phone numbers and eSIM details"""
+    try:
+        firebase_uid = request.args.get('firebase_uid')
+        
+        if not firebase_uid:
+            return jsonify({
+                'success': False,
+                'message': 'Firebase UID is required'
+            }), 400
+        
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT 
+                            phone_number,
+                            line_id,
+                            iccid,
+                            activation_url,
+                            activation_code,
+                            esim_qr_code,
+                            product_id,
+                            activation_status,
+                            created_at
+                        FROM oxio_activations
+                        WHERE firebase_uid = %s
+                        ORDER BY created_at DESC
+                        LIMIT 1
+                    """, (firebase_uid,))
+                    
+                    row = cur.fetchone()
+                    
+                    if row:
+                        phone_data = {
+                            'success': True,
+                            'phone_number': row[0],
+                            'line_id': row[1],
+                            'iccid': row[2],
+                            'activation_url': row[3],
+                            'activation_code': row[4],
+                            'qr_code': row[5],
+                            'plan_name': row[6].replace('_', ' ').title() if row[6] else 'eSIM Plan',
+                            'status': row[7] or 'active',
+                            'activation_date': row[8].isoformat() if row[8] else None
+                        }
+                        return jsonify(phone_data)
+                    else:
+                        return jsonify({
+                            'success': False,
+                            'message': 'No phone number found'
+                        }), 404
+        
+        return jsonify({
+            'success': False,
+            'message': 'Database connection error'
+        }), 500
+        
+    except Exception as e:
+        print(f"Error fetching user phone numbers: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
 # Import MCP server functions at the top level
 try:
     from mcp_server import SERVICES_CATALOG, calculate_total_costs
