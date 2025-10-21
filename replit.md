@@ -4,6 +4,32 @@
 
 The DOTM Platform is a comprehensive telecommunications service platform offering global eSIM connectivity, cryptocurrency rewards, and network optimization. It bridges traditional mobile services with blockchain technology, providing global data through OXIO's infrastructure, integrating DOTM token rewards, and utilizing Firebase for user management. The platform includes a Model Context Protocol (MCP) server for AI assistant integration, extensive API services, and a multi-layered architecture supporting various features from basic connectivity to advanced network management. Its business vision is to revolutionize mobile services by incorporating Web3 technologies, offering a unique value proposition in the telecommunications market.
 
+## Recent Changes
+
+### October 21, 2025 - User Profile eSIM Display Fixed
+
+**Milestone: Complete User Profile eSIM Integration**
+
+Successfully restored and fixed the user profile page to properly display eSIM information and phone numbers.
+
+**Key Fixes Completed:**
+1. ✅ Fixed critical Flask server crash caused by duplicate MCP server route definitions
+2. ✅ Corrected network services API to display proper service names and valid expiry dates (was showing "undefined" and "31/12/1969")
+3. ✅ Created `/api/user-phone-numbers` endpoint to retrieve user eSIM and phone number data
+4. ✅ Fixed API response format to match frontend expectations:
+   - Returns `phone_numbers` array (not single object)
+   - Field mapping: `activation_code` → `lpa_code`, `created_at` → `activated_at`
+   - Proper JSON structure with success flag
+
+**Database Schema:**
+- User activation data stored in `oxio_activations` table
+- Key fields: `firebase_uid`, `phone_number`, `iccid`, `activation_code`, `esim_qr_code`, `activation_status`, `created_at`
+
+**Technical Notes:**
+- Frontend expects arrays wrapped in descriptive keys (e.g., `phone_numbers` array)
+- API response formats must exactly match frontend expectations for proper rendering
+- Firebase UID is used as the primary key for user lookups across systems
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
