@@ -1,6 +1,6 @@
 # DOTM Platform - AI-Driven Global Telecommunications
 
-![DOT](https://img.shields.io/badge/Status-Live-green) ![Ethereum](https://img.shields.io/badge/Ethereum-Mainnet-blue) ![Version](https://img.shields.io/badge/Version-2.0-brightgreen) ![MCP](https://img.shields.io/badge/MCP-v2.0-purple)
+![DOT](https://img.shields.io/badge/Status-Live-green) ![Ethereum](https://img.shields.io/badge/Ethereum-Mainnet-blue) ![Version](https://img.shields.io/badge/Version-3.1.1-brightgreen) ![MCP](https://img.shields.io/badge/MCP-v2.0-purple)
 
 ## 🤖 Revolutionary AI Integration - NEW!
 
@@ -575,11 +575,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ![Beta Program](https://img.shields.io/badge/Beta_Program-Active-orange)
 
 **Last Updated**: October 22, 2025
-**Version**: 4.0.0 - MCP v2 AI Integration
+**Version**: 3.1.1 - MCP v2 AI Integration
 **DOTM Token Contract**: 0xF57ab8DEE7ebE3686DB8Bf89E8aCc15E94B97A8D
 **MCP v2 Endpoint**: https://gorse.dotmobile.app/mcp/v2/messages
 
-### 🎯 What's New in v4.0.0
+### 🎯 What's New in v3.1.1
 
 **AI-Driven eSIM Activation:**
 - ✅ Model Context Protocol (MCP) v2 integration
