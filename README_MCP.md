@@ -247,8 +247,85 @@ For technical support or integration assistance:
 
 This MCP server documentation is part of the DOTM Platform ecosystem. Usage is subject to platform terms of service.
 
+## MCP Server v2.0 (2025 Specification)
+
+### NEW: Protocol-Compliant MCP Server
+
+We now offer a **fully compliant Model Context Protocol (MCP) server** following the **2024-11-05 specification**:
+
+#### Key Features
+
+- ✅ **JSON-RPC 2.0** messaging protocol
+- ✅ **HTTP + SSE** transport (Server-Sent Events)
+- ✅ **Resources**: 4 resource types (catalog, memberships, network features, pricing)
+- ✅ **Tools**: 4 tools (pricing calculator, service search, details, comparisons)
+- ✅ **Prompts**: 3 prompts (plan recommendations, service explanations, cost optimization)
+- ✅ **Auto-Registration Authentication** via Firebase Bearer tokens
+
+#### Base URL
+```
+https://get-dot-esim.replit.app/mcp/v2
+```
+
+#### Quick Start
+
+**1. Server Information:**
+```bash
+curl https://get-dot-esim.replit.app/mcp/v2
+```
+
+**2. Initialize Connection:**
+```bash
+curl -X POST https://get-dot-esim.replit.app/mcp/v2/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "capabilities": {},
+      "clientInfo": {"name": "test-client", "version": "1.0.0"}
+    }
+  }'
+```
+
+**3. Calculate Pricing:**
+```bash
+curl -X POST https://get-dot-esim.replit.app/mcp/v2/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "calculate_pricing",
+      "arguments": {"service_ids": ["basic_membership", "network_vpn_access"]}
+    }
+  }'
+```
+
+#### Documentation
+
+- **Full Specification**: See `MCP_V2_SPECIFICATION.md`
+- **API Reference**: https://get-dot-esim.replit.app/mcp/v2/docs
+- **Protocol Spec**: https://modelcontextprotocol.io/specification/2024-11-05
+
+#### Available Methods
+
+**Connection**: `initialize`, `ping`  
+**Resources**: `resources/list`, `resources/read`  
+**Tools**: `tools/list`, `tools/call`  
+**Prompts**: `prompts/list`, `prompts/get`
+
 ---
 
-*Last Updated: January 2025*
-*Version: 1.0*
+## Legacy MCP v1 (Service Catalog API)
+
+The original MCP service catalog is still available at `/mcp` for backwards compatibility.
+
+---
+
+*Last Updated: October 22, 2025*
+*MCP v1: 1.0 | MCP v2: 2.0.0*
 *Total Services: 20+ across 7 categories*
