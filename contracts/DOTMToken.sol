@@ -15,6 +15,10 @@ contract DOTMToken is ERC20, Ownable {
     // New member reward amount ($10.33 CAD worth of tokens)
     uint256 public constant NEW_MEMBER_REWARD = 1033 * 10**16; // 10.33 DOTM tokens
     
+    // First transaction bonus amounts
+    uint256 public constant FIRST_TRANSACTION_BONUS_REGULAR = 1033 * 10**16; // 10.33 DOTM tokens
+    uint256 public constant FIRST_TRANSACTION_BONUS_FOUNDING = 10033 * 10**16; // 100.33 DOTM tokens
+    
     constructor() ERC20("DOTM Token", "DOTM") Ownable(msg.sender) {
         // No initial mint, tokens are minted as needed
     }
@@ -52,6 +56,18 @@ contract DOTMToken is ERC20, Ownable {
     function awardNewMember(address newMember) public onlyOwner {
         require(totalSupply() + NEW_MEMBER_REWARD <= MAX_SUPPLY, "Not enough tokens left for new member");
         _mint(newMember, NEW_MEMBER_REWARD);
+    }
+    
+    // Function to award first transaction bonus to regular members (10.33 DOTM)
+    function awardFirstTransactionBonusRegular(address member) public onlyOwner {
+        require(totalSupply() + FIRST_TRANSACTION_BONUS_REGULAR <= MAX_SUPPLY, "Not enough tokens left for first transaction bonus");
+        _mint(member, FIRST_TRANSACTION_BONUS_REGULAR);
+    }
+    
+    // Function to award first transaction bonus to founding members (100.33 DOTM)
+    function awardFirstTransactionBonusFounding(address foundingMember) public onlyOwner {
+        require(totalSupply() + FIRST_TRANSACTION_BONUS_FOUNDING <= MAX_SUPPLY, "Not enough tokens left for founding member first transaction bonus");
+        _mint(foundingMember, FIRST_TRANSACTION_BONUS_FOUNDING);
     }
     
     // Function to check remaining mintable tokens
