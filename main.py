@@ -457,6 +457,20 @@ try:
                 else:
                     print("user_network_preferences table already exists")
 
+                # Check if first_transaction_bonuses table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'first_transaction_bonuses')")
+                first_transaction_bonuses_exists = cur.fetchone()[0]
+
+                if not first_transaction_bonuses_exists:
+                    print("Creating first_transaction_bonuses table...")
+                    with open('create_first_transaction_bonus_table.sql', 'r') as sql_file:
+                        sql_script = sql_file.read()
+                        cur.execute(sql_script)
+                    conn.commit()
+                    print("first_transaction_bonuses table created successfully")
+                else:
+                    print("first_transaction_bonuses table already exists")
+
                 conn.commit()
         else:
             print("No database connection available for table creation")
