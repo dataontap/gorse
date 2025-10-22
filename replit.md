@@ -6,6 +6,51 @@ The DOTM Platform is a comprehensive telecommunications service platform offerin
 
 ## Recent Changes
 
+### October 22, 2025 - AI-Driven eSIM Activation via MCP v2 Server
+
+**Milestone: ChatGPT & Gemini Integration for eSIM Activation**
+
+Successfully implemented complete AI-driven eSIM activation workflow using Model Context Protocol (MCP) v2, enabling users to activate eSIMs by simply asking ChatGPT or Gemini AI.
+
+**Key Features Implemented:**
+1. ✅ Fixed MCP v2 server integration - resolved `_tool_manager` attribute error
+2. ✅ Added `activate_esim` tool with Stripe payment verification
+3. ✅ Integrated OXIO activation workflow for AI-driven provisioning
+4. ✅ Created comprehensive test suites for ChatGPT (6 tests) and Gemini (7 tests)
+5. ✅ Implemented end-to-end payment → activation flow validation
+
+**Technical Architecture:**
+- **MCP v2 Endpoint:** `/mcp/v2/messages` (JSON-RPC 2.0)
+- **Payment Verification:** Queries `purchases` table for `esim_beta` product ($1)
+- **Security:** Firebase authentication + email verification + Stripe payment check
+- **Integration:** Reuses existing `activate_esim_for_user()` and OXIO API
+- **Tools Available:** 5 total (calculate_pricing, search_services, get_service_details, compare_memberships, activate_esim)
+
+**User Flow:**
+1. User tells AI: "I want to activate my eSIM"
+2. AI authenticates with Firebase Bearer token
+3. AI calls MCP server's `activate_esim` tool
+4. Server verifies Stripe payment for eSIM beta
+5. Server activates eSIM via OXIO integration
+6. User receives email with QR code and phone number
+7. AI explains activation details to user
+
+**Files Updated:**
+- `mcp_server_v2.py`: Added activate_esim tool with payment verification
+- `main.py`: Fixed MCP v2 messages endpoint handler integration
+- `tests/test_mcp_chatgpt_esim.py`: ChatGPT integration test suite
+- `tests/test_mcp_gemini_esim.py`: Gemini AI integration test suite
+- `tests/test_end_to_end_esim_activation.py`: Complete workflow testing
+- `MCP_V2_ESIM_ACTIVATION_GUIDE.md`: Comprehensive integration guide
+
+**Testing Results:**
+- ✅ MCP server health check passing
+- ✅ Connection initialization working
+- ✅ activate_esim tool properly exposed
+- ✅ Payment verification logic confirmed
+- ✅ User validation logic confirmed
+- ✅ Integration with existing OXIO workflow verified
+
 ### October 21, 2025 - User Profile eSIM Display Fixed
 
 **Milestone: Complete User Profile eSIM Integration**
