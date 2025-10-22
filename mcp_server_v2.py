@@ -681,21 +681,57 @@ Provide specific actionable recommendations with cost savings calculations.
             sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
             from main import activate_esim_for_user, get_user_by_firebase_uid, get_db_connection
             
-            # Verify user exists and is verified
+            # Check if user exists, if not create them
             user_data = get_user_by_firebase_uid(firebase_uid)
             if not user_data:
-                return {
-                    "success": False,
-                    "error": "User not found",
-                    "message": f"No user found for Firebase UID: {firebase_uid}. Please ensure user is registered."
-                }
+                # User doesn't exist - create new user with ChatGPT/Gemini provided email
+                logger.info(f"Creating new user from AI assistant: {firebase_uid} / {email}")
+                
+                try:
+                    with get_db_connection() as conn:
+                        with conn.cursor() as cur:
+                            # Insert new user into users table
+                            cur.execute("""
+                                INSERT INTO users (firebase_uid, email, created_at)
+                                VALUES (%s, %s, CURRENT_TIMESTAMP)
+                                RETURNING id, firebase_uid, email
+                            """, (firebase_uid, email))
+                            
+                            new_user = cur.fetchone()
+                            conn.commit()
+                            
+                            if new_user:
+                                user_id, uid, user_email = new_user
+                                logger.info(f"Created new user from AI: ID {user_id}, UID {uid}, Email {user_email}")
+                                user_data = {
+                                    'id': user_id,
+                                    'firebase_uid': uid,
+                                    'email': user_email,
+                                    'created_via_ai': True
+                                }
+                            else:
+                                logger.error("Failed to create user - no data returned")
+                                return {
+                                    "success": False,
+                                    "error": "User creation failed",
+                                    "message": "Unable to create user account. Please try again."
+                                }
+                        
+                except Exception as db_error:
+                    logger.error(f"Error creating user: {str(db_error)}")
+                    return {
+                        "success": False,
+                        "error": "User creation failed",
+                        "message": f"Error creating user account: {str(db_error)}"
+                    }
             
-            # Check if email matches
+            # Verify email matches (important for existing users)
             if user_data.get('email') != email:
+                logger.warning(f"Email mismatch for {firebase_uid}: expected {user_data.get('email')}, got {email}")
                 return {
                     "success": False,
                     "error": "Email mismatch",
-                    "message": "Provided email does not match user's registered email"
+                    "message": f"The email {email} doesn't match your registered email. Please use your registered email address."
                 }
             
             # Check if user has paid for eSIM beta

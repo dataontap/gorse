@@ -21,7 +21,9 @@ Successfully implemented complete AI-driven eSIM activation workflow using Model
 
 **Technical Architecture:**
 - **MCP v2 Endpoint:** `/mcp/v2/messages` (JSON-RPC 2.0)
+- **Auto-Registration:** Automatically creates new users from ChatGPT/Gemini with their email
 - **Payment Verification:** Queries `purchases` table for `esim_beta` product ($1)
+- **Automatic Invoicing:** Creates and sends Stripe invoices when payment not found
 - **Security:** Firebase authentication + email verification + Stripe payment check
 - **Integration:** Reuses existing `activate_esim_for_user()` and OXIO API
 - **Tools Available:** 5 total (calculate_pricing, search_services, get_service_details, compare_memberships, activate_esim)

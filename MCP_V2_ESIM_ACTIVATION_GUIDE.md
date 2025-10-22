@@ -146,7 +146,7 @@ Content-Type: application/json
 
 ### ChatGPT Workflow
 
-#### First Attempt (No Payment)
+#### First Attempt (New User, No Payment)
 
 1. **User Request:** "I want to activate my eSIM"
 2. **ChatGPT:** Authenticates user with Firebase Bearer token
@@ -154,12 +154,14 @@ Content-Type: application/json
 4. **ChatGPT:** Calls `initialize` method to establish connection
 5. **ChatGPT:** Calls `tools/list` to discover `activate_esim` tool
 6. **ChatGPT:** Calls `tools/call` with user's email and Firebase UID
-7. **Server:** Checks database for `esim_beta` purchase - **not found**
-8. **Server:** Creates Stripe invoice for $1 and sends to user's email
-9. **Server:** Returns `invoice_sent` status with invoice URL
-10. **ChatGPT:** Tells user: "I've sent a $1 invoice to your email. Please pay it and come back!"
-11. **User:** Receives email, clicks link, pays $1 via Stripe
-12. **Stripe:** Sends webhook to DOTM → Purchase recorded in database
+7. **Server:** Checks if user exists - **not found**
+8. **Server:** **Auto-creates new user** with email from ChatGPT ✨
+9. **Server:** Checks database for `esim_beta` purchase - **not found**
+10. **Server:** Creates Stripe invoice for $1 and sends to user's email
+11. **Server:** Returns `invoice_sent` status with invoice URL
+12. **ChatGPT:** Tells user: "I've sent a $1 invoice to your email. Please pay it and come back!"
+13. **User:** Receives email, clicks link, pays $1 via Stripe
+14. **Stripe:** Sends webhook to DOTM → Purchase recorded in database
 
 #### Second Attempt (After Payment)
 
