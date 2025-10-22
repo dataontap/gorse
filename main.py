@@ -2978,6 +2978,165 @@ def handle_stripe_webhook():
                         'message': str(e)
                     }), 500
 
+            # Handle Global Data 10GB activation with OXIO
+            elif (product_id == 'global_data_10gb' or product == 'global_data_10gb') and firebase_uid:
+                try:
+                    print(f"💰 Processing 10GB Global Data purchase for Firebase UID: {firebase_uid}")
+                    
+                    # Get OXIO plan ID from metadata
+                    oxio_plan_id = session['metadata'].get('oxio_plan_id', '9d521906-ea2f-4c2b-b717-1ce36744c36a')
+                    user_email = session['metadata'].get('user_email', '')
+                    user_name = session['metadata'].get('user_name', '')
+                    total_amount = session.get('amount_total', 2000)  # Default $20.00 in cents
+                    
+                    print(f"📋 10GB Activation params: Firebase UID={firebase_uid}, Email={user_email}, Plan ID={oxio_plan_id}, Amount=${total_amount/100:.2f}")
+                    
+                    # Get or create user data
+                    with get_db_connection() as conn:
+                        if conn:
+                            with conn.cursor() as cur:
+                                cur.execute("""
+                                    SELECT id, email, display_name, oxio_user_id
+                                    FROM users
+                                    WHERE firebase_uid = %s
+                                """, (firebase_uid,))
+                                user_data = cur.fetchone()
+                                
+                                if not user_data:
+                                    print(f"⚠️ User not found in database, creating new user")
+                                    cur.execute("""
+                                        INSERT INTO users (email, firebase_uid, display_name)
+                                        VALUES (%s, %s, %s)
+                                        RETURNING id
+                                    """, (user_email, firebase_uid, user_name))
+                                    user_id = cur.fetchone()[0]
+                                    oxio_user_id = None
+                                    conn.commit()
+                                else:
+                                    user_id = user_data[0]
+                                    user_email = user_data[1] or user_email
+                                    user_name = user_data[2] or user_name
+                                    oxio_user_id = user_data[3]
+                    
+                    # Import OXIO service
+                    from oxio_service import oxio_service
+                    
+                    # Ensure OXIO user exists
+                    if not oxio_user_id:
+                        print(f"🆕 Creating OXIO user for {user_email}")
+                        name_parts = (user_name or "User").split(' ', 1)
+                        first_name = name_parts[0] if name_parts else "User"
+                        last_name = name_parts[1] if len(name_parts) > 1 else "Account"
+                        
+                        user_result = oxio_service.create_oxio_user(
+                            first_name=first_name,
+                            last_name=last_name,
+                            email=user_email,
+                            firebase_uid=firebase_uid
+                        )
+                        
+                        if user_result.get('success'):
+                            oxio_user_id = user_result.get('oxio_user_id')
+                            print(f"✅ Created OXIO user: {oxio_user_id}")
+                            
+                            # Update user record with OXIO user ID
+                            with get_db_connection() as conn:
+                                if conn:
+                                    with conn.cursor() as cur:
+                                        cur.execute("""
+                                            UPDATE users SET oxio_user_id = %s
+                                            WHERE firebase_uid = %s
+                                        """, (oxio_user_id, firebase_uid))
+                                        conn.commit()
+                        else:
+                            print(f"❌ Failed to create OXIO user: {user_result.get('message', 'Unknown error')}")
+                            return jsonify({'error': 'Failed to create OXIO user'}), 500
+                    
+                    # Activate OXIO data plan
+                    print(f"🚀 Activating OXIO 10GB plan for user: {oxio_user_id}")
+                    
+                    # Create plan subscription payload
+                    plan_payload = {
+                        "endUserId": oxio_user_id,
+                        "planId": oxio_plan_id
+                    }
+                    
+                    print(f"📤 OXIO Plan Activation Request:")
+                    print(f"   URL: https://api-staging.brandvno.com/v3/subscriptions")
+                    print(f"   Payload: {json.dumps(plan_payload, indent=2)}")
+                    
+                    # Make OXIO API call to activate plan
+                    import requests
+                    oxio_api_key = os.environ.get('OXIO_API_KEY')
+                    oxio_auth_token = os.environ.get('OXIO_AUTH_TOKEN')
+                    
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'x-api-key': oxio_api_key,
+                        'Authorization': f'Bearer {oxio_auth_token}'
+                    }
+                    
+                    response = requests.post(
+                        'https://api-staging.brandvno.com/v3/subscriptions',
+                        json=plan_payload,
+                        headers=headers
+                    )
+                    
+                    print(f"📥 OXIO Plan Activation Response:")
+                    print(f"   Status Code: {response.status_code}")
+                    print(f"   Response: {response.text}")
+                    
+                    if response.status_code in [200, 201]:
+                        oxio_response = response.json()
+                        subscription_id = oxio_response.get('id') or oxio_response.get('subscriptionId')
+                        
+                        print(f"✅ OXIO 10GB plan activated successfully")
+                        print(f"   Subscription ID: {subscription_id}")
+                        
+                        # Record purchase in database
+                        purchase_id = record_purchase(
+                            stripe_id=session.get('id'),
+                            product_id='global_data_10gb',
+                            price_id='price_1RM9sxJnTfh0bNQQgj2sacLZ',
+                            amount=total_amount,
+                            user_id=user_id,
+                            transaction_id=session.get('payment_intent'),
+                            firebase_uid=firebase_uid,
+                            stripe_transaction_id=session.get('payment_intent')
+                        )
+                        print(f"💾 Purchase recorded with ID: {purchase_id}")
+                        
+                        # Award first transaction bonus if eligible
+                        try:
+                            user_data = get_user_by_firebase_uid(firebase_uid)
+                            if user_data:
+                                eth_address = user_data.get('eth_address')
+                                
+                                if eth_address:
+                                    bonus_success, bonus_message = ethereum_helper.check_and_award_first_transaction_bonus(
+                                        user_id, firebase_uid, eth_address
+                                    )
+                                    if bonus_success:
+                                        print(f"🎁 {bonus_message}")
+                                    else:
+                                        print(f"ℹ️ First transaction bonus: {bonus_message}")
+                        except Exception as bonus_error:
+                            print(f"⚠️ Error awarding first transaction bonus: {str(bonus_error)}")
+                        
+                    else:
+                        print(f"❌ OXIO plan activation failed")
+                        return jsonify({
+                            'error': 'OXIO plan activation failed',
+                            'status_code': response.status_code,
+                            'message': response.text
+                        }), 500
+                        
+                except Exception as e:
+                    print(f"❌ Error in 10GB Global Data activation: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+                    return jsonify({'error': str(e)}), 500
+            
             # Handle other product activations (existing logic)
             elif (product_id in ['basic_membership', 'full_membership'] or product in ['basic_membership', 'full_membership']) and firebase_uid:
                 print(f"Membership activation for {product or product_id} will be handled by existing subscription flow")
