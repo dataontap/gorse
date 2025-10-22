@@ -204,3 +204,8 @@ gradle/
 gradlew
 gradlew.bat
 build.gradle.kts
+
+# Cleanup system scripts - internal use only
+CLEANUP_SYSTEM.md
+scripts/cleanup-repo.sh
+scripts/remove-private-files.sh
