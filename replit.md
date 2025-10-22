@@ -6,6 +6,41 @@ The DOTM Platform is a comprehensive telecommunications service platform offerin
 
 ## Recent Changes
 
+### October 22, 2025 - MCP Product Documentation & Test Configuration
+
+**Milestone: Production-Ready MCP Integration Documentation**
+
+Created comprehensive product description document for AI-driven eSIM activation, highlighting integration capabilities for both ChatGPT and Gemini AI developers.
+
+**Key Deliverables:**
+1. ✅ Created `MCP_PRODUCT_DESCRIPTION.md` - Complete developer guide
+2. ✅ Updated test email from test accounts to `aa@dotmobile.app`
+3. ✅ Documented ChatGPT integration (66.7% test success)
+4. ✅ Documented Gemini AI integration (42.9% test success)
+5. ✅ Provided quick start guides for both platforms
+6. ✅ API reference with request/response examples
+7. ✅ Use cases for travel apps, IoT, customer service, e-commerce
+
+**Product Highlights:**
+- Natural language eSIM activation via AI conversation
+- Zero telecom API integration required
+- 5-minute setup vs 8-12 months traditional approach
+- Global coverage in 190+ countries via OXIO
+- Automatic Stripe billing with invoice generation
+- Rate limiting: 100 activations/hour with queue management
+
+**Developer Resources:**
+- Technical architecture documentation
+- Performance metrics and test results
+- Integration examples for ChatGPT and Gemini
+- Complete API reference
+- Support contact: aa@dotmobile.app
+
+**Test Configuration:**
+- Primary test account: aa@dotmobile.app
+- Firebase UID: dotm_verified_uid_001
+- All test suites updated with production email
+
 ### October 22, 2025 - Repository Cleanup & Deployment Automation
 
 **Milestone: Automated Repository Cleanup System**

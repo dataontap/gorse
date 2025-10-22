@@ -15,13 +15,13 @@ from datetime import datetime
 BASE_URL = os.getenv("MCP_BASE_URL", "http://localhost:5000/mcp/v2")
 MESSAGES_ENDPOINT = f"{BASE_URL}/messages"
 
-# Test user data
+# Test user data - Using production DOTM account
 TEST_SCENARIOS = {
     "happy_path": {
         "description": "Verified user with valid email",
         "user": {
-            "email": "gemini_test@dotm.test",
-            "firebase_uid": "gemini_verified_uid_001",
+            "email": "aa@dotmobile.app",
+            "firebase_uid": "dotm_verified_uid_001",
             "firebase_token": "gemini_test_token",
         },
         "expected_success": True
@@ -310,8 +310,8 @@ def test_gemini_multimodal_context():
     
     # Simulate Gemini extracting user context from multimodal input
     extracted_context = {
-        "email": "gemini_test@dotm.test",
-        "firebase_uid": "gemini_verified_uid_001",
+        "email": "aa@dotmobile.app",
+        "firebase_uid": "dotm_verified_uid_001",
         "intent": "activate_esim",
         "confidence": 0.95
     }
@@ -365,8 +365,8 @@ def test_gemini_conversation_flow():
     # Step 3: Get user context (simulated)
     print("🔷 Gemini: I can help with that! Let me access your account...")
     user_context = {
-        "email": "gemini_test@dotm.test",
-        "firebase_uid": "gemini_verified_uid_001"
+        "email": "aa@dotmobile.app",
+        "firebase_uid": "dotm_verified_uid_001"
     }
     
     # Step 4: Execute activation
@@ -426,8 +426,8 @@ def test_gemini_batch_operations():
     
     # Operation 4: Activate eSIM
     activation_result = client.execute_esim_activation(
-        email="gemini_test@dotm.test",
-        firebase_uid="gemini_verified_uid_001"
+        email="aa@dotmobile.app",
+        firebase_uid="dotm_verified_uid_001"
     )
     operations.append(("Activate eSIM", activation_result.get("success", False)))
     

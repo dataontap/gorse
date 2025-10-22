@@ -14,11 +14,11 @@ import os
 BASE_URL = os.getenv("MCP_BASE_URL", "http://localhost:5000/mcp/v2")
 MESSAGES_ENDPOINT = f"{BASE_URL}/messages"
 
-# Test user data (replace with actual test Firebase UIDs)
+# Test user data - Using production DOTM account
 TEST_USERS = {
     "verified_user": {
-        "email": "verified@dotm.test",
-        "firebase_uid": "test_verified_uid_123",
+        "email": "aa@dotmobile.app",
+        "firebase_uid": "dotm_verified_uid_123",
         "firebase_token": "test_token_verified",  # Replace with actual test token
         "expected_result": "success"
     },
