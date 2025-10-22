@@ -675,11 +675,11 @@ Provide specific actionable recommendations with cost savings calculations.
             }
         
         try:
-            # Import activation function from main.py
+            # Import required functions from main.py
             import sys
             import os
             sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-            from main import activate_esim_for_user, get_user_by_firebase_uid
+            from main import activate_esim_for_user, get_user_by_firebase_uid, get_db_connection
             
             # Verify user exists and is verified
             user_data = get_user_by_firebase_uid(firebase_uid)
@@ -697,6 +697,41 @@ Provide specific actionable recommendations with cost savings calculations.
                     "error": "Email mismatch",
                     "message": "Provided email does not match user's registered email"
                 }
+            
+            # Check if user has paid for eSIM beta
+            conn = get_db_connection()
+            if conn:
+                try:
+                    with conn.cursor() as cur:
+                        # Check for eSIM beta purchase
+                        cur.execute("""
+                            SELECT PurchaseID, DateCreated, StripeTransactionID 
+                            FROM purchases 
+                            WHERE FirebaseUID = %s 
+                            AND StripeProductID = 'esim_beta'
+                            ORDER BY DateCreated DESC 
+                            LIMIT 1
+                        """, (firebase_uid,))
+                        
+                        purchase = cur.fetchone()
+                        
+                        if not purchase:
+                            return {
+                                "success": False,
+                                "error": "Payment required",
+                                "message": "No eSIM beta purchase found. Please purchase the eSIM beta ($1) before activation.",
+                                "payment_required": True,
+                                "product": "esim_beta",
+                                "price_usd": 1.00
+                            }
+                        
+                        purchase_id, purchase_date, transaction_id = purchase
+                        logger.info(f"Verified eSIM beta purchase: {purchase_id} for user {firebase_uid}")
+                        
+                finally:
+                    conn.close()
+            else:
+                logger.warning("Database connection failed - proceeding without payment verification")
             
             # Create a mock checkout session for compatibility with activate_esim_for_user
             mock_session = {
@@ -722,7 +757,8 @@ Provide specific actionable recommendations with cost savings calculations.
                         "phone_number": result.get('phone_number', 'Assigned by carrier'),
                         "plan": "OXIO Base Plan (Basic Membership)",
                         "status": "Active",
-                        "activation_id": result.get('line_id', 'N/A')
+                        "activation_id": result.get('line_id', 'N/A'),
+                        "purchase_verified": True
                     },
                     "next_steps": [
                         "Check your email for eSIM activation details and QR code",
