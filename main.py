@@ -2666,6 +2666,20 @@ def create_checkout_session():
             except Exception as db_error:
                 print(f"Error getting user data for checkout metadata: {db_error}")
 
+        # Prepare metadata
+        session_metadata = {
+            'product_id': product_id,
+            'product': product_id,  # Add 'product' field for webhook compatibility
+            'firebase_uid': firebase_uid,
+            'user_email': user_email or '',  # Add for eSIM activation
+            'user_name': user_name or '',    # Add for eSIM activation
+            'subscription_type': 'yearly' if is_subscription else 'one_time'
+        }
+        
+        # Add OXIO plan ID for global data product
+        if product_id == 'global_data_10gb':
+            session_metadata['oxio_plan_id'] = '9d521906-ea2f-4c2b-b717-1ce36744c36a'
+        
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -2675,14 +2689,7 @@ def create_checkout_session():
             mode='subscription' if is_subscription else 'payment',
             success_url=success_url,
             cancel_url=cancel_url,
-            metadata={
-                'product_id': product_id,
-                'product': product_id,  # Add 'product' field for webhook compatibility
-                'firebase_uid': firebase_uid,
-                'user_email': user_email or '',  # Add for eSIM activation
-                'user_name': user_name or '',    # Add for eSIM activation
-                'subscription_type': 'yearly' if is_subscription else 'one_time'
-            },
+            metadata=session_metadata,
             **customer_params  # Add customer ID if available
         )
 

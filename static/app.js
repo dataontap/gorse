@@ -216,21 +216,24 @@ function confirmPurchase() {
 
         // Get Firebase UID from multiple possible sources
         var firebaseUid = null;
+        var userEmail = null;
 
         // First try to get current user data
         var currentUserData = JSON.parse(localStorage.getItem('currentUser') || 'null');
         if (currentUserData && currentUserData.uid) {
             firebaseUid = currentUserData.uid;
+            userEmail = currentUserData.email;
             console.log('Using Firebase UID from currentUser:', firebaseUid);
         } else {
-            // Fallback to other Firebase UID storage (avoid 'userId' as it's internal DB ID, not Firebase UID)
+            // Fallback to other Firebase UID storage
             firebaseUid = getFirebaseUID();
             console.log('Using Firebase UID from fallback storage:', firebaseUid);
         }
 
-        // Final fallback: check Firebase directly if localStorage doesn't have UID
+        // Final fallback: check Firebase directly
         if (!firebaseUid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
             firebaseUid = firebase.auth().currentUser.uid;
+            userEmail = firebase.auth().currentUser.email;
             console.log('Using Firebase UID from direct Firebase auth:', firebaseUid);
         }
 
@@ -239,29 +242,35 @@ function confirmPurchase() {
             return;
         }
 
-        // Make API call to record purchase
-        fetch('/api/record-global-purchase', {
+        // Create Stripe checkout session
+        fetch('/create-checkout-session', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 productId: productId,
-                firebaseUid: firebaseUid
+                firebaseUid: firebaseUid,
+                email: userEmail
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to create checkout session');
+            }
+            return response.json();
+        })
         .then(data => {
-            console.log('Purchase recorded:', data);
-
-            // Show success view instead of alert
-            showPurchaseSuccessView();
-
-            // Update main dashboard globe display
-            updateMainGlobeDisplay();
+            console.log('Checkout session created:', data);
+            
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                throw new Error('No checkout URL received');
+            }
         })
         .catch(error => {
-            console.error('Error recording purchase:', error);
+            console.error('Error creating checkout session:', error);
             alert('Error processing purchase. Please try again.');
         });
     }
