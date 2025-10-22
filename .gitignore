@@ -166,6 +166,8 @@ firebase-credentials.json
 static/audio/*.mp3
 static/audio/*.wav
 static/audio/*.m4a
+welcome_*.mp3
+*.mp3
 
 # Screenshots and attached assets - development only
 attached_assets/
