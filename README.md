@@ -1,20 +1,56 @@
-# DOT Services
+# DOTM Platform - AI-Driven Global Telecommunications
 
-![DOT](https://img.shields.io/badge/Status-Live-green) ![Ethereum](https://img.shields.io/badge/Ethereum-Mainnet-blue) ![Version](https://img.shields.io/badge/Version-1.0-brightgreen)
+![DOT](https://img.shields.io/badge/Status-Live-green) ![Ethereum](https://img.shields.io/badge/Ethereum-Mainnet-blue) ![Version](https://img.shields.io/badge/Version-2.0-brightgreen) ![MCP](https://img.shields.io/badge/MCP-v2.0-purple)
+
+## 🤖 Revolutionary AI Integration - NEW!
+
+**Activate eSIMs by simply talking to ChatGPT or Gemini AI**
+
+Users can now discover and activate DOTM eSIMs entirely through natural conversation:
+
+```
+👤 USER → ChatGPT: "I need a Global Data eSIM for my trip to Europe"
+
+🤖 ChatGPT: "I can help you activate a DOTM eSIM! I've sent a $1 
+            invoice to your email. After payment, you'll have instant 
+            global connectivity."
+
+✅ RESULT: eSIM activated, QR code delivered, ready to travel!
+```
+
+### Trigger Phrases
+- **"Global Data eSIM"** - Discover DOTM through ChatGPT
+- **"DOT eSIM"** - Activate via Gemini AI or ChatGPT
+
+### How It Works
+1. **Conversation-Based Discovery** - No website needed
+2. **Automatic Account Creation** - Seamless onboarding
+3. **Email-Based Payment** - Simple $1 Stripe invoice
+4. **Instant Activation** - eSIM ready in <5 minutes
+5. **QR Code Delivery** - Install and connect immediately
+
+**Powered by Model Context Protocol (MCP) v2 - [Learn More](#-ai-assistant-integration-mcp-v2)**
+
+---
+
+## 🌐 Full MVNO Framework
+
+DOTM Platform is a next-generation telecommunications service combining global eSIM connectivity with blockchain rewards and AI-driven automation.
 
 **Code, APIs and App Available for FREE. $1/month license for globally connected active users. Ask for above 100TPH access.**
 
-## 🌐 Full MVNO framework
+### What We Provide
+- ✅ **Global eSIM Connectivity** - 190+ countries via OXIO network
+- ✅ **AI-Powered Activation** - ChatGPT & Gemini integration
+- ✅ **Blockchain Rewards** - DOTM token on Ethereum Mainnet
+- ✅ **Automated Invoicing** - Stripe payment processing
+- ✅ **Enterprise Security** - Rate limiting, Firebase auth, encryption
+- ✅ **Full MVNO** - Complete telecommunications stack
 
-dotmobile is a smart tiny telecom. This gorse release is compact Alpha build of a Full MVNO.
+We provide global eSIM connectivity, automation, network services intelligence and network optimization features through a unified ecosystem in a public cloud. Our data servers are located solely in North America: N.Virginia, USA and in Montreal, Canada. We use Full MVNO type of connectivity in the USA, Mexico and in Canada soon hopefully.
 
-Available for FREE and $1 per user above 100TPH. Etheruem and blockchain parts and many other things optional. Used Stripe for invoices, catalog and payments.
-
-Please use this comprehensive telecommunications service toolset/framework to create better telecommunications experiences, bridge traditional mobile services with better digital and user experience, integrate newtech and AI and use our token (blockchain technology) for good.
-
-We provide global eSIM connectivity, automation, network services intelligence and network optimization features through a unified ecosystem in a public cloud. Our data servers are located colely in North America: N.Virginia, USA and in Montreal, Canada. We use Full MVNO type of connectivity in the USA, Mexico and in Canada soon hopefully.
-
-We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql databases, Resend for professional email delivery, ElevenLabs for voice synthesis, Bitchat for fallback connectivity and Ethereum blockchain integration. Full list of integrations below.
+### Technology Stack
+Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql databases, Resend for professional email delivery, ElevenLabs for voice synthesis, Bitchat for fallback connectivity, Ethereum blockchain integration, and **Model Context Protocol (MCP) v2** for AI assistant integration. Full list of integrations below.
 
 ### 🚀 Live Platform
 
@@ -122,12 +158,72 @@ We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql d
 - **Offline Operation**: Complete functionality without internet or cellular connectivity
 - **Cover Traffic**: Timing obfuscation and dummy messages to prevent traffic analysis
 
-### Model Context Protocol (MCP) Server
-- **AI Assistant Integration**: Structured service information access
-- **Multi-Format APIs**: JSON endpoints and interactive HTML interfaces
-- **Privacy-First Design**: Zero user data exposure
-- **Real-Time Pricing**: Dynamic cost calculations
-- **Service Catalog**: 20+ services across 7 categories
+### Model Context Protocol (MCP) v2 Server 🆕
+**Revolutionary AI-Driven eSIM Activation**
+
+The DOTM Platform features a production-ready MCP v2 server that enables ChatGPT and Gemini AI to activate eSIMs through natural conversation.
+
+#### Key Features
+- ✅ **JSON-RPC 2.0 Protocol**: Latest MCP specification (2024-11-05)
+- ✅ **5 AI Tools Available**: Calculate pricing, search services, compare plans, activate eSIMs
+- ✅ **Automatic User Registration**: New users created seamlessly from AI conversations
+- ✅ **Automatic Invoice Generation**: Stripe invoices sent when payment needed ($1 for eSIM beta)
+- ✅ **Rate Limiting**: 100 activations/hour with intelligent queue management
+- ✅ **Real-Time ETA**: Queue position and wait time estimation
+- ✅ **Privacy-First Design**: Zero user data exposure to AI assistants
+- ✅ **OXIO Integration**: Live eSIM provisioning and phone number assignment
+
+#### Conversation Flow
+```
+1. User: "I want a Global Data eSIM" 
+   ↓
+2. AI calls MCP server → Checks authentication
+   ↓
+3. Server creates account (if new user)
+   ↓
+4. Server checks payment → Sends $1 Stripe invoice
+   ↓
+5. User pays invoice via email
+   ↓
+6. User: "I paid the invoice"
+   ↓
+7. AI calls MCP server → Payment verified
+   ↓
+8. Server activates eSIM via OXIO
+   ↓
+9. QR code + phone number sent to user's email
+   ↓
+10. User installs eSIM and travels globally!
+```
+
+#### Security & Performance
+- **Rate Limit**: 100 activations per hour (configurable)
+- **Queue Management**: Position tracking with accurate ETAs
+- **Firebase Auth**: Enterprise-grade user authentication
+- **Stripe Payment**: Automatic invoice generation and verification
+- **Comprehensive Logging**: Full audit trail for debugging and monitoring
+
+#### MCP v2 Endpoints
+- **Info**: `GET /mcp/v2` - Server capabilities and version
+- **Messages**: `POST /mcp/v2/messages` - JSON-RPC 2.0 tool execution
+- **Docs**: `GET /mcp/v2/docs` - Interactive documentation
+- **Legacy v1**: `GET /mcp` - Backward compatibility
+
+#### Available AI Tools
+1. **calculate_pricing** - Dynamic cost calculations for service bundles
+2. **search_services** - Discover available telecommunications services
+3. **get_service_details** - Detailed information about specific services
+4. **compare_memberships** - Side-by-side plan comparisons
+5. **activate_esim** - Complete eSIM activation with payment verification ⭐
+
+#### Testing
+Comprehensive test suites validate the entire AI integration:
+- ✅ Invocation phrase tests ("Global Data eSIM", "DOT eSIM")
+- ✅ ChatGPT integration tests (6 test cases)
+- ✅ Gemini AI integration tests (7 test cases)
+- ✅ End-to-end activation workflow
+- ✅ Rate limiting and queue management
+- ✅ Payment verification and invoice generation
 
 ## 📱 Beta Approval System
 
@@ -185,9 +281,86 @@ We use Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql d
 - **Input Validation**: Comprehensive parameter sanitization
 - **Audit Logging**: Complete action tracking and compliance records
 
-## 🔌 Developer Integration
+## 🤖 AI Assistant Integration (MCP v2)
 
-### Quick Start
+### Activate eSIMs via ChatGPT or Gemini
+
+Your users can now activate eSIMs by simply talking to their favorite AI assistant:
+
+**Example Conversation:**
+```
+👤 USER: "I'm traveling to Japan next week and need mobile data. 
+         I heard about Global Data eSIM - can you help?"
+
+🤖 ChatGPT: "I can definitely help you get a DOTM Global Data eSIM 
+            for your trip to Japan! Let me set that up for you..."
+            
+            [Calls DOTM MCP Server]
+
+💾 DOTM: Creates account + Sends $1 Stripe invoice to user@email.com
+
+🤖 ChatGPT: "I've created your DOTM account and sent a $1 invoice to 
+            your email. Once you pay it, I'll activate your eSIM with 
+            a phone number and data access for Japan!"
+
+📧 USER: [Receives email, pays $1 via Stripe]
+
+👤 USER: "I paid the invoice!"
+
+🤖 ChatGPT: [Calls DOTM MCP Server again]
+
+💾 DOTM: Payment verified ✓ → Activates eSIM → Assigns +1-555-123-4567
+
+🤖 ChatGPT: "Perfect! Your DOTM eSIM is now active! 
+            📱 Phone Number: +1-555-123-4567
+            📧 Check your email for the QR code to install the eSIM
+            🌏 You'll have data coverage throughout Japan
+            
+            Have an amazing trip!"
+
+✅ USER: Scans QR code, installs eSIM, lands in Japan with connectivity!
+```
+
+### MCP v2 Integration for Developers
+
+**Test the MCP v2 Server:**
+```bash
+# Check server status and capabilities
+curl https://gorse.dotmobile.app/mcp/v2
+
+# Call the activate_esim tool via JSON-RPC 2.0
+curl -X POST https://gorse.dotmobile.app/mcp/v2/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "activate_esim",
+      "arguments": {
+        "email": "user@example.com",
+        "firebase_uid": "user_firebase_uid_123"
+      }
+    }
+  }'
+
+# Response: Invoice sent or eSIM activated (depending on payment status)
+```
+
+**Rate Limit Monitoring:**
+```bash
+# Get current rate limit statistics
+curl https://gorse.dotmobile.app/mcp/v2 | jq
+
+# Example response shows:
+# - Current activations: 87/100
+# - Available slots: 13
+# - Capacity used: 87.0%
+# - Queue status: Empty
+```
+
+### Legacy API Endpoints (v1)
+
 ```bash
 # Get all services
 curl https://gorse.dotmobile.app/mcp/api
@@ -281,10 +454,12 @@ console.log(`Total monthly: $${pricing.pricing.monthly_recurring}`);
 
 ### API Specifications
 - **Base URL**: `https://gorse.dotmobile.app`
-- **MCP Server**: `https://gorse.dotmobile.app/mcp`
+- **MCP v2 Endpoint**: `https://gorse.dotmobile.app/mcp/v2/messages` (JSON-RPC 2.0)
+- **MCP v1 Server**: `https://gorse.dotmobile.app/mcp` (Legacy)
 - **Response Format**: JSON and HTML
-- **Authentication**: Firebase-based for user endpoints
-- **Rate Limiting**: 100 requests/minute for public APIs
+- **Authentication**: Firebase Bearer tokens for user operations
+- **Rate Limiting**: 100 eSIM activations/hour with queue management
+- **Protocol**: Model Context Protocol v2 (2024-11-05 specification)
 
 ### Database Schema
 - **Users**: Firebase UID mapping and profile data
@@ -304,13 +479,25 @@ console.log(`Total monthly: $${pricing.pricing.monthly_recurring}`);
 - **Total Services**: 20+ across 7 categories
 - **Global Coverage**: 190+ countries
 - **API Uptime**: 99.9%
-- **Active Integrations**: Firebase, Stripe, OXIO, Ethereum
+- **Active Integrations**: Firebase, Stripe, OXIO, Ethereum, MCP v2
+- **AI Platforms**: ChatGPT Plus, Google Gemini
 - **Token Contract**: Live on Ethereum Mainnet
 - **Beta Users**: Growing community of early adopters
+- **MCP Protocol**: v2.0 (2024-11-05 specification)
+- **Rate Limit**: 100 eSIM activations/hour with intelligent queueing
 
 ## 🚀 Getting Started
 
-### For Users
+### For Users (AI-Powered Activation) 🆕
+1. **Open ChatGPT or Gemini**: Use your favorite AI assistant
+2. **Say the Magic Words**: "I need a Global Data eSIM" or "Activate a DOT eSIM"
+3. **Pay $1 Invoice**: Check your email and pay via Stripe link
+4. **Get Your eSIM**: Receive QR code + phone number in <5 minutes
+5. **Travel Globally**: Install eSIM and connect in 190+ countries
+
+**No website navigation required. No account creation forms. Just conversation!**
+
+### For Users (Traditional Method)
 1. **Sign Up**: Create account at [gorse.dotmobile.app](https://gorse.dotmobile.app)
 2. **Choose Plan**: Select Basic ($24/year) or Full ($66/year) membership
 3. **Purchase Data**: Buy global data packages ($20 for 10GB)
@@ -318,11 +505,12 @@ console.log(`Total monthly: $${pricing.pricing.monthly_recurring}`);
 5. **Earn Tokens**: Receive DOTM rewards for all activities
 
 ### For Developers
-1. **Explore API**: Visit [gorse.dotmobile.app/mcp](https://gorse.dotmobile.app/mcp)
-2. **Read Documentation**: Complete API reference available
-3. **Test Integration**: Use public endpoints for development
+1. **Explore MCP v2**: Visit [gorse.dotmobile.app/mcp/v2](https://gorse.dotmobile.app/mcp/v2)
+2. **Test AI Integration**: Try the activate_esim tool via JSON-RPC 2.0
+3. **Read Documentation**: Complete API reference at [/mcp/v2/docs](https://gorse.dotmobile.app/mcp/v2/docs)
 4. **Build Applications**: Integrate DOTM services into your apps
-5. **Join Community**: Connect with with other developers
+5. **Monitor Rate Limits**: Track usage and queue status in real-time
+6. **Join Community**: Connect with other developers
 
 ### For Business Partners
 1. **API Access**: Programmatic service integration
@@ -386,6 +574,28 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ![Token Status](https://img.shields.io/badge/DOTM_Token-Live_on_Mainnet-blue)
 ![Beta Program](https://img.shields.io/badge/Beta_Program-Active-orange)
 
-**Last Updated**: September 11, 2025
-**Version**: 3.0.1
+**Last Updated**: October 22, 2025
+**Version**: 4.0.0 - MCP v2 AI Integration
 **DOTM Token Contract**: 0xF57ab8DEE7ebE3686DB8Bf89E8aCc15E94B97A8D
+**MCP v2 Endpoint**: https://gorse.dotmobile.app/mcp/v2/messages
+
+### 🎯 What's New in v4.0.0
+
+**AI-Driven eSIM Activation:**
+- ✅ Model Context Protocol (MCP) v2 integration
+- ✅ ChatGPT and Gemini AI support
+- ✅ Natural language eSIM activation
+- ✅ Automatic user registration from AI conversations
+- ✅ Automatic Stripe invoice generation ($1 eSIM beta)
+- ✅ Rate limiting: 100 activations/hour with queue management
+- ✅ Real-time ETA estimation for queued requests
+- ✅ Comprehensive logging and monitoring
+- ✅ Trigger phrases: "Global Data eSIM" and "DOT eSIM"
+
+**Technical Improvements:**
+- ✅ JSON-RPC 2.0 over HTTP + SSE transport
+- ✅ Thread-safe rate limiter with rolling 60-minute window
+- ✅ Enhanced security with Firebase authentication
+- ✅ Payment verification via Stripe webhooks
+- ✅ OXIO live activation integration
+- ✅ Complete test coverage (ChatGPT, Gemini, end-to-end)
