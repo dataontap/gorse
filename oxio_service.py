@@ -10,7 +10,14 @@ class OXIOService:
     def __init__(self):
         self.api_key = os.environ.get('OXIO_API_KEY')
         self.auth_token = os.environ.get('OXIO_AUTH_TOKEN')
-        self.base_url = "https://api-staging.brandvno.com"
+        
+        # Get base URL from ENVIRONMENT secret (e.g., "https://api-staging.brandvno.com" or "https://api.brandvno.com")
+        self.base_url = os.environ.get('ENVIRONMENT')
+        
+        # Fallback to staging if ENVIRONMENT is not set (for backward compatibility)
+        if not self.base_url:
+            self.base_url = "https://api-staging.brandvno.com"
+            print("⚠️  WARNING: ENVIRONMENT secret not set, using default staging URL")
 
         # Debug information
         print(f"OXIO Service initialized:")
