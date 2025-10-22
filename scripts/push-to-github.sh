@@ -46,6 +46,18 @@ if [ -z "$(git config user.email)" ]; then
 fi
 
 echo ""
+echo -e "${BLUE}🧹 Running repository cleanup...${NC}"
+echo ""
+
+# Run cleanup script if it exists
+if [ -f "scripts/cleanup-repo.sh" ]; then
+    bash scripts/cleanup-repo.sh
+    echo ""
+else
+    echo -e "${YELLOW}⚠  Cleanup script not found, skipping cleanup${NC}"
+    echo ""
+fi
+
 echo -e "${BLUE}📊 Checking repository status...${NC}"
 echo ""
 

@@ -24,6 +24,16 @@ jobs:
           git config user.name "DOT"
           git config user.email "aa@dotmobile.app"
       
+      - name: Clean Repository
+        run: |
+          echo "🧹 Running repository cleanup..."
+          if [ -f "scripts/cleanup-repo.sh" ]; then
+            chmod +x scripts/cleanup-repo.sh
+            bash scripts/cleanup-repo.sh
+          else
+            echo "⚠️  Cleanup script not found"
+          fi
+      
       - name: Commit and Push
         run: |
           git add .

@@ -6,6 +6,38 @@ The DOTM Platform is a comprehensive telecommunications service platform offerin
 
 ## Recent Changes
 
+### October 22, 2025 - Repository Cleanup & Deployment Automation
+
+**Milestone: Automated Repository Cleanup System**
+
+Implemented comprehensive cleanup system that automatically removes screenshots and temporary files from the repository before every GitHub push.
+
+**Key Features:**
+1. ✅ Created automated cleanup script (`scripts/cleanup-repo.sh`)
+2. ✅ Removed 849 files (171MB) of screenshots and temporary assets
+3. ✅ Updated .gitignore to prevent future commits of development files
+4. ✅ Integrated cleanup into `scripts/push-to-github.sh` workflow
+5. ✅ Added cleanup step to GitHub Actions workflow
+6. ✅ Safe mode excludes system directories (.git, .cache, .config)
+
+**Files Automatically Removed:**
+- Screenshots from attached_assets/ directory
+- Temporary images and photos
+- Backup files (*.tmp, *~, *.bak)
+- Empty directories
+
+**Integration Points:**
+- Local push script runs cleanup before git operations
+- GitHub Actions workflow includes cleanup step
+- .gitignore prevents future commits of development assets
+
+**Files Created:**
+- `scripts/cleanup-repo.sh`: Automated cleanup script
+- `CLEANUP_SYSTEM.md`: Complete documentation
+- Updated `.gitignore`: Added development asset patterns
+- Updated `.github/workflows/auto-push.yml`: Added cleanup step
+- Updated `scripts/push-to-github.sh`: Integrated cleanup
+
 ### October 22, 2025 - AI-Driven eSIM Activation via MCP v2 Server
 
 **Milestone: ChatGPT & Gemini Integration for eSIM Activation**
