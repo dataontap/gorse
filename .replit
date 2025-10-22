@@ -116,3 +116,6 @@ externalPort = 5000
 [agent]
 expertMode = true
 integrations = ["flask_stripe:1.0.0"]
+
+[objectStorage]
+defaultBucketID = "replit-objstore-dc71f7b2-f90c-4257-a823-37d4ee756a56"
