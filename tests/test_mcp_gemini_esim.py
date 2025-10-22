@@ -7,7 +7,7 @@ for authenticated users.
 
 import requests
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import os
 from datetime import datetime
 
@@ -63,7 +63,7 @@ class GeminiMCPClient:
             "message": message
         })
     
-    def json_rpc_call(self, method: str, params: Dict = None, auth_token: str = None) -> Dict[str, Any]:
+    def json_rpc_call(self, method: str, params: Optional[Dict] = None, auth_token: Optional[str] = None) -> Dict[str, Any]:
         """Make JSON-RPC 2.0 call to MCP server"""
         request_payload = {
             "jsonrpc": "2.0",
@@ -140,7 +140,7 @@ class GeminiMCPClient:
         self,
         email: str,
         firebase_uid: str,
-        auth_token: str = None
+        auth_token: Optional[str] = None
     ) -> Dict[str, Any]:
         """Execute eSIM activation via MCP tool"""
         print(f"\n🔷 Gemini: Executing eSIM activation for {email}...")

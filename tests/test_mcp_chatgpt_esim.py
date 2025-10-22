@@ -7,7 +7,7 @@ for authenticated users.
 
 import requests
 import json
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import os
 
 # Configuration
@@ -45,7 +45,7 @@ class ChatGPTMCPClient:
         self.session_id = None
         self.request_id = 1
     
-    def create_json_rpc_request(self, method: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    def create_json_rpc_request(self, method: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Create a JSON-RPC 2.0 request"""
         request = {
             "jsonrpc": "2.0",
@@ -58,7 +58,7 @@ class ChatGPTMCPClient:
         self.request_id += 1
         return request
     
-    def send_request(self, request: Dict[str, Any], auth_token: str = None) -> Dict[str, Any]:
+    def send_request(self, request: Dict[str, Any], auth_token: Optional[str] = None) -> Dict[str, Any]:
         """Send JSON-RPC request to MCP server"""
         headers = {
             "Content-Type": "application/json"
@@ -101,13 +101,13 @@ class ChatGPTMCPClient:
         )
         return self.send_request(request)
     
-    def list_tools(self, auth_token: str = None) -> Dict[str, Any]:
+    def list_tools(self, auth_token: Optional[str] = None) -> Dict[str, Any]:
         """List available tools"""
         print("\n🤖 ChatGPT: Requesting available tools...")
         request = self.create_json_rpc_request("tools/list")
         return self.send_request(request, auth_token)
     
-    def activate_esim(self, email: str, firebase_uid: str, auth_token: str = None) -> Dict[str, Any]:
+    def activate_esim(self, email: str, firebase_uid: str, auth_token: Optional[str] = None) -> Dict[str, Any]:
         """Activate eSIM for user"""
         print(f"\n🤖 ChatGPT: Activating eSIM for {email}...")
         request = self.create_json_rpc_request(
