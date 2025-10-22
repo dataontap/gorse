@@ -6,6 +6,45 @@ The DOTM Platform is a comprehensive telecommunications service platform offerin
 
 ## Recent Changes
 
+### October 22, 2025 - First Transaction Bonus System Implementation
+
+**Milestone: DOTM Token First Transaction Bonuses**
+
+Implemented a comprehensive system to reward users with DOTM tokens on their first transaction, with differentiated bonuses for regular and founding members.
+
+**Key Features Implemented:**
+1. ✅ Updated DOTMToken.sol smart contract with first transaction bonus constants and functions
+   - Regular members: 10.33 DOTM tokens
+   - Founding members: 100.33 DOTM tokens
+2. ✅ Created `first_transaction_bonuses` database table to track bonus awards
+3. ✅ Added helper functions in `ethereum_helper.py` to award bonuses based on member type
+4. ✅ Integrated bonus logic into Stripe webhook purchase flow in `main.py`
+5. ✅ Automatic founding member detection via `founders` table
+
+**Smart Contract Updates:**
+- Constants: `FIRST_TRANSACTION_BONUS_REGULAR = 10.33 DOTM`, `FIRST_TRANSACTION_BONUS_FOUNDING = 100.33 DOTM`
+- Functions: `awardFirstTransactionBonusRegular()`, `awardFirstTransactionBonusFounding()`
+
+**Database Schema:**
+- Table: `first_transaction_bonuses` with columns:
+  - `user_id` (UNIQUE constraint prevents duplicate awards)
+  - `firebase_uid`, `eth_address`, `is_founding_member`
+  - `bonus_amount`, `tx_hash`, `awarded_at`
+
+**Workflow:**
+1. User completes their first purchase (e.g., eSIM Beta activation)
+2. Purchase recorded in database
+3. System checks if user already received bonus
+4. System checks if user is a founding member
+5. Appropriate bonus amount awarded and transaction recorded on blockchain
+6. Bonus recorded in database to prevent duplicates
+
+**Files Created/Modified:**
+- `contracts/DOTMToken.sol`: Added bonus constants and award functions
+- `create_first_transaction_bonus_table.sql`: Database table creation
+- `ethereum_helper.py`: Added `award_first_transaction_bonus()` and `check_and_award_first_transaction_bonus()`
+- `main.py`: Integrated bonus award after purchase recording (line ~2770)
+
 ### October 22, 2025 - MCP Product Documentation & Test Configuration
 
 **Milestone: Production-Ready MCP Integration Documentation**
