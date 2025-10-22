@@ -2678,7 +2678,7 @@ def create_checkout_session():
         
         # Add OXIO plan ID for global data product
         if product_id == 'global_data_10gb':
-            session_metadata['oxio_plan_id'] = '9d521906-ea2f-4c2b-b717-1ce36744c36a'
+            session_metadata['oxio_plan_id'] = os.environ.get('OXIO_10GB_PLAN_ID', '9d521906-ea2f-4c2b-b717-1ce36744c36a')
         
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
@@ -2983,8 +2983,8 @@ def handle_stripe_webhook():
                 try:
                     print(f"💰 Processing 10GB Global Data purchase for Firebase UID: {firebase_uid}")
                     
-                    # Get OXIO plan ID from metadata
-                    oxio_plan_id = session['metadata'].get('oxio_plan_id', '9d521906-ea2f-4c2b-b717-1ce36744c36a')
+                    # Get OXIO plan ID from metadata or environment variable
+                    oxio_plan_id = session['metadata'].get('oxio_plan_id') or os.environ.get('OXIO_10GB_PLAN_ID', '9d521906-ea2f-4c2b-b717-1ce36744c36a')
                     user_email = session['metadata'].get('user_email', '')
                     user_name = session['metadata'].get('user_name', '')
                     total_amount = session.get('amount_total', 2000)  # Default $20.00 in cents
@@ -3065,21 +3065,21 @@ def handle_stripe_webhook():
                     print(f"   URL: https://api-staging.brandvno.com/v3/subscriptions")
                     print(f"   Payload: {json.dumps(plan_payload, indent=2)}")
                     
-                    # Make OXIO API call to activate plan
+                    # Make OXIO API call to activate plan (booster)
                     import requests
-                    oxio_api_key = os.environ.get('OXIO_API_KEY')
-                    oxio_auth_token = os.environ.get('OXIO_AUTH_TOKEN')
+                    import base64
+                    from oxio_service import oxio_service
                     
-                    headers = {
-                        'Content-Type': 'application/json',
-                        'x-api-key': oxio_api_key,
-                        'Authorization': f'Bearer {oxio_auth_token}'
-                    }
+                    # Use OXIO service's authentication method (Basic Auth)
+                    headers = oxio_service.get_headers()
                     
+                    # Note: Endpoint for adding booster to existing line
+                    # You'll need to update this URL when you have the correct OXIO booster endpoint
                     response = requests.post(
-                        'https://api-staging.brandvno.com/v3/subscriptions',
+                        'https://api-staging.brandvno.com/v3/subscriptions',  # TODO: Update to correct booster endpoint
                         json=plan_payload,
-                        headers=headers
+                        headers=headers,
+                        timeout=30
                     )
                     
                     print(f"📥 OXIO Plan Activation Response:")
