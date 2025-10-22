@@ -23,3 +23,7 @@ qrcode[pil]
 qrcode[pil]
 resend
 user-agents
+mcp
+passlib
+python-jose[cryptography]
+sse-starlette
