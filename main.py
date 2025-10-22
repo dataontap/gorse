@@ -1990,6 +1990,147 @@ def payments():
 def marketplace():
     return render_template('marketplace.html')
 
+@app.route('/configure-payment', methods=['GET', 'POST'])
+def configure_payment():
+    """Configure automatic payment top-up settings"""
+    if request.method == 'GET':
+        return render_template('configure_payment.html')
+    
+    if request.method == 'POST':
+        try:
+            from firebase_helper import verify_firebase_token
+            
+            decoded_token, error = verify_firebase_token(request)
+            
+            if error:
+                return jsonify({'success': False, 'error': 'Authentication required'}), 401
+            
+            firebase_uid = decoded_token.get('uid')
+            
+            initial_amount = request.form.get('initial_amount')
+            auto_recharge_enabled = request.form.get('auto_recharge_enabled') == '1'
+            threshold_amount = request.form.get('threshold_amount')
+            topup_amount = request.form.get('topup_amount')
+            monthly_limit = request.form.get('monthly_limit')
+            
+            if not initial_amount:
+                return jsonify({'success': False, 'message': 'Initial amount is required'}), 400
+            
+            initial_amount = float(initial_amount)
+            
+            if initial_amount < 5 or initial_amount > 100:
+                return jsonify({'success': False, 'message': 'Initial amount must be between $5 and $100'}), 400
+            
+            if auto_recharge_enabled:
+                if not threshold_amount or not topup_amount:
+                    return jsonify({'success': False, 'message': 'Threshold and top-up amounts are required when auto-recharge is enabled'}), 400
+                
+                threshold_amount = float(threshold_amount)
+                topup_amount = float(topup_amount)
+                
+                if threshold_amount < 5 or threshold_amount > 95:
+                    return jsonify({'success': False, 'message': 'Threshold amount must be between $5 and $95'}), 400
+                
+                if topup_amount < 10 or topup_amount > 100:
+                    return jsonify({'success': False, 'message': 'Top-up amount must be between $10 and $100'}), 400
+                
+                if threshold_amount >= topup_amount:
+                    return jsonify({'success': False, 'message': 'Top-up amount must be greater than threshold amount'}), 400
+                
+                if monthly_limit:
+                    monthly_limit = float(monthly_limit)
+                    if monthly_limit < 20 or monthly_limit > 100:
+                        return jsonify({'success': False, 'message': 'Monthly limit must be between $20 and $100'}), 400
+                else:
+                    monthly_limit = None
+            else:
+                threshold_amount = None
+                topup_amount = None
+                monthly_limit = None
+            
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            INSERT INTO auto_recharge_config 
+                            (firebase_uid, initial_amount, auto_recharge_enabled, threshold_amount, topup_amount, monthly_limit, updated_at)
+                            VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                            ON CONFLICT (firebase_uid) 
+                            DO UPDATE SET 
+                                initial_amount = EXCLUDED.initial_amount,
+                                auto_recharge_enabled = EXCLUDED.auto_recharge_enabled,
+                                threshold_amount = EXCLUDED.threshold_amount,
+                                topup_amount = EXCLUDED.topup_amount,
+                                monthly_limit = EXCLUDED.monthly_limit,
+                                updated_at = CURRENT_TIMESTAMP
+                        """, (firebase_uid, initial_amount, auto_recharge_enabled, threshold_amount, topup_amount, monthly_limit))
+                        conn.commit()
+                        
+                        print(f"Saved auto-recharge config for user {firebase_uid}: initial=${initial_amount}, auto_recharge={auto_recharge_enabled}")
+                        
+                        cur.execute("""
+                            SELECT email, display_name FROM users WHERE firebase_uid = %s
+                        """, (firebase_uid,))
+                        user_data = cur.fetchone()
+                        user_email = user_data[0] if user_data else None
+                        user_name = user_data[1] if user_data else None
+                    
+                    customers = stripe.Customer.list(email=user_email, limit=1) if user_email else None
+                    if customers and customers.data:
+                        customer_id = customers.data[0].id
+                    elif user_email:
+                        customer = stripe.Customer.create(
+                            email=user_email,
+                            metadata={'firebase_uid': firebase_uid}
+                        )
+                        customer_id = customer.id
+                    else:
+                        customer_id = None
+                    
+                    amount_in_cents = int(initial_amount * 100)
+                    
+                    checkout_session = stripe.checkout.Session.create(
+                        payment_method_types=['card'],
+                        line_items=[{
+                            'price': 'price_1RM9sxJnTfh0bNQQgj2sacLZ',
+                            'quantity': 1,
+                        }],
+                        mode='payment',
+                        success_url=request.url_root + 'dashboard?session_id={CHECKOUT_SESSION_ID}&payment_success=true',
+                        cancel_url=request.url_root + 'configure-payment',
+                        customer=customer_id if customer_id else None,
+                        metadata={
+                            'product_id': 'global_data_10gb',
+                            'firebase_uid': firebase_uid,
+                            'user_email': user_email or '',
+                            'user_name': user_name or '',
+                            'initial_amount': str(initial_amount),
+                            'auto_recharge_enabled': str(auto_recharge_enabled),
+                            'threshold_amount': str(threshold_amount) if threshold_amount else '',
+                            'topup_amount': str(topup_amount) if topup_amount else '',
+                            'monthly_limit': str(monthly_limit) if monthly_limit else '',
+                            'oxio_plan_id': '9d521906-ea2f-4c2b-b717-1ce36744c36a'
+                        }
+                    )
+                    
+                    print(f"Created checkout session {checkout_session.id} for ${initial_amount} data credit (10GB) with OXIO plan")
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': 'Configuration saved successfully',
+                        'redirect': checkout_session.url
+                    })
+                else:
+                    return jsonify({'success': False, 'message': 'Database connection error'}), 500
+                    
+        except ValueError as e:
+            return jsonify({'success': False, 'message': 'Invalid amount format'}), 400
+        except Exception as e:
+            print(f"Error saving payment configuration: {str(e)}")
+            return jsonify({'success': False, 'message': str(e)}), 500
+    else:
+        return render_template('configure_payment.html')
+
 # Device Detection and Management API
 @app.route('/api/devices/register', methods=['POST'])
 def register_device():
