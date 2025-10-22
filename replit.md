@@ -14,10 +14,10 @@ Successfully implemented complete AI-driven eSIM activation workflow using Model
 
 **Key Features Implemented:**
 1. ✅ Fixed MCP v2 server integration - resolved `_tool_manager` attribute error
-2. ✅ Added `activate_esim` tool with Stripe payment verification
+2. ✅ Added `activate_esim` tool with **automatic Stripe invoice generation**
 3. ✅ Integrated OXIO activation workflow for AI-driven provisioning
 4. ✅ Created comprehensive test suites for ChatGPT (6 tests) and Gemini (7 tests)
-5. ✅ Implemented end-to-end payment → activation flow validation
+5. ✅ Implemented end-to-end invoice → payment → activation flow validation
 
 **Technical Architecture:**
 - **MCP v2 Endpoint:** `/mcp/v2/messages` (JSON-RPC 2.0)
@@ -30,10 +30,14 @@ Successfully implemented complete AI-driven eSIM activation workflow using Model
 1. User tells AI: "I want to activate my eSIM"
 2. AI authenticates with Firebase Bearer token
 3. AI calls MCP server's `activate_esim` tool
-4. Server verifies Stripe payment for eSIM beta
-5. Server activates eSIM via OXIO integration
-6. User receives email with QR code and phone number
-7. AI explains activation details to user
+4. **If no payment:** Server automatically creates and sends Stripe invoice to user's email
+5. User pays $1 invoice via Stripe email link
+6. Stripe webhook records purchase in database
+7. User tells AI: "I paid the invoice"
+8. AI calls `activate_esim` again - payment now verified ✅
+9. Server activates eSIM via OXIO integration
+10. User receives email with QR code and phone number
+11. AI explains activation details to user
 
 **Files Updated:**
 - `mcp_server_v2.py`: Added activate_esim tool with payment verification

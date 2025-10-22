@@ -716,14 +716,74 @@ Provide specific actionable recommendations with cost savings calculations.
                         purchase = cur.fetchone()
                         
                         if not purchase:
-                            return {
-                                "success": False,
-                                "error": "Payment required",
-                                "message": "No eSIM beta purchase found. Please purchase the eSIM beta ($1) before activation.",
-                                "payment_required": True,
-                                "product": "esim_beta",
-                                "price_usd": 1.00
-                            }
+                            # No payment found - send Stripe invoice
+                            logger.info(f"No payment found for {firebase_uid} - creating Stripe invoice")
+                            
+                            try:
+                                import stripe
+                                import os
+                                stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+                                
+                                # Create or get Stripe customer
+                                customers = stripe.Customer.list(email=email, limit=1)
+                                if customers.data:
+                                    customer = customers.data[0]
+                                else:
+                                    customer = stripe.Customer.create(
+                                        email=email,
+                                        metadata={'firebase_uid': firebase_uid}
+                                    )
+                                
+                                # Create invoice item for eSIM beta ($1)
+                                stripe.InvoiceItem.create(
+                                    customer=customer.id,
+                                    price='price_1S7Yc6JnTfh0bNQQVeLeprXe',  # eSIM beta price ID
+                                    metadata={
+                                        'firebaseUid': firebase_uid,
+                                        'product': 'esim_beta',
+                                        'source': 'mcp_v2_activation'
+                                    }
+                                )
+                                
+                                # Create and send the invoice
+                                invoice = stripe.Invoice.create(
+                                    customer=customer.id,
+                                    auto_advance=True,
+                                    collection_method='send_invoice',
+                                    days_until_due=7,
+                                    metadata={
+                                        'firebaseUid': firebase_uid,
+                                        'product': 'esim_beta'
+                                    }
+                                )
+                                
+                                # Finalize and send the invoice
+                                invoice = stripe.Invoice.finalize_invoice(invoice.id)
+                                sent_invoice = stripe.Invoice.send_invoice(invoice.id)
+                                
+                                logger.info(f"Stripe invoice sent to {email}: {invoice.id}")
+                                
+                                return {
+                                    "success": False,
+                                    "status": "invoice_sent",
+                                    "message": f"I've sent a $1 invoice to {email} for eSIM activation. Please check your email and pay the invoice, then ask me to activate again.",
+                                    "invoice_url": invoice.hosted_invoice_url,
+                                    "invoice_id": invoice.id,
+                                    "amount_due": 1.00,
+                                    "next_steps": [
+                                        f"Check {email} for the Stripe invoice",
+                                        "Pay the $1 invoice",
+                                        "Come back and say 'activate my eSIM' again"
+                                    ]
+                                }
+                                
+                            except Exception as stripe_error:
+                                logger.error(f"Failed to create Stripe invoice: {str(stripe_error)}")
+                                return {
+                                    "success": False,
+                                    "error": "Invoice creation failed",
+                                    "message": f"Unable to send invoice. Please contact support. Error: {str(stripe_error)}"
+                                }
                         
                         purchase_id, purchase_date, transaction_id = purchase
                         logger.info(f"Verified eSIM beta purchase: {purchase_id} for user {firebase_uid}")

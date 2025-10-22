@@ -116,7 +116,7 @@ Content-Type: application/json
 }
 ```
 
-**Payment Required Error:**
+**Invoice Sent Response (No Payment Found):**
 ```json
 {
   "jsonrpc": "2.0",
@@ -126,11 +126,16 @@ Content-Type: application/json
       "type": "text",
       "text": "{
         \"success\": false,
-        \"error\": \"Payment required\",
-        \"message\": \"No eSIM beta purchase found. Please purchase the eSIM beta ($1) before activation.\",
-        \"payment_required\": true,
-        \"product\": \"esim_beta\",
-        \"price_usd\": 1.00
+        \"status\": \"invoice_sent\",
+        \"message\": \"I've sent a $1 invoice to user@example.com for eSIM activation. Please check your email and pay the invoice, then ask me to activate again.\",
+        \"invoice_url\": \"https://invoice.stripe.com/i/acct_.../...\",
+        \"invoice_id\": \"in_1ABC123...\",
+        \"amount_due\": 1.00,
+        \"next_steps\": [
+          \"Check user@example.com for the Stripe invoice\",
+          \"Pay the $1 invoice\",
+          \"Come back and say 'activate my eSIM' again\"
+        ]
       }"
     }]
   }
@@ -141,16 +146,29 @@ Content-Type: application/json
 
 ### ChatGPT Workflow
 
+#### First Attempt (No Payment)
+
 1. **User Request:** "I want to activate my eSIM"
 2. **ChatGPT:** Authenticates user with Firebase Bearer token
 3. **ChatGPT:** Connects to `/mcp/v2/messages` endpoint
 4. **ChatGPT:** Calls `initialize` method to establish connection
 5. **ChatGPT:** Calls `tools/list` to discover `activate_esim` tool
 6. **ChatGPT:** Calls `tools/call` with user's email and Firebase UID
-7. **Server:** Verifies Stripe payment for `esim_beta` product
-8. **Server:** Activates eSIM via OXIO integration
-9. **Server:** Returns success response with phone number
-10. **ChatGPT:** Explains to user: "Your eSIM is activated! Your phone number is..."
+7. **Server:** Checks database for `esim_beta` purchase - **not found**
+8. **Server:** Creates Stripe invoice for $1 and sends to user's email
+9. **Server:** Returns `invoice_sent` status with invoice URL
+10. **ChatGPT:** Tells user: "I've sent a $1 invoice to your email. Please pay it and come back!"
+11. **User:** Receives email, clicks link, pays $1 via Stripe
+12. **Stripe:** Sends webhook to DOTM → Purchase recorded in database
+
+#### Second Attempt (After Payment)
+
+13. **User:** "I paid the invoice, activate my eSIM"
+14. **ChatGPT:** Calls `activate_esim` tool again
+15. **Server:** Checks database - **payment found!** ✅
+16. **Server:** Activates eSIM via OXIO integration
+17. **Server:** Returns success response with phone number
+18. **ChatGPT:** "Your eSIM is activated! Your phone number is +1..."
 
 ### Gemini Workflow
 
