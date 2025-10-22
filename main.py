@@ -2764,6 +2764,26 @@ def handle_stripe_webhook():
                         )
                         print(f"💾 Purchase recorded with ID: {purchase_id}")
 
+                        # Award first transaction bonus if eligible
+                        try:
+                            user_data = get_user_by_firebase_uid(firebase_uid)
+                            if user_data:
+                                user_id = user_data.get('id')
+                                eth_address = user_data.get('eth_address')
+                                
+                                if eth_address:
+                                    bonus_success, bonus_message = ethereum_helper.check_and_award_first_transaction_bonus(
+                                        user_id, firebase_uid, eth_address
+                                    )
+                                    if bonus_success:
+                                        print(f"🎁 {bonus_message}")
+                                    else:
+                                        print(f"ℹ️ First transaction bonus: {bonus_message}")
+                                else:
+                                    print(f"⚠️ User {firebase_uid} does not have an Ethereum address for DOTM bonus")
+                        except Exception as bonus_error:
+                            print(f"⚠️ Error awarding first transaction bonus: {str(bonus_error)}")
+
                         # Update Stripe receipt with eSIM details
                         try:
                             esim_data = activation_result.get('esim_data', {}) or {}  # Ensure it's always a dict
