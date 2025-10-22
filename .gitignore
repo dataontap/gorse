@@ -176,3 +176,28 @@ PXL_*.jpg
 *.tmp
 *~
 *.bak
+
+# Private/development files - exclude from public repo
+*.zip
+*.sql
+*.pdf
+Pasted-*
+example_user_data.json
+
+# Debug and utility scripts - not for production
+add_oxio_*.py
+check_*.py
+debug_*.py
+analyze_*.py
+create_batch_*.py
+create_download_*.py
+create_secure_*.py
+create_basic_*.py
+
+# Gradle/Android build files
+*.gradle
+*.gradle.kts
+gradle/
+gradlew
+gradlew.bat
+build.gradle.kts
