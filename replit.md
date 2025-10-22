@@ -6,6 +6,41 @@ The DOTM Platform is a comprehensive telecommunications service platform offerin
 
 ## Recent Changes
 
+### October 22, 2025 - OXIO BrandVNO URL Configuration
+
+**Milestone: Environment-Based OXIO API Configuration**
+
+Replaced hardcoded OXIO BrandVNO API URLs with environment-based configuration for easier migration between environments (staging, production, etc.).
+
+**Key Changes:**
+1. ✅ Replaced hardcoded URL `https://api-staging.brandvno.com` in `oxio_service.py` with `ENVIRONMENT` secret
+2. ✅ Added fallback logic for backward compatibility (defaults to staging if not set)
+3. ✅ All API paths (`/v3/...`, `/v2/...`) preserved and working correctly
+4. ✅ Tested OXIO API connection - confirmed working with new configuration
+
+**Configuration:**
+- **Secret Name:** `ENVIRONMENT`
+- **Current Value:** `https://api-staging.brandvno.com` (staging)
+- **Production Value:** `https://api.brandvno.com` (when ready to migrate)
+- **Location:** Set in Replit Secrets
+
+**Migration Guide:**
+To switch environments, simply update the `ENVIRONMENT` secret in Replit Secrets:
+- Staging: `https://api-staging.brandvno.com`
+- Production: `https://api.brandvno.com`
+- Other: Any valid OXIO BrandVNO API base URL
+
+The Flask server will automatically reload and use the new URL for all OXIO API calls.
+
+**Files Modified:**
+- `oxio_service.py`: Lines 13-23 (replaced hardcoded URL with environment variable)
+
+**Benefits:**
+- Easy environment switching without code changes
+- Better separation of configuration from code
+- Backward compatible with fallback to staging
+- Clear warning messages when ENVIRONMENT is not set
+
 ### October 22, 2025 - First Transaction Bonus System Implementation
 
 **Milestone: DOTM Token First Transaction Bonuses**
