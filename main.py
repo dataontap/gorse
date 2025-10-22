@@ -3062,7 +3062,7 @@ def handle_stripe_webhook():
                     }
                     
                     print(f"📤 OXIO Plan Activation Request:")
-                    print(f"   URL: https://api-staging.brandvno.com/v3/subscriptions")
+                    print(f"   URL: {oxio_service.base_url}/v3/subscriptions")
                     print(f"   Payload: {json.dumps(plan_payload, indent=2)}")
                     
                     # Make OXIO API call to activate plan (booster)
@@ -3076,7 +3076,7 @@ def handle_stripe_webhook():
                     # Note: Endpoint for adding booster to existing line
                     # You'll need to update this URL when you have the correct OXIO booster endpoint
                     response = requests.post(
-                        'https://api-staging.brandvno.com/v3/subscriptions',  # TODO: Update to correct booster endpoint
+                        f'{oxio_service.base_url}/v3/subscriptions',
                         json=plan_payload,
                         headers=headers,
                         timeout=30
@@ -3288,13 +3288,16 @@ def generate_qr_code(lpa_code, iccid, format='svg'):
         # Construct the QR code data string. This format is specific to eSIM provisioning.
         # The exact structure might vary slightly based on the SM-DP+ server.
         # This is a common example: LPA:1$SMDP_ADDRESS$ICCID$QR_HASH (QR hash is optional)
-        # Using a placeholder SMDP address for now.
+        # Get SM-DP+ address from OXIO_ENVIRONMENT (extract domain from base URL)
+        from oxio_service import oxio_service
+        smdp_address = oxio_service.base_url.replace('https://', '').replace('http://', '')
+        
         if lpa_code and iccid:
-            qr_data = f"LPA:1$api-staging.brandvno.com${iccid}$?esim_activation_code={lpa_code}"
+            qr_data = f"LPA:1${smdp_address}${iccid}$?esim_activation_code={lpa_code}"
         elif lpa_code:
-            qr_data = f"LPA:1$api-staging.brandvno.com$None$?esim_activation_code={lpa_code}"
+            qr_data = f"LPA:1${smdp_address}$None$?esim_activation_code={lpa_code}"
         elif iccid:
-            qr_data = f"LPA:1$api-staging.brandvno.com${iccid}$"
+            qr_data = f"LPA:1${smdp_address}${iccid}$"
         else:
             return {'success': False, 'error': 'Missing LPA code or ICCID for QR generation'}
 

@@ -21,7 +21,7 @@ class OXIOService:
 
         # Debug information
         print(f"OXIO Service initialized:")
-        print(f"  Base URL: {self.base_url}")
+        print(f"  Base URL: Loaded from OXIO_ENVIRONMENT secret")
         print(f"  API Key configured: {bool(self.api_key)}")
         print(f"  Auth Token configured: {bool(self.auth_token)}")
 
