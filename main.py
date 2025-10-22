@@ -3855,6 +3855,338 @@ def mcp_pricing_calculator():
     else:
         return jsonify({"error": "Pricing calculator not available"}), 503
 
+# MCP v2 Server Routes (Model Context Protocol 2025 Specification)
+# Lazy loading to avoid import issues
+MCP_V2_AVAILABLE = None  # Will be set on first use
+_mcp_v2_instance = None
+_mcp_auth = None
+
+def get_mcp_v2_server():
+    """Lazy load MCP v2 server"""
+    global MCP_V2_AVAILABLE, _mcp_v2_instance, _mcp_auth
+    
+    if MCP_V2_AVAILABLE is None:
+        try:
+            from mcp_server_v2 import mcp_server, auth_middleware
+            _mcp_v2_instance = mcp_server
+            _mcp_auth = auth_middleware
+            MCP_V2_AVAILABLE = True
+            print("✅ MCP v2 Server loaded successfully")
+        except Exception as e:
+            MCP_V2_AVAILABLE = False
+            print(f"❌ MCP v2 Server not available: {str(e)}")
+            import traceback
+            traceback.print_exc()
+    
+    if not MCP_V2_AVAILABLE:
+        raise ImportError("MCP v2 Server not available")
+    
+    return _mcp_v2_instance
+
+@app.route('/mcp/v2')
+def mcp_v2_info():
+    """MCP v2 server information endpoint"""
+    try:
+        get_mcp_v2_server()  # Ensure it's loaded
+    except ImportError:
+        return jsonify({"error": "MCP v2 server not available"}), 503
+    
+    return jsonify({
+        "server": "DOTM MCP Server",
+        "version": "2.0.0",
+        "protocol_version": "2024-11-05",
+        "specification": "https://modelcontextprotocol.io/specification/2024-11-05",
+        "transport": "HTTP + SSE (Streamable HTTP)",
+        "capabilities": {
+            "resources": {"subscribe": False, "listChanged": True},
+            "tools": {"listChanged": True},
+            "prompts": {"listChanged": False}
+        },
+        "endpoints": {
+            "info": "/mcp/v2",
+            "messages": "/mcp/v2/messages",
+            "docs": "/mcp/v2/docs",
+            "legacy_v1": "/mcp"
+        },
+        "authentication": {
+            "type": "Firebase Bearer Token",
+            "auto_registration": True,
+            "required": False,
+            "header": "Authorization: Bearer <token>"
+        }
+    })
+
+@app.route('/mcp/v2/messages', methods=['POST'])
+def mcp_v2_messages():
+    """JSON-RPC 2.0 endpoint for MCP v2 protocol"""
+    try:
+        mcp_v2_instance = get_mcp_v2_server()
+    except ImportError:
+        return jsonify({"error": "MCP v2 server not available"}), 503
+    
+    try:
+        import asyncio
+        
+        body = request.get_json()
+        method = body.get("method")
+        msg_id = body.get("id")
+        params = body.get("params", {})
+        
+        if body.get("jsonrpc") != "2.0":
+            return jsonify({
+                "jsonrpc": "2.0",
+                "id": msg_id,
+                "error": {"code": -32600, "message": "Invalid Request"}
+            }), 400
+        
+        async def process_request():
+            if method == "initialize":
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "result": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {
+                            "resources": {"subscribe": False, "listChanged": True},
+                            "tools": {"listChanged": True},
+                            "prompts": {"listChanged": False}
+                        },
+                        "serverInfo": {"name": "dotm-mcp-server", "version": "2.0.0"}
+                    }
+                }
+            
+            elif method == "resources/list":
+                resources = await mcp_v2_instance.server._resource_manager.list_resources()
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "result": {
+                        "resources": [
+                            {
+                                "uri": r.uri,
+                                "name": r.name,
+                                "description": r.description,
+                                "mimeType": r.mimeType
+                            } for r in resources
+                        ]
+                    }
+                }
+            
+            elif method == "resources/read":
+                uri = params.get("uri")
+                content = await mcp_v2_instance.server._resource_manager.read_resource(uri)
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "result": {
+                        "contents": [{
+                            "uri": uri,
+                            "mimeType": "application/json",
+                            "text": content
+                        }]
+                    }
+                }
+            
+            elif method == "tools/list":
+                tools = await mcp_v2_instance.server._tool_manager.list_tools()
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "result": {
+                        "tools": [
+                            {
+                                "name": t.name,
+                                "description": t.description,
+                                "inputSchema": t.inputSchema
+                            } for t in tools
+                        ]
+                    }
+                }
+            
+            elif method == "tools/call":
+                tool_name = params.get("name")
+                arguments = params.get("arguments", {})
+                content = await mcp_v2_instance.server._tool_manager.call_tool(tool_name, arguments)
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "result": {
+                        "content": [{"type": c.type, "text": c.text} for c in content]
+                    }
+                }
+            
+            elif method == "prompts/list":
+                prompts = await mcp_v2_instance.server._prompt_manager.list_prompts()
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "result": {
+                        "prompts": [
+                            {
+                                "name": p.name,
+                                "description": p.description,
+                                "arguments": [
+                                    {"name": a.name, "description": a.description, "required": a.required}
+                                    for a in (p.arguments or [])
+                                ]
+                            } for p in prompts
+                        ]
+                    }
+                }
+            
+            elif method == "prompts/get":
+                prompt_name = params.get("name")
+                arguments = params.get("arguments", {})
+                result = await mcp_v2_instance.server._prompt_manager.get_prompt(prompt_name, arguments)
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "result": {
+                        "description": result.description,
+                        "messages": [
+                            {"role": m.role, "content": {"type": m.content.type, "text": m.content.text}}
+                            for m in result.messages
+                        ]
+                    }
+                }
+            
+            else:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "error": {"code": -32601, "message": f"Method not found: {method}"}
+                }
+        
+        result = asyncio.run(process_request())
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Error in MCP v2 messages endpoint: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "jsonrpc": "2.0",
+            "id": None,
+            "error": {"code": -32603, "message": f"Internal error: {str(e)}"}
+        }), 500
+
+@app.route('/mcp/v2/docs')
+def mcp_v2_docs():
+    """Comprehensive API documentation for MCP v2"""
+    try:
+        get_mcp_v2_server()  # Ensure it's loaded
+    except ImportError:
+        return jsonify({"error": "MCP v2 server not available"}), 503
+    
+    return jsonify({
+        "title": "DOTM MCP Server API Documentation",
+        "version": "2.0.0",
+        "protocol": "Model Context Protocol (MCP) 2024-11-05",
+        "base_url": "/mcp/v2",
+        "authentication": {
+            "type": "Firebase Bearer Token",
+            "header": "Authorization: Bearer <firebase_token>",
+            "auto_registration": True,
+            "optional": True
+        },
+        "endpoints": {
+            "GET /mcp/v2": "Server information and capabilities",
+            "POST /mcp/v2/messages": "JSON-RPC 2.0 endpoint for all MCP operations",
+            "GET /mcp/v2/docs": "This documentation endpoint"
+        },
+        "json_rpc_methods": [
+            "initialize",
+            "resources/list",
+            "resources/read",
+            "tools/list",
+            "tools/call",
+            "prompts/list",
+            "prompts/get"
+        ],
+        "resources": [
+            {
+                "uri": "dotm://services/catalog",
+                "name": "Complete Service Catalog",
+                "description": "Full catalog of all DOTM services"
+            },
+            {
+                "uri": "dotm://services/membership",
+                "name": "Membership Plans",
+                "description": "Annual subscription plans"
+            },
+            {
+                "uri": "dotm://services/network",
+                "name": "Network Features",
+                "description": "Network add-ons"
+            },
+            {
+                "uri": "dotm://pricing/summary",
+                "name": "Pricing Summary",
+                "description": "Cost calculations"
+            }
+        ],
+        "tools": [
+            {
+                "name": "calculate_pricing",
+                "description": "Calculate total pricing for selected services"
+            },
+            {
+                "name": "search_services",
+                "description": "Search services by keyword, type, or price"
+            },
+            {
+                "name": "get_service_details",
+                "description": "Get detailed service information"
+            },
+            {
+                "name": "compare_memberships",
+                "description": "Compare membership plans"
+            }
+        ],
+        "prompts": [
+            {
+                "name": "recommend_plan",
+                "description": "Get personalized plan recommendation"
+            },
+            {
+                "name": "explain_service",
+                "description": "Get detailed service explanation"
+            },
+            {
+                "name": "cost_optimization",
+                "description": "Analyze and optimize service costs"
+            }
+        ],
+        "examples": {
+            "initialize": {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "client", "version": "1.0.0"}
+                }
+            },
+            "list_tools": {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/list"
+            },
+            "call_tool": {
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "tools/call",
+                "params": {
+                    "name": "calculate_pricing",
+                    "arguments": {
+                        "service_ids": ["basic_membership", "network_vpn_access"]
+                    }
+                }
+            }
+        }
+    })
+
 # Beta Approval System API Endpoints
 @app.route('/api/beta-request', methods=['POST'])
 def submit_beta_request():

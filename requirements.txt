@@ -27,3 +27,7 @@ mcp
 passlib
 python-jose[cryptography]
 sse-starlette
+fastapi
+pydantic
+starlette
+uvicorn
