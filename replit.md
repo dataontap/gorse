@@ -18,6 +18,8 @@ Successfully implemented complete AI-driven eSIM activation workflow using Model
 3. ✅ Integrated OXIO activation workflow for AI-driven provisioning
 4. ✅ Created comprehensive test suites for ChatGPT (6 tests) and Gemini (7 tests)
 5. ✅ Implemented end-to-end invoice → payment → activation flow validation
+6. ✅ **Added rate limiting: 100 activations/hour with queue management**
+7. ✅ **Verified invocation phrases: "Global Data eSIM" and "DOT eSIM"**
 
 **Technical Architecture:**
 - **MCP v2 Endpoint:** `/mcp/v2/messages` (JSON-RPC 2.0)
@@ -42,12 +44,15 @@ Successfully implemented complete AI-driven eSIM activation workflow using Model
 11. AI explains activation details to user
 
 **Files Updated:**
-- `mcp_server_v2.py`: Added activate_esim tool with payment verification
+- `mcp_server_v2.py`: Added activate_esim tool with payment verification + rate limiting
+- `mcp_rate_limiter.py`: Rate limiting module (100/hour, queue management, ETA estimation)
 - `main.py`: Fixed MCP v2 messages endpoint handler integration
 - `tests/test_mcp_chatgpt_esim.py`: ChatGPT integration test suite
 - `tests/test_mcp_gemini_esim.py`: Gemini AI integration test suite
+- `tests/test_invocation_phrases.py`: Tests for "Global Data eSIM" and "DOT eSIM" phrases
 - `tests/test_end_to_end_esim_activation.py`: Complete workflow testing
 - `MCP_V2_ESIM_ACTIVATION_GUIDE.md`: Comprehensive integration guide
+- `INVOCATION_PHRASES_GUIDE.md`: Discovery phrase documentation and rate limiting
 
 **Testing Results:**
 - ✅ MCP server health check passing

@@ -674,6 +674,35 @@ Provide specific actionable recommendations with cost savings calculations.
                 "message": "Both email and firebase_uid are required for eSIM activation"
             }
         
+        # Check rate limit (100 activations per hour)
+        try:
+            from mcp_rate_limiter import check_activation_allowed
+            
+            allowed, rate_info = check_activation_allowed(firebase_uid, email)
+            
+            if not allowed:
+                wait_minutes = rate_info.get('estimated_wait_minutes', 0)
+                return {
+                    "success": False,
+                    "status": "rate_limited",
+                    "error": "Rate limit reached",
+                    "message": f"We're currently processing a high volume of activations. Please try again in {wait_minutes} minutes.",
+                    "rate_limit_info": {
+                        "current_usage": rate_info['current_usage'],
+                        "limit": rate_info['limit'],
+                        "estimated_wait_minutes": wait_minutes,
+                        "queue_position": rate_info.get('queue_position', 1)
+                    },
+                    "next_steps": [
+                        f"Wait approximately {wait_minutes} minutes",
+                        "Try activating again",
+                        "Your account and payment are ready - just timing!"
+                    ]
+                }
+        except Exception as rate_error:
+            logger.error(f"Rate limiter error: {str(rate_error)}")
+            # Continue with activation if rate limiter fails
+        
         try:
             # Import required functions from main.py
             import sys
@@ -735,7 +764,8 @@ Provide specific actionable recommendations with cost savings calculations.
                 }
             
             # Check if user has paid for eSIM beta
-            conn = get_db_connection()
+            conn_context = get_db_connection()
+            conn = conn_context.__enter__() if hasattr(conn_context, '__enter__') else conn_context
             if conn:
                 try:
                     with conn.cursor() as cur:
