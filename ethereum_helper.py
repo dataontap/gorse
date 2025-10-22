@@ -590,3 +590,132 @@ def assign_founding_token(member_address):
     except Exception as e:
         print(f"Error in assign_founding_token: {str(e)}")
         return False, str(e)
+
+def award_first_transaction_bonus(user_id, firebase_uid, eth_address, is_founding_member=False):
+    """
+    Awards first transaction bonus to a user
+    - Regular members: 10.33 DOTM
+    - Founding members: 100.33 DOTM
+    
+    Returns: (success, message/tx_hash)
+    """
+    from main import get_db_connection
+    
+    try:
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT EXISTS (SELECT 1 FROM first_transaction_bonuses WHERE user_id = %s)",
+                        (user_id,)
+                    )
+                    already_awarded = cur.fetchone()[0]
+                    
+                    if already_awarded:
+                        return False, "First transaction bonus already awarded to this user"
+    except Exception as e:
+        print(f"Database error checking first transaction bonus: {str(e)}")
+        return False, f"Database error: {str(e)}"
+    
+    if not eth_address:
+        return False, "User does not have an Ethereum address"
+    
+    web3 = get_web3_connection()
+    token_contract = get_token_contract()
+    
+    admin_private_key = os.environ.get('ADMIN_PRIVATE_KEY')
+    if not admin_private_key:
+        return False, "Admin key not configured"
+    
+    admin_account = web3.eth.account.from_key(admin_private_key)
+    
+    try:
+        bonus_amount = 10033 * (10 ** 16) if is_founding_member else 1033 * (10 ** 16)
+        bonus_dotm = 100.33 if is_founding_member else 10.33
+        
+        if is_founding_member:
+            tx = token_contract.functions.awardFirstTransactionBonusFounding(
+                eth_address
+            ).build_transaction({
+                'from': admin_account.address,
+                'nonce': web3.eth.get_transaction_count(admin_account.address),
+                'gas': 200000,
+                'gasPrice': web3.eth.gas_price
+            })
+        else:
+            tx = token_contract.functions.awardFirstTransactionBonusRegular(
+                eth_address
+            ).build_transaction({
+                'from': admin_account.address,
+                'nonce': web3.eth.get_transaction_count(admin_account.address),
+                'gas': 200000,
+                'gasPrice': web3.eth.gas_price
+            })
+        
+        signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
+        tx_hash = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        tx_hash_hex = web3.to_hex(tx_hash)
+        
+        try:
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """INSERT INTO first_transaction_bonuses 
+                               (user_id, firebase_uid, eth_address, is_founding_member, bonus_amount, tx_hash) 
+                               VALUES (%s, %s, %s, %s, %s, %s)""",
+                            (user_id, firebase_uid, eth_address, is_founding_member, bonus_dotm, tx_hash_hex)
+                        )
+                        conn.commit()
+                        print(f"First transaction bonus recorded for user {user_id}: {bonus_dotm} DOTM, tx: {tx_hash_hex}")
+        except Exception as db_err:
+            print(f"Database error recording first transaction bonus: {str(db_err)}")
+        
+        return True, tx_hash_hex
+        
+    except Exception as e:
+        print(f"Error awarding first transaction bonus: {str(e)}")
+        return False, str(e)
+
+def check_and_award_first_transaction_bonus(user_id, firebase_uid, eth_address):
+    """
+    Checks if user is eligible for first transaction bonus and awards it
+    Returns: (success, message)
+    """
+    from main import get_db_connection
+    
+    try:
+        with get_db_connection() as conn:
+            if not conn:
+                return False, "No database connection"
+            
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT EXISTS (SELECT 1 FROM first_transaction_bonuses WHERE user_id = %s)",
+                    (user_id,)
+                )
+                already_awarded = cur.fetchone()[0]
+                
+                if already_awarded:
+                    return False, "First transaction bonus already awarded"
+                
+                cur.execute(
+                    "SELECT EXISTS (SELECT 1 FROM founders WHERE user_id = %s AND founder = 'Y')",
+                    (user_id,)
+                )
+                is_founder = cur.fetchone()[0]
+                
+                success, result = award_first_transaction_bonus(
+                    user_id, firebase_uid, eth_address, is_founding_member=is_founder
+                )
+                
+                if success:
+                    bonus_type = "founding member" if is_founder else "regular"
+                    bonus_amount = "100.33" if is_founder else "10.33"
+                    return True, f"First transaction bonus awarded: {bonus_amount} DOTM ({bonus_type}), tx: {result}"
+                else:
+                    return False, result
+                    
+    except Exception as e:
+        print(f"Error in check_and_award_first_transaction_bonus: {str(e)}")
+        return False, str(e)
