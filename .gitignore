@@ -183,6 +183,7 @@ PXL_*.jpg
 *.pdf
 Pasted-*
 example_user_data.json
+GITHUB_UPLOAD_GUIDE.md
 
 # Debug and utility scripts - not for production
 add_oxio_*.py

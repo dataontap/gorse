@@ -41,6 +41,10 @@ echo "✓ Removed debug/utility scripts"
 git rm --cached example_user_data.json 2>/dev/null || true
 echo "✓ Removed example data"
 
+# Remove internal documentation
+git rm --cached GITHUB_UPLOAD_GUIDE.md 2>/dev/null || true
+echo "✓ Removed GITHUB_UPLOAD_GUIDE.md"
+
 # Remove gradle files
 git rm --cached build.gradle.kts 2>/dev/null || true
 echo "✓ Removed gradle files"
