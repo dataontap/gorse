@@ -337,6 +337,24 @@ class MCPDOTMServer:
                         },
                         "required": []
                     }
+                ),
+                types.Tool(
+                    name="activate_esim",
+                    description="Activate eSIM for authenticated user - processes beta eSIM activation with OXIO integration",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "email": {
+                                "type": "string",
+                                "description": "User's email address for eSIM activation and confirmation"
+                            },
+                            "firebase_uid": {
+                                "type": "string",
+                                "description": "Firebase UID of authenticated user"
+                            }
+                        },
+                        "required": ["email", "firebase_uid"]
+                    }
                 )
             ]
         
@@ -359,6 +377,10 @@ class MCPDOTMServer:
             
             elif name == "compare_memberships":
                 result = await self._compare_memberships_tool(arguments)
+                return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
+            
+            elif name == "activate_esim":
+                result = await self._activate_esim_tool(arguments)
                 return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
             
             else:
@@ -623,6 +645,89 @@ Provide specific actionable recommendations with cost savings calculations.
                 ]
             }
         }
+    
+    async def _activate_esim_tool(self, args: dict) -> dict:
+        """Activate eSIM for authenticated user via OXIO integration"""
+        email = args.get("email", "")
+        firebase_uid = args.get("firebase_uid", "")
+        
+        if not email or not firebase_uid:
+            return {
+                "success": False,
+                "error": "Missing required fields",
+                "message": "Both email and firebase_uid are required for eSIM activation"
+            }
+        
+        try:
+            # Import activation function from main.py
+            import sys
+            import os
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            from main import activate_esim_for_user, get_user_by_firebase_uid
+            
+            # Verify user exists and is verified
+            user_data = get_user_by_firebase_uid(firebase_uid)
+            if not user_data:
+                return {
+                    "success": False,
+                    "error": "User not found",
+                    "message": f"No user found for Firebase UID: {firebase_uid}. Please ensure user is registered."
+                }
+            
+            # Check if email matches
+            if user_data.get('email') != email:
+                return {
+                    "success": False,
+                    "error": "Email mismatch",
+                    "message": "Provided email does not match user's registered email"
+                }
+            
+            # Create a mock checkout session for compatibility with activate_esim_for_user
+            mock_session = {
+                'id': f'mcp_activation_{firebase_uid}_{int(datetime.now().timestamp())}',
+                'customer_email': email,
+                'metadata': {
+                    'firebaseUid': firebase_uid,
+                    'source': 'mcp_v2_server',
+                    'ai_assistant': 'chatgpt_or_gemini'
+                }
+            }
+            
+            # Call the activation function
+            logger.info(f"Activating eSIM for user {firebase_uid} via MCP v2 server")
+            result = activate_esim_for_user(firebase_uid, mock_session)
+            
+            if result.get('success'):
+                return {
+                    "success": True,
+                    "message": "eSIM activation successful!",
+                    "details": {
+                        "email": email,
+                        "phone_number": result.get('phone_number', 'Assigned by carrier'),
+                        "plan": "OXIO Base Plan (Basic Membership)",
+                        "status": "Active",
+                        "activation_id": result.get('line_id', 'N/A')
+                    },
+                    "next_steps": [
+                        "Check your email for eSIM activation details and QR code",
+                        "Log into your DOTM dashboard to view your phone number",
+                        "Scan the QR code with your device to activate eSIM"
+                    ]
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": result.get('error', 'Unknown error'),
+                    "message": result.get('message', 'eSIM activation failed')
+                }
+                
+        except Exception as e:
+            logger.error(f"Error in activate_esim tool: {str(e)}")
+            return {
+                "success": False,
+                "error": "Activation error",
+                "message": f"An error occurred during eSIM activation: {str(e)}"
+            }
     
     def _calculate_costs(self) -> dict:
         """Calculate cost overview"""
