@@ -205,6 +205,10 @@ class MCPDOTMServer:
     def __init__(self):
         self.server = Server("dotm-mcp-server")
         self.auth_middleware = MCPAuthMiddleware()
+        
+        # Store handler references for Flask endpoint access
+        self.handlers = {}
+        
         self._register_resources()
         self._register_tools()
         self._register_prompts()
@@ -263,6 +267,10 @@ class MCPDOTMServer:
             
             else:
                 raise ValueError(f"Unknown resource URI: {uri}")
+        
+        # Store handlers for direct access
+        self.handlers['list_resources'] = list_resources
+        self.handlers['read_resource'] = read_resource
     
     def _register_tools(self):
         """Register MCP Tools - executable functions"""
@@ -385,6 +393,10 @@ class MCPDOTMServer:
             
             else:
                 raise ValueError(f"Unknown tool: {name}")
+        
+        # Store handlers for direct access
+        self.handlers['list_tools'] = list_tools
+        self.handlers['call_tool'] = call_tool
     
     def _register_prompts(self):
         """Register MCP Prompts - reusable templates"""
@@ -534,6 +546,10 @@ Provide specific actionable recommendations with cost savings calculations.
             
             else:
                 raise ValueError(f"Unknown prompt: {name}")
+        
+        # Store handlers for direct access
+        self.handlers['list_prompts'] = list_prompts
+        self.handlers['get_prompt'] = get_prompt
     
     async def _calculate_pricing_tool(self, args: dict) -> dict:
         """Calculate pricing for selected services"""

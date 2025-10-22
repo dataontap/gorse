@@ -3956,7 +3956,7 @@ def mcp_v2_messages():
                 }
             
             elif method == "resources/list":
-                resources = await mcp_v2_instance.server._resource_manager.list_resources()
+                resources = await mcp_v2_instance.handlers['list_resources']()
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
@@ -3974,7 +3974,7 @@ def mcp_v2_messages():
             
             elif method == "resources/read":
                 uri = params.get("uri")
-                content = await mcp_v2_instance.server._resource_manager.read_resource(uri)
+                content = await mcp_v2_instance.handlers['read_resource'](uri)
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
@@ -3988,7 +3988,7 @@ def mcp_v2_messages():
                 }
             
             elif method == "tools/list":
-                tools = await mcp_v2_instance.server._tool_manager.list_tools()
+                tools = await mcp_v2_instance.handlers['list_tools']()
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
@@ -4006,7 +4006,7 @@ def mcp_v2_messages():
             elif method == "tools/call":
                 tool_name = params.get("name")
                 arguments = params.get("arguments", {})
-                content = await mcp_v2_instance.server._tool_manager.call_tool(tool_name, arguments)
+                content = await mcp_v2_instance.handlers['call_tool'](tool_name, arguments)
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
@@ -4016,7 +4016,7 @@ def mcp_v2_messages():
                 }
             
             elif method == "prompts/list":
-                prompts = await mcp_v2_instance.server._prompt_manager.list_prompts()
+                prompts = await mcp_v2_instance.handlers['list_prompts']()
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
@@ -4037,7 +4037,7 @@ def mcp_v2_messages():
             elif method == "prompts/get":
                 prompt_name = params.get("name")
                 arguments = params.get("arguments", {})
-                result = await mcp_v2_instance.server._prompt_manager.get_prompt(prompt_name, arguments)
+                result = await mcp_v2_instance.handlers['get_prompt'](prompt_name, arguments)
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
