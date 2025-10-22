@@ -1,0 +1,31 @@
+name: Auto Push to GitHub
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_message:
+        description: 'Commit message'
+        required: true
+        default: '🚀 Auto-deploy updates from Replit'
+
+jobs:
+  push-to-github:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Configure Git
+        run: |
+          git config user.name "DOT"
+          git config user.email "aa@dotmobile.app"
+      
+      - name: Commit and Push
+        run: |
+          git add .
+          git commit -m "${{ github.event.inputs.commit_message }}" || echo "No changes to commit"
+          git push origin main
