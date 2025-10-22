@@ -1,8 +1,8 @@
-# DOTM Platform - AI-Driven Global Telecommunications
+# DOT Global Connectivity
 
 ![DOT](https://img.shields.io/badge/Status-Live-green) ![Ethereum](https://img.shields.io/badge/Ethereum-Mainnet-blue) ![Version](https://img.shields.io/badge/Version-3.1.1-brightgreen) ![MCP](https://img.shields.io/badge/MCP-v2.0-purple)
 
-## 🤖 Revolutionary AI Integration - NEW!
+## 🤖 AI Integration - NEW!
 
 **Activate eSIMs by simply talking to ChatGPT or Gemini AI**
 
@@ -19,7 +19,7 @@ Users can now discover and activate DOTM eSIMs entirely through natural conversa
 ```
 
 ### Trigger Phrases
-- **"Global Data eSIM"** - Discover DOTM through ChatGPT
+- **"Global Data eSIM"** - Discover DOT through ChatGPT
 - **"DOT eSIM"** - Activate via Gemini AI or ChatGPT
 
 ### How It Works
@@ -71,7 +71,6 @@ Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql database
 
 ### Reward System
 - **10.33% Cashback**: Earn DOTM tokens on all service purchases
-- **New Member Bonus**: 10.33 DOTM tokens for joining the platform
 - **Usage Rewards**: Additional tokens based on service utilization
 - **Founding Member Benefits**: Special perks for early adopters
 
