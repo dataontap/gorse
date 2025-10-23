@@ -89,14 +89,95 @@
         }
 
         .esim-qr-content {
-            background: white;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             padding: 30px;
             border-radius: 15px;
             text-align: center;
             max-width: 90%;
             max-height: 90%;
             overflow: auto;
-            color: #333;
+            color: #e0e0e0;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        
+        .esim-qr-content h4,
+        .esim-qr-content h5,
+        .esim-qr-content h6 {
+            color: #00ffff;
+        }
+        
+        .esim-qr-content .form-control {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: #e0e0e0;
+        }
+        
+        .esim-qr-content .form-control:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #00ffff;
+            color: #fff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 255, 255, 0.25);
+        }
+        
+        .esim-qr-content .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .esim-qr-content .form-label,
+        .esim-qr-content label {
+            color: #00ffff;
+        }
+        
+        .esim-qr-content .text-muted,
+        .esim-qr-content small {
+            color: rgba(255, 255, 255, 0.6) !important;
+        }
+        
+        .esim-qr-content .btn-outline-primary {
+            color: #00ffff;
+            border-color: #00ffff;
+        }
+        
+        .esim-qr-content .btn-outline-primary:hover,
+        .esim-qr-content .btn-outline-primary.active {
+            background: rgba(0, 255, 255, 0.2);
+            border-color: #00ffff;
+            color: #fff;
+        }
+        
+        .esim-qr-content .btn-outline-info {
+            color: #00d4ff;
+            border-color: #00d4ff;
+        }
+        
+        .esim-qr-content .btn-outline-info:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            color: #fff;
+        }
+        
+        .esim-qr-content .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .esim-qr-content .alert-warning {
+            background: rgba(255, 193, 7, 0.1);
+            border-color: rgba(255, 193, 7, 0.3);
+            color: #ffc107;
+        }
+        
+        .esim-qr-content .alert-danger {
+            background: rgba(220, 53, 69, 0.1);
+            border-color: rgba(220, 53, 69, 0.3);
+            color: #dc3545;
+        }
+        
+        .esim-qr-content .alert-info {
+            background: rgba(13, 202, 240, 0.1);
+            border-color: rgba(13, 202, 240, 0.3);
+            color: #0dcaf0;
         }
 
         .service-status-badge {
