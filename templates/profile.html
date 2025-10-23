@@ -2560,7 +2560,12 @@
                             <label class="form-label" style="color: var(--text-primary);">
                                 <i class="fas fa-map-marker-alt"></i> ZIP Code
                             </label>
-                            <input type="text" class="form-control" id="zipCodeInput" placeholder="Enter 5-digit ZIP code" maxlength="5" pattern="[0-9]{5}">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="zipCodeInput" placeholder="Enter 5-digit ZIP code" maxlength="5" pattern="[0-9]{5}">
+                                <button class="btn btn-outline-info" type="button" onclick="useMyLocation()" title="Use my location">
+                                    <i class="fas fa-location-arrow"></i> Use My Location
+                                </button>
+                            </div>
                             <small class="text-muted">Example: 90210</small>
                         </div>
                         <button class="btn btn-primary w-100" onclick="searchByZipCode()">
@@ -2575,8 +2580,8 @@
                                 <label class="form-label" style="color: var(--text-primary);">
                                     <i class="fas fa-hashtag"></i> NPA (Area Code)
                                 </label>
-                                <input type="text" class="form-control" id="npaInput" placeholder="3 digits" maxlength="3" pattern="[0-9]{3}">
-                                <small class="text-muted">First 3 digits</small>
+                                <input type="text" class="form-control" id="npaInput" placeholder="929" value="929" maxlength="3" pattern="[0-9]{3}">
+                                <small class="text-muted">Default: 929 (New York)</small>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label" style="color: var(--text-primary);">
@@ -2726,6 +2731,68 @@
                         </div>
                     `;
                 });
+        }
+
+        function useMyLocation() {
+            const zipCodeInput = document.getElementById('zipCodeInput');
+            const loadingDiv = document.getElementById('searchLoading');
+            
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                return;
+            }
+            
+            loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting your location...';
+            loadingDiv.style.display = 'block';
+            
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    
+                    try {
+                        loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finding your ZIP code...';
+                        
+                        const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+                        const data = await response.json();
+                        
+                        if (data.postcode) {
+                            zipCodeInput.value = data.postcode;
+                            loadingDiv.style.display = 'none';
+                            
+                            const confirm = window.confirm(`ZIP code ${data.postcode} found for your location (${data.city || 'your area'}). Search for available numbers now?`);
+                            if (confirm) {
+                                searchByZipCode();
+                            }
+                        } else {
+                            loadingDiv.style.display = 'none';
+                            alert('Could not determine ZIP code from your location. Please enter it manually.');
+                        }
+                    } catch (error) {
+                        loadingDiv.style.display = 'none';
+                        console.error('Error getting ZIP code:', error);
+                        alert('Error getting ZIP code from location. Please enter it manually.');
+                    }
+                },
+                (error) => {
+                    loadingDiv.style.display = 'none';
+                    let errorMessage = 'Unable to retrieve your location. ';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage += 'Please allow location access in your browser settings.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage += 'Location information is unavailable.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage += 'Location request timed out.';
+                            break;
+                        default:
+                            errorMessage += 'An unknown error occurred.';
+                    }
+                    alert(errorMessage);
+                }
+            );
         }
 
         function displaySearchResults(phoneNumbers, searchType, searchValue) {
