@@ -2614,7 +2614,12 @@
         function handleChangeNumber() {
             const popupContent = document.getElementById('popupContent');
             popupContent.innerHTML = `
-                <div style="text-align: left; max-width: 600px; margin: 0 auto;">
+                <div style="text-align: left; max-width: 600px; margin: 0 auto; position: relative;">
+                    <!-- Close X Button - Top Right -->
+                    <button onclick="hidePhoneNumberPopup()" style="position: absolute; top: -10px; right: -10px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; z-index: 10;">
+                        <i class="fas fa-times"></i>
+                    </button>
+
                     <h5 style="color: var(--text-primary); margin-bottom: 20px;">
                         <i class="fas fa-exchange-alt"></i> Change Phone Number
                     </h5>
@@ -2628,7 +2633,7 @@
                     <!-- Search Type Tabs -->
                     <div class="btn-group w-100 mb-3" role="group">
                         <button type="button" class="btn btn-outline-primary active" id="zipSearchTab" onclick="switchSearchTab('zip')">
-                            <i class="fas fa-map-marker-alt"></i> Search by ZIP Code
+                            <i class="fas fa-map-marker-alt"></i> Search by Area Code
                         </button>
                         <button type="button" class="btn btn-outline-primary" id="npanxxSearchTab" onclick="switchSearchTab('npanxx')">
                             <i class="fas fa-hashtag"></i> Search by NPA NXX
@@ -2641,17 +2646,17 @@
                             <label class="form-label" style="color: var(--text-primary);">
                                 <i class="fas fa-map-marker-alt"></i> ZIP Code
                             </label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="zipCodeInput" placeholder="Enter 5-digit ZIP code" maxlength="5" pattern="[0-9]{5}">
-                                <button class="btn btn-outline-info" type="button" onclick="useMyLocation()" title="Use my location">
-                                    <i class="fas fa-location-arrow"></i> Use My Location
+                            <div class="input-group" style="border-radius: 50px; overflow: hidden;">
+                                <input type="text" class="form-control" id="zipCodeInput" placeholder="Enter 5-digit ZIP code" maxlength="5" pattern="[0-9]{5}" style="border-right: none; border-radius: 50px 0 0 50px;">
+                                <button class="btn btn-link" type="button" onclick="useMyLocation()" title="Use my location" style="border: 1px solid rgba(0, 255, 255, 0.3); border-left: none; border-right: none; background: rgba(255, 255, 255, 0.1); padding: 0 15px; color: #00d4ff;">
+                                    <i class="fas fa-crosshairs"></i>
+                                </button>
+                                <button class="btn btn-primary" type="button" onclick="searchByZipCode()" style="border-radius: 0 50px 50px 0; padding: 0 20px;">
+                                    <i class="fas fa-search"></i> Search
                                 </button>
                             </div>
                             <small class="text-muted">Example: 90210</small>
                         </div>
-                        <button class="btn btn-primary w-100" onclick="searchByZipCode()">
-                            <i class="fas fa-search"></i> Search Available Numbers
-                        </button>
                     </div>
 
                     <!-- NPA NXX Search -->
@@ -2686,13 +2691,6 @@
                     <!-- Loading Indicator -->
                     <div id="searchLoading" class="text-center mt-4" style="display: none;">
                         <i class="fas fa-spinner fa-spin"></i> Searching for available numbers...
-                    </div>
-
-                    <!-- Back Button -->
-                    <div class="mt-4">
-                        <button class="btn btn-secondary" onclick="hidePhoneNumberPopup()">
-                            <i class="fas fa-times"></i> Cancel
-                        </button>
                     </div>
                 </div>
             `;
