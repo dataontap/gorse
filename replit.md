@@ -26,6 +26,12 @@ Stripe is integrated for subscription management, one-time purchases, and produc
 
 Deep integration with OXIO's API facilitates eSIM provisioning, data management, and network services. The OXIO API base URL is now configurable via the `OXIO_ENVIRONMENT` secret (currently set to `https://api-staging.brandvno.com` for staging). To switch to production, simply update the secret to `https://api.brandvno.com`. The platform also offers configurable network features such as VPN, security enhancements, and communication services (VoLTE, Wi-Fi calling).
 
+**Phone Number Management**: Users can search and select phone numbers through the profile page using two methods:
+- ZIP code search: Find available numbers in specific geographic areas
+- NPA NXX search: Search by area code (NPA) and exchange (NXX) - the first 6 digits of a phone number
+
+The system tracks all number change requests in the `phone_number_changes` table, recording search parameters, selected numbers, status workflow (pending, approved, completed, failed), and OXIO API interactions. Four dedicated API endpoints handle number lookup operations, propagating proper HTTP status codes from OXIO's upstream responses.
+
 ### Blockchain Integration
 
 Web3.py integrates Ethereum smart contracts for DOTM token management on Sepolia testnet and mainnet, including an automated token reward system based on service usage.
