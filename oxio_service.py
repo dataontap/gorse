@@ -1095,6 +1095,221 @@ class OXIOService:
                 'error': str(e),
                 'message': 'Failed to test OXIO SIM endpoint'
             }
+    
+    def get_zip_codes(self, prefix: str = None, state: str = None, per_page: int = 50, page: int = 1) -> Dict[str, Any]:
+        """
+        Get list of ZIP codes and their associated area codes
+        
+        Args:
+            prefix: Optional ZIP code prefix to filter (e.g., "202" for all ZIP codes starting with 202)
+            state: Optional state abbreviation to filter (e.g., "CA", "NY")
+            per_page: Number of results per page (default 50)
+            page: Page number for pagination (default 1)
+            
+        Returns:
+            Dictionary containing ZIP codes with their area codes and availability
+        """
+        try:
+            url = f"{self.base_url}/v3-internal/zip-codes"
+            headers = self.get_headers()
+            
+            params = {
+                'perPage': per_page,
+                'page': page
+            }
+            
+            if prefix:
+                params['prefix'] = prefix
+            if state:
+                params['state'] = state
+                
+            print(f"OXIO Get ZIP Codes URL: {url}")
+            print(f"OXIO Get ZIP Codes Params: {params}")
+            
+            response = requests.get(url, headers=headers, params=params, timeout=30)
+            
+            print(f"OXIO Get ZIP Codes Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                return {
+                    'success': True,
+                    'data': response_data,
+                    'message': 'ZIP codes retrieved successfully'
+                }
+            else:
+                error_data = response.json() if response.content else {}
+                return {
+                    'success': False,
+                    'status_code': response.status_code,
+                    'error': f'OXIO API error: {response.status_code}',
+                    'message': error_data.get('message', f'HTTP {response.status_code} error')
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': 'Unexpected error',
+                'message': f'Failed to retrieve ZIP codes: {str(e)}'
+            }
+    
+    def get_zip_code_details(self, zip_code: str) -> Dict[str, Any]:
+        """
+        Get detailed information for a specific ZIP code including area codes and availability
+        
+        Args:
+            zip_code: 5-digit ZIP code to query
+            
+        Returns:
+            Dictionary containing ZIP code details with area codes and phone number availability
+        """
+        try:
+            url = f"{self.base_url}/v3-internal/zip-codes/{zip_code}"
+            headers = self.get_headers()
+            
+            print(f"OXIO Get ZIP Code Details URL: {url}")
+            
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            print(f"OXIO Get ZIP Code Details Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                return {
+                    'success': True,
+                    'data': response_data,
+                    'message': f'ZIP code {zip_code} details retrieved successfully'
+                }
+            else:
+                error_data = response.json() if response.content else {}
+                return {
+                    'success': False,
+                    'status_code': response.status_code,
+                    'error': f'OXIO API error: {response.status_code}',
+                    'message': error_data.get('message', f'ZIP code {zip_code} not found')
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': 'Unexpected error',
+                'message': f'Failed to retrieve ZIP code details: {str(e)}'
+            }
+    
+    def get_available_area_codes(self, zip_code: str = None, country_code: str = "US") -> Dict[str, Any]:
+        """
+        Get available area codes, optionally filtered by ZIP code
+        
+        Args:
+            zip_code: Optional ZIP code to filter area codes
+            country_code: Country code (default: US)
+            
+        Returns:
+            Dictionary containing available area codes with phone number counts
+        """
+        try:
+            url = f"{self.base_url}/v3/phone-numbers/available-area-codes"
+            headers = self.get_headers()
+            
+            params = {
+                'countryCode': country_code
+            }
+            
+            if zip_code:
+                params['zipCode'] = zip_code
+                
+            print(f"OXIO Get Available Area Codes URL: {url}")
+            print(f"OXIO Get Available Area Codes Params: {params}")
+            
+            response = requests.get(url, headers=headers, params=params, timeout=30)
+            
+            print(f"OXIO Get Available Area Codes Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                return {
+                    'success': True,
+                    'data': response_data,
+                    'message': 'Available area codes retrieved successfully'
+                }
+            else:
+                error_data = response.json() if response.content else {}
+                return {
+                    'success': False,
+                    'status_code': response.status_code,
+                    'error': f'OXIO API error: {response.status_code}',
+                    'message': error_data.get('message', f'HTTP {response.status_code} error')
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': 'Unexpected error',
+                'message': f'Failed to retrieve available area codes: {str(e)}'
+            }
+    
+    def search_available_numbers(self, npa: str = None, nxx: str = None, zip_code: str = None, 
+                                  area_code: str = None, limit: int = 10) -> Dict[str, Any]:
+        """
+        Search for available phone numbers by NPA, NXX, ZIP code, or area code
+        
+        Args:
+            npa: Numbering Plan Area (area code, first 3 digits)
+            nxx: Central Office Code (exchange, next 3 digits)
+            zip_code: ZIP code to search
+            area_code: Area code (alias for NPA)
+            limit: Maximum number of results to return (default 10)
+            
+        Returns:
+            Dictionary containing available phone numbers matching the criteria
+        """
+        try:
+            url = f"{self.base_url}/v3/phone-numbers/available"
+            headers = self.get_headers()
+            
+            params = {
+                'limit': limit,
+                'countryCode': 'US'
+            }
+            
+            if zip_code:
+                params['zipCode'] = zip_code
+            
+            if area_code or npa:
+                params['areaCode'] = area_code or npa
+                
+            if nxx:
+                params['nxx'] = nxx
+                
+            print(f"OXIO Search Available Numbers URL: {url}")
+            print(f"OXIO Search Available Numbers Params: {params}")
+            
+            response = requests.get(url, headers=headers, params=params, timeout=30)
+            
+            print(f"OXIO Search Available Numbers Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                return {
+                    'success': True,
+                    'data': response_data,
+                    'message': 'Available phone numbers retrieved successfully'
+                }
+            else:
+                error_data = response.json() if response.content else {}
+                return {
+                    'success': False,
+                    'status_code': response.status_code,
+                    'error': f'OXIO API error: {response.status_code}',
+                    'message': error_data.get('message', f'HTTP {response.status_code} error')
+                }
+                
+        except Exception as e:
+            return {
+                'success': False,
+                'error': 'Unexpected error',
+                'message': f'Failed to search available numbers: {str(e)}'
+            }
 
 # Create a singleton instance
 oxio_service = OXIOService()

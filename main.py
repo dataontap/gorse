@@ -471,6 +471,20 @@ try:
                 else:
                     print("first_transaction_bonuses table already exists")
 
+                # Check if phone_number_changes table exists
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'phone_number_changes')")
+                phone_number_changes_exists = cur.fetchone()[0]
+
+                if not phone_number_changes_exists:
+                    print("Creating phone_number_changes table...")
+                    with open('create_phone_number_changes_table.sql', 'r') as sql_file:
+                        sql_script = sql_file.read()
+                        cur.execute(sql_script)
+                    conn.commit()
+                    print("phone_number_changes table created successfully")
+                else:
+                    print("phone_number_changes table already exists")
+
                 conn.commit()
         else:
             print("No database connection available for table creation")
@@ -711,6 +725,110 @@ def oxio_test_sample_activation():
             'success': False,
             'error': str(e),
             'message': 'Failed to test sample activation'
+        }), 500
+
+@app.route('/api/oxio/zip-codes', methods=['GET'])
+def oxio_get_zip_codes():
+    """Get list of ZIP codes with their associated area codes"""
+    try:
+        prefix = request.args.get('prefix')
+        state = request.args.get('state')
+        per_page = int(request.args.get('perPage', 50))
+        page = int(request.args.get('page', 1))
+        
+        result = oxio_service.get_zip_codes(
+            prefix=prefix,
+            state=state,
+            per_page=per_page,
+            page=page
+        )
+        
+        if result.get('success'):
+            return jsonify(result), 200
+        else:
+            status_code = result.get('status_code', 500)
+            return jsonify(result), status_code
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to retrieve ZIP codes'
+        }), 500
+
+@app.route('/api/oxio/zip-codes/<zip_code>', methods=['GET'])
+def oxio_get_zip_code_details(zip_code):
+    """Get detailed information for a specific ZIP code"""
+    try:
+        result = oxio_service.get_zip_code_details(zip_code)
+        
+        if result.get('success'):
+            return jsonify(result), 200
+        else:
+            status_code = result.get('status_code', 404)
+            return jsonify(result), status_code
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': f'Failed to retrieve ZIP code {zip_code} details'
+        }), 500
+
+@app.route('/api/oxio/available-area-codes', methods=['GET'])
+def oxio_get_available_area_codes():
+    """Get available area codes, optionally filtered by ZIP code"""
+    try:
+        zip_code = request.args.get('zipCode')
+        country_code = request.args.get('countryCode', 'US')
+        
+        result = oxio_service.get_available_area_codes(
+            zip_code=zip_code,
+            country_code=country_code
+        )
+        
+        if result.get('success'):
+            return jsonify(result), 200
+        else:
+            status_code = result.get('status_code', 500)
+            return jsonify(result), status_code
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to retrieve available area codes'
+        }), 500
+
+@app.route('/api/oxio/search-numbers', methods=['GET'])
+def oxio_search_available_numbers():
+    """Search for available phone numbers by NPA NXX or ZIP code"""
+    try:
+        npa = request.args.get('npa')
+        nxx = request.args.get('nxx')
+        zip_code = request.args.get('zipCode')
+        area_code = request.args.get('areaCode')
+        limit = int(request.args.get('limit', 10))
+        
+        result = oxio_service.search_available_numbers(
+            npa=npa,
+            nxx=nxx,
+            zip_code=zip_code,
+            area_code=area_code,
+            limit=limit
+        )
+        
+        if result.get('success'):
+            return jsonify(result), 200
+        else:
+            status_code = result.get('status_code', 500)
+            return jsonify(result), status_code
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to search available numbers'
         }), 500
 
 # Now initialize Flask-RESTX AFTER the OXIO routes are defined

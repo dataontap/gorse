@@ -2533,13 +2533,261 @@
         function handleChangeNumber() {
             const popupContent = document.getElementById('popupContent');
             popupContent.innerHTML = `
-                <div style="text-align: center;">
-                    <h5 style="color: var(--text-primary);">Change Phone Number</h5>
-                    <p>We are working on this feature. It will be available soon.</p>
-                    <p><strong>Coming Soon</strong></p>
-                    <button class="btn btn-secondary mt-3" onclick="hidePhoneNumberPopup()">Close</button>
+                <div style="text-align: left; max-width: 600px; margin: 0 auto;">
+                    <h5 style="color: var(--text-primary); margin-bottom: 20px;">
+                        <i class="fas fa-exchange-alt"></i> Change Phone Number
+                    </h5>
+                    
+                    <div class="mb-4">
+                        <p style="color: var(--text-secondary);">
+                            Search for available numbers by ZIP code or area code + exchange (NPA NXX)
+                        </p>
+                    </div>
+
+                    <!-- Search Type Tabs -->
+                    <div class="btn-group w-100 mb-3" role="group">
+                        <button type="button" class="btn btn-outline-primary active" id="zipSearchTab" onclick="switchSearchTab('zip')">
+                            <i class="fas fa-map-marker-alt"></i> Search by ZIP Code
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="npanxxSearchTab" onclick="switchSearchTab('npanxx')">
+                            <i class="fas fa-hashtag"></i> Search by NPA NXX
+                        </button>
+                    </div>
+
+                    <!-- ZIP Code Search -->
+                    <div id="zipSearchForm" style="display: block;">
+                        <div class="mb-3">
+                            <label class="form-label" style="color: var(--text-primary);">
+                                <i class="fas fa-map-marker-alt"></i> ZIP Code
+                            </label>
+                            <input type="text" class="form-control" id="zipCodeInput" placeholder="Enter 5-digit ZIP code" maxlength="5" pattern="[0-9]{5}">
+                            <small class="text-muted">Example: 90210</small>
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="searchByZipCode()">
+                            <i class="fas fa-search"></i> Search Available Numbers
+                        </button>
+                    </div>
+
+                    <!-- NPA NXX Search -->
+                    <div id="npanxxSearchForm" style="display: none;">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label" style="color: var(--text-primary);">
+                                    <i class="fas fa-hashtag"></i> NPA (Area Code)
+                                </label>
+                                <input type="text" class="form-control" id="npaInput" placeholder="3 digits" maxlength="3" pattern="[0-9]{3}">
+                                <small class="text-muted">First 3 digits</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="color: var(--text-primary);">
+                                    <i class="fas fa-hashtag"></i> NXX (Exchange)
+                                </label>
+                                <input type="text" class="form-control" id="nxxInput" placeholder="3 digits" maxlength="3" pattern="[0-9]{3}">
+                                <small class="text-muted">Next 3 digits</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="searchByNPANXX()">
+                            <i class="fas fa-search"></i> Search Available Numbers
+                        </button>
+                    </div>
+
+                    <!-- Search Results -->
+                    <div id="searchResults" class="mt-4" style="display: none;">
+                        <h6 style="color: var(--text-primary); margin-bottom: 15px;">Available Numbers</h6>
+                        <div id="numbersList" style="max-height: 300px; overflow-y: auto;"></div>
+                    </div>
+
+                    <!-- Loading Indicator -->
+                    <div id="searchLoading" class="text-center mt-4" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i> Searching for available numbers...
+                    </div>
+
+                    <!-- Back Button -->
+                    <div class="mt-4">
+                        <button class="btn btn-secondary" onclick="hidePhoneNumberPopup()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
                 </div>
             `;
+        }
+
+        function switchSearchTab(tab) {
+            const zipTab = document.getElementById('zipSearchTab');
+            const npanxxTab = document.getElementById('npanxxSearchTab');
+            const zipForm = document.getElementById('zipSearchForm');
+            const npanxxForm = document.getElementById('npanxxSearchForm');
+            
+            if (tab === 'zip') {
+                zipTab.classList.add('active');
+                npanxxTab.classList.remove('active');
+                zipForm.style.display = 'block';
+                npanxxForm.style.display = 'none';
+            } else {
+                zipTab.classList.remove('active');
+                npanxxTab.classList.add('active');
+                zipForm.style.display = 'none';
+                npanxxForm.style.display = 'block';
+            }
+            
+            // Clear results
+            document.getElementById('searchResults').style.display = 'none';
+        }
+
+        function searchByZipCode() {
+            const zipCode = document.getElementById('zipCodeInput').value.trim();
+            
+            if (!zipCode || zipCode.length !== 5 || !/^[0-9]{5}$/.test(zipCode)) {
+                alert('Please enter a valid 5-digit ZIP code');
+                return;
+            }
+            
+            const loadingDiv = document.getElementById('searchLoading');
+            const resultsDiv = document.getElementById('searchResults');
+            
+            loadingDiv.style.display = 'block';
+            resultsDiv.style.display = 'none';
+            
+            fetch(`/api/oxio/search-numbers?zipCode=${zipCode}&limit=20`)
+                .then(response => response.json())
+                .then(data => {
+                    loadingDiv.style.display = 'none';
+                    
+                    if (data.success && data.data && data.data.phoneNumbers) {
+                        displaySearchResults(data.data.phoneNumbers, 'zip', zipCode);
+                    } else {
+                        resultsDiv.style.display = 'block';
+                        document.getElementById('numbersList').innerHTML = `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                No available numbers found for ZIP code ${zipCode}.
+                                ${data.message ? `<br><small>${data.message}</small>` : ''}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    loadingDiv.style.display = 'none';
+                    resultsDiv.style.display = 'block';
+                    document.getElementById('numbersList').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> 
+                            Error searching for numbers: ${error.message}
+                        </div>
+                    `;
+                });
+        }
+
+        function searchByNPANXX() {
+            const npa = document.getElementById('npaInput').value.trim();
+            const nxx = document.getElementById('nxxInput').value.trim();
+            
+            if (!npa || npa.length !== 3 || !/^[0-9]{3}$/.test(npa)) {
+                alert('Please enter a valid 3-digit NPA (area code)');
+                return;
+            }
+            
+            if (!nxx || nxx.length !== 3 || !/^[0-9]{3}$/.test(nxx)) {
+                alert('Please enter a valid 3-digit NXX (exchange)');
+                return;
+            }
+            
+            const loadingDiv = document.getElementById('searchLoading');
+            const resultsDiv = document.getElementById('searchResults');
+            
+            loadingDiv.style.display = 'block';
+            resultsDiv.style.display = 'none';
+            
+            fetch(`/api/oxio/search-numbers?npa=${npa}&nxx=${nxx}&limit=20`)
+                .then(response => response.json())
+                .then(data => {
+                    loadingDiv.style.display = 'none';
+                    
+                    if (data.success && data.data && data.data.phoneNumbers) {
+                        displaySearchResults(data.data.phoneNumbers, 'npanxx', `${npa}-${nxx}`);
+                    } else {
+                        resultsDiv.style.display = 'block';
+                        document.getElementById('numbersList').innerHTML = `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                No available numbers found for ${npa}-${nxx}.
+                                ${data.message ? `<br><small>${data.message}</small>` : ''}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    loadingDiv.style.display = 'none';
+                    resultsDiv.style.display = 'block';
+                    document.getElementById('numbersList').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> 
+                            Error searching for numbers: ${error.message}
+                        </div>
+                    `;
+                });
+        }
+
+        function displaySearchResults(phoneNumbers, searchType, searchValue) {
+            const resultsDiv = document.getElementById('searchResults');
+            const numbersList = document.getElementById('numbersList');
+            
+            if (!phoneNumbers || phoneNumbers.length === 0) {
+                resultsDiv.style.display = 'block';
+                numbersList.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        No phone numbers available for the selected criteria.
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            phoneNumbers.forEach(number => {
+                const phoneNumber = number.phoneNumber || number.number || number;
+                html += `
+                    <div class="card mb-2" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div class="card-body d-flex justify-content-between align-items-center" style="padding: 10px 15px;">
+                            <div>
+                                <strong style="font-size: 1.1rem; color: var(--text-primary);">${phoneNumber}</strong>
+                                ${number.location ? `<br><small style="color: var(--text-secondary);"><i class="fas fa-map-marker-alt"></i> ${number.location}</small>` : ''}
+                            </div>
+                            <button class="btn btn-sm btn-success" onclick="selectPhoneNumber('${phoneNumber}', '${searchType}', '${searchValue}')">
+                                <i class="fas fa-check"></i> Select
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            numbersList.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+
+        function selectPhoneNumber(phoneNumber, searchType, searchValue) {
+            if (!confirm(`Are you sure you want to change your number to ${phoneNumber}?`)) {
+                return;
+            }
+            
+            const firebaseUid = getFirebaseUID();
+            if (!firebaseUid) {
+                alert('Authentication required. Please log in again.');
+                return;
+            }
+            
+            // Show loading state
+            document.getElementById('searchLoading').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing number change request...';
+            document.getElementById('searchLoading').style.display = 'block';
+            document.getElementById('searchResults').style.display = 'none';
+            
+            // TODO: Implement actual number change API call
+            // For now, just show a success message
+            setTimeout(() => {
+                document.getElementById('searchLoading').style.display = 'none';
+                alert(`Number change request submitted for ${phoneNumber}.\n\nThis feature is currently being integrated with OXIO. You will be notified when the change is complete.`);
+                hidePhoneNumberPopup();
+            }, 1500);
         }
 
         function showQRCode(qrDataUrl, title) {

@@ -36,6 +36,10 @@ author = "agent"
 task = "workflow.run"
 args = "Flask Server"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Server"
+
 [[workflows.workflow]]
 name = "Flask Server"
 author = "agent"
@@ -48,17 +52,29 @@ task = "shell.exec"
 args = "python main.py"
 waitForPort = 5000
 
+[[workflows.workflow]]
+name = "Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 33909
-externalPort = 5173
-
-[[ports]]
 localPort = 34769
 externalPort = 6800
+
+[[ports]]
+localPort = 34899
+externalPort = 5173
 
 [[ports]]
 localPort = 35117
