@@ -151,8 +151,8 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Founding Member Info Section (Only for Founding Members) -->
-                        <div id="foundingMemberSection" class="founding-member-info mt-3" style="display: none;">
+                        <!-- Founding Member Info Section (Only for Founding Members) - HIDDEN: Moved to Profile Page -->
+                        <div id="foundingMemberSection" class="founding-member-info mt-3" style="display: none !important;">
                             <button class="btn btn-sm btn-outline-primary founding-member-toggle" onclick="toggleFoundingMemberInfo()">
                                 <i class="fas fa-crown"></i> Founding Member Benefits
                                 <i class="fas fa-chevron-down toggle-arrow"></i>
@@ -181,8 +181,8 @@
                             </div>
                         </div>
 
-                        <!-- Regular Member Info Section (Only for Regular Members) -->
-                        <div id="regularMemberSection" class="member-info mt-3" style="display: none;">
+                        <!-- Regular Member Info Section (Only for Regular Members) - HIDDEN: Moved to Profile Page -->
+                        <div id="regularMemberSection" class="member-info mt-3" style="display: none !important;">
                             <button class="btn btn-sm btn-outline-secondary member-toggle" onclick="toggleMemberInfo()">
                                 <i class="fas fa-star"></i> Member Benefits
                                 <i class="fas fa-chevron-down toggle-arrow-regular"></i>
@@ -1377,8 +1377,8 @@
                 const firebaseUid = getFirebaseUID();
                 if (!firebaseUid) {
                     console.log('No Firebase UID found, cannot check founder status');
-                    // Default to showing regular member section if not authenticated
-                    document.getElementById('regularMemberSection').style.display = 'block';
+                    // Member benefits moved to Profile page - keep hidden
+                    // document.getElementById('regularMemberSection').style.display = 'block';
                     return;
                 }
 
@@ -1388,25 +1388,25 @@
 
                 if (data.status === 'success') {
                     if (data.isFounder) {
-                        // Show founding member benefits
+                        // Member benefits moved to Profile page - keep hidden
                         console.log('User is a Founding Member');
-                        document.getElementById('foundingMemberSection').style.display = 'block';
-                        document.getElementById('regularMemberSection').style.display = 'none';
+                        // document.getElementById('foundingMemberSection').style.display = 'block';
+                        // document.getElementById('regularMemberSection').style.display = 'none';
                     } else {
-                        // Show regular member benefits
+                        // Member benefits moved to Profile page - keep hidden
                         console.log('User is a regular Member');
-                        document.getElementById('foundingMemberSection').style.display = 'none';
-                        document.getElementById('regularMemberSection').style.display = 'block';
+                        // document.getElementById('foundingMemberSection').style.display = 'none';
+                        // document.getElementById('regularMemberSection').style.display = 'block';
                     }
                 } else {
                     console.error('Error checking founder status:', data.error);
-                    // Default to showing regular member section on error
-                    document.getElementById('regularMemberSection').style.display = 'block';
+                    // Member benefits moved to Profile page - keep hidden
+                    // document.getElementById('regularMemberSection').style.display = 'block';
                 }
             } catch (error) {
                 console.error('Error checking founder status:', error);
-                // Default to showing regular member section on error
-                document.getElementById('regularMemberSection').style.display = 'block';
+                // Member benefits moved to Profile page - keep hidden
+                // document.getElementById('regularMemberSection').style.display = 'block';
             }
         }
 
