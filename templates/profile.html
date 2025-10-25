@@ -2617,6 +2617,20 @@
         function handleChangeNumber() {
             const popupContent = document.getElementById('popupContent');
             popupContent.innerHTML = `
+                <style>
+                    .phone-tab-btn {
+                        flex: 1;
+                        font-size: 0.85rem;
+                        padding: 10px 16px;
+                        white-space: nowrap;
+                    }
+                    @media (max-width: 480px) {
+                        .phone-tab-btn {
+                            padding: 8px 8px;
+                            font-size: 0.8rem;
+                        }
+                    }
+                </style>
                 <div style="text-align: left; max-width: 600px; margin: 0 auto;">
                     <div class="mb-2">
                         <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px;">
@@ -2625,11 +2639,11 @@
                     </div>
 
                     <!-- Search Type Tabs -->
-                    <div class="btn-group mb-2" role="group" style="display: flex; max-width: 400px; margin: 0 auto;">
-                        <button type="button" class="btn btn-outline-primary active" id="zipSearchTab" onclick="switchSearchTab('zip')" style="flex: 1; font-size: 0.8rem; padding: 6px 10px; white-space: nowrap;">
+                    <div class="btn-group mb-2" role="group" style="display: flex; width: 100%; max-width: 450px; margin: 0 auto;">
+                        <button type="button" class="btn btn-outline-primary active phone-tab-btn" id="zipSearchTab" onclick="switchSearchTab('zip')">
                             <i class="fas fa-map-marker-alt"></i> ZIP Code
                         </button>
-                        <button type="button" class="btn btn-outline-primary" id="npanxxSearchTab" onclick="switchSearchTab('npanxx')" style="flex: 1; font-size: 0.8rem; padding: 6px 10px; white-space: nowrap;">
+                        <button type="button" class="btn btn-outline-primary phone-tab-btn" id="npanxxSearchTab" onclick="switchSearchTab('npanxx')">
                             <i class="fas fa-hashtag"></i> Phone Digits
                         </button>
                     </div>
@@ -2697,7 +2711,7 @@
 
                     <!-- Unified Search Button -->
                     <div class="mt-2" style="display: flex; justify-content: center;">
-                        <button class="btn btn-primary" onclick="performSearch()" style="border-radius: 50px; padding: 10px 32px; min-width: 250px; font-size: 0.9rem;">
+                        <button class="btn btn-primary" onclick="performSearch()" style="border-radius: 50px; padding: 10px 32px; width: 100%; max-width: 450px; font-size: 0.9rem;">
                             <i class="fas fa-search"></i> Search Available Numbers
                         </button>
                     </div>
