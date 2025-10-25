@@ -116,7 +116,40 @@
                             <button class="btn btn-sm btn-outline-secondary token-refresh-btn" style="margin: 0 10px;" title="Refresh balance" onclick="refreshBalance()">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
-                            <span class="wallet-value">$100.00 USD</span>
+                            <button class="btn btn-sm btn-outline-info wallet-details-toggle" onclick="toggleWalletDetails()">
+                                <i class="fas fa-wallet"></i> Wallet Details
+                                <i class="fas fa-chevron-down toggle-arrow-wallet"></i>
+                            </button>
+                        </div>
+                        <!-- Wallet Details Section -->
+                        <div id="walletDetailsSection" class="wallet-details-info mt-3" style="display: none;">
+                            <div class="wallet-details-content">
+                                <div class="wallet-detail-item">
+                                    <label><i class="fas fa-link"></i> Ethereum Address:</label>
+                                    <div class="address-display">
+                                        <span id="ethAddressDisplay" class="eth-address">0x0000...0000</span>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="copyAddress()" title="Copy address">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="wallet-detail-item">
+                                    <label><i class="fas fa-calendar"></i> Wallet Created:</label>
+                                    <span id="walletCreatedDate">Loading...</span>
+                                </div>
+                                <div class="wallet-detail-item">
+                                    <label><i class="fas fa-external-link-alt"></i> View on Etherscan:</label>
+                                    <a id="etherscanLink" href="#" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fab fa-ethereum"></i> View on Etherscan
+                                    </a>
+                                </div>
+                                <div class="wallet-detail-item qr-section">
+                                    <label><i class="fas fa-qrcode"></i> QR Code:</label>
+                                    <div class="qr-code-container">
+                                        <img id="walletQRCode" src="" alt="Wallet QR Code" style="display: none;">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <!-- Founding Member Info Section (Only for Founding Members) -->
                         <div id="foundingMemberSection" class="founding-member-info mt-3" style="display: none;">
@@ -703,6 +736,134 @@
         .dark-mode .member-content li {
             border-bottom-color: rgba(255,255,255,0.1);
         }
+
+        /* Wallet Details Styles */
+        .wallet-details-toggle {
+            border-radius: 20px;
+            font-size: 0.85rem;
+            padding: 6px 16px;
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .wallet-details-toggle:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .toggle-arrow-wallet {
+            transition: transform 0.3s ease;
+            font-size: 0.75rem;
+        }
+
+        .toggle-arrow-wallet.rotated {
+            transform: rotate(180deg);
+        }
+
+        .wallet-details-info {
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        .wallet-details-content {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #0ea5e9;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .wallet-detail-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .wallet-detail-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .wallet-detail-item label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .wallet-detail-item label i {
+            margin-right: 5px;
+            color: #0ea5e9;
+        }
+
+        .address-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .eth-address {
+            font-family: 'Courier New', monospace;
+            background: rgba(14, 165, 233, 0.1);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #0c4a6e;
+            flex: 1;
+        }
+
+        .qr-section {
+            text-align: center;
+        }
+
+        .qr-code-container {
+            margin-top: 10px;
+            display: inline-block;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .qr-code-container img {
+            display: block;
+            width: 200px;
+            height: 200px;
+            border-radius: 4px;
+        }
+
+        /* Dark Mode Wallet Details */
+        .dark-mode .wallet-details-info {
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .dark-mode .wallet-details-content {
+            background: rgba(45, 45, 45, 0.9);
+            border-color: #0284c7;
+        }
+
+        .dark-mode .wallet-detail-item {
+            border-bottom-color: rgba(255,255,255,0.1);
+        }
+
+        .dark-mode .wallet-detail-item label {
+            color: #e0e0e0;
+        }
+
+        .dark-mode .eth-address {
+            background: rgba(14, 165, 233, 0.2);
+            color: #7dd3fc;
+        }
+
+        .dark-mode .qr-code-container {
+            background: #1e293b;
+        }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -773,7 +934,6 @@
 
                 if (!data.error) {
                     document.querySelector('.balance-amount').textContent = data.balance.toFixed(2);
-                    document.querySelector('.wallet-value').textContent = '$' + data.value_usd.toFixed(2) + ' USD';
                     statusIndicator.innerHTML = '<span style="color:green">✓ Updated from Sepolia <span class="update-time">just now</span></span>';
 
                     // Also update the header balance pill
@@ -781,6 +941,9 @@
                     if (tokenBalancePill) {
                         tokenBalancePill.textContent = `${data.balance.toFixed(2)} DOTM`;
                     }
+
+                    // Update wallet details
+                    updateWalletDetails(data);
 
                     // Start a timer to update the timestamp
                     const updateTimeEl = statusIndicator.querySelector('.update-time');
@@ -871,7 +1034,9 @@
 
                 if (!data.error) {
                     document.querySelector('.balance-amount').textContent = data.balance.toFixed(2);
-                    document.querySelector('.wallet-value').textContent = '$' + data.value_usd.toFixed(2) + ' USD';
+                    
+                    // Update wallet details
+                    updateWalletDetails(data);
                 }
             } catch (error) {
                 console.error('Error loading initial balance:', error);
@@ -1092,6 +1257,84 @@
             } else {
                 details.style.display = 'none';
                 arrow.classList.remove('rotated');
+            }
+        }
+
+        // Toggle wallet details
+        function toggleWalletDetails() {
+            const details = document.getElementById('walletDetailsSection');
+            const arrow = document.querySelector('.toggle-arrow-wallet');
+
+            if (details.style.display === 'none' || details.style.display === '') {
+                details.style.display = 'block';
+                arrow.classList.add('rotated');
+            } else {
+                details.style.display = 'none';
+                arrow.classList.remove('rotated');
+            }
+        }
+
+        // Update wallet details with data from API
+        function updateWalletDetails(data) {
+            if (data.address) {
+                // Format address for display (show first 6 and last 4 characters)
+                const shortAddress = `${data.address.substring(0, 6)}...${data.address.substring(38)}`;
+                document.getElementById('ethAddressDisplay').textContent = shortAddress;
+                document.getElementById('ethAddressDisplay').setAttribute('data-full-address', data.address);
+                
+                // Update Etherscan link (use Sepolia testnet)
+                const etherscanLink = `https://sepolia.etherscan.io/address/${data.address}`;
+                document.getElementById('etherscanLink').href = etherscanLink;
+                
+                // Update creation date
+                if (data.created_at) {
+                    const createdDate = new Date(data.created_at);
+                    document.getElementById('walletCreatedDate').textContent = createdDate.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                }
+                
+                // Generate QR code using goQR.me API
+                const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.address)}`;
+                const qrCodeImg = document.getElementById('walletQRCode');
+                qrCodeImg.src = qrCodeUrl;
+                qrCodeImg.style.display = 'block';
+            } else {
+                // No wallet connected
+                document.getElementById('ethAddressDisplay').textContent = 'No wallet connected';
+                document.getElementById('walletCreatedDate').textContent = 'N/A';
+                document.getElementById('etherscanLink').href = '#';
+                document.getElementById('walletQRCode').style.display = 'none';
+            }
+        }
+
+        // Copy address to clipboard
+        async function copyAddress() {
+            const addressDisplay = document.getElementById('ethAddressDisplay');
+            const fullAddress = addressDisplay.getAttribute('data-full-address');
+            
+            if (!fullAddress || fullAddress === 'No wallet connected') {
+                alert('No wallet address to copy');
+                return;
+            }
+            
+            try {
+                await navigator.clipboard.writeText(fullAddress);
+                
+                // Show feedback
+                const originalText = addressDisplay.textContent;
+                addressDisplay.textContent = 'Copied!';
+                addressDisplay.style.color = '#10b981';
+                
+                setTimeout(() => {
+                    addressDisplay.textContent = originalText;
+                    addressDisplay.style.color = '';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy address');
             }
         }
 

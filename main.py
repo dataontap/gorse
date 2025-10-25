@@ -3730,25 +3730,28 @@ class CurrentUserBalance(Resource):
         try:
             firebase_uid = request.firebase_user.get('uid')
             
-            # Get user's eth_address from database
+            # Get user's eth_address and created_at from database
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
                         cur.execute(
-                            "SELECT eth_address FROM users WHERE firebase_uid = %s",
+                            "SELECT eth_address, created_at FROM users WHERE firebase_uid = %s",
                             (firebase_uid,)
                         )
                         result = cur.fetchone()
                         
                         if result and result[0]:
                             eth_address = result[0]
+                            created_at = result[1]
                             balance = ethereum_helper.get_token_balance(eth_address)
                         else:
                             # No wallet address found
                             eth_address = None
+                            created_at = None
                             balance = 0.0
                 else:
                     eth_address = None
+                    created_at = None
                     balance = 0.0
 
             # Get the latest token price
@@ -3764,7 +3767,9 @@ class CurrentUserBalance(Resource):
                 'balance': balance,
                 'token_price': token_price,
                 'value_usd': balance * token_price,
-                'has_wallet': eth_address is not None
+                'has_wallet': eth_address is not None,
+                'created_at': created_at.isoformat() if created_at else None,
+                'eth_address': eth_address
             }
         except Exception as e:
             print(f"Error getting current user balance: {str(e)}")
@@ -3774,7 +3779,9 @@ class CurrentUserBalance(Resource):
                 'token_price': 1.0,
                 'value_usd': 0.0,
                 'has_wallet': False,
-                'error': str(e)
+                'error': str(e),
+                'eth_address': None,
+                'created_at': None
             }
 
 @token_ns.route('/founding-token')
