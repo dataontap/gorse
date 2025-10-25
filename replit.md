@@ -48,6 +48,19 @@ Web3.py integrates Ethereum smart contracts for DOTM token management on Sepolia
 - Differentiated member benefits: "Founding Member Benefits" (crown icon) vs "Member Benefits" (star icon) based on `/api/founder-status` endpoint
 - Full dark mode support for all wallet UI components
 
+**Transaction History**: The "Recent Transactions" section displays a combined view of blockchain transfers and platform purchases:
+- `/api/token/transactions` endpoint combines:
+  - Blockchain token transfers from Ethereum Mainnet via Etherscan API
+  - Platform purchases from database
+- Displays as IN (↓) or OUT (↑) transactions with token amounts and USD values
+- Shows last 5 transactions by default with "Show More" button to load all
+- Clickable transactions open detailed modal with:
+  - Full transaction details (hash, from, to, timestamp, value)
+  - Direct Etherscan link for blockchain transactions
+  - Network identification (Mainnet vs Stripe Payment)
+- Network badge displays "Mainnet" for blockchain transactions
+- Gracefully handles users without database records (new signups)
+
 ### MCP Server Architecture
 
 A dedicated MCP server provides AI assistants with structured access to service information, pricing data, and feature catalogs through multi-format API endpoints (JSON and HTML), while maintaining strict privacy controls. It includes AI-driven eSIM activation workflows, automatically generating Stripe invoices if payment is not found, and implementing rate limiting (100 activations/hour with queue management).
