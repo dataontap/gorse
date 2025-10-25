@@ -216,6 +216,127 @@
             word-wrap: break-word;
         }
 
+        /* Member Benefits Styles */
+        .founding-member-info, .member-info {
+            margin-bottom: 1.5rem;
+        }
+
+        .founding-member-toggle {
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e9d27e;
+            background: rgba(255, 215, 0, 0.1);
+            color: #333;
+            transition: all 0.3s ease;
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .founding-member-toggle:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .member-toggle {
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #cbd5e1;
+            background: rgba(100, 116, 139, 0.1);
+            color: #333;
+            transition: all 0.3s ease;
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .member-toggle:hover {
+            background: rgba(100, 116, 139, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .toggle-arrow, .toggle-arrow-regular {
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-arrow.rotated, .toggle-arrow-regular.rotated {
+            transform: rotate(180deg);
+        }
+
+        .founding-member-details, .member-details {
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .founding-member-content ul, .member-content ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 15px;
+        }
+
+        .founding-member-content li, .member-content li {
+            margin-bottom: 8px;
+            padding: 8px 0;
+        }
+
+        .blockchain-info {
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        .blockchain-link {
+            color: #6b21a8;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .blockchain-link:hover {
+            color: #581c87;
+            text-decoration: underline;
+        }
+
+        .dark-mode .founding-member-details, .dark-mode .member-details {
+            background: rgba(45, 45, 45, 0.9);
+            color: #e0e0e0;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .dark-mode .founding-member-toggle {
+            background: rgba(255, 215, 0, 0.15);
+            color: #e0e0e0;
+            border-color: #7d5d51;
+        }
+
+        .dark-mode .member-toggle {
+            background: rgba(100, 116, 139, 0.15);
+            color: #e0e0e0;
+            border-color: #64748b;
+        }
+
+        .dark-mode .blockchain-link {
+            color: #a78bfa;
+        }
+
         /* Mobile-responsive styles */
         @media (max-width: 768px) {
             /* Container and padding adjustments */
@@ -509,6 +630,66 @@
             </div>
             <div class="profile-details">
                 <div class="user-info mb-4">
+                    <!-- Founding Member Benefits Section -->
+                    <div id="foundingMemberSection" class="founding-member-info" style="display: none;">
+                        <button class="btn btn-sm btn-outline-primary founding-member-toggle" onclick="toggleFoundingMemberInfo()">
+                            <span><i class="fas fa-crown"></i> Founding Member Benefits</span>
+                            <i class="fas fa-chevron-down toggle-arrow"></i>
+                        </button>
+                        <div id="foundingMemberDetails" class="founding-member-details" style="display: none;">
+                            <div class="founding-member-content">
+                                <p><strong>Congratulations! As a Founding Member:</strong></p>
+                                <ul>
+                                    <li>✅ <strong>No membership fees for life</strong> (until Canada Day 2099)</li>
+                                    <li>✅ <strong>100.33 DOTM tokens</strong> (vs 10.33 for new members)</li>
+                                    <li>💰 <strong>Earn 1.33 DOTM</strong> for every 10,000MB purchase</li>
+                                    <li>🛍️ <strong>Earn DOTM</strong> on all store purchases via Stripe</li>
+                                    <li>💵 <strong>Each DOTM = $1</strong> in the dotmobile ecosystem</li>
+                                </ul>
+                                <div class="blockchain-info">
+                                    <p><small>
+                                        📊 Only <strong>10,333,333 DOTM</strong> will ever be minted according to our 
+                                        <a href="/about" class="blockchain-link">blockchain contract</a>
+                                    </small></p>
+                                    <p><small>
+                                        🔐 Your ETH wallet is powered by <strong>Infura and MetaMask</strong> - 
+                                        your private keys are never stored on our servers
+                                    </small></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Regular Member Benefits Section -->
+                    <div id="regularMemberSection" class="member-info" style="display: none;">
+                        <button class="btn btn-sm btn-outline-secondary member-toggle" onclick="toggleMemberInfo()">
+                            <span><i class="fas fa-star"></i> Member Benefits</span>
+                            <i class="fas fa-chevron-down toggle-arrow-regular"></i>
+                        </button>
+                        <div id="memberDetails" class="member-details" style="display: none;">
+                            <div class="member-content">
+                                <p><strong>Welcome! As a Member you enjoy:</strong></p>
+                                <ul>
+                                    <li>✅ <strong>10.33 DOTM welcome tokens</strong></li>
+                                    <li>💰 <strong>Earn DOTM</strong> on data purchases and store transactions</li>
+                                    <li>🌍 <strong>Global eSIM connectivity</strong> in 150+ countries</li>
+                                    <li>🔒 <strong>Secure blockchain wallet</strong> integration</li>
+                                    <li>💵 <strong>Each DOTM = $1</strong> in the dotmobile ecosystem</li>
+                                </ul>
+                                <div class="blockchain-info">
+                                    <p><small>
+                                        📊 Only <strong>10,333,333 DOTM</strong> will ever be minted according to our 
+                                        <a href="/about" class="blockchain-link">blockchain contract</a>
+                                    </small></p>
+                                    <p><small>
+                                        🔐 Your ETH wallet is powered by <strong>Infura and MetaMask</strong> - 
+                                        your private keys are never stored on our servers
+                                    </small></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="email-container">
                         <div class="user-info-header">
                             <div class="user-name" id="profileUserName" style="display: block; margin-bottom: 0.5rem;">John Doe</div>
@@ -1145,11 +1326,18 @@
 
             // Update member badge based on founder status
             const badgeElement = document.getElementById('memberBadge');
+            const foundingMemberSection = document.getElementById('foundingMemberSection');
+            const regularMemberSection = document.getElementById('regularMemberSection');
+            
             if (badgeElement && userData.email) {
                 if (userData.founderStatus === 'Y') {
                     badgeElement.textContent = '👑';
+                    if (foundingMemberSection) foundingMemberSection.style.display = 'block';
+                    if (regularMemberSection) regularMemberSection.style.display = 'none';
                 } else {
                     badgeElement.textContent = '⭐';
+                    if (foundingMemberSection) foundingMemberSection.style.display = 'none';
+                    if (regularMemberSection) regularMemberSection.style.display = 'block';
                 }
             }
 
@@ -2085,6 +2273,34 @@
         function manageDataUsage(lineId) {
             // Redirect to dashboard data usage section
             window.location.href = '/dashboard#data-usage';
+        }
+
+        // Toggle Founding Member Benefits
+        function toggleFoundingMemberInfo() {
+            const details = document.getElementById('foundingMemberDetails');
+            const arrow = document.querySelector('.toggle-arrow');
+            
+            if (details.style.display === 'none' || details.style.display === '') {
+                details.style.display = 'block';
+                if (arrow) arrow.classList.add('rotated');
+            } else {
+                details.style.display = 'none';
+                if (arrow) arrow.classList.remove('rotated');
+            }
+        }
+
+        // Toggle Regular Member Benefits
+        function toggleMemberInfo() {
+            const details = document.getElementById('memberDetails');
+            const arrow = document.querySelector('.toggle-arrow-regular');
+            
+            if (details.style.display === 'none' || details.style.display === '') {
+                details.style.display = 'block';
+                if (arrow) arrow.classList.add('rotated');
+            } else {
+                details.style.display = 'none';
+                if (arrow) arrow.classList.remove('rotated');
+            }
         }
 
         function copyFirebaseUID() {
