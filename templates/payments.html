@@ -1282,8 +1282,8 @@
                 document.getElementById('ethAddressDisplay').textContent = shortAddress;
                 document.getElementById('ethAddressDisplay').setAttribute('data-full-address', data.address);
                 
-                // Update Etherscan link (use Sepolia testnet)
-                const etherscanLink = `https://sepolia.etherscan.io/address/${data.address}`;
+                // Update Etherscan link (use mainnet)
+                const etherscanLink = `https://etherscan.io/address/${data.address}`;
                 document.getElementById('etherscanLink').href = etherscanLink;
                 
                 // Update creation date
