@@ -3728,7 +3728,7 @@ class CurrentUserBalance(Resource):
     @firebase_auth_required
     def get(self):
         try:
-            firebase_uid = request.firebase_uid
+            firebase_uid = request.firebase_user.get('uid')
             
             # Get user's eth_address from database
             with get_db_connection() as conn:
