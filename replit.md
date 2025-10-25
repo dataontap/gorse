@@ -36,6 +36,18 @@ The system tracks all number change requests in the `phone_number_changes` table
 
 Web3.py integrates Ethereum smart contracts for DOTM token management on Sepolia testnet and mainnet, including an automated token reward system based on service usage.
 
+**Wallet Management Features**: The payments page provides comprehensive wallet details through an expandable interface:
+- Real-time DOTM token balance synchronization with Sepolia testnet via `/api/token/balance/me` endpoint
+- Expandable "Wallet Details" button replacing the previous USD value display
+- Detailed wallet information including:
+  - Ethereum address (shortened format with full address stored for copy)
+  - Wallet creation date (formatted from database `created_at` field)
+  - Direct Etherscan link to view wallet on Sepolia testnet
+  - QR code generation for easy address sharing (via QR Server API)
+  - One-click address copy to clipboard with visual feedback
+- Differentiated member benefits: "Founding Member Benefits" (crown icon) vs "Member Benefits" (star icon) based on `/api/founder-status` endpoint
+- Full dark mode support for all wallet UI components
+
 ### MCP Server Architecture
 
 A dedicated MCP server provides AI assistants with structured access to service information, pricing data, and feature catalogs through multi-format API endpoints (JSON and HTML), while maintaining strict privacy controls. It includes AI-driven eSIM activation workflows, automatically generating Stripe invoices if payment is not found, and implementing rate limiting (100 activations/hour with queue management).
