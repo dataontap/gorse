@@ -4532,7 +4532,7 @@ async function loadDOTMBalance() {
         // Get Firebase ID token
         const user = firebase.auth().currentUser;
         if (!user) {
-            tokenBalancePill.textContent = '0.00 DOTM';
+            tokenBalancePill.innerHTML = '0.00 DOTM';
             return;
         }
 
@@ -4548,20 +4548,52 @@ async function loadDOTMBalance() {
 
         if (data.error) {
             console.error('Error fetching DOTM balance:', data.error);
-            tokenBalancePill.textContent = '0.00 DOTM';
+            tokenBalancePill.innerHTML = '0.00 DOTM';
         } else {
-            // Display balance in the format "100.33 DOTM"
-            tokenBalancePill.textContent = `${data.balance.toFixed(2)} DOTM`;
+            // Display balance with sync icon in the format "100.33 DOTM"
+            tokenBalancePill.innerHTML = `
+                <span>${data.balance.toFixed(2)} DOTM</span>
+                <i class="fas fa-sync-alt wallet-sync-icon" onclick="refreshDOTMBalance(event)" title="Refresh balance"></i>
+            `;
+            
+            // Make the pill clickable to navigate to payments page
+            tokenBalancePill.onclick = function(e) {
+                // Only navigate if not clicking the sync icon
+                if (!e.target.classList.contains('wallet-sync-icon')) {
+                    window.location.href = '/payments';
+                }
+            };
         }
     } catch (error) {
         console.error('Error loading DOTM balance:', error);
-        tokenBalancePill.textContent = '0.00 DOTM';
+        tokenBalancePill.innerHTML = '0.00 DOTM';
     }
 }
 
 // Refresh DOTM Balance (can be called from sync buttons)
-async function refreshDOTMBalance() {
-    await loadDOTMBalance();
+async function refreshDOTMBalance(event) {
+    // Prevent navigation if clicked on link
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    // Add rotating animation to sync icon if it exists
+    const syncIcon = document.querySelector('.wallet-sync-icon');
+    if (syncIcon) {
+        syncIcon.classList.add('rotating');
+    }
+
+    try {
+        await loadDOTMBalance();
+    } finally {
+        // Remove rotating animation after a delay
+        if (syncIcon) {
+            setTimeout(() => {
+                syncIcon.classList.remove('rotating');
+            }, 1000);
+        }
+    }
 }
 
 // Make functions globally available

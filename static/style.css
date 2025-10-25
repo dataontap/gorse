@@ -132,7 +132,9 @@ body.light-mode {
 
 /* Wallet value pill styling */
 .wallet-value-pill {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     background-color: rgba(0, 102, 255, 0.1);
     color: #0066ff;
     padding: 6px 12px;
@@ -146,6 +148,7 @@ body.light-mode {
     max-width: calc(100% - 10px);
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: pointer;
 }
 
 .dark-mode .wallet-value-pill {
@@ -166,6 +169,25 @@ body.light-mode {
     background-color: rgba(0, 102, 255, 0.3);
     color: #99ccff;
     box-shadow: 0 2px 4px rgba(0, 102, 255, 0.3);
+}
+
+.wallet-sync-icon {
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.wallet-sync-icon:hover {
+    transform: scale(1.2);
+}
+
+.wallet-sync-icon.rotating {
+    animation: rotate-sync 1s linear infinite;
+}
+
+@keyframes rotate-sync {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .countries-link {
