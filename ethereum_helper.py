@@ -29,24 +29,18 @@ def get_token_contract():
 # Get token balance for a user
 def get_token_balance(address):
     try:
-        # Handle the case if this is a "current_user" placeholder
-        if address == "current_user":
-            # Return placeholder data for demo purposes
-            return 100.33
+        # If no address provided, return 0
+        if not address or address == "current_user":
+            return 0.0
 
-        # Check if this is the specific test account that should have 100.33 DOTM
-        # This could be determined by email lookup or wallet address
-        # For now, return 100.33 for demo purposes as requested
-        if address:
-            return 100.33
-
+        # Try to get balance from blockchain
         token_contract = get_token_contract()
         balance = token_contract.functions.balanceOf(address).call()
         return balance / (10 ** 18)  # Convert from wei to DOTM
     except Exception as e:
         print(f"Error in get_token_balance: {str(e)}")
-        # Return specific balance for the test account
-        return 100.33
+        # Return 0 if there's an error
+        return 0.0
 
 # Award tokens for data purchase (10.33% of purchase amount)
 def award_data_purchase_tokens(user_id, purchase_amount):

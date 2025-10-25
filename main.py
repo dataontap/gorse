@@ -3696,11 +3696,8 @@ class TokenPrice(Resource):
 class TokenBalance(Resource):
     def get(self, address):
         try:
-            # Use dummy data for demo or if using placeholder "current_user"
-            if address == "current_user":
-                balance = 100.0
-            else:
-                balance = ethereum_helper.get_token_balance(address)
+            # Get balance based on address
+            balance = ethereum_helper.get_token_balance(address)
 
             # Get the latest token price
             try:
@@ -3718,13 +3715,66 @@ class TokenBalance(Resource):
             }
         except Exception as e:
             print(f"Error getting token balance: {str(e)}")
-            # For demo purposes, return a fallback response instead of an error
             return {
                 'address': address,
-                'balance': 100.0,
+                'balance': 0.0,
                 'token_price': 1.0,
-                'value_usd': 100.0,
-                'note': 'Demo mode'
+                'value_usd': 0.0,
+                'error': str(e)
+            }
+
+@token_ns.route('/balance/me')
+class CurrentUserBalance(Resource):
+    @firebase_auth_required
+    def get(self):
+        try:
+            firebase_uid = request.firebase_uid
+            
+            # Get user's eth_address from database
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "SELECT eth_address FROM users WHERE firebase_uid = %s",
+                            (firebase_uid,)
+                        )
+                        result = cur.fetchone()
+                        
+                        if result and result[0]:
+                            eth_address = result[0]
+                            balance = ethereum_helper.get_token_balance(eth_address)
+                        else:
+                            # No wallet address found
+                            eth_address = None
+                            balance = 0.0
+                else:
+                    eth_address = None
+                    balance = 0.0
+
+            # Get the latest token price
+            try:
+                price_data = ethereum_helper.get_token_price_from_etherscan()
+                token_price = price_data.get('price', 1.0)
+            except Exception as e:
+                print(f"Using default token price due to error: {str(e)}")
+                token_price = 1.0  # Default fallback
+
+            return {
+                'address': eth_address,
+                'balance': balance,
+                'token_price': token_price,
+                'value_usd': balance * token_price,
+                'has_wallet': eth_address is not None
+            }
+        except Exception as e:
+            print(f"Error getting current user balance: {str(e)}")
+            return {
+                'address': None,
+                'balance': 0.0,
+                'token_price': 1.0,
+                'value_usd': 0.0,
+                'has_wallet': False,
+                'error': str(e)
             }
 
 @token_ns.route('/founding-token')
