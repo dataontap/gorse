@@ -2817,6 +2817,196 @@ def create_checkout_session():
         print(f"Error creating checkout session: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/payment-methods/setup-intent', methods=['POST'])
+@firebase_auth_required
+def create_setup_intent():
+    """Create a SetupIntent for adding a payment method"""
+    try:
+        # Get Firebase UID from verified token
+        firebase_uid = request.firebase_user.get('uid')
+        if not firebase_uid:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        # Get user's Stripe customer ID from database
+        with get_db_connection() as conn:
+            if not conn:
+                return jsonify({'error': 'Database connection unavailable'}), 503
+            
+            with conn.cursor() as cur:
+                cur.execute("SELECT stripe_customer_id, email FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                result = cur.fetchone()
+                
+                if not result:
+                    return jsonify({'error': 'User not found'}), 404
+                
+                stripe_customer_id, email = result
+                
+                # Create Stripe customer if doesn't exist
+                if not stripe_customer_id:
+                    customer = stripe.Customer.create(
+                        email=email,
+                        metadata={'firebase_uid': firebase_uid}
+                    )
+                    stripe_customer_id = customer.id
+                    
+                    # Update database with new customer ID
+                    cur.execute(
+                        "UPDATE users SET stripe_customer_id = %s WHERE firebase_uid = %s",
+                        (stripe_customer_id, firebase_uid)
+                    )
+                    conn.commit()
+        
+        # Create SetupIntent
+        setup_intent = stripe.SetupIntent.create(
+            customer=stripe_customer_id,
+            payment_method_types=['card'],
+        )
+        
+        return jsonify({
+            'clientSecret': setup_intent.client_secret
+        })
+        
+    except Exception as e:
+        print(f"Error creating setup intent: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/payment-methods', methods=['GET'])
+@firebase_auth_required
+def get_payment_methods():
+    """Get all payment methods for a user"""
+    try:
+        # Get Firebase UID from verified token
+        firebase_uid = request.firebase_user.get('uid')
+        if not firebase_uid:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        # Get user's Stripe customer ID from database
+        with get_db_connection() as conn:
+            if not conn:
+                return jsonify({'error': 'Database connection unavailable'}), 503
+                
+            with conn.cursor() as cur:
+                cur.execute("SELECT stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                result = cur.fetchone()
+                
+                if not result or not result[0]:
+                    return jsonify({'paymentMethods': []})
+                
+                stripe_customer_id = result[0]
+        
+        # Get payment methods from Stripe
+        payment_methods = stripe.Customer.list_payment_methods(
+            stripe_customer_id,
+            type='card'
+        )
+        
+        # Get default payment method
+        customer = stripe.Customer.retrieve(stripe_customer_id)
+        default_pm_id = customer.invoice_settings.default_payment_method
+        
+        # Format payment methods for frontend
+        formatted_pms = []
+        for pm in payment_methods.data:
+            formatted_pms.append({
+                'id': pm.id,
+                'brand': pm.card.brand,
+                'last4': pm.card.last4,
+                'exp_month': pm.card.exp_month,
+                'exp_year': pm.card.exp_year,
+                'isDefault': pm.id == default_pm_id
+            })
+        
+        return jsonify({'paymentMethods': formatted_pms})
+        
+    except Exception as e:
+        print(f"Error fetching payment methods: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/payment-methods/<pm_id>/detach', methods=['POST'])
+@firebase_auth_required
+def detach_payment_method(pm_id):
+    """Detach/remove a payment method"""
+    try:
+        # Get Firebase UID from verified token
+        firebase_uid = request.firebase_user.get('uid')
+        if not firebase_uid:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        # Verify the payment method belongs to the user's customer
+        with get_db_connection() as conn:
+            if not conn:
+                return jsonify({'error': 'Database connection unavailable'}), 503
+                
+            with conn.cursor() as cur:
+                cur.execute("SELECT stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                result = cur.fetchone()
+                
+                if not result or not result[0]:
+                    return jsonify({'error': 'User not found'}), 404
+                
+                stripe_customer_id = result[0]
+        
+        # Verify payment method belongs to this customer before detaching
+        try:
+            pm = stripe.PaymentMethod.retrieve(pm_id)
+            if pm.customer != stripe_customer_id:
+                return jsonify({'error': 'Unauthorized: Payment method does not belong to this user'}), 403
+        except Exception as e:
+            return jsonify({'error': 'Payment method not found'}), 404
+        
+        # Detach the payment method
+        stripe.PaymentMethod.detach(pm_id)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        print(f"Error detaching payment method: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/payment-methods/<pm_id>/set-default', methods=['POST'])
+@firebase_auth_required
+def set_default_payment_method(pm_id):
+    """Set a payment method as default"""
+    try:
+        # Get Firebase UID from verified token
+        firebase_uid = request.firebase_user.get('uid')
+        if not firebase_uid:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        # Get user's Stripe customer ID
+        with get_db_connection() as conn:
+            if not conn:
+                return jsonify({'error': 'Database connection unavailable'}), 503
+                
+            with conn.cursor() as cur:
+                cur.execute("SELECT stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                result = cur.fetchone()
+                
+                if not result or not result[0]:
+                    return jsonify({'error': 'User not found'}), 404
+                
+                stripe_customer_id = result[0]
+        
+        # Verify payment method belongs to this customer before setting as default
+        try:
+            pm = stripe.PaymentMethod.retrieve(pm_id)
+            if pm.customer != stripe_customer_id:
+                return jsonify({'error': 'Unauthorized: Payment method does not belong to this user'}), 403
+        except Exception as e:
+            return jsonify({'error': 'Payment method not found'}), 404
+        
+        # Update customer's default payment method
+        stripe.Customer.modify(
+            stripe_customer_id,
+            invoice_settings={'default_payment_method': pm_id}
+        )
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        print(f"Error setting default payment method: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 def get_user_assigned_iccid_data(firebase_uid):
     """Check if user already has an assigned ICCID from inventory"""
     try:

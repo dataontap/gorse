@@ -228,49 +228,39 @@
                 </div>
             </div>
 
-            <!-- Default Payment Method Section -->
-            <div class="address-section mb-4">
-                <h3 class="mb-3"><i class="fas fa-star"></i> Default</h3>
-                <div class="address-card">
-                    <div class="address-content">
-                        <h4 class="payment-title">Visa ending in 4242</h4>
-                        <p class="payment-detail">Expires 12/25</p>
-                        <p class="text-success">Default payment method</p>
+            <!-- Payment Methods Section (Dynamic) -->
+            <div id="paymentMethodsSection">
+                <!-- Loading state -->
+                <div id="paymentMethodsLoading" class="address-section mb-4" style="display: none;">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading payment methods...</p>
                     </div>
-                    <i class="fas fa-edit edit-icon" onclick="editPaymentMethod(this)"></i>
-                </div>
-            </div>
-
-            <!-- Other Payment Methods Section -->
-            <div class="address-section mb-4">
-                <h3 class="mb-3"><i class="fas fa-credit-card"></i> Other</h3>
-                <div class="address-card mb-3">
-                    <div class="address-content">
-                        <h4 class="payment-title">Mastercard ending in 5555</h4>
-                        <p class="payment-detail">Expires 08/25</p>
-                        <p class="payment-status">&nbsp;</p>
-                    </div>
-                    <i class="fas fa-edit edit-icon" onclick="editPaymentMethod(this)"></i>
                 </div>
 
-                <div class="address-card">
-                    <div class="address-content">
-                        <h4 class="payment-title">Bitcoin Wallet</h4>
-                        <p class="payment-detail">Connected via Stripe</p>
-                        <p class="payment-status">&nbsp;</p>
-                    </div>
-                    <i class="fas fa-edit edit-icon" onclick="editPaymentMethod(this)"></i>
+                <!-- Default Payment Method Section -->
+                <div id="defaultPaymentSection" class="address-section mb-4" style="display: none;">
+                    <h3 class="mb-3"><i class="fas fa-star"></i> Default</h3>
+                    <div id="defaultPaymentMethodCard"></div>
                 </div>
-            </div>
 
-            <!-- Add Payment Method Section -->
-            <div class="address-section mb-4">
-                <h3 class="mb-3"><i class="fas fa-plus-circle"></i> Add</h3>
-                <div class="address-card">
-                    <div class="d-flex justify-content-between align-items-center w-100">
-                        <button class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Add New Payment Method
-                        </button>
+                <!-- Other Payment Methods Section -->
+                <div id="otherPaymentsSection" class="address-section mb-4" style="display: none;">
+                    <h3 class="mb-3"><i class="fas fa-credit-card"></i> Other</h3>
+                    <div id="otherPaymentMethodsCards"></div>
+                </div>
+
+                <!-- Add Payment Method Section -->
+                <div class="address-section mb-4">
+                    <h3 class="mb-3"><i class="fas fa-plus-circle"></i> Add</h3>
+                    <div class="address-card">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <button class="btn btn-primary" onclick="openAddPaymentMethodModal()">
+                                <i class="fas fa-plus"></i> Add New Payment Method
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1456,10 +1446,316 @@
         document.addEventListener('DOMContentLoaded', function() {
             refreshTransactions();
             checkFoundingMemberStatus();
+            loadPaymentMethods(); // Load payment methods
 
             // Initialize translation
             initializeTranslation();
         });
+    </script>
+
+    <!-- Add Payment Method Modal -->
+    <div class="modal fade" id="addPaymentMethodModal" tabindex="-1" aria-labelledby="addPaymentMethodModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPaymentMethodModalLabel">Add Payment Method</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="payment-form">
+                        <div class="mb-3">
+                            <label for="card-element" class="form-label">Card Details</label>
+                            <div id="card-element" class="form-control" style="height: 40px; padding-top: 10px;">
+                                <!-- Stripe Card Element will be mounted here -->
+                            </div>
+                            <div id="card-errors" class="text-danger mt-2" role="alert"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="submit-payment-btn">
+                            <span id="button-text">Add Payment Method</span>
+                            <div class="spinner-border spinner-border-sm d-none" id="spinner" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
+    
+    <!-- Payment Methods JavaScript -->
+    <script>
+        let stripe, elements, cardElement;
+        const STRIPE_PUBLISHABLE_KEY = 'pk_test_51QeENGHD5N9LAhGBe4GFZHLjJyOdBUAL6bFQFKW9G8EAl8AEwKWGQhkCwcfXE3ej2XGMj8QOi3SxHhJIATLUt95A00j82rzkH1'; // Replace with your actual key
+
+        // Initialize Stripe
+        function initializeStripe() {
+            stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+            elements = stripe.elements();
+            cardElement = elements.create('card');
+            cardElement.mount('#card-element');
+
+            // Handle real-time validation errors from the card Element
+            cardElement.on('change', function(event) {
+                const displayError = document.getElementById('card-errors');
+                if (event.error) {
+                    displayError.textContent = event.error.message;
+                } else {
+                    displayError.textContent = '';
+                }
+            });
+        }
+
+        // Open add payment method modal
+        function openAddPaymentMethodModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addPaymentMethodModal'));
+            modal.show();
+            
+            // Initialize Stripe if not already done
+            if (!stripe) {
+                initializeStripe();
+            }
+        }
+
+        // Handle form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('payment-form');
+            if (form) {
+                form.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    
+                    const submitButton = document.getElementById('submit-payment-btn');
+                    const buttonText = document.getElementById('button-text');
+                    const spinner = document.getElementById('spinner');
+                    
+                    // Show loading state
+                    submitButton.disabled = true;
+                    buttonText.classList.add('d-none');
+                    spinner.classList.remove('d-none');
+                    
+                    try {
+                        const user = firebase.auth().currentUser;
+                        if (!user) {
+                            throw new Error('Please sign in to add a payment method');
+                        }
+                        
+                        // Get Firebase ID token
+                        const idToken = await user.getIdToken();
+                        
+                        // Create SetupIntent on the server
+                        const response = await fetch('/api/payment-methods/setup-intent', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${idToken}`
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        
+                        // Confirm the SetupIntent with the card details
+                        const { setupIntent, error } = await stripe.confirmCardSetup(
+                            data.clientSecret,
+                            {
+                                payment_method: {
+                                    card: cardElement
+                                }
+                            }
+                        );
+                        
+                        if (error) {
+                            throw new Error(error.message);
+                        }
+                        
+                        // Success! Close modal and reload payment methods
+                        bootstrap.Modal.getInstance(document.getElementById('addPaymentMethodModal')).hide();
+                        await loadPaymentMethods();
+                        
+                        // Reset form
+                        form.reset();
+                        cardElement.clear();
+                        
+                        alert('Payment method added successfully!');
+                    } catch (error) {
+                        console.error('Error adding payment method:', error);
+                        document.getElementById('card-errors').textContent = error.message;
+                    } finally {
+                        // Reset button state
+                        submitButton.disabled = false;
+                        buttonText.classList.remove('d-none');
+                        spinner.classList.add('d-none');
+                    }
+                });
+            }
+        });
+
+        // Load and display payment methods
+        async function loadPaymentMethods() {
+            const loadingDiv = document.getElementById('paymentMethodsLoading');
+            const defaultSection = document.getElementById('defaultPaymentSection');
+            const otherSection = document.getElementById('otherPaymentsSection');
+            
+            try {
+                loadingDiv.style.display = 'block';
+                
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    loadingDiv.style.display = 'none';
+                    return;
+                }
+                
+                // Get Firebase ID token
+                const idToken = await user.getIdToken();
+                
+                const response = await fetch('/api/payment-methods', {
+                    headers: {
+                        'Authorization': `Bearer ${idToken}`
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Error loading payment methods:', data.error);
+                    loadingDiv.style.display = 'none';
+                    return;
+                }
+                
+                const paymentMethods = data.paymentMethods || [];
+                
+                // Clear existing content
+                document.getElementById('defaultPaymentMethodCard').innerHTML = '';
+                document.getElementById('otherPaymentMethodsCards').innerHTML = '';
+                
+                // Separate default and other payment methods
+                const defaultPM = paymentMethods.find(pm => pm.isDefault);
+                const otherPMs = paymentMethods.filter(pm => !pm.isDefault);
+                
+                // Display default payment method
+                if (defaultPM) {
+                    document.getElementById('defaultPaymentMethodCard').innerHTML = createPaymentMethodCard(defaultPM, true);
+                    defaultSection.style.display = 'block';
+                } else {
+                    defaultSection.style.display = 'none';
+                }
+                
+                // Display other payment methods
+                if (otherPMs.length > 0) {
+                    document.getElementById('otherPaymentMethodsCards').innerHTML = 
+                        otherPMs.map(pm => createPaymentMethodCard(pm, false)).join('');
+                    otherSection.style.display = 'block';
+                } else {
+                    otherSection.style.display = 'none';
+                }
+                
+            } catch (error) {
+                console.error('Error loading payment methods:', error);
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        // Create payment method card HTML
+        function createPaymentMethodCard(pm, isDefault) {
+            const brandIcon = pm.brand === 'visa' ? 'fab fa-cc-visa' : 
+                            pm.brand === 'mastercard' ? 'fab fa-cc-mastercard' : 
+                            pm.brand === 'amex' ? 'fab fa-cc-amex' : 
+                            'fas fa-credit-card';
+            
+            return `
+                <div class="address-card mb-3">
+                    <div class="address-content">
+                        <h4 class="payment-title">
+                            <i class="${brandIcon}"></i> 
+                            ${pm.brand.charAt(0).toUpperCase() + pm.brand.slice(1)} ending in ${pm.last4}
+                        </h4>
+                        <p class="payment-detail">Expires ${pm.exp_month}/${pm.exp_year}</p>
+                        ${isDefault ? '<p class="text-success">Default payment method</p>' : '<p class="payment-status">&nbsp;</p>'}
+                    </div>
+                    <div class="dropdown">
+                        <i class="fas fa-ellipsis-v edit-icon" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;"></i>
+                        <ul class="dropdown-menu">
+                            ${!isDefault ? `<li><a class="dropdown-item" href="#" onclick="setDefaultPaymentMethod('${pm.id}'); return false;">Set as Default</a></li>` : ''}
+                            <li><a class="dropdown-item text-danger" href="#" onclick="removePaymentMethod('${pm.id}'); return false;">Remove</a></li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Set default payment method
+        async function setDefaultPaymentMethod(pmId) {
+            try {
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    alert('Please sign in');
+                    return;
+                }
+                
+                // Get Firebase ID token
+                const idToken = await user.getIdToken();
+                
+                const response = await fetch(`/api/payment-methods/${pmId}/set-default`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                await loadPaymentMethods();
+                alert('Default payment method updated');
+            } catch (error) {
+                console.error('Error setting default payment method:', error);
+                alert('Failed to set default payment method: ' + error.message);
+            }
+        }
+
+        // Remove payment method
+        async function removePaymentMethod(pmId) {
+            if (!confirm('Are you sure you want to remove this payment method?')) {
+                return;
+            }
+            
+            try {
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    alert('Please sign in');
+                    return;
+                }
+                
+                // Get Firebase ID token
+                const idToken = await user.getIdToken();
+                
+                const response = await fetch(`/api/payment-methods/${pmId}/detach`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                await loadPaymentMethods();
+                alert('Payment method removed');
+            } catch (error) {
+                console.error('Error removing payment method:', error);
+                alert('Failed to remove payment method: ' + error.message);
+            }
+        }
     </script>
 </body>
 </html>
