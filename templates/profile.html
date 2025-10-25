@@ -543,13 +543,11 @@
                         </div>
                     </div>
 
-                    <div class="row justify-content-center">
-                        <div class="col-12">
-                            <div class="card address-card" style="max-width: 700px; margin: 0 auto;">
-                                <div class="card-body" style="text-align: center; display: flex; justify-content: center;">
-                                    <div class="address-content" style="text-align: center; width: 100%; max-width: 600px;">
-                                        <h5 style="text-align: center; margin-bottom: 1.5rem;">Account Details</h5>
-                                        <div class="info-grid" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                    <div style="display: flex; justify-content: center; width: 100%;">
+                        <div class="card address-card" style="max-width: 700px; width: 100%;">
+                            <div class="card-body" style="text-align: center;">
+                                <h5 style="text-align: center; margin-bottom: 1.5rem;">Account Details</h5>
+                                <div class="info-grid" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
                                             <p style="display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; width: 100%;">
                                                 <strong style="margin-bottom: 0.5rem; text-align: center;">UID:</strong>
                                                 <span class="font-monospace" id="firebaseUID" style="margin-bottom: 0.5rem; text-align: center; word-break: break-all;">Loading...</span>
@@ -570,11 +568,11 @@
                                                 <span class="font-monospace" id="oxioGroupID" style="margin-bottom: 0.5rem; text-align: center; word-break: break-all;">Loading...</span>
                                                 <button class="btn btn-sm btn-outline-secondary copy-btn" id="oxioGroupIDCopyBtn" onclick="copyOxioGroupID()" title="Copy GroupID" style="display: none;"><i class="fas fa-copy"></i></button>
                                             </p>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
-                            <!-- eSIM ICCID & QR Code Section -->
+                        </div>
+                    </div>
+                    <!-- eSIM ICCID & QR Code Section -->
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="card border-info mb-3" id="iccidSection" style="display: none;">
