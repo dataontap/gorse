@@ -624,7 +624,7 @@
             }
         });
 
-        function refreshBalance() {
+        async function refreshBalance() {
             const refreshButton = document.querySelector('.token-refresh-btn');
             refreshButton.classList.add('rotating');
 
@@ -641,36 +641,55 @@
 
             statusIndicator.innerHTML = '<span style="color:#6b21a8">Connecting to Sepolia...</span>';
 
-            // In a real implementation, you would call your API endpoint
-            fetch('/api/token/balance/current_user')
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.error) {
-                        document.querySelector('.balance-amount').textContent = data.balance.toFixed(2);
-                        document.querySelector('.wallet-value').textContent = '$' + data.value_usd.toFixed(2) + ' USD';
-                        statusIndicator.innerHTML = '<span style="color:green">✓ Updated from Sepolia <span class="update-time">just now</span></span>';
+            try {
+                // Get Firebase ID token
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    throw new Error('User not authenticated');
+                }
 
-                        // Start a timer to update the timestamp
-                        const updateTimeEl = statusIndicator.querySelector('.update-time');
-                        if (updateTimeEl) {
-                            let seconds = 0;
-                            const updateTimer = setInterval(() => {
-                                seconds++;
-                                if (seconds < 60) {
-                                    updateTimeEl.textContent = seconds < 10 ? 'just now' : `${seconds} sec ago`;
-                                } else if (seconds < 3600) {
-                                    const minutes = Math.floor(seconds / 60);
-                                    updateTimeEl.textContent = `${minutes} min ago`;
-                                } else {
-                                    const hours = Math.floor(seconds / 3600);
-                                    updateTimeEl.textContent = `${hours} hr ago`;
-                                    // Stop updating after a day
-                                    if (hours >= 24) {
-                                        clearInterval(updateTimer);
-                                    }
+                const idToken = await user.getIdToken();
+
+                // Fetch balance from our API for the current user
+                const response = await fetch('/api/token/balance/me', {
+                    headers: {
+                        'Authorization': `Bearer ${idToken}`
+                    }
+                });
+                const data = await response.json();
+
+                if (!data.error) {
+                    document.querySelector('.balance-amount').textContent = data.balance.toFixed(2);
+                    document.querySelector('.wallet-value').textContent = '$' + data.value_usd.toFixed(2) + ' USD';
+                    statusIndicator.innerHTML = '<span style="color:green">✓ Updated from Sepolia <span class="update-time">just now</span></span>';
+
+                    // Also update the header balance pill
+                    const tokenBalancePill = document.getElementById('tokenBalancePill');
+                    if (tokenBalancePill) {
+                        tokenBalancePill.textContent = `${data.balance.toFixed(2)} DOTM`;
+                    }
+
+                    // Start a timer to update the timestamp
+                    const updateTimeEl = statusIndicator.querySelector('.update-time');
+                    if (updateTimeEl) {
+                        let seconds = 0;
+                        const updateTimer = setInterval(() => {
+                            seconds++;
+                            if (seconds < 60) {
+                                updateTimeEl.textContent = seconds < 10 ? 'just now' : `${seconds} sec ago`;
+                            } else if (seconds < 3600) {
+                                const minutes = Math.floor(seconds / 60);
+                                updateTimeEl.textContent = `${minutes} min ago`;
+                            } else {
+                                const hours = Math.floor(seconds / 3600);
+                                updateTimeEl.textContent = `${hours} hr ago`;
+                                // Stop updating after a day
+                                if (hours >= 24) {
+                                    clearInterval(updateTimer);
                                 }
-                            }, 1000);
-                        }
+                            }
+                        }, 1000);
+                    }
 
                         // Create a ping effect perfectly aligned with the refresh button
                         const refreshBtnRect = refreshButton.getBoundingClientRect();
@@ -712,16 +731,47 @@
                             `;
                             document.head.appendChild(style);
                         }
-                    } else {
-                        statusIndicator.innerHTML = '<span style="color:red">Error updating from Sepolia</span>';
+                } else {
+                    statusIndicator.innerHTML = '<span style="color:red">Error updating from Sepolia</span>';
+                }
+                refreshButton.classList.remove('rotating');
+            } catch (error) {
+                console.error('Error fetching balance:', error);
+                statusIndicator.innerHTML = '<span style="color:red">Failed to connect to Sepolia</span>';
+                refreshButton.classList.remove('rotating');
+            }
+        }
+
+        // Load balance on page load
+        async function loadInitialBalance() {
+            try {
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+
+                const idToken = await user.getIdToken();
+                const response = await fetch('/api/token/balance/me', {
+                    headers: {
+                        'Authorization': `Bearer ${idToken}`
                     }
-                    refreshButton.classList.remove('rotating');
-                })
-                .catch(error => {
-                    console.error('Error fetching balance:', error);
-                    statusIndicator.innerHTML = '<span style="color:red">Failed to connect to Sepolia</span>';
-                    refreshButton.classList.remove('rotating');
                 });
+                const data = await response.json();
+
+                if (!data.error) {
+                    document.querySelector('.balance-amount').textContent = data.balance.toFixed(2);
+                    document.querySelector('.wallet-value').textContent = '$' + data.value_usd.toFixed(2) + ' USD';
+                }
+            } catch (error) {
+                console.error('Error loading initial balance:', error);
+            }
+        }
+
+        // Call loadInitialBalance when page is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(loadInitialBalance, 500);
+            });
+        } else {
+            setTimeout(loadInitialBalance, 500);
         }
 
         function preorderMetalCard() {

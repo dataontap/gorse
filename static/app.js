@@ -4529,32 +4529,39 @@ async function loadDOTMBalance() {
     if (!tokenBalancePill) return;
 
     try {
-        // Check if MetaMask is available and connected
-        if (typeof window.ethereum !== 'undefined') {
-            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-            if (accounts.length > 0) {
-                const address = accounts[0];
+        // Get Firebase ID token
+        const user = firebase.auth().currentUser;
+        if (!user) {
+            tokenBalancePill.textContent = '0.00 DOTM';
+            return;
+        }
 
-                // Fetch balance from our API
-                const response = await fetch(`/api/token/balance/${address}`);
-                const data = await response.json();
+        const idToken = await user.getIdToken();
 
-                if (data.error) {
-                    console.error('Error fetching DOTM balance:', data.error);
-                    tokenBalancePill.textContent = '0.00 DOTM';
-                } else {
-                    // Display balance in the format "100.33 DOTM"
-                    tokenBalancePill.textContent = `${data.balance.toFixed(2)} DOTM`;
-                }
-            } else {                tokenBalancePill.textContent = 'Connect Wallet';
+        // Fetch balance from our API for the current user
+        const response = await fetch('/api/token/balance/me', {
+            headers: {
+                'Authorization': `Bearer ${idToken}`
             }
+        });
+        const data = await response.json();
+
+        if (data.error) {
+            console.error('Error fetching DOTM balance:', data.error);
+            tokenBalancePill.textContent = '0.00 DOTM';
         } else {
-            tokenBalancePill.textContent = 'MetaMask Required';
+            // Display balance in the format "100.33 DOTM"
+            tokenBalancePill.textContent = `${data.balance.toFixed(2)} DOTM`;
         }
     } catch (error) {
         console.error('Error loading DOTM balance:', error);
         tokenBalancePill.textContent = '0.00 DOTM';
     }
+}
+
+// Refresh DOTM Balance (can be called from sync buttons)
+async function refreshDOTMBalance() {
+    await loadDOTMBalance();
 }
 
 // Make functions globally available
