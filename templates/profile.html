@@ -2618,16 +2618,37 @@
             const popupContent = document.getElementById('popupContent');
             popupContent.innerHTML = `
                 <style>
+                    .phone-tab-container {
+                        display: flex !important;
+                        flex-direction: row !important;
+                        flex-wrap: nowrap !important;
+                        width: 100% !important;
+                        max-width: 450px;
+                        margin: 0 auto;
+                        gap: 0;
+                    }
                     .phone-tab-btn {
-                        flex: 1;
+                        flex: 1 1 50% !important;
+                        min-width: 0 !important;
                         font-size: 0.85rem;
                         padding: 10px 16px;
                         white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
                     }
-                    @media (max-width: 480px) {
+                    @media (max-width: 600px) {
+                        .phone-tab-container {
+                            flex-direction: row !important;
+                        }
                         .phone-tab-btn {
-                            padding: 8px 8px;
+                            padding: 10px 8px;
                             font-size: 0.8rem;
+                        }
+                    }
+                    @media (max-width: 400px) {
+                        .phone-tab-btn {
+                            padding: 8px 4px;
+                            font-size: 0.75rem;
                         }
                     }
                 </style>
@@ -2639,7 +2660,7 @@
                     </div>
 
                     <!-- Search Type Tabs -->
-                    <div class="btn-group mb-2" role="group" style="display: flex; width: 100%; max-width: 450px; margin: 0 auto;">
+                    <div class="btn-group mb-2 phone-tab-container" role="group">
                         <button type="button" class="btn btn-outline-primary active phone-tab-btn" id="zipSearchTab" onclick="switchSearchTab('zip')">
                             <i class="fas fa-map-marker-alt"></i> ZIP Code
                         </button>
