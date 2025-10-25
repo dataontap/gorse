@@ -599,32 +599,32 @@
                 </div>
 
                 <!-- Account Details Section - Separate from all other content -->
-                <div class="mb-4" style="display: flex; justify-content: center; width: 100%;">
-                    <div class="card address-card" style="max-width: 700px; width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
-                        <div class="card-body">
-                            <h5 style="text-align: center; margin-bottom: 1.5rem; color: var(--text-primary);">Account Details</h5>
-                            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-                                <p style="display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; width: 100%;">
-                                    <strong style="margin-bottom: 0.5rem; text-align: center;">UID:</strong>
-                                    <span class="font-monospace" id="firebaseUID" style="margin-bottom: 0.5rem; text-align: center; word-break: break-all;">Loading...</span>
-                                    <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyFirebaseUID()" title="Copy UID"><i class="fas fa-copy"></i></button>
-                                </p>
-                                <p style="display: none; flex-direction: column; align-items: center; margin-bottom: 1.5rem; width: 100%;">
-                                    <strong style="margin-bottom: 0.5rem; text-align: center;">Member#:</strong>
-                                    <span id="dotUserID" style="margin-bottom: 0.5rem; text-align: center; word-break: break-all;">Loading...</span>
-                                    <button class="btn btn-sm btn-outline-secondary copy-btn" id="dotUserIDCopyBtn" onclick="copyDotUserID()" title="Copy Member#" style="display: none;"><i class="fas fa-copy"></i></button>
-                                </p>
-                                <p style="display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; width: 100%;">
-                                    <strong style="margin-bottom: 0.5rem; text-align: center;">NetworkID:</strong>
-                                    <span class="font-monospace" id="oxioUserID" style="margin-bottom: 0.5rem; text-align: center; word-break: break-all;">Loading...</span>
-                                    <button class="btn btn-sm btn-outline-secondary copy-btn" id="oxioUserIDCopyBtn" onclick="copyOxioUserID()" title="Copy NetworkID" style="display: none;"><i class="fas fa-copy"></i></button>
-                                </p>
-                                <p style="display: flex; flex-direction: column; align-items: center; margin-bottom: 0; width: 100%;">
-                                    <strong style="margin-bottom: 0.5rem; text-align: center;">GroupID:</strong>
-                                    <span class="font-monospace" id="oxioGroupID" style="margin-bottom: 0.5rem; text-align: center; word-break: break-all;">Loading...</span>
-                                    <button class="btn btn-sm btn-outline-secondary copy-btn" id="oxioGroupIDCopyBtn" onclick="copyOxioGroupID()" title="Copy GroupID" style="display: none;"><i class="fas fa-copy"></i></button>
-                                </p>
-                            </div>
+                <div class="account-details-container" style="margin-bottom: 2rem;">
+                    <div style="max-width: 700px; margin: 0 auto; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 2rem;">
+                        <h5 style="text-align: center; margin: 0 0 2rem 0; color: var(--text-primary); font-size: 1.25rem;">Account Details</h5>
+                        
+                        <div style="text-align: center; margin-bottom: 2rem;">
+                            <div style="margin-bottom: 0.75rem;"><strong>UID:</strong></div>
+                            <div class="font-monospace" id="firebaseUID" style="margin-bottom: 1rem; word-break: break-all; padding: 0 1rem;">Loading...</div>
+                            <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copyFirebaseUID()" title="Copy UID"><i class="fas fa-copy"></i></button>
+                        </div>
+                        
+                        <div style="text-align: center; margin-bottom: 2rem; display: none;" id="dotUserIDContainer">
+                            <div style="margin-bottom: 0.75rem;"><strong>Member#:</strong></div>
+                            <div id="dotUserID" style="margin-bottom: 1rem; word-break: break-all; padding: 0 1rem;">Loading...</div>
+                            <button class="btn btn-sm btn-outline-secondary copy-btn" id="dotUserIDCopyBtn" onclick="copyDotUserID()" title="Copy Member#" style="display: none;"><i class="fas fa-copy"></i></button>
+                        </div>
+                        
+                        <div style="text-align: center; margin-bottom: 2rem;">
+                            <div style="margin-bottom: 0.75rem;"><strong>NetworkID:</strong></div>
+                            <div class="font-monospace" id="oxioUserID" style="margin-bottom: 1rem; word-break: break-all; padding: 0 1rem;">Loading...</div>
+                            <button class="btn btn-sm btn-outline-secondary copy-btn" id="oxioUserIDCopyBtn" onclick="copyOxioUserID()" title="Copy NetworkID" style="display: none;"><i class="fas fa-copy"></i></button>
+                        </div>
+                        
+                        <div style="text-align: center;">
+                            <div style="margin-bottom: 0.75rem;"><strong>GroupID:</strong></div>
+                            <div class="font-monospace" id="oxioGroupID" style="margin-bottom: 1rem; word-break: break-all; padding: 0 1rem;">Loading...</div>
+                            <button class="btn btn-sm btn-outline-secondary copy-btn" id="oxioGroupIDCopyBtn" onclick="copyOxioGroupID()" title="Copy GroupID" style="display: none;"><i class="fas fa-copy"></i></button>
                         </div>
                     </div>
                 </div>
