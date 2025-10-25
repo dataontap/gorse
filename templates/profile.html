@@ -635,11 +635,8 @@
 
                     <!-- Network Services Overview -->
                     <div class="card mb-3" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
-                        <div class="card-header d-flex justify-content-between align-items-center" style="background: transparent; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div class="card-header" style="background: transparent; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
                             <h5 style="color: var(--text-primary); margin: 0;"><i class="fas fa-network-wired"></i> Network Services</h5>
-                            <a href="/network" class="btn btn-sm btn-primary">
-                                <i class="fas fa-cog"></i> Manage
-                            </a>
                         </div>
                         <div class="card-body" style="background: transparent;">
                             <div id="networkServicesLoading" class="text-center" style="color: var(--text-primary);">
@@ -3650,15 +3647,23 @@
             services.forEach(service => {
                 const statusBadgeClass = getServiceStatusBadgeClass(service.status);
                 html += `
-                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom" style="border-color: rgba(255, 255, 255, 0.1);">
-                        <div>
-                            <i class="fas ${getServiceIcon(service.type)} me-2"></i>
-                            <strong>${service.name}</strong>
-                            <span class="badge ms-2 ${statusBadgeClass}">${service.status.toUpperCase()}</span>
+                    <div class="mb-3 p-3 border-bottom" style="border-color: rgba(255, 255, 255, 0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem; margin-bottom: 0.5rem;">
+                            <div style="flex: 1; text-align: left;">
+                                <div style="margin-bottom: 0.5rem;">
+                                    <i class="fas ${getServiceIcon(service.type)} me-2"></i>
+                                    <strong>${service.name}</strong>
+                                </div>
+                                <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                                    Valid until: ${new Date(service.expiry_date).toLocaleDateString()}
+                                </div>
+                            </div>
+                            <div style="flex-shrink: 0; text-align: right;">
+                                <span class="badge ${statusBadgeClass}">${service.status.toUpperCase()}</span>
+                            </div>
                         </div>
-                        <div>
-                            <small class="me-2 text-muted">Valid until: ${new Date(service.expiry_date).toLocaleDateString()}</small>
-                            <a href="/network" class="btn btn-sm btn-outline-primary"><i class="fas fa-cog"></i> Manage</a>
+                        <div style="text-align: right; margin-top: 1rem;">
+                            <a href="/network" class="btn btn-sm btn-primary"><i class="fas fa-cog"></i> Manage</a>
                         </div>
                     </div>
                 `;
