@@ -280,7 +280,7 @@
                 <h3 class="mb-3"><i class="fab fa-ethereum"></i> Recent Transactions</h3>
                 <div class="transactions-container">
                     <div class="network-indicator">
-                        <span class="network-badge sepolia">Sepolia Testnet</span>
+                        <span class="network-badge mainnet">Mainnet</span>
                         <button class="btn btn-sm btn-outline-secondary refresh-transactions-btn" onclick="refreshTransactions()">
                             <i class="fas fa-sync-alt"></i> Refresh
                         </button>
@@ -1093,7 +1093,7 @@
             });
         }
 
-        function refreshTransactions() {
+        async function refreshTransactions(showAll = false) {
             const refreshButton = document.querySelector('.refresh-transactions-btn');
             const loadingState = document.getElementById('transactionsLoading');
             const transactionsList = document.getElementById('transactionsList');
@@ -1105,85 +1105,117 @@
             transactionsList.style.display = 'none';
             emptyState.style.display = 'none';
 
-            // Get Firebase UID for user identification
-            const firebaseUid = getFirebaseUID();
-            if (!firebaseUid) {
-                console.error('No Firebase UID found - user may not be authenticated');
+            try {
+                // Get Firebase ID token
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    throw new Error('User not authenticated');
+                }
+
+                const idToken = await user.getIdToken();
+                const limit = showAll ? 0 : 5;  // 0 means show all
+
+                // Fetch transactions from new combined API
+                const response = await fetch(`/api/token/transactions?limit=${limit}`, {
+                    headers: {
+                        'Authorization': `Bearer ${idToken}`
+                    }
+                });
+                const data = await response.json();
+
+                // Hide loading state
+                loadingState.style.display = 'none';
+                refreshButton.classList.remove('rotating');
+
+                if (data.status === 'success' && data.transactions && data.transactions.length > 0) {
+                    displayTransactions(data.transactions, data.has_more, showAll);
+                    transactionsList.style.display = 'block';
+                } else {
+                    emptyState.style.display = 'block';
+                    transactionsList.innerHTML = '';
+                }
+            } catch (error) {
+                console.error('Error fetching transactions:', error);
                 loadingState.style.display = 'none';
                 refreshButton.classList.remove('rotating');
                 emptyState.style.display = 'block';
-                return;
+                transactionsList.innerHTML = '';
             }
-
-            // Fetch transactions from API
-            fetch(`/api/ethereum-transactions?firebaseUid=${firebaseUid}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Hide loading state
-                    loadingState.style.display = 'none';
-                    refreshButton.classList.remove('rotating');
-
-                    if (data.status === 'success' && data.transactions && data.transactions.length > 0) {
-                        displayTransactions(data.transactions, data.network, data.address);
-                        transactionsList.style.display = 'block';
-                    } else {
-                        emptyState.style.display = 'block';
-                        transactionsList.innerHTML = '';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching transactions:', error);
-                    loadingState.style.display = 'none';
-                    refreshButton.classList.remove('rotating');
-                    emptyState.style.display = 'block';
-                    transactionsList.innerHTML = '';
-                });
         }
 
-        function displayTransactions(transactions, network, userAddress) {
+        function displayTransactions(transactions, has_more, showingAll) {
             const transactionsList = document.getElementById('transactionsList');
             transactionsList.innerHTML = '';
 
             transactions.forEach(tx => {
                 const transactionItem = document.createElement('div');
                 transactionItem.className = 'transaction-item';
+                transactionItem.style.cursor = 'pointer';
 
                 // Format timestamp
                 const date = new Date(tx.timestamp * 1000);
                 const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
 
-                // Format hash (show first 10 and last 6 characters)
-                const shortHash = tx.hash.substring(0, 10) + '...' + tx.hash.substring(tx.hash.length - 6);
+                // Format hash (show first 10 and last 6 characters if available)
+                const shortHash = tx.hash ? (tx.hash.substring(0, 10) + '...' + tx.hash.substring(tx.hash.length - 6)) : 'N/A';
 
-                // Format value
-                const value = parseFloat(tx.value);
-                const valueDisplay = value > 0 ? `${value.toFixed(6)} ETH` : '0 ETH';
+                // Determine display values
+                let amountDisplay = '';
+                let valueDisplay = '';
+                
+                if (tx.token_amount > 0) {
+                    amountDisplay = `${tx.token_amount.toFixed(2)} DOTM`;
+                    valueDisplay = `$${tx.usd_value.toFixed(2)}`;
+                } else if (tx.usd_value > 0) {
+                    amountDisplay = `Purchase`;
+                    valueDisplay = `$${tx.usd_value.toFixed(2)}`;
+                }
+
+                // Direction styling
+                const directionClass = tx.direction === 'IN' ? 'received' : 'sent';
+                const directionIcon = tx.direction === 'IN' ? '↓' : '↑';
+                const directionColor = tx.direction === 'IN' ? '#2e7d32' : '#f57c00';
 
                 transactionItem.innerHTML = `
                     <div class="transaction-info">
-                        <div class="transaction-hash">${shortHash}</div>
-                        <div class="transaction-details">
-                            Block: ${tx.block_number} • ${formattedDate}
+                        <div class="transaction-hash" style="font-weight: 600;">${tx.description}</div>
+                        <div class="transaction-details" style="font-size: 0.8rem; color: #888;">
+                            ${formattedDate}
                         </div>
                     </div>
                     <div class="transaction-amount">
-                        <div class="transaction-value">${valueDisplay}</div>
-                        <span class="transaction-type ${tx.type}">${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}</span>
+                        <div class="transaction-value" style="font-weight: 600; color: ${directionColor};">
+                            ${directionIcon} ${amountDisplay}
+                        </div>
+                        <div class="transaction-type ${directionClass}" style="font-size: 0.8rem; color: #666;">
+                            ${valueDisplay}
+                        </div>
                     </div>
                 `;
 
                 // Add click handler to show full transaction details
                 transactionItem.addEventListener('click', () => {
-                    showTransactionDetails(tx, network);
+                    showTransactionDetails(tx);
                 });
 
                 transactionsList.appendChild(transactionItem);
             });
+
+            // Add "Show More" button if there are more transactions
+            if (has_more && !showingAll) {
+                const showMoreBtn = document.createElement('button');
+                showMoreBtn.className = 'btn btn-outline-primary btn-sm w-100 mt-3';
+                showMoreBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show More';
+                showMoreBtn.onclick = () => refreshTransactions(true);
+                transactionsList.appendChild(showMoreBtn);
+            }
         }
 
-        function showTransactionDetails(tx, network) {
-            const explorerUrl = network === 'sepolia' 
-                ? `https://sepolia.etherscan.io/tx/${tx.hash}`
+        function showTransactionDetails(tx) {
+            const explorerUrl = tx.network === 'mainnet' 
+                ? `https://etherscan.io/tx/${tx.hash}`
+                : tx.network === 'stripe'
+                ? null
                 : `https://etherscan.io/tx/${tx.hash}`;
 
             const modal = document.createElement('div');
@@ -1201,27 +1233,28 @@
                 z-index: 10000;
             `;
 
-            modal.innerHTML = `
+            const date = new Date(tx.timestamp * 1000);
+            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+            let detailsHTML = `
                 <div style="background: white; padding: 20px; border-radius: 12px; max-width: 500px; width: 90%;">
-                    <h4>Transaction Details</h4>
-                    <p><strong>Hash:</strong> ${tx.hash}</p>
-                    <p><strong>From:</strong> ${tx.from}</p>
-                    <p><strong>To:</strong> ${tx.to}</p>
-                    <p><strong>Value:</strong> ${tx.value} ETH</p>
-                    <p><strong>Block:</strong> ${tx.block_number}</p>
-                    <p><strong>Gas:</strong> ${tx.gas}</p>
-                    <p><strong>Gas Price:</strong> ${tx.gas_price} Gwei</p>
+                    <h4>${tx.description}</h4>
+                    <p><strong>Direction:</strong> <span style="color: ${tx.direction === 'IN' ? '#2e7d32' : '#f57c00'}">${tx.direction}</span></p>
+                    <p><strong>Date:</strong> ${formattedDate}</p>
+                    ${tx.token_amount > 0 ? `<p><strong>Amount:</strong> ${tx.token_amount.toFixed(4)} DOTM</p>` : ''}
+                    ${tx.usd_value > 0 ? `<p><strong>Value:</strong> $${tx.usd_value.toFixed(2)} USD</p>` : ''}
+                    <p><strong>Network:</strong> ${tx.network === 'mainnet' ? 'Ethereum Mainnet' : tx.network === 'stripe' ? 'Stripe Payment' : tx.network}</p>
+                    ${tx.hash ? `<p><strong>Transaction ID:</strong><br/><span style="font-family: monospace; font-size: 0.8rem; word-break: break-all;">${tx.hash}</span></p>` : ''}
+                    ${tx.from ? `<p><strong>From:</strong><br/><span style="font-family: monospace; font-size: 0.8rem; word-break: break-all;">${tx.from}</span></p>` : ''}
+                    ${tx.to ? `<p><strong>To:</strong><br/><span style="font-family: monospace; font-size: 0.8rem; word-break: break-all;">${tx.to}</span></p>` : ''}
                     <div style="margin-top: 15px;">
-                        <button onclick="window.open('${explorerUrl}', '_blank')" class="btn btn-primary btn-sm">
-                            View on ${network === 'sepolia' ? 'Sepolia ' : ''}Etherscan
-                        </button>
-                        <button onclick="this.closest('.transaction-modal').remove()" class="btn btn-secondary btn-sm" style="margin-left: 10px;">
-                            Close
-                        </button>
+                        ${explorerUrl ? `<button onclick="window.open('${explorerUrl}', '_blank')" class="btn btn-primary btn-sm">View on Etherscan</button>` : ''}
+                        <button onclick="this.closest('.transaction-modal').remove()" class="btn btn-secondary btn-sm" style="margin-left: 10px;">Close</button>
                     </div>
                 </div>
             `;
 
+            modal.innerHTML = detailsHTML;
             document.body.appendChild(modal);
 
             // Close modal when clicking outside

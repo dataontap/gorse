@@ -3897,6 +3897,130 @@ class CreateTestWallet(Resource):
             print(f"Error creating test wallet: {str(e)}")
             return {'error': str(e)}, 500
 
+@token_ns.route('/transactions')
+class UserTransactions(Resource):
+    @firebase_auth_required
+    def get(self):
+        """Get combined transactions (blockchain + purchases) for the current user"""
+        try:
+            firebase_uid = request.firebase_user.get('uid')
+            limit = request.args.get('limit', '5')  # Default to last 5
+            
+            try:
+                limit = int(limit)
+            except:
+                limit = 5
+            
+            # Get user's eth_address from database
+            eth_address = None
+            user_id = None
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "SELECT eth_address, id FROM users WHERE firebase_uid = %s",
+                            (firebase_uid,)
+                        )
+                        result = cur.fetchone()
+                        if result:
+                            eth_address = result[0]
+                            user_id = result[1]
+            
+            all_transactions = []
+            
+            # Fetch blockchain transactions from Etherscan Mainnet API
+            if eth_address:
+                etherscan_api_key = os.environ.get('ETHERSCAN_API_KEY')
+                if etherscan_api_key:
+                    try:
+                        import requests
+                        # Get token transactions from Etherscan
+                        token_address = os.environ.get('TOKEN_ADDRESS')
+                        url = f"https://api.etherscan.io/api?module=account&action=tokentx&contractaddress={token_address}&address={eth_address}&sort=desc&apikey={etherscan_api_key}"
+                        
+                        response = requests.get(url, timeout=10)
+                        data = response.json()
+                        
+                        if data.get('status') == '1' and data.get('result'):
+                            for tx in data['result'][:20]:  # Get last 20 blockchain transactions
+                                # Determine if IN or OUT
+                                is_incoming = tx['to'].lower() == eth_address.lower()
+                                token_amount = int(tx['value']) / (10 ** 18)  # Convert from wei
+                                
+                                all_transactions.append({
+                                    'type': 'token_in' if is_incoming else 'token_out',
+                                    'direction': 'IN' if is_incoming else 'OUT',
+                                    'description': 'DOTM Tokens Received' if is_incoming else 'DOTM Tokens Sent',
+                                    'token_amount': token_amount,
+                                    'usd_value': 0.0,  # $0 for now as requested
+                                    'timestamp': int(tx['timeStamp']),
+                                    'hash': tx['hash'],
+                                    'from': tx['from'],
+                                    'to': tx['to'],
+                                    'network': 'mainnet'
+                                })
+                    except Exception as e:
+                        print(f"Error fetching Etherscan transactions: {str(e)}")
+            
+            # Fetch purchases from database (only if user exists in database)
+            if user_id:
+                with get_db_connection() as conn:
+                    if conn:
+                        with conn.cursor() as cur:
+                            cur.execute("""
+                                SELECT 
+                                    PurchaseID,
+                                    StripeProductID,
+                                    TotalAmount,
+                                    DateCreated,
+                                    StripeTransactionID
+                                FROM purchases
+                                WHERE FirebaseUID = %s
+                                ORDER BY DateCreated DESC
+                                LIMIT 20
+                            """, (firebase_uid,))
+                            
+                            purchases = cur.fetchall()
+                            for purchase in purchases:
+                                purchase_id, product_id, amount, date_created, tx_id = purchase
+                                
+                                # Convert amount from cents to dollars
+                                amount_usd = amount / 100.0 if amount else 0
+                                
+                                # Add as OUT transaction
+                                all_transactions.append({
+                                    'type': 'purchase',
+                                    'direction': 'OUT',
+                                    'description': f'Purchase: {product_id}',
+                                    'token_amount': 0,
+                                    'usd_value': amount_usd,
+                                    'timestamp': int(date_created.timestamp()) if date_created else 0,
+                                    'hash': tx_id or str(purchase_id),
+                                    'network': 'stripe'
+                                })
+            
+            # Sort all transactions by timestamp (most recent first)
+            all_transactions.sort(key=lambda x: x['timestamp'], reverse=True)
+            
+            # Apply limit
+            limited_transactions = all_transactions[:limit] if limit > 0 else all_transactions
+            
+            return {
+                'status': 'success',
+                'transactions': limited_transactions,
+                'total_count': len(all_transactions),
+                'shown_count': len(limited_transactions),
+                'has_more': len(all_transactions) > len(limited_transactions)
+            }
+            
+        except Exception as e:
+            print(f"Error getting transactions: {str(e)}")
+            return {
+                'status': 'error',
+                'message': str(e),
+                'transactions': []
+            }, 500
+
 @app.route('/update-token-price', methods=['GET'])
 def update_token_price():
     """Endpoint to manually update token price"""
