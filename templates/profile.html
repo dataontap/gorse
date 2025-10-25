@@ -2646,14 +2646,14 @@
                             <label class="form-label" style="color: var(--text-primary);">
                                 <i class="fas fa-map-marker-alt"></i> ZIP Code
                             </label>
-                            <div class="input-group" style="border-radius: 50px; overflow: hidden;">
-                                <input type="text" class="form-control" id="zipCodeInput" placeholder="Enter 5-digit ZIP code" maxlength="5" pattern="[0-9]{5}" style="border-right: none; border-radius: 50px 0 0 50px;">
-                                <button class="btn btn-link" type="button" onclick="useMyLocation()" title="Use my location" style="border: 1px solid rgba(0, 255, 255, 0.3); border-left: none; border-right: none; background: rgba(255, 255, 255, 0.1); padding: 0 15px; color: #00d4ff;">
-                                    <i class="fas fa-crosshairs"></i>
-                                </button>
-                                <button class="btn btn-primary" type="button" onclick="searchByZipCode()" style="border-radius: 0 50px 50px 0; padding: 0 20px;">
-                                    <i class="fas fa-search"></i> Search
-                                </button>
+                            <div style="position: relative;">
+                                <div class="input-group" style="border-radius: 50px;">
+                                    <input type="text" class="form-control" id="zipCodeInput" placeholder="Enter 5-digit ZIP code" maxlength="5" pattern="[0-9]{5}" style="border-radius: 50px 0 0 50px; padding-right: 45px;">
+                                    <i class="fas fa-crosshairs" onclick="useMyLocation()" title="Use my location" style="position: absolute; right: 160px; top: 50%; transform: translateY(-50%); color: #00d4ff; cursor: pointer; font-size: 14px; z-index: 10; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'"></i>
+                                    <button class="btn btn-primary" type="button" onclick="searchByZipCode()" style="border-radius: 0 50px 50px 0; padding: 0 20px;">
+                                        <i class="fas fa-search"></i> Search
+                                    </button>
+                                </div>
                             </div>
                             <small class="text-muted">Example: 90210</small>
                         </div>
