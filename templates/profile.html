@@ -500,7 +500,8 @@
         <div class="dashboard-content">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div class="d-flex align-items-center" style="gap: 0.75rem;">
-                    <i class="fas fa-user-circle" style="font-size: 2rem; line-height: 1;"></i>
+                    <img id="profilePicture" src="" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; display: none;">
+                    <i id="profileIcon" class="fas fa-user-circle" style="font-size: 2rem; line-height: 1;"></i>
                     <h2 style="margin: 0; line-height: 1;">Profile</h2>
                     <span id="memberBadge" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.4rem 0.8rem; background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; border-radius: 20px; font-size: 1.3rem; min-width: 50px; line-height: 1;">⭐</span>
                 </div>
@@ -1065,7 +1066,8 @@
                         const basicUserData = {
                             uid: currentUser.uid,
                             email: currentUser.email,
-                            displayName: currentUser.displayName
+                            displayName: currentUser.displayName,
+                            photoURL: currentUser.photoURL
                         };
                         displayUserData(basicUserData);
                     }
@@ -1105,6 +1107,26 @@
         function displayUserData(userData) {
             console.log('Displaying user data:', userData);
             console.log('DOT User ID value:', userData.userId);
+
+            // Update profile picture
+            const profilePicture = document.getElementById('profilePicture');
+            const profileIcon = document.getElementById('profileIcon');
+            if (userData.photoURL) {
+                if (profilePicture) {
+                    profilePicture.src = userData.photoURL;
+                    profilePicture.style.display = 'block';
+                }
+                if (profileIcon) {
+                    profileIcon.style.display = 'none';
+                }
+            } else {
+                if (profilePicture) {
+                    profilePicture.style.display = 'none';
+                }
+                if (profileIcon) {
+                    profileIcon.style.display = 'block';
+                }
+            }
 
             // Update email
             if (userData.email) {
@@ -1228,6 +1250,7 @@
                             uid: firebaseUid,
                             email: data.email,
                             displayName: data.displayName,
+                            photoURL: currentUser.photoURL,
                             userId: data.userId,
                             founderStatus: data.founderStatus,
                             stripeCustomerId: data.stripeCustomerId,
