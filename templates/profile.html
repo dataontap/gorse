@@ -500,7 +500,7 @@
         <div class="dashboard-content">
             <!-- Member Badge - moved above Profile heading -->
             <div class="mb-2 text-center">
-                <span class="founding-shield" id="memberBadge" style="display: inline-block; padding: 0.5rem 1rem; background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; border-radius: 20px; font-weight: bold;">⭐ Member</span>
+                <span class="founding-shield" id="memberBadge" style="display: inline-block; padding: 0.5rem 1.5rem; background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; border-radius: 25px; font-weight: bold; font-size: 1rem;">⭐ Member</span>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -1126,8 +1126,11 @@
             // Update member badge based on founder status
             const badgeElement = document.getElementById('memberBadge');
             if (badgeElement && userData.email) {
-                const founderBadge = userData.founderStatus === 'Y' ? '⭐ Founding Member' : '⭐ Member';
-                badgeElement.textContent = founderBadge;
+                if (userData.founderStatus === 'Y') {
+                    badgeElement.textContent = '👑 Founding Member';
+                } else {
+                    badgeElement.textContent = '⭐ Member';
+                }
             }
 
             // Update Firebase UID
