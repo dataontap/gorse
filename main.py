@@ -2102,7 +2102,9 @@ def network():
 
 @app.route('/payments', methods=['GET'])
 def payments():
-    return render_template('payments.html')
+    # Pass Stripe publishable key to template
+    stripe_publishable_key = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
+    return render_template('payments.html', stripe_publishable_key=stripe_publishable_key)
 
 @app.route('/marketplace', methods=['GET'])
 def marketplace():

@@ -1488,7 +1488,9 @@
     <!-- Payment Methods JavaScript -->
     <script>
         let stripe, elements, cardElement;
-        const STRIPE_PUBLISHABLE_KEY = 'pk_test_51QeENGHD5N9LAhGBe4GFZHLjJyOdBUAL6bFQFKW9G8EAl8AEwKWGQhkCwcfXE3ej2XGMj8QOi3SxHhJIATLUt95A00j82rzkH1'; // Replace with your actual key
+        
+        // Get Stripe publishable key from environment (injected by Flask)
+        const STRIPE_PUBLISHABLE_KEY = '{{ stripe_publishable_key }}';
 
         // Initialize Stripe
         function initializeStripe() {
