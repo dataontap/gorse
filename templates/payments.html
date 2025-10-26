@@ -110,12 +110,14 @@
                 <h3 class="mb-3"><i class="fab fa-ethereum"></i> My Wallet</h3>
                 <div class="wallet-card token-stats metamask-card">
                     <div class="wallet-content">
-                        <div class="wallet-balance" style="display: flex; align-items: center; width: 100%;">
+                        <div class="wallet-balance" style="display: flex; align-items: center; justify-content: center; width: 100%;">
                             <span class="balance-amount">100</span>
                             <span class="wallet-symbol">DOTM</span>
                             <button class="btn btn-sm btn-outline-secondary token-refresh-btn" style="margin: 0 10px;" title="Refresh balance" onclick="refreshBalance()">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
+                        </div>
+                        <div style="display: flex; justify-content: center; margin-top: 15px;">
                             <button class="btn btn-sm btn-outline-info wallet-details-toggle" onclick="toggleWalletDetails()">
                                 <i class="fas fa-wallet"></i> Wallet Details
                                 <i class="fas fa-chevron-down toggle-arrow-wallet"></i>
@@ -732,7 +734,6 @@
             border-radius: 20px;
             font-size: 0.85rem;
             padding: 6px 16px;
-            margin-left: auto;
             display: flex;
             align-items: center;
             gap: 8px;
