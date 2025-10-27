@@ -6123,7 +6123,7 @@ def simulate_data_usage(user):
         
         # Simulate realistic data usage patterns
         network_types = ['4G', '5G']
-        connection_types = ['Mobile', 'Home']
+        connection_types = ['Mobile', 'Home', 'WiFi']
         priorities = ['High', 'Medium', 'Low']
         providers = ['OXIO', 'Verizon', 'AT&T', 'T-Mobile']
         

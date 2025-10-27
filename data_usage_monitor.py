@@ -38,7 +38,7 @@ class DataUsageMonitor:
                                 
                                 -- Network type and connection
                                 network_type VARCHAR(10) NOT NULL,  -- '4G' or '5G'
-                                connection_type VARCHAR(20) NOT NULL,  -- 'Mobile' or 'Home'
+                                connection_type VARCHAR(20) NOT NULL,  -- 'Mobile', 'Home', or 'WiFi'
                                 
                                 -- Performance metrics
                                 speed_mbps DECIMAL(10, 2) NOT NULL,
@@ -63,7 +63,7 @@ class DataUsageMonitor:
                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                 
                                 CONSTRAINT check_network_type CHECK (network_type IN ('4G', '5G')),
-                                CONSTRAINT check_connection_type CHECK (connection_type IN ('Mobile', 'Home'))
+                                CONSTRAINT check_connection_type CHECK (connection_type IN ('Mobile', 'Home', 'WiFi'))
                             );
                             
                             -- Indexes for fast queries
@@ -126,7 +126,7 @@ class DataUsageMonitor:
         Args:
             firebase_uid: User's Firebase UID
             network_type: '4G' or '5G'
-            connection_type: 'Mobile' or 'Home'
+            connection_type: 'Mobile', 'Home', or 'WiFi'
             speed_mbps: Current connection speed in Mbps
             data_used_mb: Data consumed in megabytes
             priority: Connection priority (High/Medium/Low)
