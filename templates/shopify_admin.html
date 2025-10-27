@@ -6,7 +6,27 @@
     <title>Shopify Management - Admin</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="/static/firebase-init.js"></script>
+    <script src="/static/firebase-auth.js"></script>
+    <script src="/static/auth-guard.js"></script>
     <style>
+        :root {
+            --shopify-green: #96bf48;
+            --shopify-green-dark: #5e8e3e;
+        }
+        
+        body {
+            background: #1a1a1a;
+            color: #fff;
+        }
+        
+        body.light-mode {
+            background: #f5f5f5;
+            color: #333;
+        }
+        
         .shopify-admin {
             max-width: 1400px;
             margin: 0 auto;
@@ -14,7 +34,7 @@
         }
         
         .header {
-            background: linear-gradient(135deg, #96bf48 0%, #5e8e3e 100%);
+            background: linear-gradient(135deg, var(--shopify-green) 0%, var(--shopify-green-dark) 100%);
             color: white;
             padding: 30px;
             border-radius: 10px;
@@ -24,12 +44,31 @@
             align-items: center;
         }
         
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+        
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        
         .connection-status {
-            background: white;
+            background: #2a2a2a;
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        body.light-mode .connection-status {
+            background: white;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .connection-status h3 {
+            margin: 0 0 10px 0;
         }
         
         .status-indicator {
@@ -47,6 +86,10 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+        }
+        
+        body.light-mode .tabs {
             border-bottom: 2px solid #e0e0e0;
         }
         
@@ -55,21 +98,31 @@
             background: transparent;
             border: none;
             cursor: pointer;
-            color: #666;
+            color: #999;
             font-weight: 500;
             transition: all 0.3s;
+            font-size: 1em;
+        }
+        
+        body.light-mode .tab {
+            color: #666;
         }
         
         .tab.active {
-            color: #96bf48;
-            border-bottom: 3px solid #96bf48;
+            color: var(--shopify-green);
+            border-bottom: 3px solid var(--shopify-green);
         }
         
         .tab-content {
             display: none;
-            background: white;
+            background: #2a2a2a;
             padding: 25px;
             border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        body.light-mode .tab-content {
+            background: white;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
@@ -85,14 +138,19 @@
         }
         
         .product-card {
-            border: 1px solid #e0e0e0;
+            border: 1px solid #444;
             border-radius: 8px;
             padding: 15px;
-            transition: box-shadow 0.2s;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        
+        body.light-mode .product-card {
+            border: 1px solid #e0e0e0;
         }
         
         .product-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(150, 191, 72, 0.3);
+            transform: translateY(-2px);
         }
         
         .product-image {
@@ -101,6 +159,10 @@
             object-fit: cover;
             border-radius: 5px;
             margin-bottom: 10px;
+            background: #333;
+        }
+        
+        body.light-mode .product-image {
             background: #f5f5f5;
         }
         
@@ -110,15 +172,19 @@
         }
         
         .product-price {
-            color: #96bf48;
+            color: var(--shopify-green);
             font-size: 1.2em;
             font-weight: bold;
         }
         
         .product-inventory {
-            color: #666;
+            color: #999;
             font-size: 0.9em;
             margin-top: 5px;
+        }
+        
+        body.light-mode .product-inventory {
+            color: #666;
         }
         
         .orders-table {
@@ -130,12 +196,21 @@
         .orders-table td {
             padding: 12px;
             text-align: left;
+            border-bottom: 1px solid #444;
+        }
+        
+        body.light-mode .orders-table th,
+        body.light-mode .orders-table td {
             border-bottom: 1px solid #e0e0e0;
         }
         
         .orders-table th {
-            background: #f8f9fa;
+            background: #333;
             font-weight: 600;
+        }
+        
+        body.light-mode .orders-table th {
+            background: #f8f9fa;
         }
         
         .order-status {
@@ -145,9 +220,13 @@
             font-weight: 500;
         }
         
-        .status-fulfilled { background: #d4edda; color: #155724; }
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-cancelled { background: #f8d7da; color: #721c24; }
+        .status-fulfilled { background: #155724; color: #d4edda; }
+        .status-pending { background: #856404; color: #fff3cd; }
+        .status-cancelled { background: #721c24; color: #f8d7da; }
+        
+        body.light-mode .status-fulfilled { background: #d4edda; color: #155724; }
+        body.light-mode .status-pending { background: #fff3cd; color: #856404; }
+        body.light-mode .status-cancelled { background: #f8d7da; color: #721c24; }
         
         .btn {
             padding: 10px 20px;
@@ -156,15 +235,16 @@
             cursor: pointer;
             font-weight: 500;
             transition: all 0.2s;
+            font-size: 1em;
         }
         
         .btn-primary {
-            background: #96bf48;
+            background: var(--shopify-green);
             color: white;
         }
         
         .btn-primary:hover {
-            background: #7da537;
+            background: var(--shopify-green-dark);
         }
         
         .btn-secondary {
@@ -172,40 +252,46 @@
             color: white;
         }
         
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
         .loading {
             text-align: center;
             padding: 40px;
+            color: #999;
+        }
+        
+        body.light-mode .loading {
             color: #666;
         }
         
         .error {
-            background: #f8d7da;
-            color: #721c24;
+            background: #721c24;
+            color: #f8d7da;
             padding: 15px;
             border-radius: 5px;
             margin: 20px 0;
         }
         
+        body.light-mode .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
         .success {
-            background: #d4edda;
-            color: #155724;
+            background: #155724;
+            color: #d4edda;
             padding: 15px;
             border-radius: 5px;
             margin: 20px 0;
         }
+        
+        body.light-mode .success {
+            background: #d4edda;
+            color: #155724;
+        }
     </style>
-    
-    <!-- Firebase SDK v8 -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
-    
-    <!-- Custom Firebase Scripts -->
-    <script src="/static/firebase-init.js"></script>
-    <script src="/static/firebase-auth.js"></script>
-    
-    <!-- Authentication Guard -->
-    <script src="/static/auth-guard.js"></script>
 </head>
 <body>
     <div class="shopify-admin">
@@ -279,8 +365,6 @@
         </div>
     </div>
 
-    <script src="/static/firebase-init.js"></script>
-    <script src="/static/firebase-auth.js"></script>
     <script>
         let currentTab = 'products';
         
@@ -309,7 +393,7 @@
                     statusDiv.innerHTML = `
                         <span class="status-indicator status-connected"></span>
                         Connected to ${data.shop.name || 'Shopify Store'}
-                        <small style="display: block; margin-top: 5px; color: #666;">
+                        <small style="display: block; margin-top: 5px; color: #999;">
                             ${data.shop.domain || ''} - ${data.shop.currency || ''}
                         </small>
                     `;
@@ -343,7 +427,7 @@
                                 ${product.image ? 
                                     `<img src="${product.image.src}" class="product-image" alt="${product.title}">` :
                                     `<div class="product-image" style="display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-box" style="font-size: 48px; color: #ccc;"></i>
+                                        <i class="fas fa-box" style="font-size: 48px; color: #666;"></i>
                                     </div>`
                                 }
                                 <div class="product-title">${product.title}</div>
@@ -360,7 +444,7 @@
                 }
             } catch (error) {
                 console.error('Error loading products:', error);
-                container.innerHTML = '<div class="error">Failed to load products</div>';
+                container.innerHTML = '<div class="error">Failed to load products: ' + error.message + '</div>';
             }
         }
         
@@ -450,7 +534,6 @@
             }
         }
         
-        // Initialize on load
         window.addEventListener('DOMContentLoaded', () => {
             checkConnection();
             loadProducts();

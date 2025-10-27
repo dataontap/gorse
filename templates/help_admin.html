@@ -1,13 +1,32 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>dot.</title>
+    <title>Help Desk Admin - DOTM</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="/static/firebase-init.js"></script>
+    <script src="/static/firebase-auth.js"></script>
+    <script src="/static/auth-guard.js"></script>
     <style>
+        :root {
+            --admin-primary: #667eea;
+            --admin-primary-dark: #764ba2;
+        }
+        
+        body {
+            background: #1a1a1a;
+            color: #fff;
+        }
+        
+        body.light-mode {
+            background: #f5f5f5;
+            color: #333;
+        }
+        
         .admin-dashboard {
             max-width: 1200px;
             margin: 0 auto;
@@ -15,11 +34,21 @@
         }
         
         .dashboard-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-dark) 100%);
             color: white;
             padding: 30px;
             border-radius: 10px;
             margin-bottom: 30px;
+        }
+        
+        .dashboard-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+        
+        .dashboard-header p {
+            margin: 0;
+            opacity: 0.9;
         }
         
         .stats-grid {
@@ -30,35 +59,58 @@
         }
         
         .stat-card {
-            background: white;
+            background: #2a2a2a;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
             text-align: center;
+        }
+        
+        body.light-mode .stat-card {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         .stat-number {
             font-size: 2.5em;
             font-weight: bold;
-            color: #667eea;
+            color: var(--admin-primary);
         }
         
         .stat-label {
-            color: #666;
+            color: #999;
             margin-top: 10px;
         }
         
+        body.light-mode .stat-label {
+            color: #666;
+        }
+        
         .sessions-table {
-            background: white;
+            background: #2a2a2a;
             border-radius: 10px;
             overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        body.light-mode .sessions-table {
+            background: white;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         .table-header {
-            background: #f8f9fa;
+            background: #333;
             padding: 20px;
+            border-bottom: 1px solid #444;
+        }
+        
+        body.light-mode .table-header {
+            background: #f8f9fa;
             border-bottom: 1px solid #dee2e6;
+        }
+        
+        .table-header h3 {
+            margin: 0;
         }
         
         .sessions-list {
@@ -71,11 +123,19 @@
             grid-template-columns: 100px 150px 120px 100px 120px 150px 100px;
             gap: 10px;
             padding: 15px 20px;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #333;
             align-items: center;
         }
         
+        body.light-mode .session-row {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
         .session-row:hover {
+            background: #333;
+        }
+        
+        body.light-mode .session-row:hover {
             background: #f8f9fa;
         }
         
@@ -86,13 +146,18 @@
             font-weight: bold;
         }
         
-        .status-active { background: #d4edda; color: #155724; }
-        .status-ended { background: #f8d7da; color: #721c24; }
-        .status-ai { background: #d1ecf1; color: #0c5460; }
-        .status-callback { background: #fff3cd; color: #856404; }
+        .status-active { background: #155724; color: #d4edda; }
+        .status-ended { background: #721c24; color: #f8d7da; }
+        .status-ai { background: #0c5460; color: #d1ecf1; }
+        .status-callback { background: #856404; color: #fff3cd; }
+        
+        body.light-mode .status-active { background: #d4edda; color: #155724; }
+        body.light-mode .status-ended { background: #f8d7da; color: #721c24; }
+        body.light-mode .status-ai { background: #d1ecf1; color: #0c5460; }
+        body.light-mode .status-callback { background: #fff3cd; color: #856404; }
         
         .jira-link {
-            color: #0052cc;
+            color: #5b9bd5;
             text-decoration: none;
         }
         
@@ -108,24 +173,13 @@
             border-radius: 5px;
             cursor: pointer;
             margin-bottom: 20px;
+            font-size: 1em;
         }
         
         .refresh-btn:hover {
             background: #218838;
         }
     </style>
-    
-    <!-- Firebase SDK v8 -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
-    
-    <!-- Custom Firebase Scripts -->
-    <script src="/static/firebase-init.js"></script>
-    <script src="/static/firebase-auth.js"></script>
-    
-    <!-- Authentication Guard -->
-    <script src="/static/auth-guard.js"></script>
 </head>
 <body>
     <div class="admin-dashboard">
@@ -155,7 +209,6 @@
     <script>
         async function loadDashboardData() {
             try {
-                // Load analytics
                 const analyticsResponse = await fetch('/api/help/analytics?days=30');
                 const analyticsData = await analyticsResponse.json();
                 
@@ -163,7 +216,6 @@
                     displayStats(analyticsData.analytics);
                 }
 
-                // Load sessions
                 const sessionsResponse = await fetch('/api/help/sessions');
                 const sessionsData = await sessionsResponse.json();
                 
@@ -245,7 +297,7 @@
             }).join('');
             
             sessionsList.innerHTML = `
-                <div class="session-row" style="font-weight: bold; background: #f8f9fa;">
+                <div class="session-row" style="font-weight: bold; background: rgba(0,0,0,0.2);">
                     <div>User</div>
                     <div>Started</div>
                     <div>Duration</div>
@@ -258,10 +310,7 @@
             `;
         }
 
-        // Load data on page load
         document.addEventListener('DOMContentLoaded', loadDashboardData);
-
-        // Auto-refresh every 30 seconds
         setInterval(loadDashboardData, 30000);
     </script>
 </body>
