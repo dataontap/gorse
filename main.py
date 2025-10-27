@@ -7,6 +7,7 @@ from typing import Optional
 import psycopg2
 from psycopg2.pool import SimpleConnectionPool
 from contextlib import contextmanager
+from functools import wraps
 import time
 import threading
 import json
