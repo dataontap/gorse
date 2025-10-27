@@ -39,6 +39,9 @@
             padding: 30px;
             border-radius: 10px;
             margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .dashboard-header h1 {
@@ -49,6 +52,28 @@
         .dashboard-header p {
             margin: 0;
             opacity: 0.9;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .nav-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
         }
         
         .stats-grid {
@@ -184,8 +209,18 @@
 <body>
     <div class="admin-dashboard">
         <div class="dashboard-header">
-            <h1><i class="fas fa-headset"></i> Help Desk Admin Dashboard</h1>
-            <p>Monitor and analyze customer help requests and support metrics</p>
+            <div>
+                <h1><i class="fas fa-headset"></i> Help Desk Admin Dashboard</h1>
+                <p>Monitor and analyze customer help requests and support metrics</p>
+            </div>
+            <div class="nav-buttons">
+                <a href="/admin" class="nav-btn">
+                    <i class="fas fa-tools"></i> Admin
+                </a>
+                <a href="/dashboard" class="nav-btn">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </div>
         </div>
 
         <button class="refresh-btn" onclick="loadDashboardData()">

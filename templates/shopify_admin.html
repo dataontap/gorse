@@ -54,6 +54,28 @@
             opacity: 0.9;
         }
         
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .nav-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
         .connection-status {
             background: #2a2a2a;
             padding: 20px;
@@ -300,9 +322,14 @@
                 <h1><i class="fab fa-shopify"></i> Shopify Management</h1>
                 <p>Manage your store products, inventory, and orders</p>
             </div>
-            <a href="/admin" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Admin
-            </a>
+            <div class="nav-buttons">
+                <a href="/admin" class="nav-btn">
+                    <i class="fas fa-tools"></i> Admin
+                </a>
+                <a href="/dashboard" class="nav-btn">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </div>
         </div>
 
         <div class="connection-status">
