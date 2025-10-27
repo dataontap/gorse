@@ -700,6 +700,29 @@
                         </div>
                     </div>
 
+                    <!-- Admin Portal Button (Owner Only) -->
+                    <div id="adminPortalSection" style="display: none; margin: 20px 0;">
+                        <a href="/admin" class="btn btn-lg btn-primary" style="
+                            width: 100%;
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            border: none;
+                            padding: 16px;
+                            font-size: 1.1em;
+                            font-weight: 600;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 12px;
+                            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                            transition: transform 0.2s, box-shadow 0.2s;
+                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102, 126, 234, 0.6)'"
+                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(102, 126, 234, 0.4)'">
+                            <span style="font-size: 1.5em; font-weight: bold;">∞</span>
+                            <span>Admin Portal</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+
                     <!-- eSIM Details Section -->
                     <div class="esim-section mb-4">
                         <div class="card" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px);">
@@ -1115,14 +1138,19 @@
             if (isSignedIn && firebaseUser) {
                 console.log('Profile: User authenticated, loading profile data for:', firebaseUser.uid);
                 
-                // Check if user is the owner and show admin link
+                // Check if user is the owner and show admin link/button
                 const OWNER_EMAIL = 'aa@dotmobile.app';
                 const adminLink = document.getElementById('adminPortalLink');
+                const adminSection = document.getElementById('adminPortalSection');
+                
                 if (firebaseUser.email && firebaseUser.email.toLowerCase() === OWNER_EMAIL.toLowerCase()) {
-                    console.log('Owner detected - showing admin portal link');
+                    console.log('Owner detected - showing admin portal access');
                     if (adminLink) adminLink.style.display = 'block';
+                    if (adminSection) adminSection.style.display = 'block';
                 } else {
+                    console.log('Regular user - hiding admin portal access');
                     if (adminLink) adminLink.style.display = 'none';
+                    if (adminSection) adminSection.style.display = 'none';
                 }
                 
                 // Load all user-specific data only after authentication is confirmed

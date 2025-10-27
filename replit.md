@@ -4,6 +4,14 @@
 
 The DOTM Platform is a telecommunications service platform that integrates global eSIM connectivity, cryptocurrency rewards, and network optimization. It merges traditional mobile services with blockchain technology, leveraging OXIO's infrastructure for global data and incorporating DOTM token rewards. Firebase is used for user management, and a Model Context Protocol (MCP) server enables AI assistant integration. The platform offers extensive API services and a multi-layered architecture to support features ranging from basic connectivity to advanced network management. Its business vision is to innovate mobile services through Web3 technologies, providing a unique offering in the telecommunications market.
 
+## Admin Portal Access
+
+The platform includes a secure admin portal accessible only to the platform owner (aa@dotmobile.app). Access is provided through two methods:
+
+1. **Direct Login on Admin Page**: Navigate to `/admin` to access a dedicated login form. When not authenticated, the page displays a login interface instead of redirecting, allowing direct sign-in with owner credentials.
+
+2. **Profile Page Button**: When logged in as the owner, a prominent "∞ Admin Portal" button appears on the profile page, providing quick access to the admin dashboard. This button features an infinity symbol (∞) and is styled with a gradient purple design for easy identification.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
