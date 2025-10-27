@@ -366,24 +366,30 @@
         async function checkOwnerAccess() {
             try {
                 const user = firebase.auth().currentUser;
+                console.log('[Admin] Current user:', user?.email);
+                
                 if (!user) {
+                    console.log('[Admin] No user found, redirecting to login');
                     window.location.href = '/login';
                     return false;
                 }
                 
                 const userEmail = user.email;
+                console.log('[Admin] Checking access for:', userEmail, 'Expected:', OWNER_EMAIL);
                 
                 // Check if user is owner
                 if (userEmail.toLowerCase() !== OWNER_EMAIL.toLowerCase()) {
+                    console.log('[Admin] Access denied - user is not owner');
                     document.getElementById('loadingSpinner').style.display = 'none';
                     document.getElementById('accessDenied').style.display = 'block';
                     return false;
                 }
                 
+                console.log('[Admin] Access granted! Loading stats...');
                 document.getElementById('ownerEmail').textContent = userEmail;
                 return true;
             } catch (error) {
-                console.error('Error checking owner access:', error);
+                console.error('[Admin] Error checking owner access:', error);
                 return false;
             }
         }
@@ -446,28 +452,36 @@
             }, 1000);
         }
         
-        // Initialize
-        // Add timeout fallback in case auth takes too long
-        const authTimeout = setTimeout(() => {
-            console.log('Authentication timeout - redirecting to login');
-            window.location.href = '/login';
-        }, 5000);
+        // Initialize - Wait for Firebase to be ready
+        console.log('[Admin] Initializing admin page...');
         
-        firebase.auth().onAuthStateChanged(async (user) => {
-            clearTimeout(authTimeout);
+        // Wait for Firebase to initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('[Admin] DOM loaded, waiting for Firebase auth...');
             
-            if (user) {
-                console.log('User authenticated:', user.email);
-                const hasAccess = await checkOwnerAccess();
-                if (hasAccess) {
-                    await loadAdminStats();
-                } else {
-                    console.log('Access denied - not owner');
-                }
-            } else {
-                console.log('No authenticated user - redirecting to login');
+            // Add timeout fallback in case auth takes too long
+            const authTimeout = setTimeout(() => {
+                console.log('[Admin] Authentication timeout - redirecting to login');
                 window.location.href = '/login';
-            }
+            }, 8000);
+            
+            firebase.auth().onAuthStateChanged(async (user) => {
+                clearTimeout(authTimeout);
+                console.log('[Admin] Auth state changed, user:', user?.email || 'none');
+                
+                if (user) {
+                    console.log('[Admin] User authenticated:', user.email);
+                    const hasAccess = await checkOwnerAccess();
+                    if (hasAccess) {
+                        await loadAdminStats();
+                    } else {
+                        console.log('[Admin] Access denied - not owner');
+                    }
+                } else {
+                    console.log('[Admin] No authenticated user - redirecting to login');
+                    window.location.href = '/login';
+                }
+            });
         });
     </script>
 </body>
