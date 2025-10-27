@@ -591,6 +591,9 @@
                         </select>
                     </div>
                 </div>
+                <a href="/admin" id="adminPortalLink" style="display: none;">
+                    <span style="font-size: 1.2em; font-weight: bold;">∞</span> Admin Portal
+                </a>
                 <a href="#" id="logoutBtn" onclick="handleLogout(event)">
                     <i class="fas fa-sign-out-alt"></i> <span data-translate="logout">Logout</span>
                 </a>
@@ -1111,6 +1114,17 @@
 
             if (isSignedIn && firebaseUser) {
                 console.log('Profile: User authenticated, loading profile data for:', firebaseUser.uid);
+                
+                // Check if user is the owner and show admin link
+                const OWNER_EMAIL = 'aa@dotmobile.app';
+                const adminLink = document.getElementById('adminPortalLink');
+                if (firebaseUser.email && firebaseUser.email.toLowerCase() === OWNER_EMAIL.toLowerCase()) {
+                    console.log('Owner detected - showing admin portal link');
+                    if (adminLink) adminLink.style.display = 'block';
+                } else {
+                    if (adminLink) adminLink.style.display = 'none';
+                }
+                
                 // Load all user-specific data only after authentication is confirmed
                 loadFirebaseUserData();
                 loadNetworkServicesOverview(); // Load network services overview
