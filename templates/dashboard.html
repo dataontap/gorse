@@ -570,14 +570,34 @@
         </div>
         <div class="dashboard-content">
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<div class="insights-card">
+            <div class="insights-card" style="cursor: pointer; transition: transform 0.3s;" onclick="window.location.href='/insights'">
                 <div class="data-usage">
                     <div class="usage-header centered-header">
-                        <div class="usage-label trend-alert text-center w-100"><i class="fas fa-exclamation-triangle"></i> Usage Trend Alert</div>
+                        <div class="usage-label text-center w-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 600;">
+                            <i class="fas fa-chart-line"></i> MCP API Usage Insights
+                        </div>
                     </div>
-                    <div class="insight-message">Jenny's data usage increased by 45% this week. <a href="#" class="insight-link" onclick="toggleChart(this)">See details</a></div>
-                    <div class="usage-chart" style="display: none;">
-                        <canvas id="usageChart" width="400" height="200"></canvas>
+                    <div class="insight-message" style="padding: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.85em; color: #888; margin-bottom: 5px;">This Month</div>
+                                <div id="monthlyRequests" style="font-size: 1.5em; font-weight: bold; color: #667eea;">-</div>
+                                <div style="font-size: 0.75em; color: #666;">requests</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.85em; color: #888; margin-bottom: 5px;">Data Usage</div>
+                                <div id="monthlyData" style="font-size: 1.5em; font-weight: bold; color: #764ba2;">-</div>
+                                <div style="font-size: 0.75em; color: #666;">MB</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.85em; color: #888; margin-bottom: 5px;">API Keys</div>
+                                <div id="activeKeys" style="font-size: 1.5em; font-weight: bold; color: #667eea;">-</div>
+                                <div style="font-size: 0.75em; color: #666;">active</div>
+                            </div>
+                        </div>
+                        <a href="/insights" class="insight-link" style="color: #667eea; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                            View Detailed Analytics <i class="fas fa-arrow-right"></i>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -1435,6 +1455,48 @@
         // Load purchases when the page loads
         document.addEventListener('DOMContentLoaded', function() {
             loadUserPurchases();
+            loadMCPInsights();
+        });
+
+        // Load MCP usage insights for the dashboard card
+        async function loadMCPInsights() {
+            try {
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+                
+                const token = await user.getIdToken();
+                const response = await fetch('/api/mcp/usage/stats?days=30', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update dashboard card with current month's data
+                    const monthlyRequests = document.getElementById('monthlyRequests');
+                    const monthlyData = document.getElementById('monthlyData');
+                    const activeKeys = document.getElementById('activeKeys');
+                    
+                    if (monthlyRequests) {
+                        monthlyRequests.textContent = data.current_billing_period?.requests?.toLocaleString() || '0';
+                    }
+                    if (monthlyData) {
+                        monthlyData.textContent = data.current_billing_period?.megabytes?.toFixed(2) || '0.00';
+                    }
+                    if (activeKeys) {
+                        activeKeys.textContent = data.total_keys || '0';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading MCP insights:', error);
+            }
+        }
+
+        // Refresh MCP insights when user is authenticated
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                loadMCPInsights();
+            }
         });
 
         // Add event listener for resend eSIM button
