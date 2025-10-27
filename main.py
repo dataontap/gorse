@@ -2469,9 +2469,12 @@ def admin():
 
 @app.route('/api/admin/stats', methods=['GET'])
 @firebase_auth_required
-def get_admin_stats(user):
+def get_admin_stats():
     """Get platform statistics for admin dashboard"""
     try:
+        # Get user from request object (set by decorator)
+        user = request.firebase_user
+        
         # Check if user is owner
         owner_email = os.environ.get('OWNER_EMAIL', 'aa@dotmobile.app')
         user_email = user.get('email', '')
