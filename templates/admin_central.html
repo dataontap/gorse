@@ -52,12 +52,17 @@
         }
         
         .stat-card {
-            background: var(--card-bg);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 25px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             border-left: 4px solid;
             transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        body.light-mode .stat-card {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         
         .stat-card:hover {
@@ -74,10 +79,14 @@
         
         .stat-label {
             font-size: 0.85em;
-            color: #888;
+            color: #aaa;
             margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+        
+        body.light-mode .stat-label {
+            color: #888;
         }
         
         .stat-value {
@@ -95,6 +104,10 @@
         
         .stat-subtitle {
             font-size: 0.9em;
+            color: #999;
+        }
+        
+        body.light-mode .stat-subtitle {
             color: #666;
         }
         
@@ -118,7 +131,7 @@
         }
         
         .tool-card {
-            background: var(--card-bg);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 25px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -127,6 +140,11 @@
             text-decoration: none;
             color: inherit;
             display: block;
+        }
+        
+        body.light-mode .tool-card {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         
         .tool-card:hover {
@@ -149,9 +167,13 @@
         }
         
         .tool-description {
-            color: #666;
+            color: #999;
             font-size: 0.95em;
             line-height: 1.5;
+        }
+        
+        body.light-mode .tool-description {
+            color: #666;
         }
         
         .loading-spinner {
@@ -190,6 +212,39 @@
             font-size: 2em;
             margin-bottom: 15px;
             color: #ef4444;
+        }
+        
+        /* Form input styles for dark/light mode */
+        #adminLoginForm input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+        
+        body.light-mode #adminLoginForm input {
+            background: white;
+            border: 2px solid #ddd;
+            color: #333;
+        }
+        
+        #adminLoginForm input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        body.light-mode #adminLoginForm input::placeholder {
+            color: #999;
+        }
+        
+        #adminLoginError {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fee;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+        
+        body.light-mode #adminLoginError {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
         }
     </style>
 </head>
