@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Central - DOTM Platform</title>
+    <title>DOT Central - DOTM Platform</title>
     <link rel="stylesheet" href="/static/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -197,7 +197,7 @@
     <div class="admin-container" id="adminContent" style="display: none;">
         <div class="admin-header">
             <div style="flex: 1;">
-                <h1>🛠️ Admin Central Dashboard</h1>
+                <h1>🛠️ DOT Central</h1>
                 <p class="subtitle">Comprehensive Platform Management & Analytics</p>
                 <div class="owner-badge">
                     <i class="fas fa-crown"></i> Owner Access: <span id="ownerEmail">Loading...</span>
@@ -384,14 +384,14 @@
             <form id="adminLoginForm" style="text-align: left;">
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600;">Email</label>
-                    <input type="email" id="adminEmail" required 
+                    <input type="email" id="adminEmail" required autocomplete="email"
                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;"
                            placeholder="aa@dotmobile.app">
                 </div>
                 
                 <div style="margin-bottom: 25px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600;">Password</label>
-                    <input type="password" id="adminPassword" required 
+                    <input type="password" id="adminPassword" required autocomplete="current-password"
                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;"
                            placeholder="Enter your password">
                 </div>
