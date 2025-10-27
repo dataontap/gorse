@@ -253,6 +253,9 @@ def create_stripe_products():
                 data_meter = stripe.billing.Meter.create(
                     display_name='Data Usage',
                     event_name='data_usage',
+                    default_aggregation={
+                        'formula': 'sum'
+                    },
                     value_settings={
                         'event_payload_key': 'megabytes_used'
                     }

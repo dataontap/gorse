@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP API Keys - Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <style>
+        body { background: #1a1a2e; color: #eee; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        .container { max-width: 1200px; margin-top: 40px; }
+        .card { background: #16213e; border: 1px solid #0f3460; margin-bottom: 20px; }
+        .card-header { background: #0f3460; color: #00d9ff; font-weight: 600; }
+        .btn-primary { background: #00d9ff; border: none; color: #000; font-weight: 600; }
+        .btn-primary:hover { background: #00b8d4; }
+        .btn-danger { background: #ff4757; border: none; }
+        .api-key-display { background: #0f3460; padding: 10px; border-radius: 5px; font-family: monospace; word-break: break-all; }
+        .warning-box { background: #ff6b6b; color: white; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        table { color: #eee; }
+        .badge { font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">🔐 MCP API Key Management</h1>
+        
+        <div class="card">
+            <div class="card-header">Create New API Key</div>
+            <div class="card-body">
+                <form id="createKeyForm">
+                    <div class="mb-3">
+                        <label class="form-label">Admin Key</label>
+                        <input type="password" class="form-control" id="adminKey" required placeholder="Enter admin key">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Key Name *</label>
+                        <input type="text" class="form-control" id="keyName" required placeholder="e.g., ChatGPT Integration">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="description" rows="2" placeholder="Optional description"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rate Limit (requests/hour)</label>
+                        <input type="number" class="form-control" id="rateLimit" value="1000" min="1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Firebase UID (optional)</label>
+                        <input type="text" class="form-control" id="firebaseUid" placeholder="Link to specific user">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Generate API Key</button>
+                </form>
+                
+                <div id="newKeyDisplay" style="display: none; margin-top: 20px;">
+                    <div class="warning-box">
+                        <strong>⚠️ IMPORTANT:</strong> Save this API key now. You won't be able to see it again!
+                    </div>
+                    <label class="form-label">Your New API Key:</label>
+                    <div class="api-key-display" id="generatedKey"></div>
+                    <button class="btn btn-sm btn-primary mt-2" onclick="copyApiKey()">📋 Copy to Clipboard</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">Active API Keys</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <button class="btn btn-primary btn-sm" onclick="loadApiKeys()">🔄 Refresh List</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped" id="apiKeysTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Rate Limit</th>
+                                <th>Total Requests</th>
+                                <th>Created</th>
+                                <th>Last Used</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="apiKeysBody">
+                            <tr><td colspan="8" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAdminKey = '';
+
+        document.getElementById('createKeyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            currentAdminKey = document.getElementById('adminKey').value;
+            const data = {
+                admin_key: currentAdminKey,
+                key_name: document.getElementById('keyName').value,
+                description: document.getElementById('description').value,
+                rate_limit: parseInt(document.getElementById('rateLimit').value),
+                firebase_uid: document.getElementById('firebaseUid').value || null
+            };
+            
+            try {
+                const response = await fetch('/api/admin/mcp-keys/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('generatedKey').textContent = result.api_key;
+                    document.getElementById('newKeyDisplay').style.display = 'block';
+                    
+                    document.getElementById('keyName').value = '';
+                    document.getElementById('description').value = '';
+                    document.getElementById('firebaseUid').value = '';
+                    
+                    loadApiKeys();
+                    
+                    alert('✅ API key created successfully! Make sure to copy it now.');
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error creating API key: ' + error.message);
+            }
+        });
+        
+        async function loadApiKeys() {
+            const adminKey = currentAdminKey || document.getElementById('adminKey').value;
+            
+            if (!adminKey) {
+                alert('Please enter admin key first');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/mcp-keys/list?admin_key=${adminKey}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const tbody = document.getElementById('apiKeysBody');
+                    tbody.innerHTML = '';
+                    
+                    if (result.api_keys.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No API keys found</td></tr>';
+                        return;
+                    }
+                    
+                    result.api_keys.forEach(key => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><strong>${key.key_name}</strong></td>
+                            <td>${key.description || '-'}</td>
+                            <td>${key.rate_limit}/hr</td>
+                            <td>${key.total_requests || 0}</td>
+                            <td>${new Date(key.created_at).toLocaleString()}</td>
+                            <td>${key.last_used_at ? new Date(key.last_used_at).toLocaleString() : 'Never'}</td>
+                            <td>
+                                <span class="badge ${key.is_active ? 'bg-success' : 'bg-danger'}">
+                                    ${key.is_active ? 'Active' : 'Revoked'}
+                                </span>
+                            </td>
+                            <td>
+                                ${key.is_active ? 
+                                    `<button class="btn btn-danger btn-sm" onclick="revokeKey(${key.id})">Revoke</button>` :
+                                    '<span class="text-muted">-</span>'
+                                }
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    alert('Error loading API keys: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error loading API keys: ' + error.message);
+            }
+        }
+        
+        async function revokeKey(keyId) {
+            if (!confirm('Are you sure you want to revoke this API key? This cannot be undone.')) {
+                return;
+            }
+            
+            const adminKey = currentAdminKey || document.getElementById('adminKey').value;
+            
+            try {
+                const response = await fetch(`/api/admin/mcp-keys/revoke/${keyId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ admin_key: adminKey })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    loadApiKeys();
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error revoking key: ' + error.message);
+            }
+        }
+        
+        function copyApiKey() {
+            const keyText = document.getElementById('generatedKey').textContent;
+            navigator.clipboard.writeText(keyText).then(() => {
+                alert('✅ API key copied to clipboard!');
+            });
+        }
+        
+        window.onload = () => {
+            const savedAdminKey = sessionStorage.getItem('adminKey');
+            if (savedAdminKey) {
+                document.getElementById('adminKey').value = savedAdminKey;
+                currentAdminKey = savedAdminKey;
+                loadApiKeys();
+            }
+        };
+        
+        document.getElementById('adminKey').addEventListener('change', (e) => {
+            sessionStorage.setItem('adminKey', e.target.value);
+        });
+    </script>
+</body>
+</html>

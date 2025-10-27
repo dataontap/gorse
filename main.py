@@ -485,6 +485,51 @@ try:
                 else:
                     print("phone_number_changes table already exists")
 
+                # Check if MCP API keys tables exist
+                cur.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'mcp_api_keys')")
+                mcp_api_keys_exists = cur.fetchone()[0]
+
+                if not mcp_api_keys_exists:
+                    print("Creating MCP API keys tables...")
+                    cur.execute("""
+                        CREATE TABLE mcp_api_keys (
+                            id SERIAL PRIMARY KEY,
+                            key_hash VARCHAR(64) UNIQUE NOT NULL,
+                            key_name VARCHAR(255) NOT NULL,
+                            description TEXT,
+                            rate_limit INTEGER DEFAULT 1000,
+                            is_active BOOLEAN DEFAULT TRUE,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            last_used_at TIMESTAMP,
+                            total_requests BIGINT DEFAULT 0,
+                            firebase_uid VARCHAR(128),
+                            allowed_origins TEXT[],
+                            metadata JSONB
+                        );
+                        
+                        CREATE INDEX idx_mcp_api_keys_key_hash ON mcp_api_keys(key_hash);
+                        CREATE INDEX idx_mcp_api_keys_is_active ON mcp_api_keys(is_active);
+                        CREATE INDEX idx_mcp_api_keys_firebase_uid ON mcp_api_keys(firebase_uid);
+                        
+                        CREATE TABLE mcp_api_requests (
+                            id SERIAL PRIMARY KEY,
+                            key_hash VARCHAR(64) NOT NULL,
+                            request_path VARCHAR(255),
+                            request_method VARCHAR(10),
+                            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            ip_address INET,
+                            user_agent TEXT,
+                            response_status INTEGER
+                        );
+                        
+                        CREATE INDEX idx_mcp_api_requests_key_hash_timestamp 
+                            ON mcp_api_requests(key_hash, timestamp);
+                    """)
+                    conn.commit()
+                    print("MCP API keys tables created successfully")
+                else:
+                    print("MCP API keys tables already exist")
+
                 conn.commit()
         else:
             print("No database connection available for table creation")
@@ -5644,6 +5689,146 @@ def resend_esim_activation_email():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Initialize MCP Auth Manager
+try:
+    from mcp_auth import MCPAuthManager
+    mcp_auth_manager = MCPAuthManager(get_db_connection)
+    print("MCP Auth Manager initialized successfully")
+except Exception as e:
+    print(f"Error initializing MCP Auth Manager: {str(e)}")
+    mcp_auth_manager = None
+
+
+# MCP API Key Management Endpoints
+@app.route('/admin/mcp-keys', methods=['GET'])
+def admin_mcp_keys():
+    """Admin page for managing MCP API keys"""
+    return render_template('admin_mcp_keys.html')
+
+
+@app.route('/api/admin/mcp-keys/list', methods=['GET'])
+def list_mcp_api_keys():
+    """List all MCP API keys (admin only)"""
+    try:
+        admin_key = request.headers.get('X-Admin-Key') or request.args.get('admin_key')
+        if admin_key != os.environ.get('ADMIN_KEY', 'dotm_admin_2025'):
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+        if not mcp_auth_manager:
+            return jsonify({'success': False, 'error': 'MCP Auth Manager not initialized'}), 500
+        
+        firebase_uid = request.args.get('firebase_uid')
+        api_keys = mcp_auth_manager.list_api_keys(firebase_uid)
+        
+        return jsonify({
+            'success': True,
+            'api_keys': api_keys
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/mcp-keys/create', methods=['POST'])
+def create_mcp_api_key():
+    """Create a new MCP API key (admin only)"""
+    try:
+        data = request.get_json()
+        admin_key = data.get('admin_key') or request.headers.get('X-Admin-Key')
+        
+        if admin_key != os.environ.get('ADMIN_KEY', 'dotm_admin_2025'):
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+        if not mcp_auth_manager:
+            return jsonify({'success': False, 'error': 'MCP Auth Manager not initialized'}), 500
+        
+        key_name = data.get('key_name')
+        description = data.get('description', '')
+        rate_limit = data.get('rate_limit', 1000)
+        firebase_uid = data.get('firebase_uid')
+        allowed_origins = data.get('allowed_origins', [])
+        
+        if not key_name:
+            return jsonify({'success': False, 'error': 'key_name is required'}), 400
+        
+        success, result, message = mcp_auth_manager.create_api_key(
+            key_name=key_name,
+            description=description,
+            rate_limit=rate_limit,
+            firebase_uid=firebase_uid,
+            allowed_origins=allowed_origins
+        )
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'api_key': result,
+                'message': message,
+                'warning': 'Save this API key securely. It will not be shown again.'
+            })
+        else:
+            return jsonify({'success': False, 'error': result}), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/mcp-keys/revoke/<int:key_id>', methods=['POST'])
+def revoke_mcp_api_key(key_id):
+    """Revoke an MCP API key (admin only)"""
+    try:
+        data = request.get_json() or {}
+        admin_key = data.get('admin_key') or request.headers.get('X-Admin-Key')
+        
+        if admin_key != os.environ.get('ADMIN_KEY', 'dotm_admin_2025'):
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+        if not mcp_auth_manager:
+            return jsonify({'success': False, 'error': 'MCP Auth Manager not initialized'}), 500
+        
+        success, message = mcp_auth_manager.revoke_api_key(key_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': message})
+        else:
+            return jsonify({'success': False, 'error': message}), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/mcp/validate-key', methods=['GET'])
+def validate_mcp_key():
+    """Validate an MCP API key and return its details"""
+    try:
+        auth_header = request.headers.get('Authorization', '')
+        
+        if not auth_header.startswith('Bearer '):
+            return jsonify({
+                'valid': False,
+                'error': 'Missing or invalid Authorization header'
+            }), 401
+        
+        api_key = auth_header.replace('Bearer ', '').strip()
+        
+        if not mcp_auth_manager:
+            return jsonify({'valid': False, 'error': 'Auth manager not initialized'}), 500
+        
+        is_valid, key_info = mcp_auth_manager.validate_api_key(api_key)
+        
+        if is_valid:
+            is_allowed, rate_info = mcp_auth_manager.check_rate_limit(api_key, key_info)
+            return jsonify({
+                'valid': True,
+                'key_name': key_info.get('key_name'),
+                'rate_limit': rate_info
+            })
+        else:
+            return jsonify({'valid': False, 'error': 'Invalid API key'}), 401
+            
+    except Exception as e:
+        return jsonify({'valid': False, 'error': str(e)}), 500
 
 
 if __name__ == '__main__':
