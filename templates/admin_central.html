@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Central - DOTM Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="/static/firebase-init.js"></script>
+    <style>
+        .admin-container {
+            max-width: 1600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        
+        .admin-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+        }
+        
+        .admin-header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .admin-header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .owner-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 4px solid;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .stat-card.users { border-left-color: #667eea; }
+        .stat-card.revenue { border-left-color: #10b981; }
+        .stat-card.subs { border-left-color: #f59e0b; }
+        .stat-card.mcp { border-left-color: #8b5cf6; }
+        .stat-card.data { border-left-color: #ec4899; }
+        .stat-card.support { border-left-color: #06b6d4; }
+        
+        .stat-label {
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card.users .stat-value { color: #667eea; }
+        .stat-card.revenue .stat-value { color: #10b981; }
+        .stat-card.subs .stat-value { color: #f59e0b; }
+        .stat-card.mcp .stat-value { color: #8b5cf6; }
+        .stat-card.data .stat-value { color: #ec4899; }
+        .stat-card.support .stat-value { color: #06b6d4; }
+        
+        .stat-subtitle {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .tools-section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 25px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .tool-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .tool-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .tool-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .tool-description {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .access-denied {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .access-denied i {
+            font-size: 5em;
+            color: #ef4444;
+            margin-bottom: 20px;
+        }
+        
+        .access-denied h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container" id="adminContent" style="display: none;">
+        <div class="admin-header">
+            <h1>🛠️ Admin Central Dashboard</h1>
+            <p class="subtitle">Comprehensive Platform Management & Analytics</p>
+            <div class="owner-badge">
+                <i class="fas fa-crown"></i> Owner Access: <span id="ownerEmail">Loading...</span>
+            </div>
+        </div>
+        
+        <!-- Platform Statistics -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card users">
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" id="statUsers">-</div>
+                <div class="stat-subtitle">Platform Members</div>
+            </div>
+            
+            <div class="stat-card revenue">
+                <div class="stat-label">Total Revenue</div>
+                <div class="stat-value" id="statRevenue">$-</div>
+                <div class="stat-subtitle"><span id="statPurchases">-</span> purchases</div>
+            </div>
+            
+            <div class="stat-card subs">
+                <div class="stat-label">Active Subscriptions</div>
+                <div class="stat-value" id="statSubs">-</div>
+                <div class="stat-subtitle">Current subscribers</div>
+            </div>
+            
+            <div class="stat-card mcp">
+                <div class="stat-label">MCP API Keys</div>
+                <div class="stat-value" id="statMcp">-</div>
+                <div class="stat-subtitle">Active integrations</div>
+            </div>
+            
+            <div class="stat-card data">
+                <div class="stat-label">Data Usage (Month)</div>
+                <div class="stat-value" id="statDataGb">- GB</div>
+                <div class="stat-subtitle">$<span id="statDataCost">-</span> billed</div>
+            </div>
+            
+            <div class="stat-card support">
+                <div class="stat-label">Support Tickets</div>
+                <div class="stat-value" id="statTickets">-</div>
+                <div class="stat-subtitle">Last 7 days</div>
+            </div>
+        </div>
+        
+        <!-- Admin Tools -->
+        <div class="tools-section">
+            <h2 class="section-title">
+                <i class="fas fa-tools"></i> Administration Tools
+            </h2>
+            <div class="tools-grid">
+                <a href="/admin/mcp-keys" class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-key"></i></div>
+                    <div class="tool-title">MCP API Keys</div>
+                    <div class="tool-description">Manage API keys for external integrations and AI assistants</div>
+                </a>
+                
+                <a href="/help-admin" class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-headset"></i></div>
+                    <div class="tool-title">Help Desk Admin</div>
+                    <div class="tool-description">Manage customer support tickets and help requests</div>
+                </a>
+                
+                <a href="/email-admin" class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-envelope"></i></div>
+                    <div class="tool-title">Email Templates</div>
+                    <div class="tool-description">Edit eSIM activation and notification email templates</div>
+                </a>
+                
+                <a href="/admin/shopify" class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="tool-title">Shopify Management</div>
+                    <div class="tool-description">Sync products and manage marketplace inventory</div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Analytics & Monitoring -->
+        <div class="tools-section">
+            <h2 class="section-title">
+                <i class="fas fa-chart-line"></i> Analytics & Monitoring
+            </h2>
+            <div class="tools-grid">
+                <a href="/insights" class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-chart-bar"></i></div>
+                    <div class="tool-title">MCP Usage Insights</div>
+                    <div class="tool-description">Real-time API usage analytics and billing data</div>
+                </a>
+                
+                <a href="/data-usage" class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-wifi"></i></div>
+                    <div class="tool-title">Data Usage Monitor</div>
+                    <div class="tool-description">Real-time network data consumption and metered billing</div>
+                </a>
+                
+                <a href="/oxio-test" class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-flask"></i></div>
+                    <div class="tool-title">OXIO API Testing</div>
+                    <div class="tool-description">Test OXIO eSIM provisioning and network services</div>
+                </a>
+                
+                <a href="/api" class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-code"></i></div>
+                    <div class="tool-title">API Documentation</div>
+                    <div class="tool-description">Interactive Swagger API documentation</div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Database & System Tools -->
+        <div class="tools-section">
+            <h2 class="section-title">
+                <i class="fas fa-database"></i> System Tools
+            </h2>
+            <div class="tools-grid">
+                <a href="/dashboard" class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-home"></i></div>
+                    <div class="tool-title">User Dashboard</div>
+                    <div class="tool-description">View platform from user perspective</div>
+                </a>
+                
+                <a href="/marketplace" class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-store"></i></div>
+                    <div class="tool-title">Marketplace</div>
+                    <div class="tool-description">Browse and manage product offerings</div>
+                </a>
+                
+                <a href="/tokens" class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-coins"></i></div>
+                    <div class="tool-title">DOTM Tokens</div>
+                    <div class="tool-description">Blockchain token management and rewards</div>
+                </a>
+                
+                <div class="tool-card" onclick="refreshStats()">
+                    <div class="tool-icon"><i class="fas fa-sync-alt"></i></div>
+                    <div class="tool-title">Refresh Statistics</div>
+                    <div class="tool-description">Update dashboard stats and analytics</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+    
+    <div class="access-denied" id="accessDenied" style="display: none;">
+        <i class="fas fa-lock"></i>
+        <h2>Access Denied</h2>
+        <p>This area is restricted to the platform owner only.</p>
+        <p style="margin-top: 20px;">
+            <a href="/dashboard" style="color: #667eea; text-decoration: none; font-weight: 600;">
+                Return to Dashboard
+            </a>
+        </p>
+    </div>
+
+    <script src="/static/firebase-auth.js"></script>
+    <script>
+        const OWNER_EMAIL = 'aa@dotmobile.app'; // Will be validated server-side
+        
+        async function checkOwnerAccess() {
+            try {
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    window.location.href = '/login';
+                    return false;
+                }
+                
+                const userEmail = user.email;
+                
+                // Check if user is owner
+                if (userEmail.toLowerCase() !== OWNER_EMAIL.toLowerCase()) {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    document.getElementById('accessDenied').style.display = 'block';
+                    return false;
+                }
+                
+                document.getElementById('ownerEmail').textContent = userEmail;
+                return true;
+            } catch (error) {
+                console.error('Error checking owner access:', error);
+                return false;
+            }
+        }
+        
+        async function loadAdminStats() {
+            try {
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+                
+                const token = await user.getIdToken();
+                const response = await fetch('/api/admin/stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        document.getElementById('loadingSpinner').style.display = 'none';
+                        document.getElementById('accessDenied').style.display = 'block';
+                        return;
+                    }
+                    throw new Error('Failed to load stats');
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.stats) {
+                    updateStats(data.stats);
+                }
+                
+                // Show content
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('adminContent').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading admin stats:', error);
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('accessDenied').style.display = 'block';
+            }
+        }
+        
+        function updateStats(stats) {
+            document.getElementById('statUsers').textContent = stats.users.total.toLocaleString();
+            document.getElementById('statRevenue').textContent = '$' + stats.purchases.revenue.toLocaleString();
+            document.getElementById('statPurchases').textContent = stats.purchases.count.toLocaleString();
+            document.getElementById('statSubs').textContent = stats.subscriptions.active.toLocaleString();
+            document.getElementById('statMcp').textContent = stats.mcp.active_keys.toLocaleString();
+            document.getElementById('statDataGb').textContent = stats.data_usage.monthly_gb.toFixed(2) + ' GB';
+            document.getElementById('statDataCost').textContent = stats.data_usage.monthly_cost.toFixed(2);
+            document.getElementById('statTickets').textContent = stats.support.recent_tickets.toLocaleString();
+        }
+        
+        async function refreshStats() {
+            const spinner = document.querySelector('.tool-card:nth-child(4) .tool-icon i');
+            spinner.classList.add('fa-spin');
+            
+            await loadAdminStats();
+            
+            setTimeout(() => {
+                spinner.classList.remove('fa-spin');
+            }, 1000);
+        }
+        
+        // Initialize
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                const hasAccess = await checkOwnerAccess();
+                if (hasAccess) {
+                    await loadAdminStats();
+                }
+            } else {
+                window.location.href = '/login';
+            }
+        });
+    </script>
+</body>
+</html>

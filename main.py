@@ -2423,10 +2423,139 @@ def notifications():
 def bitchat():
     return render_template('bitchat.html')
 
+# Owner Authentication Decorator
+def owner_required(f):
+    """Require owner email authentication"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Get owner email from environment variable (secure, configurable)
+        owner_email = os.environ.get('OWNER_EMAIL', 'aa@dotmobile.app')
+        
+        # Get the current user from Firebase
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Unauthorized', 'message': 'Admin access restricted'}), 401
+        
+        token = auth_header.replace('Bearer ', '')
+        
+        try:
+            decoded_token = firebase_admin.auth.verify_id_token(token)
+            user_email = decoded_token.get('email', '')
+            
+            # Check if user email matches owner email
+            if user_email.lower() != owner_email.lower():
+                return jsonify({
+                    'error': 'Forbidden', 
+                    'message': 'Access restricted to platform owner'
+                }), 403
+            
+            # Pass the user info to the route
+            request.owner_user = decoded_token
+            return f(*args, **kwargs)
+            
+        except Exception as e:
+            print(f"Owner authentication error: {str(e)}")
+            return jsonify({'error': 'Authentication failed', 'message': str(e)}), 401
+    
+    return decorated_function
+
+
 @app.route('/admin')
 def admin():
-    """Main admin panel"""
-    return render_template('admin.html')
+    """Admin Central Dashboard - consolidates all admin tools"""
+    return render_template('admin_central.html')
+
+
+@app.route('/api/admin/stats', methods=['GET'])
+@firebase_auth_required
+def get_admin_stats(user):
+    """Get platform statistics for admin dashboard"""
+    try:
+        # Check if user is owner
+        owner_email = os.environ.get('OWNER_EMAIL', 'aa@dotmobile.app')
+        user_email = user.get('email', '')
+        
+        if user_email.lower() != owner_email.lower():
+            return jsonify({'error': 'Forbidden'}), 403
+        
+        with get_db_connection() as conn:
+            if not conn:
+                return jsonify({'error': 'Database unavailable'}), 500
+            
+            with conn.cursor() as cur:
+                # Get user count
+                cur.execute("SELECT COUNT(*) FROM users")
+                user_count = cur.fetchone()[0] or 0
+                
+                # Get purchase count and total revenue
+                cur.execute("""
+                    SELECT COUNT(*), COALESCE(SUM(amount / 100.0), 0) 
+                    FROM purchases 
+                    WHERE status = 'completed'
+                """)
+                purchase_row = cur.fetchone()
+                purchase_count = purchase_row[0] or 0
+                total_revenue = float(purchase_row[1]) if purchase_row[1] else 0
+                
+                # Get subscription count
+                cur.execute("""
+                    SELECT COUNT(*) FROM subscriptions 
+                    WHERE status = 'active'
+                """)
+                active_subs = cur.fetchone()[0] or 0
+                
+                # Get MCP API key count
+                cur.execute("SELECT COUNT(*) FROM mcp_api_keys WHERE is_active = true")
+                mcp_keys_count = cur.fetchone()[0] or 0
+                
+                # Get data usage stats
+                cur.execute("""
+                    SELECT 
+                        COALESCE(SUM(data_used_gb), 0) as total_gb,
+                        COALESCE(SUM(cost_usd), 0) as total_cost
+                    FROM data_usage_metrics
+                    WHERE created_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP)
+                """)
+                usage_row = cur.fetchone()
+                monthly_data_gb = float(usage_row[0]) if usage_row[0] else 0
+                monthly_data_cost = float(usage_row[1]) if usage_row[1] else 0
+                
+                # Get help desk ticket count
+                cur.execute("""
+                    SELECT COUNT(*) FROM user_message_history 
+                    WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+                """)
+                recent_tickets = cur.fetchone()[0] or 0
+                
+                return jsonify({
+                    'success': True,
+                    'stats': {
+                        'users': {
+                            'total': user_count
+                        },
+                        'purchases': {
+                            'count': purchase_count,
+                            'revenue': round(total_revenue, 2)
+                        },
+                        'subscriptions': {
+                            'active': active_subs
+                        },
+                        'mcp': {
+                            'active_keys': mcp_keys_count
+                        },
+                        'data_usage': {
+                            'monthly_gb': round(monthly_data_gb, 2),
+                            'monthly_cost': round(monthly_data_cost, 2)
+                        },
+                        'support': {
+                            'recent_tickets': recent_tickets
+                        }
+                    }
+                })
+                
+    except Exception as e:
+        print(f"Error getting admin stats: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/admin/shopify')
 def shopify_admin():
