@@ -2493,9 +2493,8 @@ def get_admin_stats():
                 
                 # Get purchase count and total revenue
                 cur.execute("""
-                    SELECT COUNT(*), COALESCE(SUM(amount / 100.0), 0) 
-                    FROM purchases 
-                    WHERE status = 'completed'
+                    SELECT COUNT(*), COALESCE(SUM(totalamount / 100.0), 0) 
+                    FROM purchases
                 """)
                 purchase_row = cur.fetchone()
                 purchase_count = purchase_row[0] or 0
