@@ -41,8 +41,9 @@ def hash_api_key(api_key: str) -> str:
 class MCPAuthManager:
     """Manages MCP API key authentication and rate limiting"""
     
-    def __init__(self, get_db_connection):
+    def __init__(self, get_db_connection, usage_service=None):
         self.get_db_connection = get_db_connection
+        self.usage_service = usage_service
         self._ensure_table_exists()
     
     def _ensure_table_exists(self):
@@ -235,7 +236,8 @@ class MCPAuthManager:
         request_method: str,
         ip_address: str,
         user_agent: str,
-        response_status: int
+        response_status: int,
+        firebase_uid: Optional[str] = None
     ):
         """Log an API request for rate limiting and analytics"""
         try:
@@ -252,6 +254,17 @@ class MCPAuthManager:
                         """, (key_hash, request_path, request_method, 
                               ip_address, user_agent, response_status))
                         conn.commit()
+            
+            # Report usage to Stripe if successful request and usage service available
+            if response_status == 200 and self.usage_service and firebase_uid:
+                try:
+                    self.usage_service.report_mcp_usage_to_stripe(
+                        firebase_uid=firebase_uid,
+                        request_count=1
+                    )
+                except Exception as e:
+                    print(f"Error reporting usage to Stripe: {str(e)}")
+                    
         except Exception as e:
             print(f"Error logging MCP request: {str(e)}")
     
@@ -369,7 +382,8 @@ def require_mcp_api_key(auth_manager: MCPAuthManager):
             auth_manager.log_request(
                 api_key, request.path, request.method,
                 request.remote_addr, request.headers.get('User-Agent', ''),
-                status_code
+                status_code,
+                firebase_uid=key_info.get('firebase_uid')
             )
             
             # Add rate limit headers to response

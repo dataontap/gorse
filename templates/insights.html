@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Usage Insights - DOTM Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="/static/firebase-init.js"></script>
+    <style>
+        .insights-container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        
+        .insights-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .insights-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #888;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stat-subtitle {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 350px;
+        }
+        
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .endpoint-list {
+            margin-top: 20px;
+        }
+        
+        .endpoint-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .endpoint-path {
+            font-family: monospace;
+            font-weight: 600;
+        }
+        
+        .endpoint-method {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .method-POST { background: #48bb78; color: white; }
+        .method-GET { background: #4299e1; color: white; }
+        .method-PUT { background: #ed8936; color: white; }
+        .method-DELETE { background: #f56565; color: white; }
+        
+        .endpoint-count {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .period-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+        
+        .period-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: transparent;
+            color: #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .period-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .period-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="insights-container">
+        <div class="insights-header">
+            <h1>📊 MCP Usage Insights</h1>
+            <p style="color: #888; font-size: 1.1em;">Real-time API usage analytics and billing data</p>
+        </div>
+        
+        <div class="period-selector">
+            <button class="period-btn" data-days="7">7 Days</button>
+            <button class="period-btn active" data-days="30">30 Days</button>
+            <button class="period-btn" data-days="90">90 Days</button>
+        </div>
+        
+        <div class="stats-grid" id="statsGrid">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <h3 class="chart-title">Daily API Usage Trend</h3>
+            <div class="chart-wrapper">
+                <canvas id="usageChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <h3 class="chart-title">Top API Endpoints (Last 7 Days)</h3>
+            <div class="chart-wrapper">
+                <canvas id="endpointsChart"></canvas>
+            </div>
+            <div class="endpoint-list" id="endpointList"></div>
+        </div>
+        
+        <div class="chart-container">
+            <h3 class="chart-title">Current Billing Period</h3>
+            <div id="billingInfo"></div>
+        </div>
+    </div>
+
+    <script src="/static/firebase-auth.js"></script>
+    <script>
+        let currentPeriod = 30;
+        let usageChart, endpointsChart;
+        
+        // Period selector
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentPeriod = parseInt(btn.dataset.days);
+                loadInsightsData();
+            });
+        });
+        
+        async function loadInsightsData() {
+            try {
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                const token = await user.getIdToken();
+                
+                // Fetch usage stats
+                const statsResponse = await fetch(`/api/mcp/usage/stats?days=${currentPeriod}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const statsData = await statsResponse.json();
+                
+                if (statsData.success) {
+                    updateStatsCards(statsData);
+                    updateUsageChart(statsData.daily_usage);
+                    updateBillingInfo(statsData.current_billing_period);
+                }
+                
+                // Fetch endpoint stats
+                const endpointsResponse = await fetch('/api/mcp/usage/endpoints?days=7', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const endpointsData = await endpointsResponse.json();
+                
+                if (endpointsData.success) {
+                    updateEndpointsChart(endpointsData.endpoints);
+                    updateEndpointList(endpointsData.endpoints);
+                }
+                
+            } catch (error) {
+                console.error('Error loading insights:', error);
+                document.getElementById('statsGrid').innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; color: #ff6b6b;">
+                        Error loading insights data. Please try again.
+                    </div>
+                `;
+            }
+        }
+        
+        function updateStatsCards(data) {
+            const grid = document.getElementById('statsGrid');
+            grid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Total Requests</div>
+                    <div class="stat-value">${data.total_requests.toLocaleString()}</div>
+                    <div class="stat-subtitle">${data.period_days} days</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Data Usage</div>
+                    <div class="stat-value">${data.total_megabytes.toFixed(2)} MB</div>
+                    <div class="stat-subtitle">Metered billing</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Active Days</div>
+                    <div class="stat-value">${data.active_days}</div>
+                    <div class="stat-subtitle">of ${data.period_days} days</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Avg Daily Requests</div>
+                    <div class="stat-value">${Math.round(data.avg_requests_per_day)}</div>
+                    <div class="stat-subtitle">per active day</div>
+                </div>
+            `;
+        }
+        
+        function updateUsageChart(dailyUsage) {
+            const ctx = document.getElementById('usageChart').getContext('2d');
+            
+            if (usageChart) {
+                usageChart.destroy();
+            }
+            
+            const labels = dailyUsage.map(d => new Date(d.date).toLocaleDateString());
+            const data = dailyUsage.map(d => d.request_count);
+            
+            usageChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.reverse(),
+                    datasets: [{
+                        label: 'API Requests',
+                        data: data.reverse(),
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        function updateEndpointsChart(endpoints) {
+            const ctx = document.getElementById('endpointsChart').getContext('2d');
+            
+            if (endpointsChart) {
+                endpointsChart.destroy();
+            }
+            
+            const top10 = endpoints.slice(0, 10);
+            const labels = top10.map(e => `${e.method} ${e.path}`);
+            const data = top10.map(e => e.count);
+            
+            endpointsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Request Count',
+                        data: data,
+                        backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                        borderColor: '#667eea',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        function updateEndpointList(endpoints) {
+            const list = document.getElementById('endpointList');
+            list.innerHTML = endpoints.slice(0, 10).map(e => `
+                <div class="endpoint-item">
+                    <div>
+                        <span class="endpoint-method method-${e.method}">${e.method}</span>
+                        <span class="endpoint-path">${e.path}</span>
+                        <div style="font-size: 0.85em; color: #888; margin-top: 5px;">
+                            Success Rate: ${e.success_rate}%
+                        </div>
+                    </div>
+                    <div class="endpoint-count">${e.count.toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+        
+        function updateBillingInfo(billingPeriod) {
+            const info = document.getElementById('billingInfo');
+            const estimatedCost = (billingPeriod.megabytes * 0.10).toFixed(2);
+            
+            info.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">This Month's Requests</div>
+                        <div class="stat-value">${billingPeriod.requests.toLocaleString()}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Billable Data</div>
+                        <div class="stat-value">${billingPeriod.megabytes} MB</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Estimated Cost</div>
+                        <div class="stat-value">$${estimatedCost}</div>
+                        <div class="stat-subtitle">$0.10 per MB</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; padding: 15px; background: rgba(102, 126, 234, 0.05); border-radius: 8px;">
+                    <p style="color: #888; margin: 0;">
+                        💡 <strong>Billing Note:</strong> Usage is automatically reported to Stripe in real-time. 
+                        Your next invoice will include these charges.
+                    </p>
+                </div>
+            `;
+        }
+        
+        // Load data when authenticated
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                loadInsightsData();
+            } else {
+                window.location.href = '/login';
+            }
+        });
+    </script>
+</body>
+</html>

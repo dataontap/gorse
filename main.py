@@ -5691,13 +5691,19 @@ def resend_esim_activation_email():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# Initialize MCP Auth Manager
+# Initialize MCP Usage Service and Auth Manager
 try:
+    from mcp_usage_service import MCPUsageService
     from mcp_auth import MCPAuthManager
-    mcp_auth_manager = MCPAuthManager(get_db_connection)
-    print("MCP Auth Manager initialized successfully")
+    
+    mcp_usage_service = MCPUsageService(get_db_connection)
+    mcp_usage_service.ensure_billing_table_exists()
+    
+    mcp_auth_manager = MCPAuthManager(get_db_connection, usage_service=mcp_usage_service)
+    print("MCP Usage Service and Auth Manager initialized successfully")
 except Exception as e:
-    print(f"Error initializing MCP Auth Manager: {str(e)}")
+    print(f"Error initializing MCP services: {str(e)}")
+    mcp_usage_service = None
     mcp_auth_manager = None
 
 
@@ -5829,6 +5835,49 @@ def validate_mcp_key():
             
     except Exception as e:
         return jsonify({'valid': False, 'error': str(e)}), 500
+
+
+# MCP Usage Analytics Endpoints
+@app.route('/insights', methods=['GET'])
+def insights_page():
+    """MCP Usage Insights Page"""
+    return render_template('insights.html')
+
+
+@app.route('/api/mcp/usage/stats', methods=['GET'])
+@firebase_auth_required
+def get_mcp_usage_stats(user):
+    """Get MCP usage statistics for authenticated user"""
+    try:
+        if not mcp_usage_service:
+            return jsonify({'success': False, 'error': 'Usage service not initialized'}), 500
+        
+        days = int(request.args.get('days', 30))
+        firebase_uid = user.get('uid')
+        
+        stats = mcp_usage_service.get_user_usage_stats(firebase_uid, days)
+        return jsonify(stats)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/mcp/usage/endpoints', methods=['GET'])
+@firebase_auth_required
+def get_mcp_usage_by_endpoint(user):
+    """Get MCP usage breakdown by endpoint"""
+    try:
+        if not mcp_usage_service:
+            return jsonify({'success': False, 'error': 'Usage service not initialized'}), 500
+        
+        days = int(request.args.get('days', 7))
+        firebase_uid = user.get('uid')
+        
+        endpoint_stats = mcp_usage_service.get_usage_by_endpoint(firebase_uid, days)
+        return jsonify(endpoint_stats)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 if __name__ == '__main__':
