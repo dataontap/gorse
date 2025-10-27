@@ -447,13 +447,25 @@
         }
         
         // Initialize
+        // Add timeout fallback in case auth takes too long
+        const authTimeout = setTimeout(() => {
+            console.log('Authentication timeout - redirecting to login');
+            window.location.href = '/login';
+        }, 5000);
+        
         firebase.auth().onAuthStateChanged(async (user) => {
+            clearTimeout(authTimeout);
+            
             if (user) {
+                console.log('User authenticated:', user.email);
                 const hasAccess = await checkOwnerAccess();
                 if (hasAccess) {
                     await loadAdminStats();
+                } else {
+                    console.log('Access denied - not owner');
                 }
             } else {
+                console.log('No authenticated user - redirecting to login');
                 window.location.href = '/login';
             }
         });
