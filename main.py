@@ -5695,16 +5695,21 @@ def resend_esim_activation_email():
 try:
     from mcp_usage_service import MCPUsageService
     from mcp_auth import MCPAuthManager
+    from data_usage_monitor import DataUsageMonitor
     
     mcp_usage_service = MCPUsageService(get_db_connection)
     mcp_usage_service.ensure_billing_table_exists()
     
     mcp_auth_manager = MCPAuthManager(get_db_connection, usage_service=mcp_usage_service)
-    print("MCP Usage Service and Auth Manager initialized successfully")
+    
+    data_usage_monitor = DataUsageMonitor(get_db_connection)
+    
+    print("MCP Usage Service, Auth Manager, and Data Usage Monitor initialized successfully")
 except Exception as e:
     print(f"Error initializing MCP services: {str(e)}")
     mcp_usage_service = None
     mcp_auth_manager = None
+    data_usage_monitor = None
 
 
 # MCP API Key Management Endpoints
@@ -5875,6 +5880,150 @@ def get_mcp_usage_by_endpoint(user):
         
         endpoint_stats = mcp_usage_service.get_usage_by_endpoint(firebase_uid, days)
         return jsonify(endpoint_stats)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Real-Time Data Usage Endpoints
+@app.route('/data-usage', methods=['GET'])
+def data_usage_page():
+    """Real-time data usage monitoring page"""
+    return render_template('data_usage.html')
+
+
+@app.route('/api/data-usage/realtime', methods=['GET'])
+@firebase_auth_required
+def get_realtime_data_usage(user):
+    """Get real-time data usage metrics for authenticated user"""
+    try:
+        if not data_usage_monitor:
+            return jsonify({'success': False, 'error': 'Data usage monitor not initialized'}), 500
+        
+        firebase_uid = user.get('uid')
+        metrics = data_usage_monitor.get_realtime_metrics(firebase_uid)
+        return jsonify(metrics)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/data-usage/history', methods=['GET'])
+@firebase_auth_required
+def get_data_usage_history(user):
+    """Get historical data usage for charting"""
+    try:
+        if not data_usage_monitor:
+            return jsonify({'success': False, 'error': 'Data usage monitor not initialized'}), 500
+        
+        firebase_uid = user.get('uid')
+        hours = int(request.args.get('hours', 24))
+        interval = int(request.args.get('interval', 5))
+        
+        history = data_usage_monitor.get_usage_history(firebase_uid, hours, interval)
+        return jsonify(history)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/data-usage/log', methods=['POST'])
+@firebase_auth_required
+def log_data_usage_event(user):
+    """Log a data usage event (for testing or external integration)"""
+    try:
+        if not data_usage_monitor:
+            return jsonify({'success': False, 'error': 'Data usage monitor not initialized'}), 500
+        
+        data = request.get_json()
+        firebase_uid = user.get('uid')
+        
+        # Get user's Stripe customer ID
+        stripe_customer_id = None
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    result = cur.fetchone()
+                    if result:
+                        stripe_customer_id = result[0]
+        
+        result = data_usage_monitor.log_usage_event(
+            firebase_uid=firebase_uid,
+            network_type=data.get('network_type', '4G'),
+            connection_type=data.get('connection_type', 'Mobile'),
+            speed_mbps=float(data.get('speed_mbps', 0)),
+            data_used_mb=float(data.get('data_used_mb', 0)),
+            priority=data.get('priority'),
+            provider=data.get('provider'),
+            session_id=data.get('session_id'),
+            device_id=data.get('device_id'),
+            ip_address=request.remote_addr,
+            stripe_customer_id=stripe_customer_id
+        )
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/data-usage/simulate', methods=['POST'])
+@firebase_auth_required
+def simulate_data_usage(user):
+    """Simulate realistic data usage for demo purposes"""
+    try:
+        if not data_usage_monitor:
+            return jsonify({'success': False, 'error': 'Data usage monitor not initialized'}), 500
+        
+        import random
+        import uuid
+        
+        firebase_uid = user.get('uid')
+        
+        # Get user's Stripe customer ID
+        stripe_customer_id = None
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT stripe_customer_id FROM users WHERE firebase_uid = %s", (firebase_uid,))
+                    result = cur.fetchone()
+                    if result:
+                        stripe_customer_id = result[0]
+        
+        # Simulate realistic data usage patterns
+        network_types = ['4G', '5G']
+        connection_types = ['Mobile', 'Home']
+        priorities = ['High', 'Medium', 'Low']
+        providers = ['OXIO', 'Verizon', 'AT&T', 'T-Mobile']
+        
+        network_type = random.choice(network_types)
+        connection_type = random.choice(connection_types)
+        
+        # Realistic speed ranges
+        if network_type == '5G':
+            speed_mbps = random.uniform(100, 500)
+        else:
+            speed_mbps = random.uniform(10, 100)
+        
+        # Simulate data consumption (0.5 - 50 MB per event)
+        data_used_mb = random.uniform(0.5, 50)
+        
+        result = data_usage_monitor.log_usage_event(
+            firebase_uid=firebase_uid,
+            network_type=network_type,
+            connection_type=connection_type,
+            speed_mbps=speed_mbps,
+            data_used_mb=data_used_mb,
+            priority=random.choice(priorities),
+            provider=random.choice(providers),
+            session_id=str(uuid.uuid4()),
+            device_id='demo_device',
+            ip_address=request.remote_addr,
+            stripe_customer_id=stripe_customer_id
+        )
+        
+        return jsonify(result)
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

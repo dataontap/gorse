@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Data Usage - DOTM Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="/static/firebase-init.js"></script>
+    <style>
+        .data-usage-container {
+            max-width: 1600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .page-header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .page-header .subtitle {
+            color: #888;
+            font-size: 1.1em;
+        }
+        
+        .highlights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .highlight-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s;
+        }
+        
+        .highlight-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .highlight-label {
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .highlight-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .highlight-subtitle {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .network-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.2em;
+        }
+        
+        .badge-4g {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .badge-5g {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .chart-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .dark-mode .chart-title {
+            color: #fff;
+        }
+        
+        .chart-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .refresh-btn.spinning i {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .auto-refresh-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95em;
+            color: #666;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: #667eea;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .cost-highlight {
+            font-size: 2.5em !important;
+            color: #10b981 !important;
+        }
+        
+        .priority-high { color: #ef4444; }
+        .priority-medium { color: #f59e0b; }
+        .priority-low { color: #10b981; }
+    </style>
+</head>
+<body>
+    <div class="data-usage-container">
+        <div class="page-header">
+            <h1>📡 Real-Time Data Usage Monitor</h1>
+            <p class="subtitle">Live network performance and metered billing tracking</p>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Live Data Stream Active</span>
+            </div>
+        </div>
+        
+        <!-- Highlights Section -->
+        <div class="highlights-grid">
+            <div class="highlight-card">
+                <div class="highlight-label">Network Type</div>
+                <div class="highlight-value">
+                    <span id="networkType" class="network-badge badge-4g">4G</span>
+                </div>
+                <div class="highlight-subtitle" id="connectionType">Mobile</div>
+            </div>
+            
+            <div class="highlight-card">
+                <div class="highlight-label">Speed</div>
+                <div class="highlight-value" id="speedMbps">0.0</div>
+                <div class="highlight-subtitle">Mbps</div>
+            </div>
+            
+            <div class="highlight-card">
+                <div class="highlight-label">Priority</div>
+                <div class="highlight-value priority-high" id="priority">N/A</div>
+                <div class="highlight-subtitle">Connection Priority</div>
+            </div>
+            
+            <div class="highlight-card">
+                <div class="highlight-label">Provider</div>
+                <div class="highlight-value" id="provider" style="font-size: 1.5em;">N/A</div>
+                <div class="highlight-subtitle">Internet Provider</div>
+            </div>
+            
+            <div class="highlight-card" style="border-left-color: #10b981;">
+                <div class="highlight-label">Data Usage (Hour)</div>
+                <div class="highlight-value cost-highlight" id="dataGbHour">0.0</div>
+                <div class="highlight-subtitle">GB per hour at current rate</div>
+            </div>
+            
+            <div class="highlight-card" style="border-left-color: #10b981;">
+                <div class="highlight-label">Cost (Hour)</div>
+                <div class="highlight-value cost-highlight" id="costHour">$0.0</div>
+                <div class="highlight-subtitle">per hour at current rate</div>
+            </div>
+        </div>
+        
+        <!-- Real-Time Chart -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3 class="chart-title">📊 Data Usage Over Time</h3>
+                <div class="chart-controls">
+                    <div class="auto-refresh-toggle">
+                        <span>Auto-Refresh</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoRefreshToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <button class="refresh-btn" id="manualRefresh">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh Now
+                    </button>
+                    <button class="refresh-btn" id="simulateBtn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                        <i class="fas fa-flask"></i>
+                        Simulate Data
+                    </button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="dataUsageChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Today's Summary -->
+        <div class="chart-container">
+            <h3 class="chart-title">📅 Today's Summary</h3>
+            <div class="highlights-grid">
+                <div class="highlight-card">
+                    <div class="highlight-label">Total Data Used</div>
+                    <div class="highlight-value" id="dataGbToday">0.0</div>
+                    <div class="highlight-subtitle">GB today</div>
+                </div>
+                
+                <div class="highlight-card">
+                    <div class="highlight-label">Total Cost</div>
+                    <div class="highlight-value" id="costToday">$0.00</div>
+                    <div class="highlight-subtitle">billed today</div>
+                </div>
+                
+                <div class="highlight-card">
+                    <div class="highlight-label">Last Updated</div>
+                    <div class="highlight-value" id="lastUpdated" style="font-size: 1.2em;">--:--</div>
+                    <div class="highlight-subtitle">time</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/firebase-auth.js"></script>
+    <script>
+        let dataChart;
+        let autoRefreshInterval;
+        let isAutoRefresh = true;
+        const REFRESH_RATE = 5000; // 5 seconds for high refresh rate
+        
+        // Initialize chart
+        function initializeChart() {
+            const ctx = document.getElementById('dataUsageChart').getContext('2d');
+            
+            dataChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Data Usage (GB)',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Data (GB)'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+        
+        // Load real-time metrics
+        async function loadRealtimeMetrics() {
+            try {
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+                
+                const token = await user.getIdToken();
+                const response = await fetch('/api/data-usage/realtime', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.metrics) {
+                    updateHighlights(data.metrics);
+                }
+            } catch (error) {
+                console.error('Error loading real-time metrics:', error);
+            }
+        }
+        
+        // Load usage history for chart
+        async function loadUsageHistory() {
+            try {
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+                
+                const token = await user.getIdToken();
+                const response = await fetch('/api/data-usage/history?hours=24', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.history) {
+                    updateChart(data.history);
+                }
+            } catch (error) {
+                console.error('Error loading usage history:', error);
+            }
+        }
+        
+        // Update highlights section
+        function updateHighlights(metrics) {
+            // Network Type & Connection
+            const networkEl = document.getElementById('networkType');
+            networkEl.textContent = metrics.network_type || 'N/A';
+            networkEl.className = 'network-badge ' + (metrics.network_type === '5G' ? 'badge-5g' : 'badge-4g');
+            
+            document.getElementById('connectionType').textContent = metrics.connection_type || 'N/A';
+            
+            // Speed
+            document.getElementById('speedMbps').textContent = metrics.speed_mbps?.toFixed(1) || '0.0';
+            
+            // Priority
+            const priorityEl = document.getElementById('priority');
+            priorityEl.textContent = metrics.priority || 'N/A';
+            priorityEl.className = `highlight-value priority-${(metrics.priority || 'low').toLowerCase()}`;
+            
+            // Provider
+            document.getElementById('provider').textContent = metrics.provider || 'N/A';
+            
+            // Hourly usage and cost
+            document.getElementById('dataGbHour').textContent = metrics.data_gb_hour?.toFixed(1) || '0.0';
+            document.getElementById('costHour').textContent = '$' + (metrics.cost_usd_hour?.toFixed(1) || '0.0');
+            
+            // Today's totals
+            document.getElementById('dataGbToday').textContent = metrics.data_gb_today?.toFixed(1) || '0.0';
+            document.getElementById('costToday').textContent = '$' + (metrics.cost_usd_today?.toFixed(2) || '0.00');
+            
+            // Last updated
+            if (metrics.last_updated) {
+                const time = new Date(metrics.last_updated);
+                document.getElementById('lastUpdated').textContent = time.toLocaleTimeString();
+            }
+        }
+        
+        // Update chart with history data
+        function updateChart(history) {
+            if (!dataChart || !history.length) return;
+            
+            const labels = history.map(h => {
+                const time = new Date(h.timestamp);
+                return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            });
+            
+            const data = history.map(h => h.data_gb);
+            
+            dataChart.data.labels = labels;
+            dataChart.data.datasets[0].data = data;
+            dataChart.update('none'); // Update without animation for smooth real-time feel
+        }
+        
+        // Refresh all data
+        async function refreshData() {
+            const btn = document.getElementById('manualRefresh');
+            btn.classList.add('spinning');
+            
+            await Promise.all([
+                loadRealtimeMetrics(),
+                loadUsageHistory()
+            ]);
+            
+            setTimeout(() => btn.classList.remove('spinning'), 500);
+        }
+        
+        // Auto-refresh toggle
+        document.getElementById('autoRefreshToggle').addEventListener('change', (e) => {
+            isAutoRefresh = e.target.checked;
+            
+            if (isAutoRefresh) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        });
+        
+        // Manual refresh button
+        document.getElementById('manualRefresh').addEventListener('click', refreshData);
+        
+        // Simulate data button
+        document.getElementById('simulateBtn').addEventListener('click', async () => {
+            try {
+                const user = firebase.auth().currentUser;
+                if (!user) return;
+                
+                const token = await user.getIdToken();
+                await fetch('/api/data-usage/simulate', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Refresh data after simulation
+                setTimeout(refreshData, 500);
+            } catch (error) {
+                console.error('Error simulating data:', error);
+            }
+        });
+        
+        // Start auto-refresh
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            
+            autoRefreshInterval = setInterval(() => {
+                if (isAutoRefresh) {
+                    refreshData();
+                }
+            }, REFRESH_RATE);
+        }
+        
+        // Stop auto-refresh
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+        
+        // Initialize when authenticated
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                initializeChart();
+                refreshData();
+                startAutoRefresh();
+            } else {
+                window.location.href = '/login';
+            }
+        });
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopAutoRefresh();
+        });
+    </script>
+</body>
+</html>
