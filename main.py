@@ -2526,7 +2526,7 @@ def get_admin_stats():
                 # Get help desk ticket count
                 cur.execute("""
                     SELECT COUNT(*) FROM user_message_history 
-                    WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+                    WHERE listened_at >= CURRENT_DATE - INTERVAL '7 days'
                 """)
                 recent_tickets = cur.fetchone()[0] or 0
                 
