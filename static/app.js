@@ -4532,7 +4532,7 @@ async function loadDOTMBalance() {
         // Get Firebase ID token
         const user = firebase.auth().currentUser;
         if (!user) {
-            tokenBalancePill.innerHTML = '0.00 DOTM';
+            tokenBalancePill.innerHTML = '-- DOTM';
             return;
         }
 
@@ -4548,7 +4548,7 @@ async function loadDOTMBalance() {
 
         if (data.error) {
             console.error('Error fetching DOTM balance:', data.error);
-            tokenBalancePill.innerHTML = '0.00 DOTM';
+            tokenBalancePill.innerHTML = '-- DOTM';
         } else {
             // Display balance with sync icon in the format "100.33 DOTM"
             tokenBalancePill.innerHTML = `
@@ -4566,7 +4566,7 @@ async function loadDOTMBalance() {
         }
     } catch (error) {
         console.error('Error loading DOTM balance:', error);
-        tokenBalancePill.innerHTML = '0.00 DOTM';
+        tokenBalancePill.innerHTML = '-- DOTM';
     }
 }
 
