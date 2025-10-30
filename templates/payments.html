@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>dot.</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.css" rel="stylesheet">
@@ -17,6 +19,76 @@
     
     <!-- Authentication Guard -->
     <script src="/static/auth-guard.js"></script>
+    
+    <style>
+        /* Mobile-friendly styles */
+        .copy-btn {
+            font-size: 0.8em;
+            padding: 6px 10px;
+            margin-left: 5px;
+            min-width: 44px;
+            min-height: 44px;
+        }
+
+        .text-break {
+            word-break: break-all;
+            word-wrap: break-word;
+        }
+
+        .font-monospace {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+        }
+
+        .btn-group .btn {
+            margin: 0 2px;
+        }
+
+        /* Ensure cards are mobile responsive */
+        @media (max-width: 768px) {
+            .wallet-card {
+                padding: 15px !important;
+            }
+            
+            .wallet-balance {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .balance-amount {
+                font-size: 2em !important;
+            }
+            
+            .wallet-symbol {
+                font-size: 1.2em !important;
+            }
+            
+            .token-refresh-btn {
+                margin: 5px 0 !important;
+            }
+            
+            .payment-card {
+                margin-bottom: 15px;
+            }
+            
+            .btn {
+                min-width: 44px;
+                min-height: 44px;
+            }
+            
+            .container {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+        }
+        
+        /* Touch-friendly buttons */
+        button, .btn, a.btn {
+            min-width: 44px;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+    </style>
 </head>
 <body class="dashboard-body">
     <div class="top-bar">
@@ -111,7 +183,7 @@
                 <div class="wallet-card token-stats metamask-card">
                     <div class="wallet-content">
                         <div class="wallet-balance" style="display: flex; align-items: center; justify-content: center; width: 100%;">
-                            <span class="balance-amount">100</span>
+                            <span class="balance-amount">--</span>
                             <span class="wallet-symbol">DOTM</span>
                             <button class="btn btn-sm btn-outline-secondary token-refresh-btn" style="margin: 0 10px;" title="Refresh balance" onclick="refreshBalance()">
                                 <i class="fas fa-sync-alt"></i>
@@ -923,7 +995,7 @@
                 });
                 const data = await response.json();
 
-                if (!data.error) {
+                if (!data.error && data.balance !== null && data.balance !== undefined) {
                     document.querySelector('.balance-amount').textContent = data.balance.toFixed(2);
                     statusIndicator.innerHTML = '<span style="color:green">✓ Updated from Sepolia <span class="update-time">just now</span></span>';
 
@@ -935,6 +1007,9 @@
 
                     // Update wallet details
                     updateWalletDetails(data);
+                } else {
+                    // Keep the default "--" if no balance
+                    statusIndicator.innerHTML = '<span style="color:#999">No wallet data</span>';
 
                     // Start a timer to update the timestamp
                     const updateTimeEl = statusIndicator.querySelector('.update-time');
@@ -1023,14 +1098,16 @@
                 });
                 const data = await response.json();
 
-                if (!data.error) {
+                if (!data.error && data.balance !== null && data.balance !== undefined) {
                     document.querySelector('.balance-amount').textContent = data.balance.toFixed(2);
                     
                     // Update wallet details
                     updateWalletDetails(data);
                 }
+                // If no balance, keep the default "--" value
             } catch (error) {
                 console.error('Error loading initial balance:', error);
+                // Keep the default "--" value on error
             }
         }
 
