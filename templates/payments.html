@@ -183,7 +183,7 @@
                 <div class="wallet-card token-stats metamask-card">
                     <div class="wallet-content">
                         <div class="wallet-balance" style="display: flex; align-items: center; justify-content: center; width: 100%;">
-                            <span class="balance-amount">0</span>
+                            <span class="balance-amount">--</span>
                             <span class="wallet-symbol">DOTM</span>
                             <button class="btn btn-sm btn-outline-secondary token-refresh-btn" style="margin: 0 10px;" title="Refresh balance" onclick="refreshBalance()">
                                 <i class="fas fa-sync-alt"></i>
@@ -1074,11 +1074,15 @@
                             document.head.appendChild(style);
                         }
                 } else {
+                    // Keep the default "--" if no valid balance
+                    document.querySelector('.balance-amount').textContent = '--';
                     statusIndicator.innerHTML = '<span style="color:red">Error updating from Sepolia</span>';
                 }
                 refreshButton.classList.remove('rotating');
             } catch (error) {
                 console.error('Error fetching balance:', error);
+                // Keep the default "--" on error
+                document.querySelector('.balance-amount').textContent = '--';
                 statusIndicator.innerHTML = '<span style="color:red">Failed to connect to Sepolia</span>';
                 refreshButton.classList.remove('rotating');
             }
