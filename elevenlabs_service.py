@@ -151,10 +151,6 @@ class ElevenLabsService:
         return self.text_to_speech(message_text, voice_id, language, voice_settings)
     
     def _generate_english_message(self, user_name, day_name, date_str, location_data=None, events_data=None, time_data=None, context_data=None):
-        name_part = ""
-        if user_name:
-            name_part = f"Hello {user_name}! Am I pronouncing your name correctly? "
-        
         # Build location and time specific greeting
         location_time_part = ""
         if location_data and location_data.get('success'):
@@ -192,10 +188,16 @@ class ElevenLabsService:
             if isp:
                 isp_part = f"\n\nI notice you're connecting through {isp}. Even before becoming a full member with an annual membership, you're already gaining insights about your network connectivity just by joining our community."
         
+        # Build name acknowledgment (after brand message)
+        name_acknowledgment = ""
+        if user_name:
+            name_acknowledgment = f"\n\nHello {user_name}! I hope I'm pronouncing your name correctly."
+        
         return f"""
-        {name_part}Welcome to our community. We are building the connectivity network of the future for Canadians anywhere.{location_time_part}
+        Welcome to our community. We are building the connectivity network of the future for Canadians anywhere.{location_time_part}
         {context_part}
         {isp_part}
+        {name_acknowledgment}
         
         You've just become part of something revolutionary - a wireless service that works everywhere on Earth and even up to 15 kilometers above it. Whether you're traveling across continents or exploring new heights, we've got you covered.
         
