@@ -11,6 +11,15 @@ class GlobalAudioPlayer {
     }
 
     init() {
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.initAudioPlayer());
+        } else {
+            this.initAudioPlayer();
+        }
+    }
+
+    initAudioPlayer() {
         // Create audio element if it doesn't exist
         if (!document.getElementById('globalAudioPlayer')) {
             this.audio = document.createElement('audio');
@@ -29,11 +38,14 @@ class GlobalAudioPlayer {
 
         // Restore state if exists
         this.restoreState();
+        
+        console.log('Global audio player fully initialized with mini player');
     }
 
     createMiniPlayer() {
         // Check if mini player already exists
         if (document.getElementById('globalMiniPlayer')) {
+            console.log('Mini player already exists');
             return;
         }
 
@@ -64,6 +76,7 @@ class GlobalAudioPlayer {
         `;
         
         document.body.appendChild(miniPlayer);
+        console.log('Mini player created and added to DOM');
 
         // Set up mini player controls
         document.getElementById('miniPlayerPlayPause').addEventListener('click', () => {
@@ -166,6 +179,14 @@ class GlobalAudioPlayer {
         const miniPlayer = document.getElementById('globalMiniPlayer');
         if (miniPlayer) {
             miniPlayer.style.display = 'flex';
+            console.log('Mini player shown');
+        } else {
+            console.error('Mini player element not found! Creating it now...');
+            this.createMiniPlayer();
+            const newMiniPlayer = document.getElementById('globalMiniPlayer');
+            if (newMiniPlayer) {
+                newMiniPlayer.style.display = 'flex';
+            }
         }
     }
 

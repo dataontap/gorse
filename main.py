@@ -5927,41 +5927,31 @@ def generate_welcome_message():
         
         print(f"🎉 {message_type.capitalize()} message generation requested for: {firebase_uid}")
         
-        # Check if this message type has already been generated
+        # Check if we have cached audio for this SPECIFIC combination
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                        SELECT COUNT(*) FROM user_message_history 
-                        WHERE firebase_uid = %s AND message_type = %s
-                    """, (firebase_uid, message_type))
-                    message_count = cur.fetchone()[0]
+                        SELECT audio_data, content_type FROM welcome_messages 
+                        WHERE firebase_uid = %s AND message_type = %s 
+                        AND language = %s AND voice_profile = %s
+                        ORDER BY created_at DESC LIMIT 1
+                    """, (firebase_uid, message_type, language, voice_profile))
+                    cached_message = cur.fetchone()
                     
-                    if message_count > 0:
-                        print(f"   User has already received {message_type} message. Count: {message_count}")
-                        
-                        # Check if we have cached audio
-                        cur.execute("""
-                            SELECT audio_data, content_type FROM welcome_messages 
-                            WHERE firebase_uid = %s AND message_type = %s 
-                            AND language = %s AND voice_profile = %s
-                            ORDER BY created_at DESC LIMIT 1
-                        """, (firebase_uid, message_type, language, voice_profile))
-                        cached_message = cur.fetchone()
-                        
-                        if cached_message:
-                            audio_data, content_type = cached_message
-                            return Response(
-                                audio_data,
-                                mimetype=content_type or 'audio/mpeg',
-                                headers={'X-Message-Type': message_type, 'X-Is-Cached': 'true'}
-                            )
-                        else:
-                            return jsonify({
-                                'success': False,
-                                'error': f'{message_type.capitalize()} message already generated but not cached',
-                                'message': 'Message was previously generated'
-                            }), 400
+                    if cached_message:
+                        print(f"   Returning cached {message_type} message for {language}/{voice_profile}")
+                        audio_data, content_type = cached_message
+                        return Response(
+                            audio_data,
+                            mimetype=content_type or 'audio/mpeg',
+                            headers={
+                                'X-Message-Type': message_type,
+                                'X-Is-Cached': 'true',
+                                'X-Language': language,
+                                'X-Voice-Profile': voice_profile
+                            }
+                        )
         
         # Get user details
         user_name = None
@@ -6071,23 +6061,33 @@ def generate_welcome_message():
                 if context_obj:
                     location_context_json = json_lib.dumps(context_obj)
             
-            # Save to welcome_messages table for caching
+            # Save to welcome_messages table for caching (use ON CONFLICT to handle duplicates)
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
-                        # Save the audio to database with context
+                        # Save the audio to database with context (update if exists)
                         if audio_data:
                             cur.execute("""
                                 INSERT INTO welcome_messages 
                                 (firebase_uid, language, voice_profile, message_type, audio_data, content_type, generation_time_ms, location_context, generated_at_local_time)
                                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                ON CONFLICT (firebase_uid, language, voice_profile, message_type)
+                                DO UPDATE SET 
+                                    audio_data = EXCLUDED.audio_data,
+                                    content_type = EXCLUDED.content_type,
+                                    generation_time_ms = EXCLUDED.generation_time_ms,
+                                    location_context = EXCLUDED.location_context,
+                                    generated_at_local_time = EXCLUDED.generated_at_local_time,
+                                    created_at = CURRENT_TIMESTAMP
                             """, (firebase_uid, language, voice_profile, message_type, audio_data, content_type, generation_time_ms, location_context_json, local_timestamp))
                         
-                        # Record in user_message_history
+                        # Record in user_message_history (update if exists)
                         cur.execute("""
                             INSERT INTO user_message_history 
                             (firebase_uid, message_type, language, voice_profile, completed)
                             VALUES (%s, %s, %s, %s, %s)
+                            ON CONFLICT (firebase_uid, message_type, language, voice_profile)
+                            DO UPDATE SET completed = EXCLUDED.completed
                         """, (firebase_uid, message_type, language, voice_profile, True))
                         conn.commit()
             
