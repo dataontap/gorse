@@ -1207,18 +1207,47 @@
                     voice_profile: voiceProfile
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.audio_url) {
-                    // Store both audio URL and message type
-                    preloadedMessages[key] = {
-                        audioUrl: data.audio_url,
-                        messageType: data.message_type || 'welcome'
-                    };
-                    currentMessageType = data.message_type || 'welcome';  // Store message type
-                    loadAndPlayAudio(data.audio_url);
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                const messageType = response.headers.get('X-Message-Type') || 'welcome';
+                
+                // Check if response is audio blob or JSON
+                if (contentType && contentType.includes('audio')) {
+                    currentMessageType = messageType;
+                    // Return blob for audio data
+                    return response.blob().then(blob => ({
+                        isBlob: true,
+                        blob: blob,
+                        messageType: messageType
+                    }));
                 } else {
-                    alert('Error generating welcome message: ' + (data.error || 'Unknown error'));
+                    // Return JSON data
+                    return response.json().then(data => ({
+                        isBlob: false,
+                        data: data
+                    }));
+                }
+            })
+            .then(result => {
+                if (result.isBlob) {
+                    // Handle blob audio data
+                    const audioUrl = URL.createObjectURL(result.blob);
+                    preloadedMessages[key] = {
+                        audioUrl: audioUrl,
+                        messageType: result.messageType
+                    };
+                    currentMessageType = result.messageType;
+                    loadAndPlayAudio(audioUrl);
+                } else if (result.data.success && result.data.audio_url) {
+                    // Handle JSON response with audio URL
+                    preloadedMessages[key] = {
+                        audioUrl: result.data.audio_url,
+                        messageType: result.data.message_type || 'welcome'
+                    };
+                    currentMessageType = result.data.message_type || 'welcome';
+                    loadAndPlayAudio(result.data.audio_url);
+                } else {
+                    alert('Error generating welcome message: ' + (result.data.error || 'Unknown error'));
                     playBtn.disabled = false;
                     playBtn.innerHTML = '<i class="fas fa-play"></i>';
                 }
