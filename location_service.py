@@ -1,5 +1,7 @@
 import requests
 from typing import Dict, Optional
+from datetime import datetime
+import pytz
 
 class LocationService:
     """Service for IP-based location and ISP detection"""
@@ -94,6 +96,67 @@ class LocationService:
             parts.append(country)
         
         return ', '.join(parts) if parts else "your location"
+    
+    def get_local_time(self, timezone_str: str) -> Dict:
+        """
+        Get current local time for a given timezone
+        
+        Args:
+            timezone_str: Timezone string (e.g., 'America/Toronto')
+            
+        Returns:
+            dict with local time information
+        """
+        try:
+            if not timezone_str:
+                return {
+                    'success': False,
+                    'error': 'No timezone provided'
+                }
+            
+            # Get timezone object
+            tz = pytz.timezone(timezone_str)
+            
+            # Get current time in that timezone
+            now = datetime.now(tz)
+            
+            # Format time for voice message
+            hour = now.hour
+            minute = now.minute
+            
+            # Determine time of day
+            if 5 <= hour < 12:
+                time_of_day = "morning"
+            elif 12 <= hour < 17:
+                time_of_day = "afternoon"
+            elif 17 <= hour < 21:
+                time_of_day = "evening"
+            else:
+                time_of_day = "night"
+            
+            # Format time string
+            time_12h = now.strftime("%I:%M %p").lstrip('0')  # Remove leading zero
+            time_24h = now.strftime("%H:%M")
+            
+            return {
+                'success': True,
+                'timezone': timezone_str,
+                'datetime': now.isoformat(),
+                'time_12h': time_12h,
+                'time_24h': time_24h,
+                'hour': hour,
+                'minute': minute,
+                'time_of_day': time_of_day,
+                'date': now.strftime("%B %d, %Y"),  # e.g., "October 31, 2025"
+                'day_of_week': now.strftime("%A")  # e.g., "Friday"
+            }
+            
+        except Exception as e:
+            print(f"Error getting local time: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
 
 # Create singleton instance
 location_service = LocationService()
