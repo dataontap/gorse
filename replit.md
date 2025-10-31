@@ -77,13 +77,34 @@ A dedicated MCP server provides AI assistants with structured access to service 
 
 The user profile page is designed to display eSIM information and phone numbers clearly. API responses are formatted to match frontend expectations, including specific field mappings and JSON structures with success flags.
 
-**Personalized Welcome Messages**: The platform generates location-aware, first-login-only welcome messages via the `/api/welcome-message/generate` endpoint. Features include:
-- First-login enforcement: Uses `user_message_history` table to ensure welcome messages are only generated once per user based on their join date (`created_at` field)
-- IP-based location detection: Automatically detects user's city, region, and country using IP-API.com (free, no API key required)
-- ISP recognition: Identifies the user's internet service provider and contextualizes network insights available even before purchasing annual membership
-- Local events awareness (optional): Mentions recent events from the past 30 days in the user's location via Ticketmaster API if configured
-- ElevenLabs voice synthesis: Delivers personalized audio messages in 30+ languages with custom voice profiles
-- All location, ISP, and events data is cached in the `welcome_messages` table for efficient delivery
+**Progressive Personalized Messaging**: The platform delivers evolving personalized audio messages based on user login patterns:
+
+*First Login - Welcome Message* (`/api/message/get-current`):
+- Location-aware greeting with IP-based city, region, and country detection via IP-API.com (free, no API key)
+- ISP recognition contextualizing network insights available before membership purchase
+- Optional local events from past 30 days via Ticketmaster API
+- Personalized with user's join date from database
+
+*Second Login - Tip Message*:
+- Platform usage tips and feature discovery
+- Best practices for network optimization
+- No location/events data (focused on actionable tips)
+
+*Third Login - Update Message*:
+- Platform news and new feature announcements
+- Service improvements and community updates
+- No location/events data (focused on platform updates)
+
+*Subsequent Logins*:
+- Returns the most recently played message for replay
+- Messages cached indefinitely for user convenience
+
+**Technical Implementation**:
+- `/api/message/get-current` endpoint determines which message to serve based on `user_message_history` table
+- `/api/welcome-message/generate` endpoint generates new messages (accepts `message_type` parameter: welcome, tip, update)
+- All audio cached in `welcome_messages` table with language and voice_profile keys
+- ElevenLabs text-to-speech with 30+ language support and custom voice profiles
+- Response headers include: `X-Message-Type`, `X-Is-New`, `X-Location`, `X-Events-Count`
 
 ### Data Privacy & Security
 
