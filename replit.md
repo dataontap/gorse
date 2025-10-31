@@ -81,9 +81,15 @@ The user profile page is designed to display eSIM information and phone numbers 
 
 *First Login - Welcome Message* (`/api/message/get-current`):
 - Location-aware greeting with IP-based city, region, and country detection via IP-API.com (free, no API key)
+- Local time calculation from timezone data with time-of-day context (morning, afternoon, evening, night)
+- Real-time contextual information via Gemini API with Google Search grounding:
+  - Current weather conditions in user's location
+  - Traffic and transportation updates
+  - Today's events and activities happening locally
 - ISP recognition contextualizing network insights available before membership purchase
-- Optional local events from past 30 days via Ticketmaster API
 - Personalized with user's join date from database
+- All contextual data stored as permanent acquisition records in database
+- Message starts with: "Welcome to our community. We are building the connectivity network of the future for Canadians anywhere,"
 
 *Second Login - Tip Message*:
 - Platform usage tips and feature discovery
@@ -102,9 +108,14 @@ The user profile page is designed to display eSIM information and phone numbers 
 **Technical Implementation**:
 - `/api/message/get-current` endpoint determines which message to serve based on `user_message_history` table
 - `/api/welcome-message/generate` endpoint generates new messages (accepts `message_type` parameter: welcome, tip, update)
-- All audio cached in `welcome_messages` table with language and voice_profile keys
+- All audio cached in `welcome_messages` table with:
+  - `language` and `voice_profile` keys for audio generation
+  - `location_context` JSONB field storing comprehensive acquisition data (location, time, weather, traffic, events)
+  - `generated_at_local_time` timestamp in user's timezone
 - ElevenLabs text-to-speech with 30+ language support and custom voice profiles
-- Response headers include: `X-Message-Type`, `X-Is-New`, `X-Location`, `X-Events-Count`
+- Gemini API with grounding for real-time Google Search results (weather, traffic, events)
+- Location service extracts timezone and calculates local time with time-of-day classification
+- Response headers include: `X-Message-Type`, `X-Is-New`, `X-Location`, `X-Local-Time`, `X-Has-Context`
 
 ### Data Privacy & Security
 
@@ -121,10 +132,10 @@ The platform isolates public service information from sensitive user and transac
 ### Communication & AI Services
 
 -   **ElevenLabs Voice Synthesis**: Provides advanced text-to-speech services with multilingual support and custom voice profiles.
+-   **Google Gemini API**: AI-powered contextual information with Google Search grounding for real-time weather, traffic, and events data.
 -   **OpenAI Integration**: For AI-powered help desk and automated customer support.
 -   **SMTP Email Services**: For transactional emails and notifications.
--   **IP-API.com**: Free IP geolocation and ISP detection service for personalized welcome messages.
--   **Ticketmaster API** (optional): For local events information in welcome messages.
+-   **IP-API.com**: Free IP geolocation, ISP detection, and timezone service for personalized welcome messages.
 
 ### Blockchain & Web3
 
