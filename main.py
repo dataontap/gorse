@@ -5823,10 +5823,10 @@ def resend_esim_activation_email():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@app.route('/api/welcome-message/generate', methods=['POST'])
+@app.route('/api/message/get-current', methods=['POST'])
 @require_auth
-def generate_welcome_message():
-    """Generate personalized welcome message with location, ISP, and local events info - only on first login"""
+def get_current_message():
+    """Get the current message for the user based on their login history - supports progressive messaging"""
     try:
         data = request.get_json()
         firebase_uid = data.get('firebaseUid') or data.get('firebase_uid')
@@ -5836,25 +5836,133 @@ def generate_welcome_message():
         if not firebase_uid:
             return jsonify({'success': False, 'error': 'Firebase UID required'}), 400
         
-        print(f"🎉 Welcome message generation requested for: {firebase_uid}")
+        print(f"📨 Message request for: {firebase_uid}")
         
-        # Check if this is the first login (check user_message_history)
+        # Get user's message history to determine what to show
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    # Get all message types the user has received
+                    cur.execute("""
+                        SELECT message_type, listened_at, language, voice_profile
+                        FROM user_message_history 
+                        WHERE firebase_uid = %s 
+                        ORDER BY listened_at ASC
+                    """, (firebase_uid,))
+                    message_history = cur.fetchall()
+                    
+                    # Determine which message to show
+                    received_types = [msg[0] for msg in message_history]
+                    
+                    # Progressive message logic
+                    if 'welcome' not in received_types:
+                        message_type = 'welcome'
+                        is_new_message = True
+                    elif 'tip' not in received_types:
+                        message_type = 'tip'
+                        is_new_message = True
+                    elif 'update' not in received_types:
+                        message_type = 'update'
+                        is_new_message = True
+                    else:
+                        # User has seen all message types, return the most recent one
+                        message_type = message_history[-1][0] if message_history else 'welcome'
+                        is_new_message = False
+                    
+                    print(f"   Message type: {message_type}, New: {is_new_message}")
+                    
+                    # Check if we have a cached message
+                    cur.execute("""
+                        SELECT audio_data, content_type FROM welcome_messages 
+                        WHERE firebase_uid = %s AND message_type = %s 
+                        AND language = %s AND voice_profile = %s
+                        ORDER BY created_at DESC LIMIT 1
+                    """, (firebase_uid, message_type, language, voice_profile))
+                    cached_message = cur.fetchone()
+                    
+                    if cached_message and not is_new_message:
+                        # Return cached message
+                        print(f"   ✅ Returning cached {message_type} message")
+                        audio_data, content_type = cached_message
+                        
+                        # Return the audio directly
+                        return Response(
+                            audio_data,
+                            mimetype=content_type or 'audio/mpeg',
+                            headers={
+                                'X-Message-Type': message_type,
+                                'X-Is-New': 'false',
+                                'X-Message-Count': str(len(message_history))
+                            }
+                        )
+        
+        # If we need a new message, redirect to generation
+        print(f"   🎬 Generating new {message_type} message")
+        return jsonify({
+            'success': True,
+            'needs_generation': True,
+            'message_type': message_type,
+            'message_count': len(message_history) if 'message_history' in locals() else 0
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting current message: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/welcome-message/generate', methods=['POST'])
+@require_auth
+def generate_welcome_message():
+    """Generate personalized welcome message with location, ISP, and local events info - only on first login"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid') or data.get('firebase_uid')
+        language = data.get('language', 'en')
+        voice_profile = data.get('voice_profile', 'ScienceTeacher')
+        message_type = data.get('message_type', 'welcome')  # Allow specifying message type
+        
+        if not firebase_uid:
+            return jsonify({'success': False, 'error': 'Firebase UID required'}), 400
+        
+        print(f"🎉 {message_type.capitalize()} message generation requested for: {firebase_uid}")
+        
+        # Check if this message type has already been generated
         with get_db_connection() as conn:
             if conn:
                 with conn.cursor() as cur:
                     cur.execute("""
                         SELECT COUNT(*) FROM user_message_history 
-                        WHERE firebase_uid = %s AND message_type = 'welcome'
-                    """, (firebase_uid,))
-                    welcome_count = cur.fetchone()[0]
+                        WHERE firebase_uid = %s AND message_type = %s
+                    """, (firebase_uid, message_type))
+                    message_count = cur.fetchone()[0]
                     
-                    if welcome_count > 0:
-                        print(f"   User has already received welcome message. Count: {welcome_count}")
-                        return jsonify({
-                            'success': False,
-                            'error': 'Welcome message already generated for this user',
-                            'message': 'This is a first-login-only feature'
-                        }), 400
+                    if message_count > 0:
+                        print(f"   User has already received {message_type} message. Count: {message_count}")
+                        
+                        # Check if we have cached audio
+                        cur.execute("""
+                            SELECT audio_data, content_type FROM welcome_messages 
+                            WHERE firebase_uid = %s AND message_type = %s 
+                            AND language = %s AND voice_profile = %s
+                            ORDER BY created_at DESC LIMIT 1
+                        """, (firebase_uid, message_type, language, voice_profile))
+                        cached_message = cur.fetchone()
+                        
+                        if cached_message:
+                            audio_data, content_type = cached_message
+                            return Response(
+                                audio_data,
+                                mimetype=content_type or 'audio/mpeg',
+                                headers={'X-Message-Type': message_type, 'X-Is-Cached': 'true'}
+                            )
+                        else:
+                            return jsonify({
+                                'success': False,
+                                'error': f'{message_type.capitalize()} message already generated but not cached',
+                                'message': 'Message was previously generated'
+                            }), 400
         
         # Get user details
         user_name = None
@@ -5871,68 +5979,100 @@ def generate_welcome_message():
                         user_name = user_result[0]
                         user_created_at = user_result[1]
         
-        # Get IP address from request
-        client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-        if ',' in client_ip:
-            client_ip = client_ip.split(',')[0].strip()
-        
-        print(f"   Client IP: {client_ip}")
-        
-        # Import location and events services
-        from location_service import location_service
-        from events_service import events_service
-        
-        # Get location and ISP data
-        location_data = location_service.get_location_data(client_ip)
-        print(f"   Location data: {location_data}")
-        
-        # Get local events if we have location (optional feature)
+        # Get location and events data only for welcome messages
+        location_data = None
         events_data = None
-        if location_data.get('success') and location_data.get('city'):
-            city = location_data.get('city')
-            country_code = location_data.get('country_code', 'US')
-            try:
-                events_data = events_service.get_recent_events(city, country_code, days_back=30, max_results=5)
-                if events_data and events_data.get('events'):
-                    print(f"   ✅ Found {len(events_data.get('events', []))} local events")
-                else:
-                    print(f"   ℹ️ No events data available (optional feature)")
-            except Exception as e:
-                print(f"   ℹ️ Events lookup skipped: {str(e)} (optional feature)")
-                events_data = None
         
-        # Generate the welcome message with location and events
+        if message_type == 'welcome':
+            # Get IP address from request
+            client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+            if ',' in client_ip:
+                client_ip = client_ip.split(',')[0].strip()
+            
+            print(f"   Client IP: {client_ip}")
+            
+            # Import location and events services
+            from location_service import location_service
+            from events_service import events_service
+            
+            # Get location and ISP data
+            location_data = location_service.get_location_data(client_ip)
+            print(f"   Location data: {location_data}")
+            
+            # Get local events if we have location (optional feature)
+            if location_data.get('success') and location_data.get('city'):
+                city = location_data.get('city')
+                country_code = location_data.get('country_code', 'US')
+                try:
+                    events_data = events_service.get_recent_events(city, country_code, days_back=30, max_results=5)
+                    if events_data and events_data.get('events'):
+                        print(f"   ✅ Found {len(events_data.get('events', []))} local events")
+                    else:
+                        print(f"   ℹ️ No events data available (optional feature)")
+                except Exception as e:
+                    print(f"   ℹ️ Events lookup skipped: {str(e)} (optional feature)")
+                    events_data = None
+        
+        # Generate the message with appropriate data
         result = elevenlabs_service.generate_welcome_message(
             user_name=user_name,
             language=language,
             voice_profile=voice_profile,
-            message_type='welcome',
+            message_type=message_type,
             location_data=location_data,
             events_data=events_data
         )
         
         if result.get('success'):
-            # Record in user_message_history
+            # Get the audio data from the result
+            audio_data = result.get('audio_data')
+            content_type = result.get('content_type', 'audio/mpeg')
+            generation_time_ms = result.get('generation_time_ms')
+            
+            # Save to welcome_messages table for caching
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
+                        # Save the audio to database
+                        if audio_data:
+                            cur.execute("""
+                                INSERT INTO welcome_messages 
+                                (firebase_uid, language, voice_profile, message_type, audio_data, content_type, generation_time_ms)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            """, (firebase_uid, language, voice_profile, message_type, audio_data, content_type, generation_time_ms))
+                        
+                        # Record in user_message_history
                         cur.execute("""
                             INSERT INTO user_message_history 
                             (firebase_uid, message_type, language, voice_profile, completed)
                             VALUES (%s, %s, %s, %s, %s)
-                        """, (firebase_uid, 'welcome', language, voice_profile, True))
+                        """, (firebase_uid, message_type, language, voice_profile, True))
                         conn.commit()
             
-            print(f"   ✅ Welcome message generated successfully")
+            print(f"   ✅ {message_type.capitalize()} message generated and cached successfully")
             
-            return jsonify({
-                'success': True,
-                'audio_url': result.get('audio_url'),
-                'message': 'Welcome message generated successfully',
-                'location': location_data if location_data.get('success') else None,
-                'events_count': len(events_data.get('events', [])) if events_data and events_data.get('success') else 0,
-                'user_joined': user_created_at.isoformat() if user_created_at else None
-            })
+            # Return the audio directly
+            if audio_data:
+                return Response(
+                    audio_data,
+                    mimetype=content_type,
+                    headers={
+                        'X-Message-Type': message_type,
+                        'X-Is-New': 'true',
+                        'X-Location': location_data.get('city', '') if location_data and location_data.get('success') else '',
+                        'X-Events-Count': str(len(events_data.get('events', []))) if events_data and events_data.get('success') else '0'
+                    }
+                )
+            else:
+                return jsonify({
+                    'success': True,
+                    'audio_url': result.get('audio_url'),
+                    'message': f'{message_type.capitalize()} message generated successfully',
+                    'message_type': message_type,
+                    'location': location_data if location_data and location_data.get('success') else None,
+                    'events_count': len(events_data.get('events', [])) if events_data and events_data.get('success') else 0,
+                    'user_joined': user_created_at.isoformat() if user_created_at else None
+                })
         else:
             return jsonify({
                 'success': False,
