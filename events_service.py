@@ -11,7 +11,7 @@ class EventsService:
         self.base_url = "https://app.ticketmaster.com/discovery/v2"
         
         if not self.api_key:
-            print("WARNING: TICKETMASTER_API_KEY not configured. Event fetching will not work.")
+            print("INFO: TICKETMASTER_API_KEY not configured. Events feature is optional and disabled.")
     
     def get_recent_events(self, city: str, country_code: str = 'US', days_back: int = 30, max_results: int = 5) -> Dict:
         """
@@ -27,9 +27,11 @@ class EventsService:
             dict with events data
         """
         if not self.api_key:
+            print("   Events feature skipped - no API key configured (this is optional)")
             return {
                 'success': False,
-                'error': 'Ticketmaster API key not configured'
+                'error': 'Events API not configured (optional feature)',
+                'events': []
             }
         
         try:

@@ -5886,13 +5886,20 @@ def generate_welcome_message():
         location_data = location_service.get_location_data(client_ip)
         print(f"   Location data: {location_data}")
         
-        # Get local events if we have location
+        # Get local events if we have location (optional feature)
         events_data = None
         if location_data.get('success') and location_data.get('city'):
             city = location_data.get('city')
             country_code = location_data.get('country_code', 'US')
-            events_data = events_service.get_recent_events(city, country_code, days_back=30, max_results=5)
-            print(f"   Events data: {events_data}")
+            try:
+                events_data = events_service.get_recent_events(city, country_code, days_back=30, max_results=5)
+                if events_data and events_data.get('events'):
+                    print(f"   ✅ Found {len(events_data.get('events', []))} local events")
+                else:
+                    print(f"   ℹ️ No events data available (optional feature)")
+            except Exception as e:
+                print(f"   ℹ️ Events lookup skipped: {str(e)} (optional feature)")
+                events_data = None
         
         # Generate the welcome message with location and events
         result = elevenlabs_service.generate_welcome_message(
