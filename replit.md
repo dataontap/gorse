@@ -77,6 +77,14 @@ A dedicated MCP server provides AI assistants with structured access to service 
 
 The user profile page is designed to display eSIM information and phone numbers clearly. API responses are formatted to match frontend expectations, including specific field mappings and JSON structures with success flags.
 
+**Personalized Welcome Messages**: The platform generates location-aware, first-login-only welcome messages via the `/api/welcome-message/generate` endpoint. Features include:
+- First-login enforcement: Uses `user_message_history` table to ensure welcome messages are only generated once per user based on their join date (`created_at` field)
+- IP-based location detection: Automatically detects user's city, region, and country using IP-API.com (free, no API key required)
+- ISP recognition: Identifies the user's internet service provider and contextualizes network insights available even before purchasing annual membership
+- Local events awareness (optional): Mentions recent events from the past 30 days in the user's location via Ticketmaster API if configured
+- ElevenLabs voice synthesis: Delivers personalized audio messages in 30+ languages with custom voice profiles
+- All location, ISP, and events data is cached in the `welcome_messages` table for efficient delivery
+
 ### Data Privacy & Security
 
 The platform isolates public service information from sensitive user and transaction data. All sensitive credentials are managed through environment variables.
@@ -94,6 +102,8 @@ The platform isolates public service information from sensitive user and transac
 -   **ElevenLabs Voice Synthesis**: Provides advanced text-to-speech services with multilingual support and custom voice profiles.
 -   **OpenAI Integration**: For AI-powered help desk and automated customer support.
 -   **SMTP Email Services**: For transactional emails and notifications.
+-   **IP-API.com**: Free IP geolocation and ISP detection service for personalized welcome messages.
+-   **Ticketmaster API** (optional): For local events information in welcome messages.
 
 ### Blockchain & Web3
 
