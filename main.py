@@ -5979,9 +5979,10 @@ def generate_welcome_message():
                         user_name = user_result[0]
                         user_created_at = user_result[1]
         
-        # Get location and events data only for welcome messages
+        # Get location, time, and context data only for welcome messages
         location_data = None
-        events_data = None
+        time_data = None
+        context_data = None
         
         if message_type == 'welcome':
             # Get IP address from request
@@ -5991,36 +5992,45 @@ def generate_welcome_message():
             
             print(f"   Client IP: {client_ip}")
             
-            # Import location and events services
+            # Import services
             from location_service import location_service
-            from events_service import events_service
+            from gemini_grounding_service import gemini_grounding_service
             
             # Get location and ISP data
             location_data = location_service.get_location_data(client_ip)
             print(f"   Location data: {location_data}")
             
-            # Get local events if we have location (optional feature)
+            # Get local time if we have timezone
+            if location_data.get('success') and location_data.get('timezone'):
+                time_data = location_service.get_local_time(location_data.get('timezone'))
+                print(f"   Local time: {time_data.get('time_12h', 'N/A')}")
+            
+            # Get context (weather, traffic, events) using Gemini grounding
             if location_data.get('success') and location_data.get('city'):
                 city = location_data.get('city')
-                country_code = location_data.get('country_code', 'US')
+                region = location_data.get('region', '')
+                country = location_data.get('country', '')
                 try:
-                    events_data = events_service.get_recent_events(city, country_code, days_back=30, max_results=5)
-                    if events_data and events_data.get('events'):
-                        print(f"   ✅ Found {len(events_data.get('events', []))} local events")
+                    context_data = gemini_grounding_service.get_local_context(city, region, country)
+                    if context_data and context_data.get('success'):
+                        print(f"   ✅ Gemini context retrieved successfully")
+                        print(f"   Context: {context_data.get('summary', '')[:100]}...")
                     else:
-                        print(f"   ℹ️ No events data available (optional feature)")
+                        print(f"   ℹ️ Gemini context not available (optional feature)")
                 except Exception as e:
-                    print(f"   ℹ️ Events lookup skipped: {str(e)} (optional feature)")
-                    events_data = None
+                    print(f"   ℹ️ Gemini lookup skipped: {str(e)} (optional feature)")
+                    context_data = None
         
-        # Generate the message with appropriate data
+        # Generate the message with all context data
         result = elevenlabs_service.generate_welcome_message(
             user_name=user_name,
             language=language,
             voice_profile=voice_profile,
             message_type=message_type,
             location_data=location_data,
-            events_data=events_data
+            events_data=None,  # No longer using Ticketmaster
+            time_data=time_data,
+            context_data=context_data
         )
         
         if result.get('success'):
@@ -6029,17 +6039,50 @@ def generate_welcome_message():
             content_type = result.get('content_type', 'audio/mpeg')
             generation_time_ms = result.get('generation_time_ms')
             
+            # Prepare location context for storage
+            import json as json_lib
+            location_context_json = None
+            local_timestamp = None
+            
+            if message_type == 'welcome':
+                # Build comprehensive context object
+                context_obj = {}
+                if location_data and location_data.get('success'):
+                    context_obj['location'] = {
+                        'city': location_data.get('city'),
+                        'region': location_data.get('region'),
+                        'country': location_data.get('country'),
+                        'isp': location_data.get('isp'),
+                        'timezone': location_data.get('timezone')
+                    }
+                if time_data and time_data.get('success'):
+                    context_obj['time'] = {
+                        'time_12h': time_data.get('time_12h'),
+                        'time_of_day': time_data.get('time_of_day'),
+                        'date': time_data.get('date'),
+                        'day_of_week': time_data.get('day_of_week')
+                    }
+                    local_timestamp = time_data.get('datetime')
+                if context_data and context_data.get('success'):
+                    context_obj['gemini_context'] = {
+                        'summary': context_data.get('summary'),
+                        'grounded': context_data.get('grounded', False)
+                    }
+                
+                if context_obj:
+                    location_context_json = json_lib.dumps(context_obj)
+            
             # Save to welcome_messages table for caching
             with get_db_connection() as conn:
                 if conn:
                     with conn.cursor() as cur:
-                        # Save the audio to database
+                        # Save the audio to database with context
                         if audio_data:
                             cur.execute("""
                                 INSERT INTO welcome_messages 
-                                (firebase_uid, language, voice_profile, message_type, audio_data, content_type, generation_time_ms)
-                                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                            """, (firebase_uid, language, voice_profile, message_type, audio_data, content_type, generation_time_ms))
+                                (firebase_uid, language, voice_profile, message_type, audio_data, content_type, generation_time_ms, location_context, generated_at_local_time)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            """, (firebase_uid, language, voice_profile, message_type, audio_data, content_type, generation_time_ms, location_context_json, local_timestamp))
                         
                         # Record in user_message_history
                         cur.execute("""
@@ -6060,7 +6103,8 @@ def generate_welcome_message():
                         'X-Message-Type': message_type,
                         'X-Is-New': 'true',
                         'X-Location': location_data.get('city', '') if location_data and location_data.get('success') else '',
-                        'X-Events-Count': str(len(events_data.get('events', []))) if events_data and events_data.get('success') else '0'
+                        'X-Local-Time': time_data.get('time_12h', '') if time_data and time_data.get('success') else '',
+                        'X-Has-Context': 'true' if context_data and context_data.get('success') else 'false'
                     }
                 )
             else:
