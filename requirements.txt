@@ -31,3 +31,4 @@ fastapi
 pydantic
 starlette
 uvicorn
+requests

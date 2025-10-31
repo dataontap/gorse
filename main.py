@@ -5823,6 +5823,122 @@ def resend_esim_activation_email():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/welcome-message/generate', methods=['POST'])
+@require_auth
+def generate_welcome_message():
+    """Generate personalized welcome message with location, ISP, and local events info - only on first login"""
+    try:
+        data = request.get_json()
+        firebase_uid = data.get('firebaseUid') or data.get('firebase_uid')
+        language = data.get('language', 'en')
+        voice_profile = data.get('voice_profile', 'ScienceTeacher')
+        
+        if not firebase_uid:
+            return jsonify({'success': False, 'error': 'Firebase UID required'}), 400
+        
+        print(f"🎉 Welcome message generation requested for: {firebase_uid}")
+        
+        # Check if this is the first login (check user_message_history)
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT COUNT(*) FROM user_message_history 
+                        WHERE firebase_uid = %s AND message_type = 'welcome'
+                    """, (firebase_uid,))
+                    welcome_count = cur.fetchone()[0]
+                    
+                    if welcome_count > 0:
+                        print(f"   User has already received welcome message. Count: {welcome_count}")
+                        return jsonify({
+                            'success': False,
+                            'error': 'Welcome message already generated for this user',
+                            'message': 'This is a first-login-only feature'
+                        }), 400
+        
+        # Get user details
+        user_name = None
+        user_created_at = None
+        with get_db_connection() as conn:
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT display_name, created_at FROM users 
+                        WHERE firebase_uid = %s
+                    """, (firebase_uid,))
+                    user_result = cur.fetchone()
+                    if user_result:
+                        user_name = user_result[0]
+                        user_created_at = user_result[1]
+        
+        # Get IP address from request
+        client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+        if ',' in client_ip:
+            client_ip = client_ip.split(',')[0].strip()
+        
+        print(f"   Client IP: {client_ip}")
+        
+        # Import location and events services
+        from location_service import location_service
+        from events_service import events_service
+        
+        # Get location and ISP data
+        location_data = location_service.get_location_data(client_ip)
+        print(f"   Location data: {location_data}")
+        
+        # Get local events if we have location
+        events_data = None
+        if location_data.get('success') and location_data.get('city'):
+            city = location_data.get('city')
+            country_code = location_data.get('country_code', 'US')
+            events_data = events_service.get_recent_events(city, country_code, days_back=30, max_results=5)
+            print(f"   Events data: {events_data}")
+        
+        # Generate the welcome message with location and events
+        result = elevenlabs_service.generate_welcome_message(
+            user_name=user_name,
+            language=language,
+            voice_profile=voice_profile,
+            message_type='welcome',
+            location_data=location_data,
+            events_data=events_data
+        )
+        
+        if result.get('success'):
+            # Record in user_message_history
+            with get_db_connection() as conn:
+                if conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            INSERT INTO user_message_history 
+                            (firebase_uid, message_type, language, voice_profile, completed)
+                            VALUES (%s, %s, %s, %s, %s)
+                        """, (firebase_uid, 'welcome', language, voice_profile, True))
+                        conn.commit()
+            
+            print(f"   ✅ Welcome message generated successfully")
+            
+            return jsonify({
+                'success': True,
+                'audio_url': result.get('audio_url'),
+                'message': 'Welcome message generated successfully',
+                'location': location_data if location_data.get('success') else None,
+                'events_count': len(events_data.get('events', [])) if events_data and events_data.get('success') else 0,
+                'user_joined': user_created_at.isoformat() if user_created_at else None
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Failed to generate welcome message')
+            }), 500
+            
+    except Exception as e:
+        print(f"❌ Error generating welcome message: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 # Initialize MCP Usage Service and Auth Manager
 try:
     from mcp_usage_service import MCPUsageService
