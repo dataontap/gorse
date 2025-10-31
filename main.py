@@ -5913,7 +5913,6 @@ def get_current_message():
 
 
 @app.route('/api/welcome-message/generate', methods=['POST'])
-@require_auth
 def generate_welcome_message():
     """Generate personalized welcome message with location, ISP, and local events info - only on first login"""
     try:
