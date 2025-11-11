@@ -643,15 +643,26 @@
                     compatibilityRecommendation.innerHTML = recommendationMessage;
 
                 } else {
-                    // Show error message
+                    // Show error message based on error type
                     compatibilityLoading.style.display = 'none';
                     compatibilityError.style.display = 'block';
+                    
+                    const isConnectionIssue = data.error_type === 'connection';
+                    const errorColor = isConnectionIssue ? '#ffc107' : '#ff6b6b';
+                    const backgroundColor = isConnectionIssue ? 'rgba(255, 193, 7, 0.1)' : 'rgba(255, 107, 107, 0.1)';
+                    
+                    compatibilityError.style.color = errorColor;
+                    compatibilityError.style.background = backgroundColor;
+                    compatibilityError.style.border = `1px solid ${errorColor}`;
+                    compatibilityError.style.borderRadius = '8px';
+                    
                     compatibilityError.innerHTML = `
                         <h4>⚠️ Compatibility Check Failed</h4>
-                        <p>${data.message || 'Unable to verify device compatibility at this time.'}</p>
-                        <p>You can still proceed with signup and we'll verify compatibility later.</p>
+                        <p style="color: ${errorColor};">${data.message || 'Unable to verify device compatibility at this time.'}</p>
+                        ${data.details ? `<p style="color: #cccccc; font-size: 14px;">${data.details}</p>` : ''}
+                        <p style="color: #cccccc;">You can still proceed with signup and we'll verify compatibility later.</p>
                     `;
-                    imeiCheckResult = null; // Allow signup anyway
+                    imeiCheckResult = null;
                     updateSignupButtonState(null);
                 }
 
@@ -659,12 +670,19 @@
                 console.error('Error checking IMEI compatibility:', error);
                 compatibilityLoading.style.display = 'none';
                 compatibilityError.style.display = 'block';
+                
+                compatibilityError.style.color = '#ffc107';
+                compatibilityError.style.background = 'rgba(255, 193, 7, 0.1)';
+                compatibilityError.style.border = '1px solid #ffc107';
+                compatibilityError.style.borderRadius = '8px';
+                
                 compatibilityError.innerHTML = `
-                    <h4>⚠️ Service Temporarily Unavailable</h4>
-                    <p>The compatibility check service is currently unavailable. Please try again later.</p>
-                    <p>You can still proceed with signup and we'll verify compatibility during activation.</p>
+                    <h4>⚠️ Connection Issue</h4>
+                    <p style="color: #ffc107;">Connection issue, please retry</p>
+                    <p style="color: #cccccc; font-size: 14px;">Unable to reach the compatibility service. Please try again.</p>
+                    <p style="color: #cccccc;">You can still proceed with signup and we'll verify compatibility during activation.</p>
                 `;
-                imeiCheckResult = null; // Allow signup anyway
+                imeiCheckResult = null;
                 updateSignupButtonState(null);
             }
         }

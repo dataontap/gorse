@@ -1596,22 +1596,45 @@ def check_imei_compatibility():
         else:
             return jsonify({
                 'success': False,
-                'error': 'Compatibility service unavailable',
+                'error': 'service_unavailable',
+                'error_type': 'service_error',
                 'message': 'Unable to check device compatibility at this time'
             }), 503
 
+    except requests.exceptions.SSLError as e:
+        print(f"SSL Error checking IMEI compatibility: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'connection_issue',
+            'error_type': 'connection',
+            'message': 'Connection issue, please retry',
+            'details': 'Temporary network connectivity issue. Please try again.'
+        }), 503
+    except requests.exceptions.ConnectionError as e:
+        print(f"Connection Error checking IMEI compatibility: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'connection_issue',
+            'error_type': 'connection',
+            'message': 'Connection issue, please retry',
+            'details': 'Unable to reach the compatibility service. Please check your connection and try again.'
+        }), 503
     except requests.exceptions.Timeout:
         return jsonify({
             'success': False,
-            'error': 'Service timeout',
-            'message': 'Compatibility check timed out. Please try again.'
+            'error': 'connection_timeout',
+            'error_type': 'connection',
+            'message': 'Connection issue, please retry',
+            'details': 'The request timed out. Please try again.'
         }), 504
     except Exception as e:
         print(f"Error checking IMEI compatibility: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Internal server error',
-            'message': 'Unable to process compatibility check'
+            'error': 'internal_error',
+            'error_type': 'service_error',
+            'message': 'Unable to process compatibility check',
+            'details': 'An unexpected error occurred. Please try again later.'
         }), 500
 
 def get_user_by_firebase_uid(firebase_uid):
