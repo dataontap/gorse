@@ -1529,7 +1529,7 @@ def check_imei_compatibility():
         import requests
 
         compatibility_response = requests.post(
-            'https://will-my-phone-work.replit.app/api/v1/check',
+            'https://deviceinsights.net/api/v1/check',
             headers={
                 'Content-Type': 'application/json',
                 'Authorization': f'Bearer {api_key}'
