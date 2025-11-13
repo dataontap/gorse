@@ -12,8 +12,8 @@ language = "python3"
 requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
-run = ["sh", "-c", "python main.py"]
-deploymentTarget = "cloudrun"
+run = ["python", "wsgi.py"]
+deploymentTarget = "autoscale"
 
 [workflows]
 runButton = "Project"
