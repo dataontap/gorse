@@ -1,8 +1,8 @@
-# DOTM Platform MCP Server v2.0 - Technical Specification
+# DOTM Platform MCP Server - Technical Specification
 
 ## Overview
 
-This document provides the complete technical specification for the DOTM Platform Model Context Protocol (MCP) Server v2.0, which follows the **2025 MCP Specification (version 2024-11-05)**.
+This document provides the complete technical specification for the DOTM Platform Model Context Protocol (MCP) Server, which follows the **MCP Specification (version 2024-11-05)**.
 
 ## Version Information
 
@@ -17,12 +17,12 @@ This document provides the complete technical specification for the DOTM Platfor
 
 ### Development
 ```
-http://localhost:5000/mcp/v2
+http://localhost:5000/mcp
 ```
 
 ### Production
 ```
-https://gorse.dotmobile.app/mcp/v2
+https://gorse.dotmobile.app/mcp
 ```
 
 ## Architecture
@@ -41,9 +41,9 @@ https://gorse.dotmobile.app/mcp/v2
    - User context propagation through requests
 
 3. **Flask Integration** (`main.py`)
-   - HTTP+SSE transport endpoint at `/mcp/v2/messages`
-   - Server information endpoint at `/mcp/v2`
-   - API documentation endpoint at `/mcp/v2/docs`
+   - HTTP+SSE transport endpoint at `/mcp/messages`
+   - Server information endpoint at `/mcp`
+   - API documentation endpoint at `/mcp/docs`
 
 ### Technology Stack
 
@@ -63,7 +63,7 @@ passlib                          # Password hashing utilities
 
 ### 1. Server Information
 ```
-GET /mcp/v2
+GET /mcp
 ```
 
 Returns server capabilities, version info, and available endpoints.
@@ -95,17 +95,16 @@ Returns server capabilities, version info, and available endpoints.
     "header": "Authorization: Bearer <token>"
   },
   "endpoints": {
-    "info": "/mcp/v2",
-    "messages": "/mcp/v2/messages",
-    "docs": "/mcp/v2/docs",
-    "legacy_v1": "/mcp"
+    "info": "/mcp",
+    "messages": "/mcp/messages",
+    "docs": "/mcp/docs"
   }
 }
 ```
 
 ### 2. JSON-RPC Messages
 ```
-POST /mcp/v2/messages
+POST /mcp/messages
 Content-Type: application/json
 ```
 
@@ -118,7 +117,7 @@ Authorization: Bearer <firebase_jwt_token>
 
 ### 3. API Documentation
 ```
-GET /mcp/v2/docs
+GET /mcp/docs
 ```
 
 Returns comprehensive API documentation with examples.
@@ -506,7 +505,7 @@ Get suggestions to optimize service costs.
 
 ### Firebase Bearer Token
 
-The MCP v2 server supports optional Firebase authentication with auto-registration.
+The MCP server supports optional Firebase authentication with auto-registration.
 
 **Header:**
 ```
@@ -557,7 +556,7 @@ All errors follow JSON-RPC 2.0 error format:
 import requests
 import json
 
-BASE_URL = "https://get-dot-esim.replit.app/mcp/v2/messages"
+BASE_URL = "https://get-dot-esim.replit.app/mcp/messages"
 
 # Initialize connection
 init_request = {
@@ -606,7 +605,7 @@ print(result["content"][0]["text"])
 ### JavaScript Client
 
 ```javascript
-const BASE_URL = 'https://get-dot-esim.replit.app/mcp/v2/messages';
+const BASE_URL = 'https://get-dot-esim.replit.app/mcp/messages';
 
 async function callMCP(method, params = {}) {
   const response = await fetch(BASE_URL, {
@@ -658,7 +657,7 @@ Add to `claude_desktop_config.json`:
       "command": "python",
       "args": ["-m", "mcp_server_v2"],
       "env": {
-        "MCP_SERVER_URL": "https://get-dot-esim.replit.app/mcp/v2"
+        "MCP_SERVER_URL": "https://get-dot-esim.replit.app/mcp"
       }
     }
   }

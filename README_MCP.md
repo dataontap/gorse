@@ -16,10 +16,10 @@ The DOTM Platform MCP (Model Context Protocol) Server provides detailed service 
 - **Feature Listings** with detailed descriptions for each service
 
 **Multi-Format Access**
-- **Interactive Web Interface** - Responsive HTML with Bootstrap styling at `/mcp`
-- **JSON API** - RESTful endpoints for programmatic access at `/mcp/api`
-- **Service-Specific Endpoints** - Individual service details at `/mcp/service/{service_id}`
-- **Pricing Calculator** - Dynamic cost computation at `/mcp/calculate`
+- **Server Information** - Server capabilities and version info at `/mcp`
+- **JSON-RPC 2.0 Protocol** - Full MCP protocol support at `/mcp/messages`
+- **API Documentation** - Comprehensive docs and examples at `/mcp/docs`
+- **Resources, Tools & Prompts** - Service catalog, pricing calculator, and AI-friendly prompts
 
 **Privacy-First Architecture**
 - **Zero User Data Exposure** - Only public service information is accessible
@@ -80,12 +80,11 @@ The MCP server is available at: `https://gorse.dotmobile.app/mcp`
 
 ### Main Endpoints
 
-| Endpoint | Description | Response Type |
-|----------|-------------|---------------|
-| `/mcp` | Interactive web interface with complete service catalog | HTML |
-| `/mcp/api` | JSON API with full service data | JSON |
-| `/mcp/service/{service_id}` | Details for specific service | JSON |
-| `/mcp/calculate` | Pricing calculator with service selection | JSON |
+| Endpoint | Method | Description | Response Type |
+|----------|--------|-------------|---------------|
+| `/mcp` | GET | Server information and capabilities | JSON |
+| `/mcp/messages` | POST | JSON-RPC 2.0 endpoint for all MCP operations | JSON |
+| `/mcp/docs` | GET | API documentation with examples | JSON |
 
 ### Service Categories
 
@@ -99,19 +98,49 @@ The MCP server is available at: `https://gorse.dotmobile.app/mcp`
 
 ## Usage Examples
 
-### Get All Services
+### Get Server Information
 ```bash
-curl https://gorse.dotmobile.app/mcp/api
+curl https://gorse.dotmobile.app/mcp
 ```
 
-### Get Specibfic Service
+### List Available Resources (Service Catalog)
 ```bash
-curl https://gorse.dotmobile.app/mcp/service/basic_membership
+curl -X POST https://gorse.dotmobile.app/mcp/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "resources/list"
+  }'
 ```
 
-### Calculate Pricing
+### Read Service Catalog
 ```bash
-curl "https://gorse.dotmobile.app/mcp/calculate?services=basic_membership,global_data_10gb"
+curl -X POST https://gorse.dotmobile.app/mcp/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "resources/read",
+    "params": {"uri": "dotm://services/catalog"}
+  }'
+```
+
+### Calculate Pricing Using Tools
+```bash
+curl -X POST https://gorse.dotmobile.app/mcp/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "calculate_pricing",
+      "arguments": {
+        "service_ids": ["basic_membership", "network_vpn_access"]
+      }
+    }
+  }'
 ```
 
 ## Cost Overview
