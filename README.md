@@ -264,6 +264,23 @@ Comprehensive test suites validate the entire AI integration:
 - **Premium Plan**: ~$5.50/month (Full membership)
 - **Maximum Configuration**: ~$30-40/month (All features enabled)
 
+### API Access Pricing (Subject to Change)
+
+For developers integrating with the DOTM Platform API:
+
+| Tier | TPH Limit | Price | Billing | Notes |
+|------|-----------|-------|---------|-------|
+| **Free** | ≤100 TPH | **$0** | N/A | All API endpoints included |
+| **Paid** | >100 TPH | **$1.00 USD** | Per active user/month | Billed in arrears |
+
+**TPH** = Transactions Per Hour (total API requests across all endpoints)
+
+**Important Notes:**
+- Network access (eSIM, data packages) charged separately per service pricing above
+- See [TERMS_OF_SERVICE.md](TERMS_OF_SERVICE.md) for complete API terms
+- Pricing subject to change with 30 days notice
+- Contact **rbm@dotmobile.app** for enterprise pricing
+
 ## 🛡️ Security & Privacy
 
 ### Privacy Protection
@@ -563,7 +580,20 @@ We welcome contributions to the DOTM Platform:
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project uses a dual licensing structure:
+
+### Open Source Code (MIT License)
+The software code is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details. You are free to use, modify, and distribute the code according to MIT License terms.
+
+### API Service Usage (Commercial Terms)
+The hosted API services and infrastructure are subject to **commercial terms** - see [TERMS_OF_SERVICE.md](TERMS_OF_SERVICE.md) for complete details.
+
+**API Pricing (Subject to Change):**
+- **Free Tier**: Up to 100 TPH (Transactions Per Hour) across all API endpoints
+- **Paid Tier**: $1.00 USD per active user per month for usage exceeding 100 TPH
+- **Network Access**: Charged separately per membership pricing (see Pricing Structure section)
+
+For questions about licensing or API usage, contact: **rbm@dotmobile.app**
 
 ## 🔗 Quick Links
 

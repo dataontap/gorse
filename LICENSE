@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2024 DOTM Platform
+Copyright (c) 2025 Data On Tap Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,25 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+IMPORTANT NOTE REGARDING API SERVICE USAGE:
+
+While this software code is licensed under the MIT License above, the DOTM 
+Platform's hosted API services and infrastructure are subject to separate 
+commercial terms.
+
+If you plan to use the hosted API services (not just the source code), you 
+must comply with the Terms of Service located in TERMS_OF_SERVICE.md, which 
+includes:
+
+- Free tier: Up to 100 TPH (Transactions Per Hour) across all API endpoints
+- Paid tier: $1.00 USD per active user per month for usage exceeding 100 TPH
+- Network access charged separately per membership pricing
+
+For complete API usage terms, data privacy policies, and pricing details, 
+please refer to TERMS_OF_SERVICE.md in this repository or visit:
+https://gorse.dotmobile.app/terms
+
+Contact: rbm@dotmobile.app
