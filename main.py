@@ -4940,10 +4940,10 @@ def mcp_messages():
                     "result": {
                         "resources": [
                             {
-                                "uri": r.uri,
+                                "uri": str(r.uri),
                                 "name": r.name,
-                                "description": r.description,
-                                "mimeType": r.mimeType
+                                "description": r.description if r.description else "",
+                                "mimeType": r.mimeType if r.mimeType else "application/json"
                             } for r in resources
                         ]
                     }
