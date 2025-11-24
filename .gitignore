@@ -205,7 +205,13 @@ gradlew
 gradlew.bat
 build.gradle.kts
 
-# Cleanup system scripts - internal use only
+# Development & deployment scripts - internal use only
+scripts/
 CLEANUP_SYSTEM.md
-scripts/cleanup-repo.sh
-scripts/remove-private-files.sh
+
+# Internal service workers and helpers
+firebase-messaging-sw.js
+github_client.js
+
+# Hardhat config (blockchain development)
+hardhat.config.js
