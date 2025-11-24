@@ -17,7 +17,7 @@ dotm-platform/
 │   └── CONTRIBUTING.md       # Contribution guidelines
 ├── src/                      # Source code
 │   ├── main.py              # Main application
-│   ├── mcp_server.py        # MCP server implementation
+│   ├── mcp_server_v2.py     # MCP server implementation (JSON-RPC 2.0)
 │   ├── oxio_service.py      # OXIO integration
 │   └── stripe_products.py   # Payment processing
 ├── static/                   # Static assets
@@ -34,10 +34,9 @@ dotm-platform/
 - **Alternative MCP**: `https://mcp.dotmobile.app`
 
 ### API Endpoints
-- **Interactive Interface**: `GET /mcp`
-- **JSON API**: `GET /mcp/api`
-- **Service Details**: `GET /mcp/service/{service_id}`
-- **Pricing Calculator**: `GET /mcp/calculate`
+- **Server Info**: `GET /mcp` - Server capabilities and version
+- **JSON-RPC Protocol**: `POST /mcp/messages` - All MCP operations
+- **API Documentation**: `GET /mcp/docs` - Complete API reference
 
 ## Deployment Instructions
 

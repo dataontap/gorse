@@ -203,9 +203,9 @@ The DOTM Platform features a production-ready MCP v2 server that enables ChatGPT
 - **Comprehensive Logging**: Full audit trail for debugging and monitoring
 
 #### MCP v2 Endpoints
-- **Info**: `GET /mcp/v2` - Server capabilities and version
-- **Messages**: `POST /mcp/v2/messages` - JSON-RPC 2.0 tool execution
-- **Docs**: `GET /mcp/v2/docs` - Interactive documentation
+- **Info**: `GET /mcp` - Server capabilities and version
+- **Messages**: `POST /mcp/messages` - JSON-RPC 2.0 tool execution
+- **Docs**: `GET /mcp/docs` - Interactive documentation
 - **Legacy v1**: `GET /mcp` - Backward compatibility
 
 #### Available AI Tools
@@ -325,10 +325,10 @@ Your users can now activate eSIMs by simply talking to their favorite AI assista
 **Test the MCP v2 Server:**
 ```bash
 # Check server status and capabilities
-curl https://gorse.dotmobile.app/mcp/v2
+curl https://gorse.dotmobile.app/mcp
 
 # Call the activate_esim tool via JSON-RPC 2.0
-curl -X POST https://gorse.dotmobile.app/mcp/v2/messages \
+curl -X POST https://gorse.dotmobile.app/mcp/messages \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -349,7 +349,7 @@ curl -X POST https://gorse.dotmobile.app/mcp/v2/messages \
 **Rate Limit Monitoring:**
 ```bash
 # Get current rate limit statistics
-curl https://gorse.dotmobile.app/mcp/v2 | jq
+curl https://gorse.dotmobile.app/mcp | jq
 
 # Example response shows:
 # - Current activations: 87/100
@@ -358,52 +358,72 @@ curl https://gorse.dotmobile.app/mcp/v2 | jq
 # - Queue status: Empty
 ```
 
-### Legacy API Endpoints (v1)
+### JSON-RPC API Integration
 
-```bash
-# Get all services
-curl https://gorse.dotmobile.app/mcp/api
-
-# Get specific service details
-curl https://gorse.dotmobile.app/mcp/service/basic_membership
-
-# Calculate pricing for multiple services
-curl "https://gorse.dotmobile.app/mcp/calculate?services=basic_membership,global_data_10gb"
-```
+**Note**: The API now uses JSON-RPC 2.0 protocol. Legacy REST endpoints have been removed.
 
 ### Python Integration
 ```python
 import requests
 
-# Fetch service catalog
-response = requests.get('https://gorse.dotmobile.app/mcp/api')
-services = response.json()['services']
+BASE_URL = "https://gorse.dotmobile.app/mcp/messages"
 
-# Calculate total pricing
-pricing = requests.get(
-    'https://gorse.dotmobile.app/mcp/calculate',
-    params={'services': 'basic_membership,network_security'}
-).json()
+# Fetch service catalog using JSON-RPC
+response = requests.post(BASE_URL, json={
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "resources/read",
+    "params": {"uri": "dotm://services/catalog"}
+})
+services = response.json()["result"]["contents"][0]["text"]
 
-print(f"Monthly cost: ${pricing['pricing']['monthly_recurring']}")
-print(f"Annual cost: ${pricing['pricing']['annual_total']}")
+# Calculate pricing using tools
+pricing_response = requests.post(BASE_URL, json={
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "calculate_pricing",
+        "arguments": {
+            "service_ids": ["basic_membership", "network_security_basic"]
+        }
+    }
+})
+
+result = pricing_response.json()["result"]["content"][0]["text"]
+print(result)
 ```
 
 ### JavaScript Integration
 ```javascript
-// Fetch service data
-const response = await fetch('https://gorse.dotmobile.app/mcp/api');
-const data = await response.json();
+const BASE_URL = 'https://gorse.dotmobile.app/mcp/messages';
 
-// Display available services
-console.log('Available services:', Object.keys(data.services));
+async function callMCP(method, params = {}) {
+  const response = await fetch(BASE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: Math.floor(Math.random() * 1000),
+      method,
+      params
+    })
+  });
+  return response.json();
+}
+
+// Fetch service catalog
+const catalog = await callMCP('resources/read', {
+  uri: 'dotm://services/catalog'
+});
+console.log('Services:', catalog.result.contents[0].text);
 
 // Calculate pricing
-const pricing = await fetch(
-    'https://gorse.dotmobile.app/mcp/calculate?services=full_membership,vpn_access'
-).then(res => res.json());
-
-console.log(`Total monthly: $${pricing.pricing.monthly_recurring}`);
+const pricing = await callMCP('tools/call', {
+  name: 'calculate_pricing',
+  arguments: { service_ids: ['full_membership', 'network_vpn_access'] }
+});
+console.log('Pricing:', pricing.result.content[0].text);
 ```
 
 ## 📊 Service Categories
@@ -453,7 +473,7 @@ console.log(`Total monthly: $${pricing.pricing.monthly_recurring}`);
 
 ### API Specifications
 - **Base URL**: `https://gorse.dotmobile.app`
-- **MCP v2 Endpoint**: `https://gorse.dotmobile.app/mcp/v2/messages` (JSON-RPC 2.0)
+- **MCP v2 Endpoint**: `https://gorse.dotmobile.app/mcp/messages` (JSON-RPC 2.0)
 - **MCP v1 Server**: `https://gorse.dotmobile.app/mcp` (Legacy)
 - **Response Format**: JSON and HTML
 - **Authentication**: Firebase Bearer tokens for user operations
@@ -504,9 +524,9 @@ console.log(`Total monthly: $${pricing.pricing.monthly_recurring}`);
 5. **Earn Tokens**: Receive DOTM rewards for all activities
 
 ### For Developers
-1. **Explore MCP v2**: Visit [gorse.dotmobile.app/mcp/v2](https://gorse.dotmobile.app/mcp/v2)
+1. **Explore MCP v2**: Visit [gorse.dotmobile.app/mcp](https://gorse.dotmobile.app/mcp)
 2. **Test AI Integration**: Try the activate_esim tool via JSON-RPC 2.0
-3. **Read Documentation**: Complete API reference at [/mcp/v2/docs](https://gorse.dotmobile.app/mcp/v2/docs)
+3. **Read Documentation**: Complete API reference at [/mcp/docs](https://gorse.dotmobile.app/mcp/docs)
 4. **Build Applications**: Integrate DOTM services into your apps
 5. **Monitor Rate Limits**: Track usage and queue status in real-time
 6. **Join Community**: Connect with other developers
@@ -576,7 +596,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Last Updated**: October 22, 2025
 **Version**: 3.1.1 - MCP v2 AI Integration
 **DOTM Token Contract**: 0xF57ab8DEE7ebE3686DB8Bf89E8aCc15E94B97A8D
-**MCP v2 Endpoint**: https://gorse.dotmobile.app/mcp/v2/messages
+**MCP v2 Endpoint**: https://gorse.dotmobile.app/mcp/messages
 
 ### 🎯 What's New in v3.1.1
 
