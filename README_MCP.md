@@ -104,7 +104,7 @@ The MCP server is available at: `https://gorse.dotmobile.app/mcp`
 curl https://gorse.dotmobile.app/mcp/api
 ```
 
-### Get Specific Service
+### Get Specibfic Service
 ```bash
 curl https://gorse.dotmobile.app/mcp/service/basic_membership
 ```
