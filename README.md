@@ -50,7 +50,7 @@ DOTM Platform is a next-generation telecommunications service combining global e
 We provide global eSIM connectivity, automation, network services intelligence and network optimization features through a unified ecosystem in a public cloud. Our data servers are located solely in North America: N.Virginia, USA and in Montreal, Canada. We use Full MVNO type of connectivity in the USA, Mexico and in Canada soon hopefully.
 
 ### Technology Stack
-Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql databases, Resend for professional email delivery, ElevenLabs for voice synthesis, Bitchat for fallback connectivity, Ethereum blockchain integration, and **Model Context Protocol (MCP)** for AI assistant integration. Full list of integrations below.
+Firebase authentication, Gemini for AI, NeonDB for Postgresql databases, Resend for email delivery, ElevenLabs for voice synthesis, Bitchat for fallback connectivity, Ethereum blockchain integration, and **Model Context Protocol (MCP)** for AI assistant integration. Full list of integrations below.
 
 ### 🚀 Live Platform
 
