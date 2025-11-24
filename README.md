@@ -202,11 +202,10 @@ The DOTM Platform features a production-ready MCP v2 server that enables ChatGPT
 - **Stripe Payment**: Automatic invoice generation and verification
 - **Comprehensive Logging**: Full audit trail for debugging and monitoring
 
-#### MCP v2 Endpoints
+#### Unified MCP Endpoints
 - **Info**: `GET /mcp` - Server capabilities and version
 - **Messages**: `POST /mcp/messages` - JSON-RPC 2.0 tool execution
 - **Docs**: `GET /mcp/docs` - Interactive documentation
-- **Legacy v1**: `GET /mcp` - Backward compatibility
 
 #### Available AI Tools
 1. **calculate_pricing** - Dynamic cost calculations for service bundles
