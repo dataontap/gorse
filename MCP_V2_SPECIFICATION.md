@@ -22,7 +22,7 @@ http://localhost:5000/mcp/v2
 
 ### Production
 ```
-https://get-dot-esim.replit.app/mcp/v2
+https://gorse.dotmobile.app/mcp/v2
 ```
 
 ## Architecture

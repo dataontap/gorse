@@ -7,7 +7,7 @@ import requests
 import json
 
 def test_mcp_endpoints():
-    base_url = "https://get-dot-esim.replit.app"  # Replace with your actual Repl URL
+    base_url = "https://gorse.dotmobile.app"  # Replace with your actual Repl URL
     
     endpoints_to_test = [
         "/mcp",

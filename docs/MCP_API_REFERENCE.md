@@ -3,7 +3,7 @@
 
 ## Base URL
 ```
-https://get-dot-esim.replit.app/mcp
+https://gorse.dotmobile.app/mcp
 ```
 
 ## Authentication

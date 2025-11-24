@@ -29,8 +29,8 @@ dotm-platform/
 ## Live Deployments
 
 ### Production URLs
-- **Main Platform**: `https://get-dot-esim.replit.app`
-- **MCP Server**: `https://get-dot-esim.replit.app/mcp`
+- **Main Platform**: `https://gorse.dotmobile.app`
+- **MCP Server**: `https://gorse.dotmobile.app/mcp`
 - **Alternative MCP**: `https://mcp.dotmobile.app`
 
 ### API Endpoints

@@ -74,7 +74,7 @@ The DOTM Platform MCP (Model Context Protocol) Server provides detailed service 
 
 ## Live Server
 
-The MCP server is available at: `https://get-dot-esim.replit.app/mcp`
+The MCP server is available at: `https://gorse.dotmobile.app/mcp`
 
 ## API Endpoints
 
@@ -101,17 +101,17 @@ The MCP server is available at: `https://get-dot-esim.replit.app/mcp`
 
 ### Get All Services
 ```bash
-curl https://get-dot-esim.replit.app/mcp/api
+curl https://gorse.dotmobile.app/mcp/api
 ```
 
 ### Get Specific Service
 ```bash
-curl https://get-dot-esim.replit.app/mcp/service/basic_membership
+curl https://gorse.dotmobile.app/mcp/service/basic_membership
 ```
 
 ### Calculate Pricing
 ```bash
-curl "https://get-dot-esim.replit.app/mcp/calculate?services=basic_membership,global_data_10gb"
+curl "https://gorse.dotmobile.app/mcp/calculate?services=basic_membership,global_data_10gb"
 ```
 
 ## Cost Overview
@@ -185,12 +185,12 @@ The MCP server strictly adheres to privacy guidelines:
 import requests
 
 # Get all services
-response = requests.get('https://get-dot-esim.replit.app/mcp/api')
+response = requests.get('https://gorse.dotmobile.app/mcp/api')
 services = response.json()
 
 # Calculate pricing for specific services
 calc_response = requests.get(
-    'https://get-dot-esim.replit.app/mcp/calculate',
+    'https://gorse.dotmobile.app/mcp/calculate',
     params={'services': ['basic_membership', 'network_security']}
 )
 pricing = calc_response.json()
@@ -199,13 +199,13 @@ pricing = calc_response.json()
 ### JavaScript Integration
 ```javascript
 // Fetch service catalog
-fetch('https://get-dot-esim.replit.app/mcp/api')
+fetch('https://gorse.dotmobile.app/mcp/api')
   .then(response => response.json())
   .then(data => console.log('Services:', data.services));
 
 // Calculate pricing
 const services = ['basic_membership', 'vpn_access'];
-fetch(`https://get-dot-esim.replit.app/mcp/calculate?services=${services.join(',')}`)
+fetch(`https://gorse.dotmobile.app/mcp/calculate?services=${services.join(',')}`)
   .then(response => response.json())
   .then(data => console.log('Pricing:', data.pricing));
 ```
@@ -239,8 +239,8 @@ fetch(`https://get-dot-esim.replit.app/mcp/calculate?services=${services.join(',
 ## Support
 
 For technical support or integration assistance:
-- Platform: [DOTM Platform](https://get-dot-esim.replit.app)
-- Documentation: [MCP Server](https://get-dot-esim.replit.app/mcp)
+- Platform: [DOTM Platform](https://gorse.dotmobile.app)
+- Documentation: [MCP Server](https://gorse.dotmobile.app/mcp)
 - Repository: Contact for access
 
 ## License
@@ -264,19 +264,19 @@ We now offer a **fully compliant Model Context Protocol (MCP) server** following
 
 #### Base URL
 ```
-https://get-dot-esim.replit.app/mcp/v2
+https://gorse.dotmobile.app/mcp/v2
 ```
 
 #### Quick Start
 
 **1. Server Information:**
 ```bash
-curl https://get-dot-esim.replit.app/mcp/v2
+curl https://gorse.dotmobile.app/mcp/v2
 ```
 
 **2. Initialize Connection:**
 ```bash
-curl -X POST https://get-dot-esim.replit.app/mcp/v2/messages \
+curl -X POST https://gorse.dotmobile.app/mcp/v2/messages \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -292,7 +292,7 @@ curl -X POST https://get-dot-esim.replit.app/mcp/v2/messages \
 
 **3. Calculate Pricing:**
 ```bash
-curl -X POST https://get-dot-esim.replit.app/mcp/v2/messages \
+curl -X POST https://gorse.dotmobile.app/mcp/v2/messages \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -308,7 +308,7 @@ curl -X POST https://get-dot-esim.replit.app/mcp/v2/messages \
 #### Documentation
 
 - **Full Specification**: See `MCP_V2_SPECIFICATION.md`
-- **API Reference**: https://get-dot-esim.replit.app/mcp/v2/docs
+- **API Reference**: https://gorse.dotmobile.app/mcp/v2/docs
 - **Protocol Spec**: https://modelcontextprotocol.io/specification/2024-11-05
 
 #### Available Methods
