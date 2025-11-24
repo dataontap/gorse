@@ -1,6 +1,6 @@
 # DOT Global Connectivity
 
-![DOT](https://img.shields.io/badge/Status-Live-green) ![Ethereum](https://img.shields.io/badge/Ethereum-Mainnet-blue) ![Version](https://img.shields.io/badge/Version-3.1.1-brightgreen) ![MCP](https://img.shields.io/badge/MCP-v2.0-purple)
+![DOT](https://img.shields.io/badge/Status-Live-green) ![Ethereum](https://img.shields.io/badge/Ethereum-Mainnet-blue) ![Version](https://img.shields.io/badge/Version-3.1.1-brightgreen) ![MCP](https://img.shields.io/badge/MCP-2.0-purple)
 
 ## 🤖 AI Integration - NEW!
 
@@ -29,7 +29,7 @@ Users can now discover and activate DOTM eSIMs entirely through natural conversa
 4. **Instant Activation** - eSIM ready in <5 minutes
 5. **QR Code Delivery** - Install and connect immediately
 
-**Powered by Model Context Protocol (MCP) v2 - [Learn More](#-ai-assistant-integration-mcp-v2)**
+**Powered by Model Context Protocol (MCP) - [Learn More](#-ai-assistant-integration-mcp)**
 
 ---
 
@@ -50,7 +50,7 @@ DOTM Platform is a next-generation telecommunications service combining global e
 We provide global eSIM connectivity, automation, network services intelligence and network optimization features through a unified ecosystem in a public cloud. Our data servers are located solely in North America: N.Virginia, USA and in Montreal, Canada. We use Full MVNO type of connectivity in the USA, Mexico and in Canada soon hopefully.
 
 ### Technology Stack
-Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql databases, Resend for professional email delivery, ElevenLabs for voice synthesis, Bitchat for fallback connectivity, Ethereum blockchain integration, and **Model Context Protocol (MCP) v2** for AI assistant integration. Full list of integrations below.
+Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql databases, Resend for professional email delivery, ElevenLabs for voice synthesis, Bitchat for fallback connectivity, Ethereum blockchain integration, and **Model Context Protocol (MCP)** for AI assistant integration. Full list of integrations below.
 
 ### 🚀 Live Platform
 
@@ -123,7 +123,7 @@ Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql database
 ### Key Integrations
 - **Firebase Admin SDK**: Server-side authentication and user management
 - **Stripe Payments**: Subscription management and billing
-- **OXIO Staging API**: eSIM provisioning and network services
+- **Network Services API**: eSIM provisioning and connectivity management
 - **Ethereum Mainnet**: DOTM token rewards and transactions
 - **Resend Email API**: Professional email delivery and notifications
 - **ElevenLabs**: Voice synthesis for personalized interactions
@@ -157,10 +157,10 @@ Firebase authentication, Gemini 1.5 Flash for AI, NeonDB for Postgresql database
 - **Offline Operation**: Complete functionality without internet or cellular connectivity
 - **Cover Traffic**: Timing obfuscation and dummy messages to prevent traffic analysis
 
-### Model Context Protocol (MCP) v2 Server 🆕
+### Model Context Protocol (MCP) Server 🆕
 **Revolutionary AI-Driven eSIM Activation**
 
-The DOTM Platform features a production-ready MCP v2 server that enables ChatGPT and Gemini AI to activate eSIMs through natural conversation.
+The DOTM Platform features a production-ready MCP server that enables ChatGPT and Gemini AI to activate eSIMs through natural conversation.
 
 #### Key Features
 - ✅ **JSON-RPC 2.0 Protocol**: Latest MCP specification (2024-11-05)
@@ -279,7 +279,7 @@ Comprehensive test suites validate the entire AI integration:
 - **Input Validation**: Comprehensive parameter sanitization
 - **Audit Logging**: Complete action tracking and compliance records
 
-## 🤖 AI Assistant Integration (MCP v2)
+## 🤖 AI Assistant Integration (MCP)
 
 ### Activate eSIMs via ChatGPT or Gemini
 
@@ -319,9 +319,9 @@ Your users can now activate eSIMs by simply talking to their favorite AI assista
 ✅ USER: Scans QR code, installs eSIM, lands in Japan with connectivity!
 ```
 
-### MCP v2 Integration for Developers
+### MCP Integration for Developers
 
-**Test the MCP v2 Server:**
+**Test the MCP Server:**
 ```bash
 # Check server status and capabilities
 curl https://gorse.dotmobile.app/mcp
@@ -472,12 +472,12 @@ console.log('Pricing:', pricing.result.content[0].text);
 
 ### API Specifications
 - **Base URL**: `https://gorse.dotmobile.app`
-- **MCP v2 Endpoint**: `https://gorse.dotmobile.app/mcp/messages` (JSON-RPC 2.0)
+- **MCP Endpoint**: `https://gorse.dotmobile.app/mcp/messages` (JSON-RPC 2.0)
 - **MCP v1 Server**: `https://gorse.dotmobile.app/mcp` (Legacy)
 - **Response Format**: JSON and HTML
 - **Authentication**: Firebase Bearer tokens for user operations
 - **Rate Limiting**: 100 eSIM activations/hour with queue management
-- **Protocol**: Model Context Protocol v2 (2024-11-05 specification)
+- **Protocol**: Model Context Protocol (2024-11-05 specification)
 
 ### Database Schema
 - **Users**: Firebase UID mapping and profile data
@@ -497,11 +497,11 @@ console.log('Pricing:', pricing.result.content[0].text);
 - **Total Services**: 20+ across 7 categories
 - **Global Coverage**: 190+ countries
 - **API Uptime**: 99.9%
-- **Active Integrations**: Firebase, Stripe, OXIO, Ethereum, MCP v2
+- **Active Integrations**: Firebase, Stripe, OXIO, Ethereum, MCP
 - **AI Platforms**: ChatGPT Plus, Google Gemini
 - **Token Contract**: Live on Ethereum Mainnet
 - **Beta Users**: Growing community of early adopters
-- **MCP Protocol**: v2.0 (2024-11-05 specification)
+- **MCP Protocol**: 2.0 (2024-11-05 specification)
 - **Rate Limit**: 100 eSIM activations/hour with intelligent queueing
 
 ## 🚀 Getting Started
@@ -523,7 +523,7 @@ console.log('Pricing:', pricing.result.content[0].text);
 5. **Earn Tokens**: Receive DOTM rewards for all activities
 
 ### For Developers
-1. **Explore MCP v2**: Visit [gorse.dotmobile.app/mcp](https://gorse.dotmobile.app/mcp)
+1. **Explore MCP**: Visit [gorse.dotmobile.app/mcp](https://gorse.dotmobile.app/mcp)
 2. **Test AI Integration**: Try the activate_esim tool via JSON-RPC 2.0
 3. **Read Documentation**: Complete API reference at [/mcp/docs](https://gorse.dotmobile.app/mcp/docs)
 4. **Build Applications**: Integrate DOTM services into your apps
@@ -593,14 +593,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ![Beta Program](https://img.shields.io/badge/Beta_Program-Active-orange)
 
 **Last Updated**: October 22, 2025
-**Version**: 3.1.1 - MCP v2 AI Integration
+**Version**: 3.1.1 - MCP AI Integration
 **DOTM Token Contract**: 0xF57ab8DEE7ebE3686DB8Bf89E8aCc15E94B97A8D
-**MCP v2 Endpoint**: https://gorse.dotmobile.app/mcp/messages
+**MCP Endpoint**: https://gorse.dotmobile.app/mcp/messages
 
 ### 🎯 What's New in v3.1.1
 
 **AI-Driven eSIM Activation:**
-- ✅ Model Context Protocol (MCP) v2 integration
+- ✅ Model Context Protocol (MCP) integration
 - ✅ ChatGPT and Gemini AI support
 - ✅ Natural language eSIM activation
 - ✅ Automatic user registration from AI conversations
