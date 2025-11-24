@@ -4833,98 +4833,41 @@ def get_user_phone_numbers():
             'message': str(e)
         }), 500
 
-# Import MCP server functions at the top level
-try:
-    from mcp_server import SERVICES_CATALOG, calculate_total_costs
-    MCP_AVAILABLE = True
-except ImportError:
-    MCP_AVAILABLE = False
-    SERVICES_CATALOG = {}
-
-# MCP Server Routes for Service Catalog and Pricing
-@app.route('/mcp')
-def mcp_server():
-    """MCP server endpoint for service catalog and pricing"""
-    if MCP_AVAILABLE:
-        # Import the function here to avoid circular imports
-        with mcp_app.app_context():
-            from mcp_server import mcp_server as mcp_server_func
-            return mcp_server_func()
-    else:
-        return jsonify({
-            "error": "MCP server not available",
-            "message": "Service catalog endpoint is currently unavailable"
-        }), 503
-
-@app.route('/mcp/api')
-def mcp_api():
-    """JSON API endpoint for programmatic access to service catalog"""
-    if MCP_AVAILABLE:
-        from mcp_server import mcp_api as mcp_api_func
-        return mcp_api_func()
-    else:
-        return jsonify({
-            "error": "MCP API not available",
-            "fallback_services": {
-                "basic_membership": {"price_usd": 24.00, "type": "annual"},
-                "full_membership": {"price_usd": 66.00, "type": "annual"},
-                "global_data_10gb": {"price_usd": 10.00, "type": "one_time"}
-            }
-        })
-
-@app.route('/mcp/service/<service_id>')
-def mcp_service_detail(service_id):
-    """MCP service detail endpoint"""
-    if MCP_AVAILABLE:
-        from mcp_server import mcp_service_detail as mcp_service_detail_func
-        return mcp_service_detail_func(service_id)
-    else:
-        return jsonify({"error": "Service detail endpoint not available"}), 503
-
-@app.route('/mcp/calculate')
-def mcp_pricing_calculator():
-    """MCP pricing calculator endpoint"""
-    if MCP_AVAILABLE:
-        from mcp_server import mcp_pricing_calculator as mcp_pricing_calculator_func
-        return mcp_pricing_calculator_func()
-    else:
-        return jsonify({"error": "Pricing calculator not available"}), 503
-
-# MCP v2 Server Routes (Model Context Protocol 2025 Specification)
+# MCP Server (Model Context Protocol 2024-11-05 Specification)
 # Lazy loading to avoid import issues
-MCP_V2_AVAILABLE = None  # Will be set on first use
-_mcp_v2_instance = None
+MCP_AVAILABLE = None  # Will be set on first use
+_mcp_instance = None
 _mcp_auth = None
 
-def get_mcp_v2_server():
-    """Lazy load MCP v2 server"""
-    global MCP_V2_AVAILABLE, _mcp_v2_instance, _mcp_auth
+def get_mcp_server():
+    """Lazy load MCP server"""
+    global MCP_AVAILABLE, _mcp_instance, _mcp_auth
     
-    if MCP_V2_AVAILABLE is None:
+    if MCP_AVAILABLE is None:
         try:
             from mcp_server_v2 import mcp_server, auth_middleware
-            _mcp_v2_instance = mcp_server
+            _mcp_instance = mcp_server
             _mcp_auth = auth_middleware
-            MCP_V2_AVAILABLE = True
-            print("✅ MCP v2 Server loaded successfully")
+            MCP_AVAILABLE = True
+            print("✅ MCP Server loaded successfully")
         except Exception as e:
-            MCP_V2_AVAILABLE = False
-            print(f"❌ MCP v2 Server not available: {str(e)}")
+            MCP_AVAILABLE = False
+            print(f"❌ MCP Server not available: {str(e)}")
             import traceback
             traceback.print_exc()
     
-    if not MCP_V2_AVAILABLE:
-        raise ImportError("MCP v2 Server not available")
+    if not MCP_AVAILABLE:
+        raise ImportError("MCP Server not available")
     
-    return _mcp_v2_instance
+    return _mcp_instance
 
-@app.route('/mcp/v2')
-def mcp_v2_info():
-    """MCP v2 server information endpoint"""
+@app.route('/mcp')
+def mcp_info():
+    """MCP server information endpoint"""
     try:
-        get_mcp_v2_server()  # Ensure it's loaded
+        get_mcp_server()  # Ensure it's loaded
     except ImportError:
-        return jsonify({"error": "MCP v2 server not available"}), 503
+        return jsonify({"error": "MCP server not available"}), 503
     
     return jsonify({
         "server": "DOTM MCP Server",
@@ -4938,10 +4881,9 @@ def mcp_v2_info():
             "prompts": {"listChanged": False}
         },
         "endpoints": {
-            "info": "/mcp/v2",
-            "messages": "/mcp/v2/messages",
-            "docs": "/mcp/v2/docs",
-            "legacy_v1": "/mcp"
+            "info": "/mcp",
+            "messages": "/mcp/messages",
+            "docs": "/mcp/docs"
         },
         "authentication": {
             "type": "Firebase Bearer Token",
@@ -4951,13 +4893,13 @@ def mcp_v2_info():
         }
     })
 
-@app.route('/mcp/v2/messages', methods=['POST'])
-def mcp_v2_messages():
-    """JSON-RPC 2.0 endpoint for MCP v2 protocol"""
+@app.route('/mcp/messages', methods=['POST'])
+def mcp_messages():
+    """JSON-RPC 2.0 endpoint for MCP protocol"""
     try:
-        mcp_v2_instance = get_mcp_v2_server()
+        mcp_instance = get_mcp_server()
     except ImportError:
-        return jsonify({"error": "MCP v2 server not available"}), 503
+        return jsonify({"error": "MCP server not available"}), 503
     
     try:
         import asyncio
@@ -4991,7 +4933,7 @@ def mcp_v2_messages():
                 }
             
             elif method == "resources/list":
-                resources = await mcp_v2_instance.handlers['list_resources']()
+                resources = await mcp_instance.handlers['list_resources']()
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
@@ -5009,7 +4951,7 @@ def mcp_v2_messages():
             
             elif method == "resources/read":
                 uri = params.get("uri")
-                content = await mcp_v2_instance.handlers['read_resource'](uri)
+                content = await mcp_instance.handlers['read_resource'](uri)
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
@@ -5023,7 +4965,7 @@ def mcp_v2_messages():
                 }
             
             elif method == "tools/list":
-                tools = await mcp_v2_instance.handlers['list_tools']()
+                tools = await mcp_instance.handlers['list_tools']()
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
@@ -5041,7 +4983,7 @@ def mcp_v2_messages():
             elif method == "tools/call":
                 tool_name = params.get("name")
                 arguments = params.get("arguments", {})
-                content = await mcp_v2_instance.handlers['call_tool'](tool_name, arguments)
+                content = await mcp_instance.handlers['call_tool'](tool_name, arguments)
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
@@ -5051,7 +4993,7 @@ def mcp_v2_messages():
                 }
             
             elif method == "prompts/list":
-                prompts = await mcp_v2_instance.handlers['list_prompts']()
+                prompts = await mcp_instance.handlers['list_prompts']()
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
@@ -5072,7 +5014,7 @@ def mcp_v2_messages():
             elif method == "prompts/get":
                 prompt_name = params.get("name")
                 arguments = params.get("arguments", {})
-                result = await mcp_v2_instance.handlers['get_prompt'](prompt_name, arguments)
+                result = await mcp_instance.handlers['get_prompt'](prompt_name, arguments)
                 return {
                     "jsonrpc": "2.0",
                     "id": msg_id,
@@ -5096,7 +5038,7 @@ def mcp_v2_messages():
         return jsonify(result)
         
     except Exception as e:
-        print(f"Error in MCP v2 messages endpoint: {str(e)}")
+        print(f"Error in MCP messages endpoint: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({
@@ -5105,19 +5047,19 @@ def mcp_v2_messages():
             "error": {"code": -32603, "message": f"Internal error: {str(e)}"}
         }), 500
 
-@app.route('/mcp/v2/docs')
-def mcp_v2_docs():
-    """Comprehensive API documentation for MCP v2"""
+@app.route('/mcp/docs')
+def mcp_docs():
+    """Comprehensive API documentation for MCP server"""
     try:
-        get_mcp_v2_server()  # Ensure it's loaded
+        get_mcp_server()  # Ensure it's loaded
     except ImportError:
-        return jsonify({"error": "MCP v2 server not available"}), 503
+        return jsonify({"error": "MCP server not available"}), 503
     
     return jsonify({
         "title": "DOTM MCP Server API Documentation",
         "version": "2.0.0",
         "protocol": "Model Context Protocol (MCP) 2024-11-05",
-        "base_url": "/mcp/v2",
+        "base_url": "/mcp",
         "authentication": {
             "type": "Firebase Bearer Token",
             "header": "Authorization: Bearer <firebase_token>",
@@ -5125,9 +5067,9 @@ def mcp_v2_docs():
             "optional": True
         },
         "endpoints": {
-            "GET /mcp/v2": "Server information and capabilities",
-            "POST /mcp/v2/messages": "JSON-RPC 2.0 endpoint for all MCP operations",
-            "GET /mcp/v2/docs": "This documentation endpoint"
+            "GET /mcp": "Server information and capabilities",
+            "POST /mcp/messages": "JSON-RPC 2.0 endpoint for all MCP operations",
+            "GET /mcp/docs": "This documentation endpoint"
         },
         "json_rpc_methods": [
             "initialize",
